@@ -8,7 +8,7 @@ from collections import deque
 from math import log, ceil
 import datetime
 import logging
-import settings
+from .. import settings
 
 match settings.get_current_language():
     case settings.Language.ENGLISH: import Values.EN.cdt as tn, Values.EN.se as se, Values.EN.enum_names as en
