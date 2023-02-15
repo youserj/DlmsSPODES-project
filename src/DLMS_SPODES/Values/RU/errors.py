@@ -1,0 +1,6 @@
+FAILED_TO_RECEIVE = "Не удалось получить ответ с устройства за заданный промежуток времени"
+OPEN_PORT = "Порт открыт"
+INVALID_PDU = "Неверные данные протокола(PDU)"
+UPDATE_AVAILABLE = "возможно обновление"
+UNKNOWN_APPVERSION_TYPE = "Неизвестная версия преложения"
+INITIALIZE_CONNECTION = "Инициализация соединения"
