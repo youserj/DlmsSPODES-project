@@ -1,6 +1,6 @@
 from abc import ABC
 from itertools import chain
-from types import common_data_types as cdt, useful_types as ut
+from ..types import common_data_types as cdt, useful_types as ut
 
 
 class CommonDataTypeChoiceBase(ut.CHOICE, ABC):

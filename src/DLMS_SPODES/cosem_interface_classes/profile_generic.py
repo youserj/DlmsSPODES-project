@@ -1,18 +1,13 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Type
-import cosem_interface_classes
-from cosem_interface_classes.register import Register
-from cosem_interface_classes.clock import Clock
-from relation_to_OBIS import get_name
-import ITE_exceptions as exc
+from .. import cosem_interface_classes
+from .register import Register
+from .clock import Clock
+from ..relation_to_OBIS import get_name
+from .. import ITE_exceptions as exc
 from .__class_init__ import *
-from types.implements import integers, arrays, structs
-import logging
-
-
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
+from ..types.implements import integers, arrays, structs
 
 
 BUFFER = 2
@@ -278,7 +273,6 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
             ELEMENTS = tuple(buffer_elements)
 
         self.buffer.set_type(Entry)
-        logger.info(F'Buffer struct for {self} is created')
 
     def __create_range_descriptor(self):
         """ Available after got sort object """

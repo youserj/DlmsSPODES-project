@@ -1,6 +1,6 @@
-import register
+from . import register
 from .__class_init__ import *
-from types import choices
+from ..types import choices
 
 
 class ExtendedRegister(register.Register, ic.COSEMInterfaceClasses):

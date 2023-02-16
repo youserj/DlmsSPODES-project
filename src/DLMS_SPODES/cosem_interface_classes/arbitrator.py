@@ -1,6 +1,6 @@
 from __future__ import annotations
 from .__class_init__ import *
-from types.implements import structs, integers
+from ..types.implements import structs, integers
 
 
 class Actions(cdt.Array):

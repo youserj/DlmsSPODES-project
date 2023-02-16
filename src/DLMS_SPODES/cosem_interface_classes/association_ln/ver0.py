@@ -1,13 +1,12 @@
 from __future__ import annotations
 from functools import cache
 from typing import Callable
-import settings
 from enum import IntFlag, auto
-import ITE_exceptions as exc
+from ... import ITE_exceptions as exc
 from ..__class_init__ import *
-from types import choices
-from types.implements.long_unsigneds import ClassId
-from types.implements import arrays
+from ...types import choices
+from ...types.implements.long_unsigneds import ClassId
+from ...types.implements import arrays
 
 
 class AccessMode(cdt.Enum):
@@ -211,30 +210,30 @@ class ApplicationContextName(cdt.Structure):
 
 # TODO: join with cdt.FlagMixin
 class Conformance(cdt.BitString):
-    ELEMENTS = ({settings.Language.ENGLISH: F'reserved-zero', settings.Language.RUSSIAN: F'Зарезервированый-0'},
-                {settings.Language.ENGLISH: F'general-protection', settings.Language.RUSSIAN: F'Основной защита'},
-                {settings.Language.ENGLISH: F'general-block-transfer', settings.Language.RUSSIAN: F'Основная передача блока'},
-                {settings.Language.ENGLISH: F'read', settings.Language.RUSSIAN: F'Чтение'},
-                {settings.Language.ENGLISH: F'write', settings.Language.RUSSIAN: F'Запись'},
-                {settings.Language.ENGLISH: F'unconfirmed-write', settings.Language.RUSSIAN: F'Неподтвержденная запись'},
-                {settings.Language.ENGLISH: F'reserved-six', settings.Language.RUSSIAN: F'Зарезервированый-6'},
-                {settings.Language.ENGLISH: F'reserved-seven', settings.Language.RUSSIAN: F'Зарезервированый-7'},
-                {settings.Language.ENGLISH: F'attribute0-supported-with-SET', settings.Language.RUSSIAN: F'Поддерживается установка 0 атрибута'},
-                {settings.Language.ENGLISH: F'priority-mgmt-supported', settings.Language.RUSSIAN: F'Поддерживается приоритет MGMT'},
-                {settings.Language.ENGLISH: F'attribute0-supported-with-GET', settings.Language.RUSSIAN: F'Поддерживается чтение 0 атрибута'},
-                {settings.Language.ENGLISH: F'block-transfer-with-get-or-read', settings.Language.RUSSIAN: F'Запрос или чтение через передачу блоков'},
-                {settings.Language.ENGLISH: F'block-transfer-with-set-or-write', settings.Language.RUSSIAN: F'Установка или запись через передачу блоков'},
-                {settings.Language.ENGLISH: F'block-transfer-with-action', settings.Language.RUSSIAN: F'Активация через передачу блоков'},
-                {settings.Language.ENGLISH: F'multiple-references', settings.Language.RUSSIAN: F'Несколько ссылок'},
-                {settings.Language.ENGLISH: F'information-report', settings.Language.RUSSIAN: F'Информационный отчет'},
-                {settings.Language.ENGLISH: F'data-notification', settings.Language.RUSSIAN: F'Данные-уведомление'},
-                {settings.Language.ENGLISH: F'access', settings.Language.RUSSIAN: F'Доступ'},
-                {settings.Language.ENGLISH: F'parameterized-access', settings.Language.RUSSIAN: F'Параметризованный доступ'},
-                {settings.Language.ENGLISH: F'get', settings.Language.RUSSIAN: F'Извлечение'},
-                {settings.Language.ENGLISH: F'set', settings.Language.RUSSIAN: F'Установка'},
-                {settings.Language.ENGLISH: F'selective-access', settings.Language.RUSSIAN: F'Выборочный доступ'},
-                {settings.Language.ENGLISH: F'event-notification', settings.Language.RUSSIAN: F'Событие-уведомление'},
-                {settings.Language.ENGLISH: F'action', settings.Language.RUSSIAN: F'Активация'})
+    ELEMENTS = ({Language.ENGLISH: F'reserved-zero', Language.RUSSIAN: F'Зарезервированый-0'},
+                {Language.ENGLISH: F'general-protection', Language.RUSSIAN: F'Основной защита'},
+                {Language.ENGLISH: F'general-block-transfer', Language.RUSSIAN: F'Основная передача блока'},
+                {Language.ENGLISH: F'read', Language.RUSSIAN: F'Чтение'},
+                {Language.ENGLISH: F'write', Language.RUSSIAN: F'Запись'},
+                {Language.ENGLISH: F'unconfirmed-write', Language.RUSSIAN: F'Неподтвержденная запись'},
+                {Language.ENGLISH: F'reserved-six', Language.RUSSIAN: F'Зарезервированый-6'},
+                {Language.ENGLISH: F'reserved-seven', Language.RUSSIAN: F'Зарезервированый-7'},
+                {Language.ENGLISH: F'attribute0-supported-with-SET', Language.RUSSIAN: F'Поддерживается установка 0 атрибута'},
+                {Language.ENGLISH: F'priority-mgmt-supported', Language.RUSSIAN: F'Поддерживается приоритет MGMT'},
+                {Language.ENGLISH: F'attribute0-supported-with-GET', Language.RUSSIAN: F'Поддерживается чтение 0 атрибута'},
+                {Language.ENGLISH: F'block-transfer-with-get-or-read', Language.RUSSIAN: F'Запрос или чтение через передачу блоков'},
+                {Language.ENGLISH: F'block-transfer-with-set-or-write', Language.RUSSIAN: F'Установка или запись через передачу блоков'},
+                {Language.ENGLISH: F'block-transfer-with-action', Language.RUSSIAN: F'Активация через передачу блоков'},
+                {Language.ENGLISH: F'multiple-references', Language.RUSSIAN: F'Несколько ссылок'},
+                {Language.ENGLISH: F'information-report', Language.RUSSIAN: F'Информационный отчет'},
+                {Language.ENGLISH: F'data-notification', Language.RUSSIAN: F'Данные-уведомление'},
+                {Language.ENGLISH: F'access', Language.RUSSIAN: F'Доступ'},
+                {Language.ENGLISH: F'parameterized-access', Language.RUSSIAN: F'Параметризованный доступ'},
+                {Language.ENGLISH: F'get', Language.RUSSIAN: F'Извлечение'},
+                {Language.ENGLISH: F'set', Language.RUSSIAN: F'Установка'},
+                {Language.ENGLISH: F'selective-access', Language.RUSSIAN: F'Выборочный доступ'},
+                {Language.ENGLISH: F'event-notification', Language.RUSSIAN: F'Событие-уведомление'},
+                {Language.ENGLISH: F'action', Language.RUSSIAN: F'Активация'})
     default = '011000001111111111111011'  # for LN only
 
     def __init__(self, value: bytes | bytearray | str | int | cdt.BitString = None):
@@ -278,7 +277,7 @@ class Conformance(cdt.BitString):
     @classmethod
     def get_values(cls) -> list[str]:
         """ TODO: """
-        return [values_dict[settings.get_current_language()] for values_dict in cls.ELEMENTS]
+        return [values_dict[get_current_language()] for values_dict in cls.ELEMENTS]
 
     def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
         """ return validated value and cursor position. TODO: copypast FlagMixin """
@@ -705,7 +704,7 @@ if __name__ == '__main__':
     attr_des_with = CosemAttributeDescriptorWithSelection(((15, '0.0.40.0.0.255', 2), (2, [15])))
     a2 = CosemAttributeDescriptorWithSelection(((15, '0.0.40.0.0.255', 2), (4, (15, '0.0.40.0.1.255'))))
     attr_des_with.access_selection.set_selector(2)
-    # a = max(map(lambda val: val[settings.Language.RUSSIAN], ClientSAP.elements.values()), key=lambda value: len(value))
+    # a = max(map(lambda val: val[Language.RUSSIAN], ClientSAP.elements.values()), key=lambda value: len(value))
     a = Conformance('101010110010101011110101')
     a.set(b'\xb8\x18\x00')
     c = a[1]

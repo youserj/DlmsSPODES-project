@@ -1,7 +1,7 @@
 from __future__ import annotations
 from .__class_init__ import *
-from types import choices
-from types.implements import structs
+from ..types import choices
+from ..types.implements import structs
 threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 

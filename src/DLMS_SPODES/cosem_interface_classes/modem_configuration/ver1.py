@@ -1,5 +1,5 @@
 from ..__class_init__ import *
-import ver0
+from . import ver0
 
 
 class InitializationStringElement(cdt.Structure):

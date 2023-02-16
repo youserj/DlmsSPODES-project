@@ -1,5 +1,5 @@
 """ COMMON Structs """
-from types import common_data_types as cdt, cosem_service_types as cst
+from ...types import common_data_types as cdt, cosem_service_types as cst
 
 
 class ActionItem(cdt.Structure):

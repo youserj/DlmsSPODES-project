@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Type, Any, Callable
 from dataclasses import dataclass
-from types import common_data_types as cdt
+from ..types import common_data_types as cdt
 
 
 class _String(ABC):

@@ -1,9 +1,9 @@
-from types import common_data_types as cdt
-from settings import get_current_language, Language
+from ...types import common_data_types as cdt
+from ...settings import get_current_language, Language
 
 match get_current_language():
-    case Language.ENGLISH: from Values.EN import enum_names as en
-    case Language.RUSSIAN: from Values.RU import enum_names as en
+    case Language.ENGLISH: from ...Values.EN import enum_names as en
+    case Language.RUSSIAN: from ...Values.RU import enum_names as en
 
 
 class CommSpeed(cdt.Enum):

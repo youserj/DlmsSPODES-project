@@ -1,5 +1,5 @@
 from __future__ import annotations
-import ver0
+from . import ver0
 from ..__class_init__ import *
 
 

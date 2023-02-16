@@ -1,7 +1,7 @@
 from __future__ import annotations
-import ver0
-from types import choices
-import ITE_exceptions as exc
+from . import ver0
+from ...types import choices
+from ... import ITE_exceptions as exc
 from ..__class_init__ import *
 
 

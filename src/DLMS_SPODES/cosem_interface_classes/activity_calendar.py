@@ -1,9 +1,9 @@
 from __future__ import annotations
 import datetime
 from typing import Callable, Iterator
-from cosem_interface_classes import special_days_table as sdt
+from . import special_days_table as sdt
 from .__class_init__ import *
-from types.implements import integers
+from ..types.implements import integers
 
 
 class Season(cdt.Structure):

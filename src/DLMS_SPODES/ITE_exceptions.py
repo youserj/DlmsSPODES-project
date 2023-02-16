@@ -1,7 +1,7 @@
-from enums import Transmit, Application
 from enum import IntEnum
-from version import AppVersion
-from ite_dlms import pdu_enums as pdu
+from .enums import Transmit, Application
+from .version import AppVersion
+from . import pdu_enums as pdu
 
 
 class ITException(Exception):

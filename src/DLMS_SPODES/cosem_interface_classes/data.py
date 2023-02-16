@@ -1,6 +1,6 @@
 from __future__ import annotations
 from .__class_init__ import *
-from types import choices
+from ..types import choices
 
 
 class Data(ic.COSEMInterfaceClasses):

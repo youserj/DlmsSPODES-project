@@ -1,7 +1,6 @@
-from typing import Optional
 from collections import deque
 from .__class_init__ import *
-from types.implements.emuns import CommSpeed
+from ..types.implements.emuns import CommSpeed
 
 
 class IECHDLCSetup(ic.COSEMInterfaceClasses):
@@ -54,25 +53,25 @@ class IECHDLCSetup(ic.COSEMInterfaceClasses):
         return self.get_attr(9)
 
     @property
-    def max_info_transmit(self) -> Optional[bytes]:
+    def max_info_transmit(self) -> bytes | None:
         """ return max_info_field_length_transmit if it not default """
         if self.max_info_field_length_transmit.decode() != self.get_attr_element(5).default:
             return self.max_info_field_length_transmit.contents
 
     @property
-    def max_info_receive(self) -> Optional[bytes]:
+    def max_info_receive(self) -> bytes | None:
         """ return max_info_field_length_receive if it not default """
         if self.max_info_field_length_receive.decode() != self.get_attr_element(6).default:
             return self.max_info_field_length_receive.contents
 
     @property
-    def window_transmit(self) -> Optional[bytes]:
+    def window_transmit(self) -> bytes | None:
         """ return windows_size_transmit if it not default """
         if self.windows_size_transmit.decode() != self.get_attr_element(3).default:
             return self.windows_size_transmit.contents
 
     @property
-    def window_receive(self) -> Optional[bytes]:
+    def window_receive(self) -> bytes | None:
         """ return windows_size_receive if it not default """
         if self.windows_size_receive.decode() != self.get_attr_element(4).default:
             return self.windows_size_receive.contents

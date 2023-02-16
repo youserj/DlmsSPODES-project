@@ -1,6 +1,6 @@
 from typing import Callable
 from .__class_init__ import *
-from types import choices
+from ..types import choices
 
 
 class ServiceId(cdt.Enum):

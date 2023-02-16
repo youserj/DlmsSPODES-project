@@ -1,5 +1,5 @@
-from types import common_data_types as cdt
-import ver1
+from ...types import common_data_types as cdt
+from . import ver1
 
 
 class AssociationLN(ver1.AssociationLN):

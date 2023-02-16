@@ -1,5 +1,5 @@
 from ..__class_init__ import *
-from types.implements.emuns import CommSpeed
+from ...types.implements.emuns import CommSpeed
 
 
 class InitializationStringElement(cdt.Structure):

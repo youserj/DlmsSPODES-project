@@ -1,5 +1,5 @@
-import settings
-from types import common_data_types as cdt
+from .. import settings
+from ..types import common_data_types as cdt
 
 
 class FlagEvents(dict):

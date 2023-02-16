@@ -1,6 +1,6 @@
 from .__class_init__ import *
-from types import choices
-from types.implements import integers
+from ..types import choices
+from ..types.implements import integers
 
 
 class Register(ic.COSEMInterfaceClasses):

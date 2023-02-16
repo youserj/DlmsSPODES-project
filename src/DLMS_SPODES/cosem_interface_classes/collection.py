@@ -3,57 +3,56 @@ principles (see Clause 4 EN 62056-62:2007), the identification of real data item
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
 from __future__ import annotations
-from version import AppVersion
 import datetime
 import dataclasses
+from itertools import count, chain
 from collections import deque
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type
-from types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
-import cosem_interface_class as ic
 import logging
-import events as e_
-from activity_calendar import ActivityCalendar
-from arbitrator import Arbitrator
-from association_ln.ver0 import AssociationLN as AssociationLNVer0
-from association_ln.ver1 import AssociationLN as AssociationLNVer1
-from association_ln.ver2 import AssociationLN as AssociationLNVer2
-from push_setup.ver2 import PushSetup as PushSetupVer2
-from client_setup import ClientSetup
-from clock import Clock
-from data import Data
-from disconnect_control import DisconnectControl
-from extended_register import ExtendedRegister
-from gprs_modem_setup import GPRSModemSetup
-from gsm_diagnostic import GSMDiagnostic
-from iec_hdlc_setup import IECHDLCSetup
-from image_transfer import ImageTransfer
-from ipv4_setup import IPv4Setup
-from modem_configuration.ver0 import PSTNModemConfiguration
-from modem_configuration.ver1 import ModemConfigurationVer1
-from limiter import Limiter
-from profile_generic import ProfileGeneric
-from register import Register
-from register_monitor import RegisterMonitor
-from schedule import Schedule
-from security_setup.ver0 import SecuritySetup as SecuritySetupVer0
-from security_setup.ver1 import SecuritySetup as SecuritySetupVer1
-from script_table import ScriptTable
-from single_action_schedule import SingleActionSchedule
-from special_days_table import SpecialDaysTable
-from tcp_udp_setup import TCPUDPSetup
-import ITE_exceptions as exc
+from ..version import AppVersion
+from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
+from . import cosem_interface_class as ic
+from . import events as e_
+from .activity_calendar import ActivityCalendar
+from .arbitrator import Arbitrator
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0
+from .association_ln.ver1 import AssociationLN as AssociationLNVer1
+from .association_ln.ver2 import AssociationLN as AssociationLNVer2
+from .push_setup.ver2 import PushSetup as PushSetupVer2
+from .client_setup import ClientSetup
+from .clock import Clock
+from .data import Data
+from .disconnect_control import DisconnectControl
+from .extended_register import ExtendedRegister
+from .gprs_modem_setup import GPRSModemSetup
+from .gsm_diagnostic import GSMDiagnostic
+from .iec_hdlc_setup import IECHDLCSetup
+from .image_transfer import ImageTransfer
+from .ipv4_setup import IPv4Setup
+from .modem_configuration.ver0 import PSTNModemConfiguration
+from .modem_configuration.ver1 import ModemConfigurationVer1
+from .limiter import Limiter
+from .profile_generic import ProfileGeneric
+from .register import Register
+from .register_monitor import RegisterMonitor
+from .schedule import Schedule
+from .security_setup.ver0 import SecuritySetup as SecuritySetupVer0
+from .security_setup.ver1 import SecuritySetup as SecuritySetupVer1
+from .script_table import ScriptTable
+from .single_action_schedule import SingleActionSchedule
+from .special_days_table import SpecialDaysTable
+from .tcp_udp_setup import TCPUDPSetup
+from .. import ITE_exceptions as exc
 import xml.etree.ElementTree as ET
-from itertools import count, chain
-from relation_to_OBIS import get_name
-import class_id as c_id
-from ..cosem_interface_classes import implementations as impl
-import settings
+from ..relation_to_OBIS import get_name
+from ..cosem_interface_classes import implementations as impl, class_id as c_id
+from .. import settings
 
 
 match settings.get_current_language():
-    case settings.Language.ENGLISH:        from Values.EN import actors
-    case settings.Language.RUSSIAN:        from Values.RU import actors
+    case settings.Language.ENGLISH:        from ..Values.EN import actors
+    case settings.Language.RUSSIAN:        from ..Values.RU import actors
 
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
 AssociationLN_c: tuple[Type[AssociationLN], ...] = (AssociationLNVer0, AssociationLNVer1, AssociationLNVer2)

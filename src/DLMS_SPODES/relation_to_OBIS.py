@@ -4,13 +4,13 @@ usage of those definitions in the COSEM environment. All codes, which are not ex
 reserved for future use."""
 from __future__ import annotations
 from functools import lru_cache
-import globals_setting
-from ite_dlms.type__ import cosem_service_types as cst
+from . import settings
+from .types import cosem_service_types as cst
 
 
-match globals_setting.get_current_language():
-    case globals_setting.Language.ENGLISH:     from Values.DLMS.EN import relation_to_obis_names as rn, class_names as cn
-    case globals_setting.Language.RUSSIAN:     from Values.DLMS.RU import relation_to_obis_names as rn, class_names as cn
+match settings.get_current_language():
+    case settings.Language.ENGLISH:     from .Values.EN import relation_to_obis_names as rn, class_names as cn
+    case settings.Language.RUSSIAN:     from .Values.RU import relation_to_obis_names as rn, class_names as cn
 
 
 def get_obj_names(electric_obj: int) -> str:

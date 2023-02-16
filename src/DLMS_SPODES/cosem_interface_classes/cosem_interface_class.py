@@ -2,18 +2,18 @@ from __future__ import annotations
 import dataclasses
 from abc import ABC, abstractmethod
 from typing import Iterator, Type, TypeAlias, Callable, Any
-import settings
-from types import common_data_types as cdt, useful_types as ut, cosem_service_types as cst
-from relation_to_OBIS import get_name
+from .. import settings
+from ..types import common_data_types as cdt, useful_types as ut, cosem_service_types as cst
+from ..relation_to_OBIS import get_name
 import logging
 import multiprocessing
 from enum import IntEnum
 from datetime import datetime, timedelta, timezone
-import collection as col
+from . import collection as col
 
 match settings.get_current_language():
-    case settings.Language.ENGLISH: from Values.EN import attr_names as an
-    case settings.Language.RUSSIAN: from Values.RU import attr_names as an
+    case settings.Language.ENGLISH: from ..Values.EN import attr_names as an
+    case settings.Language.RUSSIAN: from ..Values.RU import attr_names as an
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO

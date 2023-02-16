@@ -1,5 +1,5 @@
-from types import common_data_types as cdt
 from typing import Any
+from ...types import common_data_types as cdt
 
 
 class SelectionAccess(cdt.Array):

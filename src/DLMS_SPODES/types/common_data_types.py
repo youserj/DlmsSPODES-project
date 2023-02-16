@@ -10,9 +10,10 @@ import datetime
 import logging
 from .. import settings
 
+
 match settings.get_current_language():
-    case settings.Language.ENGLISH: import Values.EN.cdt as tn, Values.EN.se as se, Values.EN.enum_names as en
-    case settings.Language.RUSSIAN: import Values.RU.cdt as tn, Values.RU.se as se, Values.RU.enum_names as en
+    case settings.Language.ENGLISH: from ..Values.EN import cdt as tn, se, enum_names as en
+    case settings.Language.RUSSIAN: from ..Values.RU import cdt as tn, se, enum_names as en
     case _ as lang:                        raise ImportError(F'{lang} is absence')
 
 
