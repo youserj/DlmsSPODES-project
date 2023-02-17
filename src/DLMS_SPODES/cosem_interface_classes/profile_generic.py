@@ -7,7 +7,7 @@ from .clock import Clock
 from ..relation_to_OBIS import get_name
 from .. import ITE_exceptions as exc
 from .__class_init__ import *
-from ..types.implements import integers, arrays, structs
+from ..types.implementations import integers, arrays, structs
 
 
 BUFFER = 2

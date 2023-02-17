@@ -1,5 +1,5 @@
 from .__class_init__ import *
-from ..types.implements import integers
+from ..types.implementations import integers
 
 
 class ControlState(cdt.Enum):

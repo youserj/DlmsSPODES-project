@@ -5,8 +5,8 @@ from enum import IntFlag, auto
 from ... import ITE_exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
-from ...types.implements.long_unsigneds import ClassId
-from ...types.implements import arrays
+from ...types.implementations.long_unsigneds import ClassId
+from ...types.implementations import arrays
 
 
 class AccessMode(cdt.Enum):

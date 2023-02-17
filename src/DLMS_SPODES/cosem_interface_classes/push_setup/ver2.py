@@ -1,5 +1,5 @@
 from ..__class_init__ import *
-from ...types.implements import structs, emuns, integers
+from ...types.implementations import structs, emuns, integers
 
 
 class RestrictionValue(ut.CHOICE):

@@ -1,7 +1,6 @@
 from __future__ import annotations
 from functools import cached_property
-from typing import Optional
-from hdlc.frame import Info
+from ..hdlc.frame import Info
 
 
 class SNRM(Info):
@@ -65,7 +64,7 @@ class SNRM(Info):
     def try_create(cls, max_info_transmit: bytes = None,
                    max_info_receive: bytes = None,
                    window_transmit: bytes = None,
-                   window_receive: bytes = None) -> Optional[SNRM]:
+                   window_receive: bytes = None) -> SNRM | None:
         """ create SNRM if exist as least one parameter """
         if any((max_info_transmit, max_info_receive, window_transmit, window_receive)):
             return cls(max_info_transmit=max_info_transmit,

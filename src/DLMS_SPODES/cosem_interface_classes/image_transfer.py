@@ -1,5 +1,5 @@
 from .__class_init__ import *
-from ..types.implements import integers
+from ..types.implementations import integers
 
 
 TRANSFER_NOT_INITIATED = 0

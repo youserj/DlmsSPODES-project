@@ -1,5 +1,5 @@
 from .__class_init__ import *
-from ..types.implements import structs
+from ..types.implementations import structs
 
 
 class TYPE(cdt.Enum):

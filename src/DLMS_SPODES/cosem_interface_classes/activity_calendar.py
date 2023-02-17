@@ -3,7 +3,7 @@ import datetime
 from typing import Callable, Iterator
 from . import special_days_table as sdt
 from .__class_init__ import *
-from ..types.implements import integers
+from ..types.implementations import integers
 
 
 class Season(cdt.Structure):
