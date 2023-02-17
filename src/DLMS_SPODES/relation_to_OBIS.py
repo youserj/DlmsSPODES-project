@@ -144,13 +144,13 @@ def handle_B(value: int) -> str:
     if value == 0:
         return ""
     elif value <= 64:
-        F", {rn.CHANNEL} {value}"
+        return F", {rn.CHANNEL} {value}"
     elif value <= 127:
-        F", {rn.UTILITY_SPECIFIC} {value}"
+        return F", {rn.UTILITY_SPECIFIC} {value}"
     elif value <= 199:
-        F", {rn.MANUFACTURER_SPECIFIC} {value}"
+        return F", {rn.MANUFACTURER_SPECIFIC} {value}"
     elif value <= 255:
-        F", {rn.RESERVED} {value}"
+        return F", {rn.RESERVED} {value}"
     else:
         raise ValueError(F"got group B: {value}, expect 0..255")
 
@@ -159,9 +159,9 @@ def handle_E(value: int) -> str:
     if value == 0:
         return ""
     elif value <= 127:
-        F", {rn.INSTANCE} {value}"
+        return F", {rn.INSTANCE} {value}"
     elif value <= 255:
-        F", {rn.MANUFACTURER_SPECIFIC} {value}"
+        return F", {rn.MANUFACTURER_SPECIFIC} {value}"
     else:
         raise ValueError(F"got group E: {value}, expect 0..255")
 

@@ -158,8 +158,8 @@ class Collection:
         """ append objects from xml file """
         tree = ET.parse(filename)
         objects = tree.getroot()
-        if use is None and objects.tag != TagsName.DEVICE_ROOT:
-            raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT}")
+        if use is None and objects.tag != TagsName.DEVICE_ROOT.value:
+            raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT.value}")
         root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
