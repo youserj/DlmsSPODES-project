@@ -308,7 +308,7 @@ class PushSetup(ic.COSEMInterfaceClasses):
                   ic.ICAElement(an.PUSH_PROTECTION_PARAMETERS, PushProtectionParameters),
                   ic.ICAElement(an.PUSH_OPERATION_METHOD, PushOperationMethod),
                   ic.ICAElement(an.CONFIRMATION_PARAMETERS, ConfirmationParameters),
-                  ic.ICAElement(an.LAST_CONFIRMATION_DATE_TIME, cst.OctetStringDateTime))
+                  ic.ICAElement(an.LAST_CONFIRMATION_DATE_TIME, cdt.DateTime))
     M_ELEMENTS = (ic.ICMElement(mn.PUSH, integers.Only0),
                   ic.ICMElement(mn.RESET, integers.Only0))
 
