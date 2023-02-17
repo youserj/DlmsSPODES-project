@@ -1,6 +1,6 @@
-from ite_dlms.type__ import cosem_service_types as cst
-from ite_dlms.cosem_interface_classes import cosem_interface_class as ic, collection
-import ITE_exceptions as exc
+from .types import cst
+from .cosem_interface_classes import cosem_interface_class as ic, collection
+from . import ITE_exceptions as exc
 
 
 def get_attr_index(obj: ic.COSEMInterfaceClasses) -> list[int]:
