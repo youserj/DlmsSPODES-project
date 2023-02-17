@@ -48,6 +48,7 @@ import xml.etree.ElementTree as ET
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl, class_id as c_id
 from .. import settings
+from ..enums import TagsName
 
 
 match settings.get_current_language():
@@ -157,8 +158,8 @@ class Collection:
         """ append objects from xml file """
         tree = ET.parse(filename)
         objects = tree.getroot()
-        if use is None and objects.tag != "Configure":
-            raise ValueError(F"ERROR: Root tag got {objects.tag}, expected 'Configure'")
+        if use is None and objects.tag != TagsName.DEVICE_ROOT:
+            raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT}")
         root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
