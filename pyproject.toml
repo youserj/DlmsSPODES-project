@@ -1,0 +1,17 @@
+[build-system]
+requeres = ["setuptools", "setuptools-scm"]
+build-backed = "setuptools.build_meta"
+
+[project]
+name = "DLMS_SPODES"
+version = "0.2.9"
+authors = [
+    {name="Serj", email="youserj@outlook.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
