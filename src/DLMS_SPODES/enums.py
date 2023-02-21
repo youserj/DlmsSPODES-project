@@ -1,4 +1,10 @@
 from enum import Enum, IntEnum, auto
+from typing import Self
+from .settings import get_current_language, Language
+
+match get_current_language():
+    case Language.ENGLISH: from .Values.EN import enum_names as en
+    case Language.RUSSIAN: from .Values.RU import enum_names as en
 
 
 class ITEEnum(Enum):
@@ -72,6 +78,122 @@ class DBOperation(IntEnum):
     CREATE_DEV_TYPE = auto()
 
 
+class Interface(IntEnum):
+    NO_DEFINED = 0
+    OPTO = 1
+    RS485 = 2
+    PLC = 3
+    GSM = 4
+    NBIO = 5
+    ETHERNET = 6
+    RF = 7
+    LORA = 8
+    WIFI = 9
+    BLUETOOTH = 10
+    ZIGBEE = 11
+    RESERVED_12 = 12
+    RESERVED_13 = 13
+    RESERVED_14 = 14
+    RESERVED_15 = 15
+    RESERVED_16 = 16
+    RESERVED_17 = 17
+    RESERVED_18 = 18
+    RESERVED_19 = 19
+    RESERVED_20 = 20
+    RESERVED_21 = 21
+    RESERVED_22 = 22
+    RESERVED_23 = 23
+    RESERVED_24 = 24
+    RESERVED_25 = 25
+    RESERVED_26 = 26
+    RESERVED_27 = 27
+    RESERVED_28 = 28
+    RESERVED_29 = 29
+    MANUFACTURE_30 = 30
+    MANUFACTURE_31 = 31
+
+    @staticmethod
+    def from_str(value: str) -> Self:
+        return next(filter(lambda i: i.name == value, Interface))
+
+
+class ChannelNumber(IntEnum):
+    RESERVED = 0
+    OPTO_P1 = 1
+    P2 = 2
+    P3 = 3
+    P4 = 4
+    OTHER = 5
+    INNER = 6
+    SERVER_KEY = 7
+
+    @staticmethod
+    def from_str(value: str) -> Self:
+        return next(filter(lambda i: i.name == value, ChannelNumber))
+
+
+class ConnectionType(IntEnum):
+    NO_STATION = 0,
+    CLIENT_MANAGEMENT_PROCESS = 1
+    PUBLIC_CLIENT = 0x10
+    METER_READER = 0x20
+    UTILITY_SETTING = 0x30
+    PUSH = 0x40
+    FIRMWARE_UPDATE = 0x50
+    IHD = 0x60
+
+    def __str__(self):
+        match self:
+            case self.NO_STATION:                return en.NO_STATION
+            case self.CLIENT_MANAGEMENT_PROCESS: return en.CLIENT_MANAGEMENT_PROCESS
+            case self.PUBLIC_CLIENT:             return en.PUBLIC_CLIENT
+            case self.METER_READER:              return en.METER_READER
+            case self.UTILITY_SETTING:           return en.UTILITY_SETTING
+            case self.PUSH:                      return en.PUSH
+            case self.FIRMWARE_UPDATE:           return en.FIRMWARE_UPDATE
+            case self.IHD:                       return en.IHD
+            case _:                              return str(self)
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        match value:
+            case en.NO_STATION:                return cls.NO_STATION
+            case en.CLIENT_MANAGEMENT_PROCESS: return cls.CLIENT_MANAGEMENT_PROCESS
+            case en.PUBLIC_CLIENT:             return cls.PUBLIC_CLIENT
+            case en.METER_READER:              return cls.METER_READER
+            case en.UTILITY_SETTING:           return cls.UTILITY_SETTING
+            case en.PUSH:                      return cls.PUSH
+            case en.FIRMWARE_UPDATE:           return cls.FIRMWARE_UPDATE
+            case en.IHD:                       return cls.IHD
+            case _:                            return cls(int(value))
+
+
+class MechanismId(IntEnum):
+    NONE = 0
+    LOW = 1
+    HIGH = 2
+    HIGH_MD5 = 3
+    HIGH_SHA1 = 4
+    HIGH_GMAC = 5
+    HIGH_SHA256 = 6
+    HIGH_ECDSA = 7
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        return next(filter(lambda i: i.name == value, cls))
+
+
+class ContextId(IntEnum):
+    LN_NO_CIPHERING = 1
+    SN_NO_CIPHERING = 2
+    LN_CIPHERING = 3
+    SN_CIPHERING = 4
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        return next(filter(lambda i: i.name == value, cls))
+
+
 if __name__ == '__main__':
     a = Transmit.OK
     print(a.name, a.value, a.importance)
@@ -79,3 +201,5 @@ if __name__ == '__main__':
     match a:
         case Transmit.OK: print(a.value)
         case Application.ID_ERROR: print('id')
+
+

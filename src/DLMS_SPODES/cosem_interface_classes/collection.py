@@ -49,7 +49,7 @@ from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl, class_id as c_id
 from .. import settings
 from ..enums import TagsName
-
+from . import obis as o
 
 match settings.get_current_language():
     case settings.Language.ENGLISH:        from ..Values.EN import actors
@@ -433,7 +433,9 @@ class Collection:
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.reactive_power_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 12, e) if 0 <= e <= 6:
+            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 4):
+                return impl.data.CommunicationPortParameter(ln)
+            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 12, e) if e in (0, 1, 2, 3, 5, 6):
                 return get_type_from_class(i, 0)(ln)
             case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 128):
                 return Data(ln)
@@ -600,8 +602,13 @@ class Collection:
                 self.__container.remove(obj)
                 return True
             case ic.COSEMInterfaceClasses() as obj, list():
-                obj.attributes.remove_by(indexes)
-                if len(obj.attributes) <= 1:
+                obj: InterfaceClass
+                for i in indexes:
+                    obj.clear_attr(i)
+                for i in range(2, obj.get_attr_length()):
+                    if obj.get_attr(i) is not None:
+                        break
+                else:
                     self.__container.remove(obj)  # TODO: Rewrite with new list attr API
                 return True
             case _:
@@ -711,12 +718,20 @@ class Collection:
             return obj
 
     @cached_property
+    def LDN(self) -> Data:
+        return self.__get_object(o.LDN)
+
+    @cached_property
     def current_association(self) -> AssociationLN:
-        return self.__get_object(bytes((0, 0, 40, 0, 0, 255)))
+        return self.__get_object(o.CURRENT_ASSOCIATION)
 
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, 1, 255)))
+
+    @cached_property
+    def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
+        return self.__get_object(bytes((0, 0, 96, 12, 4, 255)))
 
     @cached_property
     def client_setup(self) -> ClientSetup:

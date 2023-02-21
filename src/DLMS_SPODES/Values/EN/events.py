@@ -251,6 +251,7 @@ PROGRAMING_147 = "Changing the sequence of the output to LCD in the 'button' mod
 PROGRAMING_148 = "Changing the level of the current limit"
 PROGRAMING_149 = "Changing the level of the voltage limit"
 PROGRAMING_150 = "Emergency tariff number"
+PROGRAMING_1024 = "KPZ. Change device parameters"
 
 # for 0.0.96.11.4.255 События внешних воздействий ГОСТ Р 58940—2020 таблица Д.5
 EXTERNAL_IMPACT_1 = "Magnetic field - the beginning"

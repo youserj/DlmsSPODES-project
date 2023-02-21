@@ -1,4 +1,5 @@
 from ..data import Data, ic, an, cdt, cst
+from ... import enums as enu
 
 
 class Unsigned(Data):
@@ -64,3 +65,38 @@ class BitMapData(cdt.Structure):
 class ITEBitMap(Data):
     """ITE 0.0.128.160.0.255. Use for send struct lcd screen bitmap(BMP) with start/stop period to server"""
     A_ELEMENTS = ic.ICAElement(an.VALUE, BitMapData, classifier=ic.Classifier.STATIC),
+
+
+class ChannelNumberValue(cdt.Unsigned):
+    @property
+    def channel(self) -> enu.ChannelNumber:
+        return enu.ChannelNumber(int(self) & 0b0000_0111)
+
+    @channel.setter
+    def channel(self, value: enu.ChannelNumber):
+        self.set((int(self) & 0b1111_1000) | value)
+
+    @property
+    def interface(self) -> enu.Interface:
+        return enu.Interface((int(self) & 0b1111_1000) >> 3)
+
+    @interface.setter
+    def interface(self, value: enu.Interface):
+        self.set((int(self) & 0b0001_1111) | (value << 3))
+
+    @property
+    def report(self) -> str:
+        return F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}"
+
+    def __str__(self):
+        return self.report
+
+
+class CommunicationPortParameter(Data):
+    """ RU. 0.0.96.12.4.255. СТО_34.01-5.1-006-2019v3. 13.10. Определение номера порта по которому установлено соединение"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=ic.Classifier.DYNAMIC),
+
+    @property
+    def value(self) -> ChannelNumberValue:
+        """override returned type"""
+        return self.get_attr(2)
