@@ -108,7 +108,11 @@ class CHOICE(ABC):
                 case bytes() as encoding:
                     match self.ELEMENTS[encoding[0]]:
                         case SequenceElement() as el: return el.TYPE(encoding)
-                        case dict() as ch:            return ch[encoding[1]].TYPE(encoding)  # use for choice cst.Time | DateTime | Date as OctetString
+                        case dict() as ch:
+                            if encoding[1] in ch.keys():
+                                return ch[encoding[1]].TYPE(encoding)  # use for choice cst.Time | DateTime | Date as OctetString
+                            else:
+                                raise ValueError(F"got type with tag: {encoding[0]} and length: {encoding[1]}, expected length {tuple(ch.keys())}")
                         case err:                     raise ValueError(F"got {err.__name__}, expected {SequenceElement.__name__} or {dict.__name__}")
                 case int() as tag:                    return self.ELEMENTS[tag].TYPE()
                 case error:                           raise ValueError(F'Unknown value type {error}')
