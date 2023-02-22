@@ -56,8 +56,6 @@ RU_DEVICE_NOT_METROLOGICAL_VERSION = "Версия метрологическо�
 RU_DEVICE_ID = "Идентификатор исполнения счетчика"
 RU_COUNTER_POINT_DATA = "данные точки учета"
 I_O_CONTROL_SIGNAL_OBJECTS_GLOBAL = "Статус входов/выходов"
-POWER_QUALITY_STATUS_DAILY = "Статус качества сети (профиль суточных показаний)"
-POWER_QUALITY_STATUS_QUALITY_LOG = "Статус качества сети (журнал качества сети)"
 TIME_OF_OPERATION = "Время работы ПУ"
 RU_DURATION_OF_FAILURE_OVERSTRAIN = "Длительность провала/перенапряжения"
 RU_AMBIENT_TEMPERATURE = "Температура"
@@ -84,8 +82,6 @@ RU_ALARM_MONITOR_1 = "Монитор событий реле нагрузки"
 # 6.2.19 Standard readout profile objects
 GENERAL_DISPLAY_READOUT = "Профиль основного дисплея «в Автопрокрутке»"
 ALTERNATE_DISPLAY_READOUT = "Профиль основного дисплея «по кнопке»"
-# 6.2.44 Parameter changes and calibration objects
-PARAMETER_CHANGES_AND_CALIBRATION_0 = "Счетчик коррекций(конфигурирований)"
 # 6.2.48 Status of internal control signals objects
 RU_LCD_BACKLIGHT_MODE = "Режим подсветки ЖКИ"
 # 6.2.59 Event counter objects
@@ -157,7 +153,6 @@ ITE_SETTING_OF_RELAY_INCLUSION_PER_DAY = "ИТЭ. Уставка количес�
 ITE_SETTINGS_MESSAGES = "ИТЭ. Сообщения для настройки"
 ITE_CORE_REGISTERS = "ИТЭ. Дамп регистров"
 ITE_BLE_ID = "ИТЭ. BLUETOOTHLE Идентификатор"
-ITE_BITMAP = "ИТЭ. BITMAP загрузчик экрана"
 ITE_ICCID = "ИТЭ. Уникальный серийный номер SIM-карты"
 RU_BODY_OPENING_STATE = "Текущее состояние датчика вскрытия корпуса"
 RU_TERMINALS_COVER_OPENING_STATE = "Текущее состояние датчика вскрытия крышки клеммников"
@@ -168,15 +163,33 @@ RU_PRESSING_ELECTRONIC_SEALS = "Обжатие электронных пломб
 RU_CLEAR_OF_ELECTRONIC_SEALS_FIXED_STATE = "Очистка зафиксированных событий (магнит и ВЧ поле)"
 RU_FIRST_OPENING_TIME_OF_BODY = "Время первого вскрытия электронной пломбы корпуса"
 RU_FIRST_OPENING_TIME_OF_TERMINALS_COVER = "Время первого вскрытия электронной пломбы крышки клеммников"
-
 # 7.4. Abstract object
 # 7.4.1 General and service entry object - Abstract
 RU_RELAY_LOAD_ARBITRATOR = "Арбитр реле нагрузки"
+# Parameter changes, calibration and access
+NUMBER_OF_CONFIGURATION_PROGRAM_CHANGES = "Счетчик коррекций (конфигурирований)"
+DATE_A_OF_LAST_CONFIGURATION_PROGRAM_CHANGE = "Дата последнего конфигурирования"
+DATE_A_OF_LAST_TIME_SWITCH_PROGRAM_CHANGE = "Дата последнего переключения времени"
+DATE_A_OF_LAST_RIPPLE_CONTROL_RECEIVER_PROGRAM_CHANGE = "Дата последнего пульсирующего управления приемника"
+STATUS_OF_SECURITY_SWITCHES = "Статус переключателей безопасности"
+DATE_A_OF_LAST_CALIBRATION = " Дата последней калибровки"
+DATE_A_OF_NEXT_CONFIGURATION_PROGRAM_CHANGE = "Дата следующего конфигурирования"
+DATE_A_OF_ACTIVATION_OF_THE_PASSIVE_CALENDAR = "Дата последнего активирования календаря"
+NUMBER_OF_PROTECTED_CONFIGURATION_PROGRAM_CHANGES = "Счетчик защищенных коррекций (конфигурирований)"
+DATE_A_OF_LAST_PROTECTED_CONFIGURATION_PROGRAM_CHANGE = "Дата последнего защищенного конфигурирования"
+DATE_A_CORRECTED_OF_LAST_CLOCK_SYNCHRONIZATION_SETTING = "Дата последней установки времени"
+DATE_OF_LAST_FIRMWARE_ACTIVATION = "Дата последнего изменения встроенного ПО"
+# Internal operating status
+INTERNAL_OPERATING_STATUS_GLOBAL = "Внутренний рабочий статус, общий"
+INTERNAL_OPERATING_STATUS_1 = "Статус качества сети (профиль суточных показаний)"
+INTERNAL_OPERATING_STATUS_2 = "Слово состояний контроля мощности"
+INTERNAL_OPERATING_STATUS_3 = "Внутренний рабочий статус 3"
+INTERNAL_OPERATING_STATUS_4 = "Статус качества сети (журнал качества сети)"
 # Communication port log parameters
 ITE_USED_COMMUNICATION_INTERFACES = "ИТЭ. Используемые коммуникационные интерфейсы"
 # Consumer messages
 LOCAL_CONSUMER_MESSAGE = "Потребительское сообщение через локальный информационный порт потребителей"
-DISPLAY_CONSUMER_MESSAGE = "Consumer message via the meter display and / or via consumer information port"
+DISPLAY_CONSUMER_MESSAGE = "Потребительское сообщение через дисплей измерителя и/или через порт информации о потребителях"
 # 7.4.5 Data profile objects – Abstract
 GSM_DIAGNOSTIC_PROFILE = "Профиль GSM диагностики"
 # electricity

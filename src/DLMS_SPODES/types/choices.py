@@ -1,6 +1,6 @@
 from abc import ABC
 from itertools import chain
-from ..types import common_data_types as cdt, useful_types as ut
+from ..types import cdt, ut, cst
 
 
 class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
@@ -83,9 +83,20 @@ class RegisterChoice(CommonDataTypeChoiceBase):
                      24: ut.SequenceElement(cdt.tn.FLOAT64, cdt.Float64)})
 
 
+class AnyDateTimeChoice(CommonDataTypeChoiceBase):
+    """Date of the event may contain the date only, the time only or both, encoded as specified in 4.1.6.1."""
+    ELEMENTS = {25: ut.SequenceElement(cdt.tn.DATE_TIME, cdt.DateTime),
+                26: ut.SequenceElement(cdt.tn.DATE, cdt.Date),
+                27: ut.SequenceElement(cdt.tn.TIME, cdt.Time),
+                9: {12: ut.SequenceElement(cst.OctetStringDateTime.NAME, cst.OctetStringDateTime),
+                    5: ut.SequenceElement(cst.OctetStringDate.NAME, cst.OctetStringDate),
+                    4: ut.SequenceElement(cst.OctetStringTime.NAME, cst.OctetStringTime)}}
+
+
 simple_dt = SimpleDataTypeChoice()
 complex_dt = ComplexDataTypeChoice()
 common_dt = CommonDataTypeChoice()
 extended_register = ExtendedRegisterChoice()
 register = RegisterChoice()
 access_selectors = AccessSelectorsChoice()
+any_date_time = AnyDateTimeChoice()

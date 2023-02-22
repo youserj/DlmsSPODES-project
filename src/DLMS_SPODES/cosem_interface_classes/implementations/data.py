@@ -1,4 +1,4 @@
-from ..data import Data, ic, an, cdt, cst
+from ..data import Data, ic, an, cdt, cst, choices
 from ... import enums as enu
 
 
@@ -63,7 +63,7 @@ class BitMapData(cdt.Structure):
 
 
 class ITEBitMap(Data):
-    """ITE 0.0.128.160.0.255. Use for send struct lcd screen bitmap(BMP) with start/stop period to server"""
+    """ITE 0.128.96.13.1.255. Use for send struct lcd screen bitmap(BMP) with start/stop period to server"""
     A_ELEMENTS = ic.ICAElement(an.VALUE, BitMapData, classifier=ic.Classifier.STATIC),
 
 
@@ -100,3 +100,8 @@ class CommunicationPortParameter(Data):
     def value(self) -> ChannelNumberValue:
         """override returned type"""
         return self.get_attr(2)
+
+
+class AnyDateTime(Data):
+    """for a-anotation DLMS UA 1000-1 Ed. 14 Table 60"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.any_date_time, classifier=ic.Classifier.STATIC),

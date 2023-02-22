@@ -94,7 +94,7 @@ class LogicalName(cdt.OctetString):
 class OctetStringDateTime(cdt.DateTime):
     """ type Time in OctetString(SIZE(12)) """
     TAG = b'\x09'
-    NAME = F'{cdt.tn.OCTET_STRING}[12]'
+    NAME = F"{cdt.tn.OCTET_STRING}[12]"
 
     def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.date | datetime.time = b'\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff'):
         match value:  # TODO: common for all OctetDateTimes

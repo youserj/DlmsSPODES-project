@@ -368,8 +368,11 @@ class Collection:
                 return ProfileGeneric(ln)
             case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 1, e) if 0 <= e <= 10:
                 return Data(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 2, e):
+            # 6.2.44 Parameter changes and calibration objects
+            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 0 | 4 | 10 | 13):
                 return Data(ln)
+            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 1 | 2 | 3 | 5 | 6 | 7 | 11 | 12):
+                return impl.data.AnyDateTime(ln)
             case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 3, e) if 0 <= e <= 4:
                 return Data(ln)
             case c_id.DISCONNECT_CONTROL,                                0, cst.LogicalName(0, b, 96, 3, 10):
@@ -389,7 +392,9 @@ class Collection:
                 return Arbitrator(ln)
             case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 4, e) if 0 <= e <= 4:
                 return Data(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 5, e) if 0 <= e <= 4:
+            case c_id.DATA | c_id.PROFILE_GENERIC as i,                  v, cst.LogicalName(0, b, 96, 5, 0):  # TODO: add RegisterTable
+                return get_type_from_class(i, v)(ln)
+            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 5, e) if 1 <= e <= 4:  # TODO: add StatusMaping
                 return Data(ln)
             case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 8, e) if 0 <= e <= 63:
                 return get_type_from_class(i, 0)(ln)
@@ -439,6 +444,11 @@ class Collection:
                 return get_type_from_class(i, 0)(ln)
             case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 128):
                 return Data(ln)
+            # 6.2.57 Consumer message objects
+            case c_id.DATA,                                              0, cst.LogicalName(0, 128, 96, 13, 1):
+                return impl.data.ITEBitMap(ln)
+            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 13, 0 | 1):
+                return get_type_from_class(i, 0)(ln)
             case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 15, e) if 0 <= e <= 99:
                 return get_type_from_class(i, 0)(ln)
             case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 20, e):

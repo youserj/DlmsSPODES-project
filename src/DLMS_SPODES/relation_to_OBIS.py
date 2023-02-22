@@ -235,14 +235,28 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case cst.LogicalName(0, b, 96, 1, 8):   return F"{rn.RU_DEVICE_NOT_METROLOGICAL_VERSION}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 1, 9):   return F"{rn.RU_DEVICE_ID}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 1, 10):  return F"{rn.RU_COUNTER_POINT_DATA}{handle_B(b)}"
-        case cst.LogicalName(0, b, 96, 2, 0):   return F"{rn.PARAMETER_CHANGES_AND_CALIBRATION_0}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 0):   return F"{rn.NUMBER_OF_CONFIGURATION_PROGRAM_CHANGES}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 1):   return F"{rn.DATE_A_OF_LAST_CONFIGURATION_PROGRAM_CHANGE}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 2):   return F"{rn.DATE_A_OF_LAST_TIME_SWITCH_PROGRAM_CHANGE}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 3):   return F"{rn.DATE_A_OF_LAST_RIPPLE_CONTROL_RECEIVER_PROGRAM_CHANGE}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 4):   return F"{rn.STATUS_OF_SECURITY_SWITCHES}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 5):   return F"{rn.DATE_A_OF_LAST_CALIBRATION}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 6):   return F"{rn.DATE_A_OF_NEXT_CONFIGURATION_PROGRAM_CHANGE}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 7):   return F"{rn.DATE_A_OF_ACTIVATION_OF_THE_PASSIVE_CALENDAR}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 10):   return F"{rn.NUMBER_OF_PROTECTED_CONFIGURATION_PROGRAM_CHANGES}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 11):   return F"{rn.DATE_A_OF_LAST_PROTECTED_CONFIGURATION_PROGRAM_CHANGE}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 12):   return F"{rn.DATE_A_CORRECTED_OF_LAST_CLOCK_SYNCHRONIZATION_SETTING}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 2, 13):   return F"{rn.DATE_OF_LAST_FIRMWARE_ACTIVATION}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 3, 0):   return F"{rn.I_O_CONTROL_SIGNAL_OBJECTS_GLOBAL}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 3, 10):  return F"{cn.DISCONNECT_CONTROL}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 3, 20):  return F"{rn.RU_RELAY_LOAD_ARBITRATOR}{handle_B(b)}"
         case cst.LogicalName(0, 0, 96, 4, 1):   return rn.RU_LCD_BACKLIGHT_MODE
         case cst.LogicalName(0, 0, 96, 4, 3):   return rn.RU_LOAD_LOCK_STATUS
-        case cst.LogicalName(0, 0, 96, 5, 1):   return rn.POWER_QUALITY_STATUS_DAILY
-        case cst.LogicalName(0, 0, 96, 5, 4):   return rn.POWER_QUALITY_STATUS_QUALITY_LOG
+        case cst.LogicalName(0, 0, 96, 5, 0):   return rn.INTERNAL_OPERATING_STATUS_GLOBAL
+        case cst.LogicalName(0, 0, 96, 5, 1):   return rn.INTERNAL_OPERATING_STATUS_1
+        case cst.LogicalName(0, 0, 96, 5, 2):   return rn.INTERNAL_OPERATING_STATUS_2
+        case cst.LogicalName(0, 0, 96, 5, 3):   return rn.INTERNAL_OPERATING_STATUS_3
+        case cst.LogicalName(0, 0, 96, 5, 4):   return rn.INTERNAL_OPERATING_STATUS_4
         case cst.LogicalName(0, b, 96, 8, 0):   return F"{rn.TIME_OF_OPERATION}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 8, 10):  return F"{rn.RU_DURATION_OF_FAILURE_OVERSTRAIN}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 9, 0):   return F"{rn.RU_AMBIENT_TEMPERATURE}{handle_B(b)}"

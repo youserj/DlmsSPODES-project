@@ -69,7 +69,7 @@ class OCTET_STRING(_String):
 
 class CHOICE(ABC):
     """ TODO: with cdt.CHOICE """
-    ELEMENTS: dict[int, SequenceElement]
+    ELEMENTS: dict[int, SequenceElement | dict[int, SequenceElement]]
 
     @property
     @abstractmethod
@@ -79,7 +79,9 @@ class CHOICE(ABC):
     def __init_subclass__(cls, **kwargs):
         if hasattr(cls, 'ELEMENTS'):
             for el in cls.ELEMENTS.values():
-                if issubclass(el.TYPE, cls.TYPE):
+                if isinstance(el, dict):
+                    """pass, maybe it is for cst.AnyTime"""
+                elif issubclass(el.TYPE, cls.TYPE):
                     """ type in order """
                 else:
                     raise ValueError(F'For {cls.__name__} got type {el.TYPE.__name__} with {el.NAME=}, expected {cls.TYPE.__name__}')
@@ -103,9 +105,13 @@ class CHOICE(ABC):
         """ get instance from encoding or tag(with default value). For CommonDataType only """
         try:
             match value:
-                case bytes() as encoding: return self.ELEMENTS[encoding[0]].TYPE(encoding)
-                case int() as tag:        return self.ELEMENTS[tag].TYPE()
-                case _ as error:          raise ValueError(F'Unknown value type {error}')
+                case bytes() as encoding:
+                    match self.ELEMENTS[encoding[0]]:
+                        case SequenceElement() as el: return el.TYPE(encoding)
+                        case dict() as ch:            return ch[encoding[1]].TYPE(encoding)  # use for choice cst.Time | DateTime | Date as OctetString
+                        case err:                     raise ValueError(F"got {err.__name__}, expected {SequenceElement.__name__} or {dict.__name__}")
+                case int() as tag:                    return self.ELEMENTS[tag].TYPE()
+                case error:                           raise ValueError(F'Unknown value type {error}')
         except KeyError as e:
             raise KeyError(F'For {self.__class__.__name__} got key: {e.args[0]}, expected {tuple(self.ELEMENTS.keys())}')
 
