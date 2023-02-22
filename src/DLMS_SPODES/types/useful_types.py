@@ -113,7 +113,7 @@ class CHOICE(ABC):
                 case int() as tag:                    return self.ELEMENTS[tag].TYPE()
                 case error:                           raise ValueError(F'Unknown value type {error}')
         except KeyError as e:
-            raise KeyError(F'For {self.__class__.__name__} got key: {e.args[0]}, expected {tuple(self.ELEMENTS.keys())}')
+            raise ValueError(F'For {self.__class__.__name__} got key: {e.args[0]}, expected {tuple(self.ELEMENTS.keys())}')
 
     def get_types(self) -> tuple[Type[cdt.CommonDataType]]:
         """ Use in setter attribute.value for validate """
