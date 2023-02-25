@@ -385,6 +385,8 @@ ITE_FACTORY_SETTING_19 = " ИТЭ. Производственные устано
 # RU. Simple OBIS. СТО 34.01-5.1-006-2021.
 RU_TOTAL_VOLTAGE_DEVIATION_TIME_FOR_CALCULATED_PERIOD = "Суммарное время отклонения напряжения за расчетный период"
 RU_LOAD_LOCK_STATUS = "Блокиратор реле нагрузки"  # 13.5.6
+# 13.9. Контроль чередования фаз
+SPODES3_PHASE_ALTERNATING_CONTROL = "Контроль чередования фаз"
 
 # 7.2.4 Summary of rules for manufacturer, utility, consortia and country specific codes. Table 54
 # KPZ - Курганский Приборостроительный завод

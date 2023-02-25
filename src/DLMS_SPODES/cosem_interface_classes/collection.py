@@ -396,6 +396,8 @@ class Collection:
                 return get_type_from_class(i, v)(ln)
             case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 5, e) if 1 <= e <= 4:  # TODO: add StatusMaping
                 return Data(ln)
+            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 96, 5, 132):
+                return impl.data.Unsigned(ln)  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
             case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 8, e) if 0 <= e <= 63:
                 return get_type_from_class(i, 0)(ln)
             case c_id.REGISTER | c_id.EXT_REGISTER as i,                 0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:

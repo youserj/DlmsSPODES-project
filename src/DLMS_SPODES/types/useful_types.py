@@ -119,12 +119,25 @@ class CHOICE(ABC):
         except KeyError as e:
             raise ValueError(F'For {self.__class__.__name__} got key: {e.args[0]}, expected {tuple(self.ELEMENTS.keys())}')
 
+    def __get_elements(self) -> list[SequenceElement]:
+        """all elements with nested values"""
+        elements = list()
+        for el in self.ELEMENTS.values():
+            match el:
+                case SequenceElement():
+                    elements.append(el)
+                case dict() as dict_el:
+                    elements.extend(dict_el.values())
+                case err:
+                    raise ValueError(F"unknown CHOICE element type {err}")
+        return elements
+
     def get_types(self) -> tuple[Type[cdt.CommonDataType]]:
         """ Use in setter attribute.value for validate """
-        return tuple((seq_el.TYPE for seq_el in self.ELEMENTS.values()))
+        return tuple((seq_el.TYPE for seq_el in self.__get_elements()))
 
     def __str__(self):
-        return F'{CHOICE}: {", ".join((el.NAME for el in self.ELEMENTS.values()))}'
+        return F'{CHOICE}: {", ".join((el.NAME for el in self.__get_elements()))}'
 
 
 def get_instance_and_context(meta: Type[UsefulType], value: bytes) -> tuple[UsefulType, bytes]:

@@ -257,6 +257,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case cst.LogicalName(0, 0, 96, 5, 2):   return rn.INTERNAL_OPERATING_STATUS_2
         case cst.LogicalName(0, 0, 96, 5, 3):   return rn.INTERNAL_OPERATING_STATUS_3
         case cst.LogicalName(0, 0, 96, 5, 4):   return rn.INTERNAL_OPERATING_STATUS_4
+        case cst.LogicalName(0, 0, 96, 5, 132): return rn.SPODES3_PHASE_ALTERNATING_CONTROL
         case cst.LogicalName(0, b, 96, 8, 0):   return F"{rn.TIME_OF_OPERATION}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 8, 10):  return F"{rn.RU_DURATION_OF_FAILURE_OVERSTRAIN}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 9, 0):   return F"{rn.RU_AMBIENT_TEMPERATURE}{handle_B(b)}"

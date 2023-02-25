@@ -375,6 +375,8 @@ ITE_FACTORY_SETTING_19 = "ITE Factory setting #19"
 # RU. Simple OBIS. СТО 34.01-5.1-006-2021.
 RU_TOTAL_VOLTAGE_DEVIATION_TIME_FOR_CALCULATED_PERIOD = "RU. Total voltage deviation time for calculated period"
 RU_LOAD_LOCK_STATUS = "RU. Load lock status"  # 13.5.6
+# 13.9. Контроль чередования фаз
+SPODES3_PHASE_ALTERNATING_CONTROL = "RU. SPODES3. Phase alternating control"
 
 # 7.2.4 Summary of rules for manufacturer, utility, consortia and country specific codes. Table 54
 # KPZ - Kurgansky Priborostroitelny Zavod
