@@ -172,7 +172,7 @@ DATE_A_OF_LAST_CONFIGURATION_PROGRAM_CHANGE = "Дата последнего к�
 DATE_A_OF_LAST_TIME_SWITCH_PROGRAM_CHANGE = "Дата последнего переключения времени"
 DATE_A_OF_LAST_RIPPLE_CONTROL_RECEIVER_PROGRAM_CHANGE = "Дата последнего пульсирующего управления приемника"
 STATUS_OF_SECURITY_SWITCHES = "Статус переключателей безопасности"
-DATE_A_OF_LAST_CALIBRATION = " Дата последней калибровки"
+DATE_A_OF_LAST_CALIBRATION = "Дата последней калибровки"
 DATE_A_OF_NEXT_CONFIGURATION_PROGRAM_CHANGE = "Дата следующего конфигурирования"
 DATE_A_OF_ACTIVATION_OF_THE_PASSIVE_CALENDAR = "Дата последнего активирования календаря"
 NUMBER_OF_PROTECTED_CONFIGURATION_PROGRAM_CHANGES = "Счетчик защищенных коррекций (конфигурирований)"
@@ -385,3 +385,7 @@ ITE_FACTORY_SETTING_19 = " ИТЭ. Производственные устано
 # RU. Simple OBIS. СТО 34.01-5.1-006-2021.
 RU_TOTAL_VOLTAGE_DEVIATION_TIME_FOR_CALCULATED_PERIOD = "Суммарное время отклонения напряжения за расчетный период"
 RU_LOAD_LOCK_STATUS = "Блокиратор реле нагрузки"  # 13.5.6
+
+# 7.2.4 Summary of rules for manufacturer, utility, consortia and country specific codes. Table 54
+# KPZ - Курганский Приборостроительный завод
+KPZ_INTERFACE_LIST = "КПЗ. Список доступных интерфейсов связи"

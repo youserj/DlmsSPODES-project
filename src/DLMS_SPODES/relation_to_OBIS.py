@@ -271,6 +271,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case cst.LogicalName(0, b, 96, 11, 8):  return F"{rn.RU_EVENTS_FOR_EXCEEDING_THE_REACTIVE_POWER}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 12, 4):  return F"{rn.RU_CHANNEL_NUMBER_INTERFACE}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 12, 6):  return F"{rn.COMMUNICATION_ADDRESS}{handle_B(b)}"
+        case cst.LogicalName(0, 0, 96, 12, 128):  return F"{rn.KPZ_INTERFACE_LIST}"
         case cst.LogicalName(0, b, 96, 13, 0):  return F"{rn.LOCAL_CONSUMER_MESSAGE}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 13, 1):  return F"{rn.DISPLAY_CONSUMER_MESSAGE}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 15, 0):  return F"{rn.RU_RELAY_TRIGGERING_METER_FOR_OPENING}{handle_B(b)}"
@@ -390,7 +391,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
             return F"{handle_B(b)}{rn.L2} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
         case cst.LogicalName(1, b, c, d, e) if c in range(61, 81):
             return F"{handle_B(b)}{rn.L3} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
-        case cst.LogicalName(1, b, 88 | 89 | 124 | 125 | 126 | 128 | 129 | 130 | 131 as c, d, e):
+        case cst.LogicalName(1, b, 88 | 89 | 124 | 125 | 126 | 128 | 129 | 130 | 131 | 133 as c, d, e):
             return F"{handle_B(b)}{get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
         case cst.LogicalName(1, b, 91, 7, 131):   return F"{rn.RU_DIFFERENTIAL_CURRENT}. {rn.INSTANTANEOUS_VALUE}{handle_B(b)}"
         case cst.LogicalName(1, b, 91, 7, 132):   return F"{rn.RU_DIFFERENTIAL_CURRENT}. {rn.PERCENT}. {rn.INSTANTANEOUS_VALUE}{handle_B(b)}"
