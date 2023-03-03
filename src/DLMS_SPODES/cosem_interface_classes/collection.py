@@ -16,7 +16,7 @@ from . import cosem_interface_class as ic
 from . import events as e_
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
-from .association_ln.ver0 import AssociationLN as AssociationLNVer0
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ServerSAP
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver2 import PushSetup as PushSetupVer2
@@ -925,6 +925,16 @@ class Collection:
                 raise ValueError(F"not find {selector} in {obj}")
         else:
             raise ValueError(F"object with {ln} is not {ScriptTable.NAME}")
+
+    def get_association_id(self, sap: ServerSAP) -> int:
+        """return id(association instance) from it server address"""
+        for ass in self.get_objects_by_class_id(AssociationLNVer0.CLASS_ID):
+            if ass.associated_partners_id.server_SAP == sap:
+                return ass.logical_name.e
+            else:
+                continue
+        else:
+            raise ValueError(F"absent association with {sap}")
 
     @lru_cache(maxsize=1000)
     def is_writable(self, ln: cst.LogicalName,
