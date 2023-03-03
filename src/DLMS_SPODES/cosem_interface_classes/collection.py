@@ -927,9 +927,9 @@ class Collection:
             raise ValueError(F"object with {ln} is not {ScriptTable.NAME}")
 
     def get_association_id(self, client_sap: ClientSAP) -> int:
-        """return id(association instance) from it client address"""
+        """return id(association instance) from it client address without current"""
         for ass in self.get_objects_by_class_id(AssociationLNVer0.CLASS_ID):
-            if ass.associated_partners_id.client_SAP == client_sap:
+            if ass.associated_partners_id.client_SAP == client_sap and ass.logical_name.e != 0:
                 return ass.logical_name.e
             else:
                 continue
