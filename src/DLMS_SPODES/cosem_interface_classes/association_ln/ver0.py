@@ -183,7 +183,7 @@ class ServerSAP(cdt.LongUnsigned):
 class AssociatedPartnersType(cdt.Structure):
     """ Contains the identifiers of the COSEM client and the COSEM server (logical device) application processes within the physical devices
     hosting these processes, which belong to the application association modelled by the “Association LN” object. """
-    values: tuple[ClientSAP, cdt.LongUnsigned]
+    values: tuple[ClientSAP, ServerSAP]
     default = (0x10, 1)
     ELEMENTS = (cdt.StructElement(cdt.se.CLIENT_SAP, ClientSAP),
                 cdt.StructElement(cdt.se.SERVER_SAP, ServerSAP))
@@ -193,7 +193,7 @@ class AssociatedPartnersType(cdt.Structure):
         return self.values[0]
 
     @property
-    def server_SAP(self) -> cdt.LongUnsigned:
+    def server_SAP(self) -> ServerSAP:
         return self.values[1]
 
 
