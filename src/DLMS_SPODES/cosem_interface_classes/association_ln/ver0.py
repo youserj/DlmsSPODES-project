@@ -7,6 +7,7 @@ from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations.long_unsigneds import ClassId
 from ...types.implementations import arrays
+from ...pdu_enums import AttributeAccess, MethodAccess
 
 
 class AccessMode(cdt.Enum):
@@ -127,6 +128,36 @@ class ObjectListType(arrays.SelectionAccess):
             else:
                 raise ValueError(F"not find in {ln} attribute index: {index}")
         return True
+
+    def __get_access_right(self, ln: cst.LogicalName | ut.CosemObjectInstanceId) -> AccessRight:
+        """return object_list_element of object_list AssociationLN"""
+        el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
+        if el is None:
+            raise exc.NoObject(F"not find {ln} in object_list")
+        else:
+            return el.access_rights
+
+    def get_attr_access(self, ln: cst.LogicalName, index: int) -> AttributeAccess:
+        """ index - DLMS object attribute index """
+        for item in self.__get_access_right(ln).attribute_access:  # item: AttributeAccessItem
+            item: AttributeAccessItem
+            if int(item.attribute_id) == index:
+                return AttributeAccess(int(item.access_mode))
+            else:
+                continue
+        else:
+            raise ValueError(F"not find in {ln} attribute index: {index}")
+
+    def get_meth_access(self, ln: cst.LogicalName | ut.CosemObjectInstanceId, index: int) -> MethodAccess:
+        """ index - DLMS object method index """
+        for item in self.__get_access_right(ln).method_access:  # item: MethodAccessItem
+            item: MethodAccessItem
+            if int(item.method_id) == index:
+                return MethodAccess(int(item.access_mode))
+            else:
+                continue
+        else:
+            raise ValueError(F"not find in {ln} attribute index: {index}")
 
 
 class ClientSAP(cdt.Enum):

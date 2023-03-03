@@ -232,7 +232,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case cst.LogicalName(0, b, 96, 1, 5):   return F"{rn.RU_REMOTE_CONSOLE_SERIAL_NUMBER}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 1, 6):   return F"{rn.RU_SPODES_VERSION}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 1, 7):   return F"{rn.RU_DEVICE_CONNECTION_SCHEME}{handle_B(b)}"
-        case cst.LogicalName(0, b, 96, 1, 8):   return F"{rn.RU_DEVICE_NOT_METROLOGICAL_VERSION}{handle_B(b)}"
+        case cst.LogicalName(0, b, 96, 1, 8):   return F"{rn.SPODES3_NOT_METROLOGICAL_FIRMWARE_ID}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 1, 9):   return F"{rn.RU_DEVICE_ID}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 1, 10):  return F"{rn.RU_COUNTER_POINT_DATA}{handle_B(b)}"
         case cst.LogicalName(0, b, 96, 2, 0):   return F"{rn.NUMBER_OF_CONFIGURATION_PROGRAM_CHANGES}{handle_B(b)}"

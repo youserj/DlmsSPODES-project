@@ -1,4 +1,5 @@
-from enum import IntEnum
+from enum import IntEnum, IntFlag
+from typing import TypeAlias
 
 
 class DataAccessResult(IntEnum):
@@ -55,3 +56,43 @@ class ActionResponse(IntEnum):
     WITH_PBLOCK = 2
     WITH_LIST = 3
     NEXT_PBLOCK = 4
+
+
+class AttributeAccess(IntEnum):
+    """use with version 0 and 1 AssociationLN"""
+    NO_ACCESS = 0
+    READ_ONLY = 1
+    WRITE_ONLY = 2
+    READ_AND_WRITE = 3
+    AUTHENTICATED_READ_ONLY = 4
+    AUTHENTICATED_WRITE_ONLY = 5
+    AUTHENTICATED_READ_AND_WRITE = 6
+
+
+class MethodAccess(IntEnum):
+    """use with version 0 and 1 AssociationLN"""
+    NO_ACCESS = 0
+    ACCESS = 1
+    AUTHENTICATED_ACCESS = 2
+
+
+class SecurityPolicyVer0(IntEnum):
+    NOTHING = 0
+    AUTHENTICATED = 1
+    ENCRYPTED = 2
+    AUTHENTICATED_AND_ENCRYPTED = 3
+
+
+class SecurityPolicyVer1(IntFlag):
+    NOTHING = 0
+    UNUSED_0 = 0b1
+    UNUSED_1 = 0b10
+    AUTHENTICATED_REQUEST = 0b100
+    ENCRYPTED_REQUEST = 0b1000
+    DIGITALLY_SIGNED_REQUEST = 0b1_0000
+    AUTHENTICATED_RESPONSE = 0b10_0000
+    ENCRYPTED_RESPONSE = 0b100_0000
+    DIGITALLY_SIGNED_RESPONSE = 0b1000_0000
+
+
+SecurityPolicy: TypeAlias = SecurityPolicyVer0 | SecurityPolicyVer1

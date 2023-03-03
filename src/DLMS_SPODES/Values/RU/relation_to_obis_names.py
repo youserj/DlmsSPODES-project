@@ -52,7 +52,6 @@ RU_DEVICE_RELEASE_DATE = "Дата выпуска ПУ"
 RU_REMOTE_CONSOLE_SERIAL_NUMBER = "Серийный номер пульта"
 RU_SPODES_VERSION = "Версия спецификации СПОДЭС"
 RU_DEVICE_CONNECTION_SCHEME = "Схема подключения ПУ"
-RU_DEVICE_NOT_METROLOGICAL_VERSION = "Версия метрологического не значимого ПО"
 RU_DEVICE_ID = "Идентификатор исполнения счетчика"
 RU_COUNTER_POINT_DATA = "данные точки учета"
 I_O_CONTROL_SIGNAL_OBJECTS_GLOBAL = "Статус входов/выходов"
@@ -387,6 +386,7 @@ RU_TOTAL_VOLTAGE_DEVIATION_TIME_FOR_CALCULATED_PERIOD = "Суммарное вр
 RU_LOAD_LOCK_STATUS = "Блокиратор реле нагрузки"  # 13.5.6
 # 13.9. Контроль чередования фаз
 SPODES3_PHASE_ALTERNATING_CONTROL = "Контроль чередования фаз"
+SPODES3_NOT_METROLOGICAL_FIRMWARE_ID = "RU. SPODES3. Идентификатор части ВПО, не относящейся к метрологии"
 
 # 7.2.4 Summary of rules for manufacturer, utility, consortia and country specific codes. Table 54
 # KPZ - Курганский Приборостроительный завод

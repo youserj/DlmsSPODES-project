@@ -50,6 +50,7 @@ from ..cosem_interface_classes import implementations as impl, class_id as c_id
 from .. import settings
 from ..enums import TagsName
 from . import obis as o
+from .. import pdu_enums as pdu
 
 match settings.get_current_language():
     case settings.Language.ENGLISH:        from ..Values.EN import actors
@@ -737,6 +738,10 @@ class Collection:
     def current_association(self) -> AssociationLN:
         return self.__get_object(o.CURRENT_ASSOCIATION)
 
+    lru_cache(4)
+    def getASSOCIATION(self, instance: int) -> AssociationLN:
+        return self.__get_object(bytes((0, 0, 40, 0, instance, 255)))
+
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, 1, 255)))
@@ -920,3 +925,59 @@ class Collection:
                 raise ValueError(F"not find {selector} in {obj}")
         else:
             raise ValueError(F"object with {ln} is not {ScriptTable.NAME}")
+
+    @lru_cache(maxsize=1000)
+    def is_writable(self, ln: cst.LogicalName,
+                    index: int,
+                    association_id: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        match self.getASSOCIATION(association_id).object_list.get_attr_access(ln, index):
+            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_ONLY:
+                return False
+            case pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
+                return True
+            case pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
+                if isinstance(security_policy, pdu.SecurityPolicyVer0):
+                    match security_policy:
+                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
+                            return True
+                        case _:
+                            return False
+                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
+                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
+                        return True
+                    else:
+                        return False
+                else:
+                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")
+
+    @lru_cache(maxsize=1000)
+    def is_readable(self, ln: cst.LogicalName,
+                    index: int,
+                    association_id: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        match self.getASSOCIATION(association_id).object_list.get_attr_access(ln, index):
+            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
+                return False
+            case pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
+                return True
+            case pdu.AttributeAccess.AUTHENTICATED_READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
+                if isinstance(security_policy, pdu.SecurityPolicyVer0):
+                    match security_policy:
+                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
+                            return True
+                        case _:
+                            return False
+                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
+                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
+                        return True
+                    else:
+                        return False
+                else:
+                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")

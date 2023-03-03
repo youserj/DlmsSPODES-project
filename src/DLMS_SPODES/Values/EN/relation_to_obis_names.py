@@ -54,7 +54,6 @@ RU_DEVICE_RELEASE_DATE = "Device release date"
 RU_REMOTE_CONSOLE_SERIAL_NUMBER = "Remote console Serial number"
 RU_SPODES_VERSION = "SPODES version"
 RU_DEVICE_CONNECTION_SCHEME = "Device Connection scheme"
-RU_DEVICE_NOT_METROLOGICAL_VERSION = "device not metrological version"
 RU_DEVICE_ID = "device ID"
 RU_COUNTER_POINT_DATA = "counter point data"
 I_O_CONTROL_SIGNAL_OBJECTS_GLOBAL = "I/O control signal objects, global"
@@ -377,6 +376,8 @@ RU_TOTAL_VOLTAGE_DEVIATION_TIME_FOR_CALCULATED_PERIOD = "RU. Total voltage devia
 RU_LOAD_LOCK_STATUS = "RU. Load lock status"  # 13.5.6
 # 13.9. Контроль чередования фаз
 SPODES3_PHASE_ALTERNATING_CONTROL = "RU. SPODES3. Phase alternating control"
+SPODES3_NOT_METROLOGICAL_FIRMWARE_ID = "RU. SPODES3. Not metrological firmware id"
+
 
 # 7.2.4 Summary of rules for manufacturer, utility, consortia and country specific codes. Table 54
 # KPZ - Kurgansky Priborostroitelny Zavod
