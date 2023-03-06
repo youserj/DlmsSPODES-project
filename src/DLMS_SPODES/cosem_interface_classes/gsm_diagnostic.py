@@ -27,12 +27,31 @@ class PSStatus(cdt.Enum):
                 b'\x04': en.HSDPA}
 
 
+class SignalQuality(cdt.Unsigned):
+    """for string report"""
+    @property
+    def report(self) -> str:
+        value = int(self)
+        if value == 0:
+            return F"–113 dBm {en.OR_LESS}(0)"
+        elif value == 1:
+            return F"–111 dBm(1)"
+        elif value < 31:
+            return F"{-109+(value-2)*2} dBm({value})"
+        elif value == 31:
+            return F"–51 dBm {en.OR_GREATER}(31)"
+        elif value == 99:
+            return F"{en.NOT_KNOWN_OR_NOT_DETECTABLE}"
+        else:
+            return F"wrong {value=}"
+
+
 class CellInfoType(cdt.Structure):
     """ Params of element """
-    values: tuple[cdt.LongUnsigned, cdt.LongUnsigned, cdt.Unsigned, cdt.Unsigned]
+    values: tuple[cdt.LongUnsigned, cdt.LongUnsigned, SignalQuality, cdt.Unsigned]
     ELEMENTS = (cdt.StructElement(cdt.se.CELL_ID, cdt.LongUnsigned),
                 cdt.StructElement(cdt.se.LOCATION_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.SIGNAL_QUALITY, cdt.Unsigned),
+                cdt.StructElement(cdt.se.SIGNAL_QUALITY, SignalQuality),
                 cdt.StructElement(cdt.se.BER, cdt.Unsigned))
 
     @property
@@ -46,13 +65,8 @@ class CellInfoType(cdt.Structure):
         return self.values[1]
 
     @property
-    def signal_quality(self) -> cdt.Unsigned:
-        """represents the signal quality:
-        0: -113 dBm or less,
-        1: -11q dBm,
-        2..30: -109...53 dBm,
-        31: -51 or greater,
-        99 not known or not detectable"""
+    def signal_quality(self) -> SignalQuality:
+        """represents the signal quality"""
         return self.values[2]
 
     @property

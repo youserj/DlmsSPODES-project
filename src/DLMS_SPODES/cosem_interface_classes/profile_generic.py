@@ -8,7 +8,7 @@ from ..relation_to_OBIS import get_name
 from .. import ITE_exceptions as exc
 from .__class_init__ import *
 from ..types.implementations import integers, arrays, structs
-
+from ..types import cdt
 
 BUFFER = 2
 CAPTURE_OBJECTS = 3
@@ -258,10 +258,22 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                                                  version=None,
                                                  logical_name=element_value.logical_name)
             self.collection.raise_before(obj, self)
-            attr_index = element_value.attribute_index.decode()
+            attr_index = int(element_value.attribute_index)
+            data_index = int(element_value.data_index)
+            data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
+            if data_index == 0:
+                name = obj.get_attr_element(attr_index).NAME
+            elif issubclass(data_type, cdt.Structure):
+                if len(data_type.ELEMENTS) < data_index:
+                    raise ValueError(F"can't create buffer_struct_type for {self}, got {data_index=} in struct {data_type.__name__}, expected 1..{len(data_type.ELEMENTS)}")
+                else:
+                    name = data_type.ELEMENTS[data_index-1].NAME
+                    data_type: Type[cdt.CommonDataType] = data_type.ELEMENTS[data_index-1].TYPE
+            else:
+                raise ValueError(F"for {data_type.__name__} got {data_index=}, expected only 0")
             # TODO: make func(obj, index) -> str: return new Name for struct element
-            buffer_elements.append(cdt.StructElement(NAME=F'{get_name(obj.logical_name)}:{obj.get_attr_element(attr_index).NAME}',
-                                                     TYPE=obj.get_attr_data_type(attr_index)))
+            buffer_elements.append(cdt.StructElement(NAME=F'{get_name(obj.logical_name)}:{name}',
+                                                     TYPE=data_type))
 
         class Entry(cdt.Structure):
             """ The number and the order of the elements of the structure holding the entries is the same as in the definition of the capture_objects.

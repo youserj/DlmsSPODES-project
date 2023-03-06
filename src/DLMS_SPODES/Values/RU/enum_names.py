@@ -270,3 +270,8 @@ GLOB_BROAD_ENCR_KEY = "Глобальный ключ шифрования шир
 IDENTIFIED_KEY = "Идентификационный ключ"
 WRAPPED_KEY = "Обернутый ключ"
 AGREED_KEY = "Согласованный ключ"
+
+# for GSM_diagnostic.cell_info
+OR_LESS = "или менее"
+OR_GREATER = "или более"
+NOT_KNOWN_OR_NOT_DETECTABLE = "не известно или не опознано"

@@ -270,3 +270,8 @@ GLOB_BROAD_ENCR_KEY = "global broadcast encryption key"
 IDENTIFIED_KEY = "identified key"
 WRAPPED_KEY = "wrapped key"
 AGREED_KEY = "agreed key"
+
+# for GSM_diagnostic.cell_info
+OR_LESS = "or less"
+OR_GREATER = "or greater"
+NOT_KNOWN_OR_NOT_DETECTABLE = "not known or not detectable"
