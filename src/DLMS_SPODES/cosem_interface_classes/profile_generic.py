@@ -233,7 +233,14 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
 
     def __create_buffer_struct_type(self):
         """ TODO: more refactoring !!! """
-        buffer_elements: list[cdt.StructElement] = list()
+        # rename CaptureObjectDefinition's and adding object if it absense in collection
+        for el_value in self.capture_objects:
+            el_value: structs.CaptureObjectDefinition
+            obj = self.collection.add_if_missing(class_id=ut.CosemClassId(el_value.class_id.contents),
+                                                 version=None,
+                                                 logical_name=el_value.logical_name)
+            self.collection.raise_before(obj, self)
+            el_value.set_name(self.collection.get_name_and_type(el_value)[0][-1])
         match self.buffer.selective_access:
             case ut.SelectiveAccessDescriptor() as desc:
                 match int(desc.access_selector):
@@ -241,8 +248,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                     case 1 if len(desc.access_parameters.selected_values) == 0: self.__buffer_capture_objects = self.capture_objects
                     case 1:                                                     self.__buffer_capture_objects = desc.access_parameters.selected_values
                     case 2:
-                        from_selected_value = desc.access_parameters.from_selected_value.decode()-1
-                        to_selected_value = desc.access_parameters.to_selected_value.decode()
+                        from_selected_value = int(desc.access_parameters.from_selected_value)-1
+                        to_selected_value = int(desc.access_parameters.to_selected_value)
                         if to_selected_value == 0:
                             to_selected_value = len(self.capture_objects)
                         self.__buffer_capture_objects = self.capture_objects[from_selected_value:to_selected_value]
@@ -251,29 +258,10 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                 self.clear_attr(CAPTURE_OBJECTS)
                 self._cbs_attr_post_init[CAPTURE_OBJECTS] = self.__create_buffer_struct_type
                 raise exc.EmptyObj('Need set <sort_method> before')
-        for element_value in self.__buffer_capture_objects:
-            element_value: structs.CaptureObjectDefinition
-            # TODO HERE NEED FIX
-            obj = self.collection.add_if_missing(class_id=ut.CosemClassId(element_value.class_id.contents),
-                                                 version=None,
-                                                 logical_name=element_value.logical_name)
-            self.collection.raise_before(obj, self)
-            attr_index = int(element_value.attribute_index)
-            data_index = int(element_value.data_index)
-            data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
-            if data_index == 0:
-                name = obj.get_attr_element(attr_index).NAME
-            elif issubclass(data_type, cdt.Structure):
-                if len(data_type.ELEMENTS) < data_index:
-                    raise ValueError(F"can't create buffer_struct_type for {self}, got {data_index=} in struct {data_type.__name__}, expected 1..{len(data_type.ELEMENTS)}")
-                else:
-                    name = data_type.ELEMENTS[data_index-1].NAME
-                    data_type: Type[cdt.CommonDataType] = data_type.ELEMENTS[data_index-1].TYPE
-            else:
-                raise ValueError(F"for {data_type.__name__} got {data_index=}, expected only 0")
-            # TODO: make func(obj, index) -> str: return new Name for struct element
-            buffer_elements.append(cdt.StructElement(NAME=F'{get_name(obj.logical_name)}:{name}',
-                                                     TYPE=data_type))
+        buffer_elements: list[cdt.StructElement] = list()
+        for el_value in self.__buffer_capture_objects:
+            names, type_ = self.collection.get_name_and_type(el_value)
+            buffer_elements.append(cdt.StructElement(NAME=". ".join(names), TYPE=type_))
 
         class Entry(cdt.Structure):
             """ The number and the order of the elements of the structure holding the entries is the same as in the definition of the capture_objects.

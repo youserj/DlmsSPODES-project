@@ -95,6 +95,9 @@ class CaptureObjectDefinition(cdt.Structure):
         identifies the captured object of the buffer (i.e. the column) of the inner profile. data_index 0: references the whole attribute"""
         return self.values[3]
 
+    def __hash__(self):
+        return int.from_bytes(self.logical_name.contents+self.attribute_index.contents+self.data_index.contents, 'big')
+
 
 class WindowElement(cdt.Structure):
     values: tuple[cst.OctetStringDateTime, cst.OctetStringDateTime]

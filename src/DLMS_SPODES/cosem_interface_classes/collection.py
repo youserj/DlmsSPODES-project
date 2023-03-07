@@ -12,6 +12,7 @@ from typing import TypeAlias, Iterator, Type
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
+from ..types.implementations import structs
 from . import cosem_interface_class as ic
 from . import events as e_
 from .activity_calendar import ActivityCalendar
@@ -991,3 +992,31 @@ class Collection:
                     raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
             case err:
                 raise exc.ITEApplication(F"unsupport access: {err}")
+
+    @lru_cache(maxsize=100)
+    def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], Type[cdt.CommonDataType]]:
+        """ return names and type of element from collection"""
+        names: list[str] = list()
+        obj = self.__get_object(value.logical_name.contents)
+        names.append(obj.NAME)
+        attr_index = int(value.attribute_index)
+        data_index = int(value.data_index)
+        data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
+        names.append(obj.get_attr_element(attr_index).NAME)
+        if data_index == 0:
+            pass
+        elif issubclass(data_type, cdt.Structure):
+            if len(data_type.ELEMENTS) < data_index:
+                raise ValueError(F"can't create buffer_struct_type for {self}, got {data_index=} in struct {data_type.__name__}, expected 1..{len(data_type.ELEMENTS)}")
+            else:
+                el: cdt.StructElement = data_type.ELEMENTS[data_index - 1]
+                names.append(el.NAME)
+                data_type = el.TYPE
+        elif isinstance(obj, ProfileGeneric) and attr_index == 2:
+            """according to DLMS UA 1000-1 Ed 14. ProfileGeneric.capture_object.data_index annex"""
+            captured_object = obj.capture_objects[data_index - 1]  # TODO: need test
+            names.append(captured_object.NAME)
+            data_type = captured_object.TYPE
+        else:
+            pass
+        return names, data_type

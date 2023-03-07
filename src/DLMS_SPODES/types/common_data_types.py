@@ -1206,6 +1206,10 @@ class Structure(ComplexDataType):
         """ don't support """
         raise ValueError(F'Unsupported change: {key}')
 
+    def set_name(self, value: str):
+        """use in ProfileGeneric for new CaptureObject"""
+        self.__dict__["NAME"] = value
+
     def set(self, value: bytes | bytearray | tuple | list | None):
         for index, el_value in enumerate(self.get_types()(value)):
             self[index].set(el_value)
