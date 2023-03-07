@@ -993,6 +993,35 @@ class Collection:
             case err:
                 raise exc.ITEApplication(F"unsupport access: {err}")
 
+    @lru_cache(maxsize=1000)
+    def is_accessable(self, ln: cst.LogicalName,
+                      index: int,
+                      association_id: int,
+                      security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                      ) -> bool:
+        """for ver 0 and 1 only"""
+        match self.getASSOCIATION(association_id).object_list.get_meth_access(ln, index):
+            case pdu.MethodAccess.NO_ACCESS:
+                return False
+            case pdu.MethodAccess.ACCESS:
+                return True
+            case pdu.MethodAccess.AUTHENTICATED_ACCESS:
+                if isinstance(security_policy, pdu.SecurityPolicyVer0):
+                    match security_policy:
+                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
+                            return True
+                        case _:
+                            return False
+                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
+                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
+                        return True
+                    else:
+                        return False
+                else:
+                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")
+
     @lru_cache(maxsize=100)
     def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], Type[cdt.CommonDataType]]:
         """ return names and type of element from collection"""

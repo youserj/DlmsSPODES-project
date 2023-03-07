@@ -4,7 +4,7 @@ build-backed = "setuptools.build_meta"
 
 [project]
 name = "DLMS_SPODES"
-version = "0.10.0"
+version = "0.11.0"
 authors = [
     {name="Serj", email="youserj@outlook.com"}
 ]
