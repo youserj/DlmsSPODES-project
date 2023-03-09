@@ -49,7 +49,7 @@ import xml.etree.ElementTree as ET
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl, class_id as c_id
 from .. import settings
-from ..enums import TagsName
+from ..enums import TagsName, MechanismId
 from . import obis as o
 from .. import pdu_enums as pdu
 
@@ -997,28 +997,22 @@ class Collection:
     def is_accessable(self, ln: cst.LogicalName,
                       index: int,
                       association_id: int,
-                      security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                      mechanism_id: MechanismId = None
                       ) -> bool:
         """for ver 0 and 1 only"""
-        match self.getASSOCIATION(association_id).object_list.get_meth_access(ln, index):
+        ass: AssociationLN = self.getASSOCIATION(association_id)
+        match ass.object_list.get_meth_access(ln, index):
             case pdu.MethodAccess.NO_ACCESS:
                 return False
             case pdu.MethodAccess.ACCESS:
                 return True
             case pdu.MethodAccess.AUTHENTICATED_ACCESS:
-                if isinstance(security_policy, pdu.SecurityPolicyVer0):
-                    match security_policy:
-                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
-                            return True
-                        case _:
-                            return False
-                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
-                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
-                        return True
-                    else:
-                        return False
+                if not mechanism_id:
+                    mechanism_id = int(ass.authentication_mechanism_name.mechanism_id_element)
+                if mechanism_id >= MechanismId.LOW:
+                    return True
                 else:
-                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+                    return False
             case err:
                 raise exc.ITEApplication(F"unsupport access: {err}")
 
