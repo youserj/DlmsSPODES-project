@@ -47,7 +47,8 @@ from .tcp_udp_setup import TCPUDPSetup
 from .. import ITE_exceptions as exc
 import xml.etree.ElementTree as ET
 from ..relation_to_OBIS import get_name
-from ..cosem_interface_classes import implementations as impl, class_id as c_id
+from ..cosem_interface_classes import implementations as impl
+from ..cosem_interface_classes.overview import ClassID
 from .. import settings
 from ..enums import TagsName, MechanismId
 from . import obis as o
@@ -73,33 +74,33 @@ InterfaceClass: TypeAlias = Data | Register | ProfileGeneric | Clock | ScriptTab
                             GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup
 
 
-def get_type_from_class(c_id: int, ver: int) -> Type[InterfaceClass]:
+def get_type_from_class(c_id: ClassID, ver: int) -> Type[InterfaceClass]:  # TODO: refactoring with enums.ClassID
     match c_id:
-        case 1:  return Data
-        case 3:  return Register
-        case 4:  return ExtendedRegister
-        case 7:  return ProfileGeneric
-        case 8:  return Clock
-        case 9:  return ScriptTable
-        case 10: return Schedule
-        case 11: return SpecialDaysTable
-        case 15: return AssociationLN_c[ver]
-        case 18: return ImageTransfer
-        case 20: return ActivityCalendar
-        case 21: return RegisterMonitor
-        case 22: return SingleActionSchedule
-        case 23: return IECHDLCSetup
-        case 27: return ModemConfiguration_c[ver]
-        case 41: return TCPUDPSetup
-        case 42: return IPv4Setup
-        case 45: return GPRSModemSetup
-        case 47: return GSMDiagnostic
-        case 64: return SecuritySetup_c[ver]
-        case 68: return Arbitrator
-        case 70: return DisconnectControl
-        case 71: return Limiter
-        case 32767: return ClientSetup
-        case _: raise ValueError(F"unknown DLMS class with ID {c_id}")
+        case ClassID.DATA:                   return Data
+        case ClassID.REGISTER:               return Register
+        case ClassID.EXT_REGISTER:           return ExtendedRegister
+        case ClassID.PROFILE_GENERIC:        return ProfileGeneric
+        case ClassID.CLOCK:                  return Clock
+        case ClassID.SCRIPT_TABLE:           return ScriptTable
+        case ClassID.SCHEDULE:               return Schedule
+        case ClassID.SPECIAL_DAYS_TABLE:     return SpecialDaysTable
+        case ClassID.ASSOCIATION_LN_CLASS:   return AssociationLN_c[ver]
+        case ClassID.IMAGE_TRANSFER:         return ImageTransfer
+        case ClassID.ACTIVITY_CALENDAR:      return ActivityCalendar
+        case ClassID.REGISTER_MONITOR:       return RegisterMonitor
+        case ClassID.SINGLE_ACTION_SCHEDULE: return SingleActionSchedule
+        case ClassID.IEC_HDLC_SETUP:         return IECHDLCSetup
+        case ClassID.MODEM_CONFIGURATION:    return ModemConfiguration_c[ver]
+        case ClassID.TCP_UDP_SETUP:          return TCPUDPSetup
+        case ClassID.IPV4_SETUP:             return IPv4Setup
+        case ClassID.GPRS_MODEM_SETUP:       return GPRSModemSetup
+        case ClassID.GSM_DIAGNOSTIC:         return GSMDiagnostic
+        case ClassID.SECURITY_SETUP:         return SecuritySetup_c[ver]
+        case ClassID.ARBITRATOR:             return Arbitrator
+        case ClassID.DISCONNECT_CONTROL:     return DisconnectControl
+        case ClassID.LIMITER:                return Limiter
+        case ClassID.CLIENT_SETUP:           return ClientSetup
+        case _:                              raise ValueError(F"unknown DLMS class with ID {c_id}")
 
 
 _CUMULATIVE = (1, 2, 11, 12, 21, 22)
@@ -321,65 +322,65 @@ class Collection:
         """ TODO: naming"""
         if version is None:
             version = self.set_version(class_id, version)
-        match int(class_id), int(version), ln:
-            case c_id.PROFILE_GENERIC,                                   1, cst.LogicalName(a, b, 99, 98, e):
+        match class_id, int(version), ln:
+            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(a, b, 99, 98, e):
                 return ProfileGeneric(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0 | 1, b, 0, 2, e):
+            case ClassID.DATA,                                              0, cst.LogicalName(0 | 1, b, 0, 2, e):
                 return Data(ln)
-            case c_id.CLOCK,                                             0, cst.LogicalName(0, b, 1, 0, e):
+            case ClassID.CLOCK,                                             0, cst.LogicalName(0, b, 1, 0, e):
                 return Clock(ln)
-            case c_id.MODEM_CONFIGURATION,                               v, cst.LogicalName(0, b, 2, 0, e) if v < len(ModemConfiguration_c):
+            case ClassID.MODEM_CONFIGURATION,                               v, cst.LogicalName(0, b, 2, 0, e) if v < len(ModemConfiguration_c):
                 return ModemConfiguration_c[v](ln)
-            case c_id.SCRIPT_TABLE,                                      0, cst.LogicalName(0, b, 10, 0, e) if e in (0, 1, 125) or 100 <= e <= 111:
+            case ClassID.SCRIPT_TABLE,                                      0, cst.LogicalName(0, b, 10, 0, e) if e in (0, 1, 125) or 100 <= e <= 111:
                 return ScriptTable(ln)
-            case c_id.SPECIAL_DAYS_TABLE,                                0, cst.LogicalName(0, b, 11, 0, e):
+            case ClassID.SPECIAL_DAYS_TABLE,                                0, cst.LogicalName(0, b, 11, 0, e):
                 return SpecialDaysTable(ln)
-            case c_id.SCHEDULE,                                          0, cst.LogicalName(0, b, 12, 0, e):
+            case ClassID.SCHEDULE,                                          0, cst.LogicalName(0, b, 12, 0, e):
                 return Schedule(ln)
-            case c_id.ACTIVITY_CALENDAR,                                 0, cst.LogicalName(0, b, 13, 0, e):
+            case ClassID.ACTIVITY_CALENDAR,                                 0, cst.LogicalName(0, b, 13, 0, e):
                 return ActivityCalendar(ln)
-            case c_id.SINGLE_ACTION_SCHEDULE,                            0, cst.LogicalName(0, b, 15, 0, e) if 0 <= e <= 7:
+            case ClassID.SINGLE_ACTION_SCHEDULE,                            0, cst.LogicalName(0, b, 15, 0, e) if 0 <= e <= 7:
                 return SingleActionSchedule(ln)
-            case c_id.REGISTER_MONITOR,                                  0, cst.LogicalName(0, b, 16, 0, e) | cst.LogicalName(0, b, 16, 1, e) if 0 <= e <= 9:
+            case ClassID.REGISTER_MONITOR,                                  0, cst.LogicalName(0, b, 16, 0, e) | cst.LogicalName(0, b, 16, 1, e) if 0 <= e <= 9:
                 return RegisterMonitor(ln)
-            case c_id.LIMITER,                                           0, cst.LogicalName(0, b, 17, 0, e):
+            case ClassID.LIMITER,                                           0, cst.LogicalName(0, b, 17, 0, e):
                 return Limiter(ln)
-            case c_id.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 21, 0, e):
+            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 21, 0, e):
                 return ProfileGeneric(ln)
-            case c_id.IEC_HDLC_SETUP,                                    1, cst.LogicalName(0, b, 22, 0, 0):
+            case ClassID.IEC_HDLC_SETUP,                                    1, cst.LogicalName(0, b, 22, 0, 0):
                 return IECHDLCSetup(ln)
-            case c_id.TCP_UDP_SETUP,                                     0, cst.LogicalName(0, b, 25, 0, 0):
+            case ClassID.TCP_UDP_SETUP,                                     0, cst.LogicalName(0, b, 25, 0, 0):
                 return TCPUDPSetup(ln)
-            case c_id.IPV4_SETUP,                                        0, cst.LogicalName(0, b, 25, 1, 0):
+            case ClassID.IPV4_SETUP,                                        0, cst.LogicalName(0, b, 25, 1, 0):
                 return IPv4Setup(ln)
-            case c_id.GPRS_MODEM_SETUP,                                  0, cst.LogicalName(0, b, 25, 4, 0):
+            case ClassID.GPRS_MODEM_SETUP,                                  0, cst.LogicalName(0, b, 25, 4, 0):
                 return GPRSModemSetup(ln)
-            case c_id.GSM_DIAGNOSTIC,                                    0, cst.LogicalName(0, b, 25, 6, 0):
+            case ClassID.GSM_DIAGNOSTIC,                                    0, cst.LogicalName(0, b, 25, 6, 0):
                 return GSMDiagnostic(ln)
-            case c_id.PUSH_SETUP,                                        2, cst.LogicalName(0, b, 25, 9, 0):
+            case ClassID.PUSH_SETUP,                                        2, cst.LogicalName(0, b, 25, 9, 0):
                 return PushSetup(ln)
-            case c_id.ASSOCIATION_LN_CLASS,                              v, cst.LogicalName(0, 0, 40, 0, e) if v < len(AssociationLN_c):
+            case ClassID.ASSOCIATION_LN_CLASS,                              v, cst.LogicalName(0, 0, 40, 0, e) if v < len(AssociationLN_c):
                 return AssociationLN_c[v](ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 42, 0, 0) | cst.LogicalName(0, _, 43, 1, _):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 42, 0, 0) | cst.LogicalName(0, _, 43, 1, _):
                 return Data(ln)
-            case c_id.SECURITY_SETUP,                                    v, cst.LogicalName(0, 0, 43, 0, e) if v < len(SecuritySetup_c):
+            case ClassID.SECURITY_SETUP,                                    v, cst.LogicalName(0, 0, 43, 0, e) if v < len(SecuritySetup_c):
                 return SecuritySetup_c[v](ln)
-            case c_id.IMAGE_TRANSFER,                                    0, cst.LogicalName(0, 0, 44, 0, e):
+            case ClassID.IMAGE_TRANSFER,                                    0, cst.LogicalName(0, 0, 44, 0, e):
                 return ImageTransfer(ln)
-            case c_id.PROFILE_GENERIC,                                   1, cst.LogicalName(0, 0, 94, 7, 1):
+            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, 0, 94, 7, 1):
                 return ProfileGeneric(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 1, e) if 0 <= e <= 10:
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 1, e) if 0 <= e <= 10:
                 return Data(ln)
             # 6.2.44 Parameter changes and calibration objects
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 0 | 4 | 10 | 13):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 0 | 4 | 10 | 13):
                 return Data(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 1 | 2 | 3 | 5 | 6 | 7 | 11 | 12):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 1 | 2 | 3 | 5 | 6 | 7 | 11 | 12):
                 return impl.data.AnyDateTime(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 3, e) if 0 <= e <= 4:
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 3, e) if 0 <= e <= 4:
                 return Data(ln)
-            case c_id.DISCONNECT_CONTROL,                                0, cst.LogicalName(0, b, 96, 3, 10):
+            case ClassID.DISCONNECT_CONTROL,                                0, cst.LogicalName(0, b, 96, 3, 10):
                 return DisconnectControl(ln)
-            case c_id.ARBITRATOR,                                        0, cst.LogicalName(0, b, 96, 3, 20):
+            case ClassID.ARBITRATOR,                                        0, cst.LogicalName(0, b, 96, 3, 20):
                 ret = Arbitrator(ln)
                 ret.actors = (actors.MANUAL,
                               actors.LOCAL_1,
@@ -390,162 +391,162 @@ class Collection:
                               actors.LOCAL_6,
                               actors.LOCAL_7)
                 return ret
-            case c_id.ARBITRATOR,                                        0, cst.LogicalName(0, b, 96, 3, e) if 21 <= e <= 29:
+            case ClassID.ARBITRATOR,                                        0, cst.LogicalName(0, b, 96, 3, e) if 21 <= e <= 29:
                 return Arbitrator(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 4, e) if 0 <= e <= 4:
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 4, e) if 0 <= e <= 4:
                 return Data(ln)
-            case c_id.DATA | c_id.PROFILE_GENERIC as i,                  v, cst.LogicalName(0, b, 96, 5, 0):  # TODO: add RegisterTable
+            case ClassID.DATA | ClassID.PROFILE_GENERIC as i,                  v, cst.LogicalName(0, b, 96, 5, 0):  # TODO: add RegisterTable
                 return get_type_from_class(i, v)(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 5, e) if 1 <= e <= 4:  # TODO: add StatusMaping
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 5, e) if 1 <= e <= 4:  # TODO: add StatusMaping
                 return Data(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 96, 5, 132):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 5, 132):
                 return impl.data.Unsigned(ln)  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 8, e) if 0 <= e <= 63:
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 8, e) if 0 <= e <= 63:
                 return get_type_from_class(i, 0)(ln)
-            case c_id.REGISTER | c_id.EXT_REGISTER as i,                 0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:
+            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:
                 return get_type_from_class(i, 0)(ln)
-            case c_id.EXT_REGISTER,                                      0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:
+            case ClassID.EXT_REGISTER,                                      0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:
                 return ExtendedRegister(ln)
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 0):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 0):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.voltage_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 1):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 1):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.current_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 2):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 2):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.commutation_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 3):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 3):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.programming_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 4):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 4):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.external_impact_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 5):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 5):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.communication_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 6):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 6):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.access_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 7):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 7):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.self_diagnostics_events
                 return ret
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 8):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 8):
                 ret = get_type_from_class(i, 0)(ln)
                 ret.events = e_.reactive_power_events
                 return ret
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 4):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 4):
                 return impl.data.CommunicationPortParameter(ln)
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 12, e) if e in (0, 1, 2, 3, 5, 6):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 12, e) if e in (0, 1, 2, 3, 5, 6):
                 return get_type_from_class(i, 0)(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 128):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 128):
                 return Data(ln)
             # 6.2.57 Consumer message objects
-            case c_id.DATA,                                              0, cst.LogicalName(0, 128, 96, 13, 1):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 128, 96, 13, 1):
                 return impl.data.ITEBitMap(ln)
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 13, 0 | 1):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 13, 0 | 1):
                 return get_type_from_class(i, 0)(ln)
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 15, e) if 0 <= e <= 99:
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 15, e) if 0 <= e <= 99:
                 return get_type_from_class(i, 0)(ln)
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 20, e):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 20, e):
                 return get_type_from_class(i, 0)(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, 0):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, 0):
                 return impl.data.OpeningBody(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, 5):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, 5):
                 return impl.data.SealStatus(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, e) if e in (1, 3, 4, 5, 6, 7):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, e) if e in (1, 3, 4, 5, 6, 7):
                 return impl.data.Unsigned(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, e) if e == 8 or e == 9:
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, e) if e == 8 or e == 9:
                 return impl.data.OctetStringDateTime(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, b, 97, 98, e) if 0 <= e <= 9 or 10 <= e <= 29:
+            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 97, 98, e) if 0 <= e <= 9 or 10 <= e <= 29:
                 return Data(ln)
             # 7.4.5 Data profile objects – Abstract
-            case c_id.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 99, 3, 0):
+            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 99, 3, 0):
                 return ProfileGeneric(ln)
-            case c_id.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 99, 1 | 2 | 12 | 13 | 14 | 15 | 16 | 17 | 18, e):
+            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 99, 1 | 2 | 12 | 13 | 14 | 15 | 16 | 17 | 18, e):
                 return ProfileGeneric(ln)
             # ITE manufacture specific
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 128, 100 | 101 | 102 | 103 | 150 | 151 | 152 | 170, 0):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 128, 100 | 101 | 102 | 103 | 150 | 151 | 152 | 170, 0):
                 return Data(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(0, 0, 128, 160, 0):
+            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 128, 160, 0):
                 return impl.data.ITEBitMap(ln)
-            case c_id.CLIENT_SETUP,                                      0, cst.LogicalName(0, 0, 199, 255, 255):
+            case ClassID.CLIENT_SETUP,                                      0, cst.LogicalName(0, 0, 199, 255, 255):
                 return ClientSetup(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(1, b, 0, 0, e) if e <= 9:
+            case ClassID.DATA,                                              0, cst.LogicalName(1, b, 0, 0, e) if e <= 9:
                 return Data(ln)
-            case c_id.DATA | c_id.REGISTER | c_id.EXT_REGISTER as i,     0, cst.LogicalName(1, b, 0, 3 | 4 | 7 | 9, e):
+            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(1, b, 0, 3 | 4 | 7 | 9, e):
                 return get_type_from_class(i, 0)(ln)
             # Nominal values
-            case c_id.REGISTER | c_id.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, 0, 6, e) if e <= 5:
+            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, 0, 6, e) if e <= 5:
                 return get_type_from_class(i, 0)(ln)
             # Measurement period- / recording interval- / billing period duration
-            case c_id.DATA,                 0, cst.LogicalName(1, b, 0, 8, 4 | 5):
+            case ClassID.DATA,                 0, cst.LogicalName(1, b, 0, 8, 4 | 5):
                 return impl.data.Unsigned(ln)
             # Coefficients
-            case c_id.REGISTER | c_id.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, 0, 10, e) if e <= 3:
+            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, 0, 10, e) if e <= 3:
                 return get_type_from_class(i, 0)(ln)
-            case c_id.DATA,                                              0, cst.LogicalName(1, b, 0, 11, e) if 1 <= e <= 7:
+            case ClassID.DATA,                                              0, cst.LogicalName(1, b, 0, 11, e) if 1 <= e <= 7:
                 return Data(ln)
             # RU. СТО 34.01-5.1-006-2021. 11.1 Рекомендуемые коды обозначения электрических величин
-            case c_id.REGISTER,                                          0, cst.LogicalName(1, 0, 131, 35, 0):
+            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 131, 35, 0):
                 return Register(ln)
-            case c_id.REGISTER,                                          0, cst.LogicalName(1, 0, 133, 35, 0):
+            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 133, 35, 0):
                 return Register(ln)
             #
-            case c_id.REGISTER | c_id.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
+            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
                 d in chain(_CUMULATIVE, _TIME_INTEGRAL_VALUES, _CONTRACTED_VALUES, _UNDER_OVER_LIMIT_THRESHOLDS, _UNDER_OVER_LIMIT_OCCURRENCE_COUNTERS,
                            _UNDER_OVER_LIMIT_DURATIONS, _UNDER_OVER_LIMIT_MAGNITUDES):
                 return get_type_from_class(i, 0)(ln)
-            case c_id.REGISTER,                                          0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
+            case ClassID.REGISTER,                                          0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
                                                                                                               d in _INSTANTANEOUS_VALUES:
                 return Register(ln)
-            case c_id.REGISTER,                                          0, cst.LogicalName(1, 0, c, d, 0) if c in _CUMULATIVE and \
+            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, c, d, 0) if c in _CUMULATIVE and \
                                                                                                               d == _RU_CHANGE_LIMIT_LEVEL:
                 return Register(ln)
-            case c_id.REGISTER | c_id.EXT_REGISTER | c_id.PROFILE_GENERIC as i, 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
+            case ClassID.REGISTER | ClassID.EXT_REGISTER | ClassID.PROFILE_GENERIC as i, 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
                                                                                                               d in _MAX_MIN_VALUES:
                 return get_type_from_class(i, 0)(ln)
             # TODO: add DemandRegister below
-            case c_id.REGISTER | c_id.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
+            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
                                                                                                               d in _CURRENT_AND_LAST_AVERAGE_VALUES:
                 return get_type_from_class(i, 0)(ln)
-            case c_id.DATA | c_id.REGISTER as i,                         0, cst.LogicalName(1, b, c, 40, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES:
+            case ClassID.DATA | ClassID.REGISTER as i,                         0, cst.LogicalName(1, b, c, 40, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES:
                 return get_type_from_class(i, 0)(ln)
             # RU. СТО 34.01-5.1-006-2021. 11.1 Рекомендуемые коды обозначения электрических величин
-            case c_id.REGISTER,                                          0, cst.LogicalName(1, 0, 147, 133, 0):
+            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 147, 133, 0):
                 return Register(ln)
-            case c_id.REGISTER,                                          0, cst.LogicalName(1, 0, 148, 36, 0):
+            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 148, 36, 0):
                 return Register(ln)
             #
-            case c_id.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 0):
+            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 0):
                 ret = ProfileGeneric(ln)
                 ret.scaler_profile_key = bytes((1, 0, 94, 7, 3, 255))
                 return ret
-            case c_id.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 1 | 2 | 3 | 4):
+            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 1 | 2 | 3 | 4):
                 return ProfileGeneric(ln)                           # Todo: RU. Scaler-profile With 1 entry
-            case c_id.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 5 | 6):
+            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 5 | 6):
                 return ProfileGeneric(ln)                           # RU. Profile
-            case c_id.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 98, 1, e):
+            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 98, 1, e):
                 ret = ProfileGeneric(ln)
                 ret.scaler_profile_key = bytes((1, 0, 94, 7, 1, 255))
                 return ret
-            case c_id.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 98, 2, e):
+            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 98, 2, e):
                 ret = ProfileGeneric(ln)
                 ret.scaler_profile_key = bytes((1, 0, 94, 7, 2, 255))
                 return ret
-            case c_id.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 99, 1 | 2, e):
+            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 99, 1 | 2, e):
                 ret = ProfileGeneric(ln)
                 ret.scaler_profile_key = bytes((1, 0, 94, 7, 4, 255))
                 return ret
-            case c_id.REGISTER,                                      0, cst.LogicalName(128, 0, c, 0, 0) if c <= 19:
+            case ClassID.REGISTER,                                      0, cst.LogicalName(128, 0, c, 0, 0) if c <= 19:
                 return Register(ln)
             case _:
                 raise exc.NoObject(F'DLMS Object: {class_id=} {version=} {ln=} not searched in relation library')
@@ -629,7 +630,7 @@ class Collection:
                 logger.warning(F'Dont remove with: {logical_name}: {indexes=}')
                 return False
 
-    @lru_cache(maxsize=ic.get_COSEM_class_amount())
+    @lru_cache(maxsize=100)  # amount of all ClassID
     def set_version(self, class_id: ut.CosemClassId, version: cdt.Unsigned | None = None) -> cdt.Unsigned:
         """ Set DLMS Class version for all Class ID. Return Class Version according by Class ID """
         for obj in filter(lambda it: it.CLASS_ID == class_id, self.__container):

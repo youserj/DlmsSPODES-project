@@ -1,4 +1,4 @@
-from ...types import common_data_types as cdt
+from ..__class_init__ import *
 from . import ver1
 
 
@@ -6,7 +6,7 @@ class AssociationLN(ver1.AssociationLN):
     """ COSEM logical devices able to establish application associations within a COSEM context using logical name referencing, model the associations
     through instances of the “Association LN” class. A COSEM logical device has one instance of this IC for each association
     the device is able to support"""
-    VERSION = cdt.Unsigned(2)
+    VERSION = Version.V2
 
     def characteristics_init(self):
         super(AssociationLN, self).characteristics_init()

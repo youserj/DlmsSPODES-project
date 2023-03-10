@@ -576,8 +576,8 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     through instances of the “Association LN” class. A COSEM logical device has one instance of this IC for each association
     the device is able to support"""
     NAME = cn.ASSOCIATION_LN
-    CLASS_ID = ut.CosemClassId(class_id.ASSOCIATION_LN_CLASS)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.ASSOCIATION_LN_CLASS
+    VERSION = Version.V0
     __cb_get_attr_descriptor: Callable[[int], ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection]
     A_ELEMENTS = (ic.ICAElement(an.OBJECT_LIST, ObjectListType, selective_access=SelectiveAccessDescriptor),
                   ic.ICAElement(an.ASSOCIATED_PARTNERS_ID, AssociatedPartnersType),

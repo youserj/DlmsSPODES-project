@@ -241,8 +241,8 @@ class Schedule(ic.COSEMInterfaceClasses):
      If the clock is put forward, then all scripts, which fall into the forwarding interval (and would therefore get lost) are executed.
      If the clock is put back, re-execution of the scripts, which fall into the backwarding interval is suppressed. """
     NAME = cn.SCHEDULE
-    CLASS_ID = ut.CosemClassId(class_id.SCHEDULE)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.SCHEDULE
+    VERSION = Version.V0
     A_ELEMENTS = ic.ICAElement(an.ENTRIES, Entries),
     M_ELEMENTS = (ic.ICMElement(mn.ENABLE_DISABLE, DataED),
                   ic.ICMElement(mn.INSERT, ScheduleTableEntry),

@@ -257,8 +257,8 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
     relevant entries there take precedence over the “Activity calendar” object driven selection of a day profile. The day profile referenced in the
     “Special days table” activates the day_schedule of the day_profile_table in the “Activity calendar” object by referencing through the day_id. """
     NAME = cn.ACTIVITY_CALENDAR
-    CLASS_ID = ut.CosemClassId(class_id.ACTIVITY_CALENDAR)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.ACTIVITY_CALENDAR
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.CALENDAR_NAME_ACTIVE, cdt.OctetString),
                   ic.ICAElement(an.SEASON_PROFILE_ACTIVE, SeasonProfile),
                   ic.ICAElement(an.WEEK_PROFILE_TABLE_ACTIVE, WeekProfileTable),

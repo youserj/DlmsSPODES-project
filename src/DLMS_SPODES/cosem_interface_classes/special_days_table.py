@@ -66,8 +66,8 @@ class SpecialDaysTable(ic.COSEMInterfaceClasses):
     """ The interface class allows defining dates, which will override normal switching behaviour for special days. The interface class works in
     conjunction with the class "Schedule" or "Activity calendar" and the linking data item is day_id """
     NAME = cn.SPECIAL_DAYS_TABLE
-    CLASS_ID = ut.CosemClassId(class_id.SPECIAL_DAYS_TABLE)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.SPECIAL_DAYS_TABLE
+    VERSION = Version.V0
     A_ELEMENTS = ic.ICAElement(an.ENTRIES, Entries),
     M_ELEMENTS = (ic.ICMElement(mn.INSERT, SpecDayEntry),
                   ic.ICMElement(mn.DELETE, cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)

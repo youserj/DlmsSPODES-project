@@ -107,8 +107,8 @@ class GSMDiagnostic(ic.COSEMInterfaceClasses):
      to obtain diagnostic information that allows identifying communication problems in the network. An instance of the 'GSM diagnostic' class stores parameters of the GSM/GPRS
      network necessary for analysing the operation of the network."""
     NAME = cn.GSM_DIAGNOSTIC
-    CLASS_ID = ut.CosemClassId(class_id.GSM_DIAGNOSTIC)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.GSM_DIAGNOSTIC
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString),
                   ic.ICAElement(an.STATUS, Status, 0, 255, 0),
                   ic.ICAElement(an.CS_ATTACHMENT, CSAttachment, 0, 255, 0),

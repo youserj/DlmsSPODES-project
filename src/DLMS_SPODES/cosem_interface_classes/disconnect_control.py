@@ -82,8 +82,8 @@ class DisconnectControl(ic.COSEMInterfaceClasses):
                                    state, it is possible to move back to the Connected (2) state via the manual_reconnect transition (e)
                                    NOTE Transitions f) and g) are essentially the same, but their trigger is different."""
     NAME = cn.DISCONNECT_CONTROL
-    CLASS_ID = ut.CosemClassId(class_id.DISCONNECT_CONTROL)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.DISCONNECT_CONTROL
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.OUTPUT_STATE, OutputState),
                   ic.ICAElement(an.CONTROL_STATE, ControlState),
                   ic.ICAElement(an.CONTROL_MODE, ControlMode))

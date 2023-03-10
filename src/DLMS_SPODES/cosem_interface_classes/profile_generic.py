@@ -158,8 +158,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         c) the physical limit for the buffer. This limit typically depends on the objects to capture. The object will reject an attempt of setting
         the maximum number of entries that is larger than physically possible. """
     NAME = cn.PROFILE_GENERIC
-    CLASS_ID = ut.CosemClassId(class_id.PROFILE_GENERIC)
-    VERSION = cdt.Unsigned(1)
+    CLASS_ID = ClassID.PROFILE_GENERIC
+    VERSION = Version.V1
     scaler_profile_key: bytes | None
     __buffer_capture_objects: CaptureObjects
     range_descriptor: Type[cdt.Structure] = None

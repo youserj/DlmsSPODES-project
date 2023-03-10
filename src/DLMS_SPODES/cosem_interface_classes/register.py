@@ -8,8 +8,8 @@ class Register(ic.COSEMInterfaceClasses):
     the nature of the process value or of the status value. The nature of the value is described by the attribute
     “logical name” using the OBIS identification system. """
     NAME = cn.REGISTER
-    CLASS_ID = ut.CosemClassId(class_id.REGISTER)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.REGISTER
+    VERSION = Version.V0
     scaler_unit_not_settable: bool
     A_ELEMENTS = (ic.ICAElement(an.VALUE, choices.register, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.SCALER_UNIT, cdt.ScalUnitType))

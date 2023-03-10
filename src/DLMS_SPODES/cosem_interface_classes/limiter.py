@@ -82,8 +82,8 @@ class Limiter(ic.COSEMInterfaceClasses):
     time, and duration. The emergency profile id element is matched to an emergency profile group id: this mechanism enables the activation of the emergency threshold only
     for a specific emergency group. """
     NAME = cn.LIMITER
-    CLASS_ID = ut.CosemClassId(class_id.LIMITER)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.LIMITER
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.MONITORED_VALUE, structs.ValueDefinition),
                   ic.ICAElement(an.THRESHOLD_ACTIVE, choices.simple_dt),
                   ic.ICAElement(an.THRESHOLD_NORMAL, choices.simple_dt),

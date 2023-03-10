@@ -82,8 +82,8 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
     and/or third party indentify by their respective system titles. They also provide methods to increase the level of security and to manage symmetric keys, asymmetric key pairs
      and certificates """
     NAME = cn.SECURITY_SETUP
-    CLASS_ID = ut.CosemClassId(class_id.SECURITY_SETUP)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.SECURITY_SETUP
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicy, 0, 3, 0),
                   ic.ICAElement(an.SECURITY_SUITE, SecuritySuite, 0, 0, 0),
                   ic.ICAElement(an.CLIENT_SYSTEM_TITLE, cdt.OctetString),

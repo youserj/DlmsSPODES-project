@@ -207,7 +207,7 @@ class CertificateIdentification(cdt.Structure):
 
 
 class SecuritySetup(ver0.SecuritySetup):
-    VERSION = cdt.Unsigned(1)
+    VERSION = Version.V1
     A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicy),
                   ic.ICAElement(an.SECURITY_SUITE, SecuritySuite),
                   ver0.SecuritySetup.get_attr_element(4),

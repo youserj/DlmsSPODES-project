@@ -54,10 +54,10 @@ class RequestAction(cdt.Structure):
 
 
 class Arbitrator(ic.COSEMInterfaceClasses):
-    """LMS UA 1000-1 Ed. 14 4.5.12 Arbitrator"""
+    """DLMS UA 1000-1 Ed. 14 4.5.12 Arbitrator"""
     NAME = cn.ARBITRATOR
-    CLASS_ID = ut.CosemClassId(class_id.ARBITRATOR)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.ARBITRATOR
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.ACTIONS, Actions),
                   ic.ICAElement(an.PERMISSION_TABLE, PermissionsTable),
                   ic.ICAElement(an.WEIGHTINGS_TABLE, WeightingsTable),

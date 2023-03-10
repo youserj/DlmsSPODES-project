@@ -34,7 +34,7 @@ class ModemConfigurationVer1(ic.COSEMInterfaceClasses):
     """ This IC allow modelling the configuration and initialisation of modems used for data transfer from/to a device. Several modems can be configured."""
     NAME = cn.MODEM_CONFIGURATION
     CLASS_ID = ut.CosemClassId(27)
-    VERSION = cdt.Unsigned(1)
+    VERSION = Version.V1
     A_ELEMENTS = (ver0.PSTNModemConfiguration.get_attr_element(2),
                   ic.ICAElement(an.INITIALIZATION_STRING, InitializationString),
                   ver0.PSTNModemConfiguration.get_attr_element(4))

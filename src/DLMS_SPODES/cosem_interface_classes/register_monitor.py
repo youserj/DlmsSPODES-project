@@ -35,8 +35,8 @@ class RegisterMonitor(ic.COSEMInterfaceClasses):
     """ DLMS UA 1000-1 Ed.14. 4.5.6. This IC allows modelling the function of monitoring of values modelled by “Data”, “Register”, “Extended register” or “Demand register” objects.
     It allows specifying thresholds, the value monitored, and a set of scripts (see 4.5.2) that are executed when the value monitored crosses a threshold """
     NAME = cn.REGISTER_MONITOR
-    CLASS_ID = ut.CosemClassId(class_id.REGISTER_MONITOR)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.REGISTER_MONITOR
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.THRESHOLDS, Thresholds),
                   ic.ICAElement(an.MONITORED_VALUE, structs.ValueDefinition),
                   ic.ICAElement(an.ACTIONS, Actions))

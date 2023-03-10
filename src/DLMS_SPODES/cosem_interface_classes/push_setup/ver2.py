@@ -295,8 +295,8 @@ class PushProtectionParameters(cdt.Array):
 class PushSetup(ic.COSEMInterfaceClasses):
     """ DLMS UA 1000-1 Ed. 14 4.4.8.2 Push setup"""
     NAME = cn.PUSH_SETUP
-    CLASS_ID = ut.CosemClassId(class_id.PUSH_SETUP)
-    VERSION = cdt.Unsigned(2)
+    CLASS_ID = ClassID.PUSH_SETUP
+    VERSION = Version.V2
     A_ELEMENTS = (ic.ICAElement(an.PUSH_OBJECT_LIST, PushObjectList),
                   ic.ICAElement(an.SEND_DESTINATION_AND_METHOD, SendDestinationAndMethod),
                   ic.ICAElement(an.COMMUNICATION_WINDOW, CommunicationWindow),

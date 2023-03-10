@@ -3,10 +3,9 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import Iterator, Type, TypeAlias, Callable, Any
 from .. import settings
-from ..types import common_data_types as cdt, useful_types as ut, cosem_service_types as cst
+from ..types import cdt, ut, cst
 from ..relation_to_OBIS import get_name
 import logging
-import multiprocessing
 from enum import IntEnum
 from datetime import datetime, timedelta, timezone
 from . import collection as col
@@ -19,21 +18,6 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 logger.info(F'Register start')
-
-
-_COSEM_interface_class_ids:  set[int] = set()
-""" registered class_id """
-print('init-Cosem', multiprocessing.current_process())
-
-
-def get_COSEM_class_amount() -> int:
-    """ Amount of different registered DLMS classes """
-    return len(_COSEM_interface_class_ids)
-
-
-def is_class_id_exist(value: int) -> bool:
-    """ check for existing class ID """
-    return value in _COSEM_interface_class_ids
 
 
 class Classifier(IntEnum):
@@ -213,14 +197,6 @@ class COSEMInterfaceClasses(ABC):
     @abstractmethod
     def NAME(self) -> str:
         """ class name according to current language """
-
-    def __init_subclass__(cls, **kwargs):
-        """ register subclass in COSEM interface classes with unique class ID  """
-        super().__init_subclass__(**kwargs)
-        if cls.VERSION is None:  # for common classes
-            return
-        print(F'Init {cls.__name__} ver{cls.VERSION}')
-        _COSEM_interface_class_ids.add(int(cls.CLASS_ID))
 
     @property
     def logical_name(self) -> cst.LogicalName:

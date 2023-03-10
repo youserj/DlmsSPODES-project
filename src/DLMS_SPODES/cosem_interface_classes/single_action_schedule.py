@@ -35,8 +35,8 @@ class SingleActionSchedule(ic.COSEMInterfaceClasses):
     """ This IC allows modelling the execution of periodic actions within a meter. Such actions are not necessarily linked to tariffication
     (see “Activity calendar” or “Schedule”).  """
     NAME = cn.SINGLE_ACTION_SCHEDULE
-    CLASS_ID = ut.CosemClassId(class_id.SINGLE_ACTION_SCHEDULE)
-    VERSION = cdt.Unsigned(0)
+    CLASS_ID = ClassID.SINGLE_ACTION_SCHEDULE
+    VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.EXECUTED_SCRIPT, structs.ActionItem),
                   ic.ICAElement(an.TYPE, TYPE),
                   ic.ICAElement(an.EXECUTION_TIME, ExecutionTime))
