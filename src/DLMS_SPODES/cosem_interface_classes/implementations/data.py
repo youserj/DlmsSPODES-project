@@ -1,5 +1,6 @@
 from ..data import Data, ic, an, cdt, cst, choices
 from ... import enums as enu
+from .. import events as ev
 
 
 class Unsigned(Data):
@@ -105,3 +106,49 @@ class CommunicationPortParameter(Data):
 class AnyDateTime(Data):
     """for a-anotation DLMS UA 1000-1 Ed. 14 Table 60"""
     A_ELEMENTS = ic.ICAElement(an.VALUE, choices.any_date_time, classifier=ic.Classifier.STATIC),
+
+
+class SPODES3VoltageEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением"""
+    events = ev.voltage_events
+
+
+class SPODES3CurrentEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
+    events = ev.current_events
+
+
+class SPODES3CommutationEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
+    events = ev.commutation_events
+
+
+class SPODES3ProgrammingEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
+    events = ev.programming_events
+
+
+class SPODES3ExternalEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
+    events = ev.external_impact_events
+
+
+class SPODES3CommunicationEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
+    events = ev.communication_events
+
+
+class SPODES3AccessEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
+    events = ev.access_events
+
+
+class SPODES3SelfDiagnosticEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
+    events = ev.self_diagnostics_events
+
+
+class SPODES3ReactivePowerEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
+    events = ev.reactive_power_events
+

@@ -1,6 +1,6 @@
 from collections import deque
-from .__class_init__ import *
-from ..types.implementations.emuns import CommSpeed
+from ..__class_init__ import *
+from ...types.implementations.emuns import CommSpeed
 
 
 class IECHDLCSetup(ic.COSEMInterfaceClasses):

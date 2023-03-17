@@ -8,6 +8,7 @@ from ..relation_to_OBIS import get_name
 import logging
 from enum import IntEnum
 from datetime import datetime, timedelta, timezone
+from itertools import count
 from . import collection as col
 
 match settings.get_current_language():
@@ -18,6 +19,8 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 logger.info(F'Register start')
+
+_n_class = count(0)
 
 
 class Classifier(IntEnum):
@@ -104,6 +107,10 @@ class COSEMInterfaceClasses(ABC):
                 self.set_attr(i, default)
 
         self.characteristics_init()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.hash_ = next(_n_class)
 
     @classmethod
     def get_attr_element(cls, i: int) -> ICAElement:

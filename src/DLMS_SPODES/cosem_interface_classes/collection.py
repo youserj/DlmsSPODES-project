@@ -3,23 +3,26 @@ principles (see Clause 4 EN 62056-62:2007), the identification of real data item
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
 from __future__ import annotations
+from struct import pack
 import datetime
 import dataclasses
 from itertools import count, chain
 from collections import deque
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type
+from typing import TypeAlias, Iterator, Type, Callable
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
 from ..types.implementations import structs
 from . import cosem_interface_class as ic
-from . import events as e_
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
+from .association_sn.ver0 import AssociationSN as AssociationSNVer0
 from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ClientSAP
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
+from .push_setup.ver0 import PushSetup as PushSetupVer0
+from .push_setup.ver1 import PushSetup as PushSetupVer1
 from .push_setup.ver2 import PushSetup as PushSetupVer2
 from .client_setup import ClientSetup
 from .clock import Clock
@@ -27,14 +30,18 @@ from .data import Data
 from .disconnect_control import DisconnectControl
 from .extended_register import ExtendedRegister
 from .gprs_modem_setup import GPRSModemSetup
-from .gsm_diagnostic import GSMDiagnostic
-from .iec_hdlc_setup import IECHDLCSetup
+from .gsm_diagnostic.ver0 import GSMDiagnostic as GSMDiagnosticVer0
+from .gsm_diagnostic.ver1 import GSMDiagnostic as GSMDiagnosticVer1
+from .gsm_diagnostic.ver2 import GSMDiagnostic as GSMDiagnosticVer2
+from .iec_hdlc_setup.ver0 import IECHDLCSetup as IECHDLCSetupVer0
+from .iec_hdlc_setup.ver1 import IECHDLCSetup as IECHDLCSetupVer1
 from .image_transfer import ImageTransfer
 from .ipv4_setup import IPv4Setup
 from .modem_configuration.ver0 import PSTNModemConfiguration
 from .modem_configuration.ver1 import ModemConfigurationVer1
 from .limiter import Limiter
-from .profile_generic import ProfileGeneric
+from .profile_generic.ver0 import ProfileGeneric as ProfileGenericVer0
+from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
 from .register import Register
 from .register_monitor import RegisterMonitor
 from .schedule import Schedule
@@ -48,59 +55,168 @@ from .. import ITE_exceptions as exc
 import xml.etree.ElementTree as ET
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
-from ..cosem_interface_classes.overview import ClassID
-from .. import settings
+from ..cosem_interface_classes.overview import ClassID, Version
 from ..enums import TagsName, MechanismId
 from . import obis as o
 from .. import pdu_enums as pdu
 
-match settings.get_current_language():
-    case settings.Language.ENGLISH:        from ..Values.EN import actors
-    case settings.Language.RUSSIAN:        from ..Values.RU import actors
-
+AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
-AssociationLN_c: tuple[Type[AssociationLN], ...] = (AssociationLNVer0, AssociationLNVer1, AssociationLNVer2)
-"""container with Association types. Use in get_instance"""
 ModemConfiguration: TypeAlias = PSTNModemConfiguration | ModemConfigurationVer1
-ModemConfiguration_c: tuple[Type[ModemConfiguration], ...] = (PSTNModemConfiguration, ModemConfigurationVer1)
-"""container with ModemConfiguration types. Use in get_instance"""
 SecuritySetup: TypeAlias = SecuritySetupVer0 | SecuritySetupVer1
-SecuritySetup_c: tuple[Type[SecuritySetup], ...] = (SecuritySetupVer0, SecuritySetupVer1)
-"""container with SecuritySetup types. Use in get_instance"""
-PushSetup: TypeAlias = PushSetupVer2
-
+PushSetup: TypeAlias = PushSetupVer0 | PushSetupVer1 | PushSetupVer2
+ProfileGeneric: TypeAlias = ProfileGenericVer1
+IECHDLCSetup: TypeAlias = IECHDLCSetupVer0 | IECHDLCSetupVer1
+GSMDiagnostic: TypeAlias = GSMDiagnosticVer0 | GSMDiagnosticVer1 | GSMDiagnosticVer2
 InterfaceClass: TypeAlias = Data | Register | ProfileGeneric | Clock | ScriptTable | Schedule | SpecialDaysTable | ActivityCalendar | SingleActionSchedule | AssociationLN | \
                             IECHDLCSetup | ExtendedRegister | DisconnectControl | Limiter | ModemConfiguration | PSTNModemConfiguration | ImageTransfer | GPRSModemSetup | \
-                            GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup
+                            GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN
 
 
-def get_type_from_class(c_id: ClassID, ver: int) -> Type[InterfaceClass]:  # TODO: refactoring with enums.ClassID
-    match c_id:
-        case ClassID.DATA:                   return Data
-        case ClassID.REGISTER:               return Register
-        case ClassID.EXT_REGISTER:           return ExtendedRegister
-        case ClassID.PROFILE_GENERIC:        return ProfileGeneric
-        case ClassID.CLOCK:                  return Clock
-        case ClassID.SCRIPT_TABLE:           return ScriptTable
-        case ClassID.SCHEDULE:               return Schedule
-        case ClassID.SPECIAL_DAYS_TABLE:     return SpecialDaysTable
-        case ClassID.ASSOCIATION_LN_CLASS:   return AssociationLN_c[ver]
-        case ClassID.IMAGE_TRANSFER:         return ImageTransfer
-        case ClassID.ACTIVITY_CALENDAR:      return ActivityCalendar
-        case ClassID.REGISTER_MONITOR:       return RegisterMonitor
-        case ClassID.SINGLE_ACTION_SCHEDULE: return SingleActionSchedule
-        case ClassID.IEC_HDLC_SETUP:         return IECHDLCSetup
-        case ClassID.MODEM_CONFIGURATION:    return ModemConfiguration_c[ver]
-        case ClassID.TCP_UDP_SETUP:          return TCPUDPSetup
-        case ClassID.IPV4_SETUP:             return IPv4Setup
-        case ClassID.GPRS_MODEM_SETUP:       return GPRSModemSetup
-        case ClassID.GSM_DIAGNOSTIC:         return GSMDiagnostic
-        case ClassID.SECURITY_SETUP:         return SecuritySetup_c[ver]
-        case ClassID.ARBITRATOR:             return Arbitrator
-        case ClassID.DISCONNECT_CONTROL:     return DisconnectControl
-        case ClassID.LIMITER:                return Limiter
-        case ClassID.CLIENT_SETUP:           return ClientSetup
-        case _:                              raise ValueError(F"unknown DLMS class with ID {c_id}")
+class ClassMap(dict):
+    def __hash__(self):
+        return hash(tuple(it.hash_ for it in self.values()))
+
+
+DataMap = ClassMap({
+    0: Data})
+RegisterMap = ClassMap({
+    0: Register})
+ExtendedRegisterMap = ClassMap({
+    0: ExtendedRegister})
+ProfileGenericMap = ClassMap({
+    0: ProfileGenericVer0,
+    1: ProfileGenericVer1})
+ClockMap = ClassMap({
+    0: Clock})
+ScriptTableMap = ClassMap({
+    0: ScriptTable})
+ScheduleMap = ClassMap({
+    0: Schedule})
+SpecialDaysTableMap = ClassMap({
+    0: SpecialDaysTable
+})
+AssociationSNMap = ClassMap({
+    0: AssociationSNVer0,
+})
+AssociationLNMap = ClassMap({
+    0: AssociationLNVer0,
+    1: AssociationLNVer1,
+    2: AssociationLNVer2,
+})
+ImageTransferMap = ClassMap({
+    0: ImageTransfer
+})
+ActivityCalendarMap = ClassMap({
+    0: ActivityCalendar
+})
+RegisterMonitorMap = ClassMap({
+    0: RegisterMonitor
+})
+SingleActionScheduleMap = ClassMap({
+    0: SingleActionSchedule
+})
+IECHDLCSetupMap = ClassMap({
+    0: IECHDLCSetupVer0,
+    1: IECHDLCSetupVer1
+})
+ModemConfigurationMap = ClassMap({
+    0: PSTNModemConfiguration,
+    1: ModemConfigurationVer1
+})
+TCPUDPSetupMap = ClassMap({
+    0: TCPUDPSetup
+})
+IPv4SetupMap = ClassMap({
+    0: IPv4Setup
+})
+GPRSModemSetupMap = ClassMap({
+    0: GPRSModemSetup
+})
+GSMDiagnosticMap = ClassMap({
+    0: GSMDiagnosticVer0,
+    1: GSMDiagnosticVer1,
+    2: GSMDiagnosticVer2
+})
+PushSetupMap = ClassMap({
+    0: PushSetupVer0,
+    1: PushSetupVer1,
+    2: PushSetupVer2,
+})
+SecuritySetupMap = ClassMap({
+    0: SecuritySetupVer0,
+    1: SecuritySetupVer1
+})
+ArbitratorMap = ClassMap({
+    0: Arbitrator
+})
+DisconnectControlMap = ClassMap({
+    0: DisconnectControl
+})
+LimiterMap = ClassMap({
+    0: Limiter
+})
+ClientSetupMap = ClassMap({
+    0: ClientSetup
+})
+
+# implementation ClassMap
+UnsignedDataMap = ClassMap({
+    0: impl.data.Unsigned
+})
+
+CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | AssociationLNMap | \
+                           ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | TCPUDPSetupMap | \
+                           IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | ClientSetupMap
+
+
+LN_C: TypeAlias = int
+LN_D: TypeAlias = int
+
+
+common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] = {
+    1: DataMap,
+    3: RegisterMap,
+    4: ExtendedRegisterMap,
+    7: ProfileGenericMap,
+    8: ClockMap,
+    9: ScriptTableMap,
+    10: ScheduleMap,
+    11: SpecialDaysTableMap,
+    15: AssociationLNMap,
+    18: ImageTransferMap,
+    20: ActivityCalendarMap,
+    21: RegisterMonitorMap,
+    22: SingleActionScheduleMap,
+    23: IECHDLCSetupMap,
+    27: ModemConfigurationMap,
+    41: TCPUDPSetupMap,
+    42: IPv4SetupMap,
+    45: GPRSModemSetupMap,
+    47: GSMDiagnosticMap,
+    64: SecuritySetupMap,
+    68: ArbitratorMap,
+    70: DisconnectControlMap,
+    71: LimiterMap,
+    32767: ClientSetupMap
+}
+
+
+def get_interface_class(class_map: dict[int, CosemClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> Type[InterfaceClass]:
+    """new version <get_type_from_class>"""
+    ret = class_map.get(int(c_id), None)
+    if ret:
+        ret2 = ret.get(int(ver), None)
+        """interface class type"""
+        if ret2:
+            return ret2
+        else:
+            raise ValueError(F"not valid {ver=} for {c_id=}")
+    else:
+        if int(c_id) not in common_interface_class_map.keys():
+            raise ValueError(F"unknown {c_id=}")
+        else:
+            raise ValueError(F"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")
 
 
 _CUMULATIVE = (1, 2, 11, 12, 21, 22)
@@ -114,8 +230,7 @@ _UNDER_OVER_LIMIT_THRESHOLDS = (31, 35, 43, 44)
 _UNDER_OVER_LIMIT_OCCURRENCE_COUNTERS = (32, 36)
 _UNDER_OVER_LIMIT_DURATIONS = (33, 37)
 _UNDER_OVER_LIMIT_MAGNITUDES = (34, 38)
-
-_NOT_PROCESSING_OF_MEASUREMENT_VALUES = (0, 93, 94, 96, 97, 98, 99)  # BlueBook DLMS UA 1000-1 Ed.14 7.5.2.1 Table 66
+_NOT_PROCESSING_OF_MEASUREMENT_VALUES = tuple(set(range(256)).difference((0, 93, 94, 96, 97, 98, 99)))  # BlueBook DLMS UA 1000-1 Ed.14 7.5.2.1 Table 66
 _RU_CHANGE_LIMIT_LEVEL = 134
 
 logger = logging.getLogger(__name__)
@@ -126,6 +241,290 @@ logger.level = logging.INFO
 class ObjectRelation:
     IC: int | tuple[int, ...] | ic.COSEMInterfaceClasses
     Additional: bytes | dict | bool = None
+
+
+@lru_cache()
+def _create_map(maps: CosemClassMap | tuple[CosemClassMap]) -> dict[int, CosemClassMap]:
+    if isinstance(maps, tuple):
+        return {int(map_[0].CLASS_ID): map_ for map_ in maps}
+    else:
+        return {int((tuple(maps.values())[0]).CLASS_ID): maps}
+
+
+FOR_C: TypeAlias = tuple[int]
+FOR_CD: TypeAlias = tuple[int, int] | tuple[tuple[int, ...], int] | tuple[tuple[int, ...], tuple[int, ...]]
+FOR_CDE: TypeAlias = tuple[int, int | tuple[int, ...], int | tuple[int, ...]]
+FOR_BCDE: TypeAlias = tuple[int, int, int, int] | tuple[int, int, int, tuple[int, ...]]
+
+__func_map_abstract_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClassMap, ...] | CosemClassMap] = {
+    (0, 1): DataMap,
+    (0, 2): DataMap,
+    (0, 9): DataMap,
+    (1, 0): ClockMap,
+    (1, 1): DataMap,
+    (1, 2): DataMap,
+    (1, 3): DataMap,
+    (1, 4): DataMap,
+    (1, 5): DataMap,
+    (1, 6): DataMap,
+    (2, 0, 0): ModemConfigurationMap,
+    #
+    (10, 0, (0, 1, 125)+tuple(range(100, 112))): ScriptTableMap,
+    (11, 0): SpecialDaysTableMap,
+    (12, 0): ScheduleMap,
+    (13, 0): ActivityCalendarMap,
+    #
+    (15, 0, tuple(range(0, 8))): SingleActionScheduleMap,
+    (16, 0): RegisterMonitorMap,
+    (16, 1, tuple(range(0, 10))): RegisterMonitorMap,
+    #
+    (17, 0): LimiterMap,
+    #
+    (19, tuple(range(50, 60)), (1, 2)): DataMap,
+    #
+    (21, 0): (DataMap, ProfileGenericMap),
+    (22, 0, 0): IECHDLCSetupMap,
+    #
+    (23, 2, 0): DataMap,
+    (23, 3, tuple(range(0, 10))): (DataMap, ProfileGenericMap),
+    (23, 3, tuple(range(10, 256))): DataMap,
+    #
+    (24, 2): ExtendedRegisterMap,
+    (24, 3): ProfileGenericMap,
+    (24, 4, 0): DisconnectControlMap,
+    (24, 5, 0): ProfileGenericMap,
+    #
+    (25, 0, 0): TCPUDPSetupMap,
+    (25, 1, 0): IPv4SetupMap,
+    #
+    (25, 4, 0): GPRSModemSetupMap,
+    #
+    (25, 6, 0): GSMDiagnosticMap,
+    #
+    (25, 9, 0): PushSetupMap,
+    #
+    (0, 40, 0, tuple(range(8))): (AssociationSNMap, AssociationLNMap),  # todo: now limit by 8 association, solve it
+    #
+    (0, 42, 0, 0): DataMap,
+    (0, 43, 0, tuple(range(256))): SecuritySetupMap,
+    (43, 1): DataMap,
+    #
+    (0, 44, 0, tuple(range(256))): ImageTransferMap,
+    #
+    (96, 1, tuple(range(0, 11))): DataMap,
+    (96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
+    (96, 2): DataMap,
+    (96, 3, tuple(range(0, 4))): DataMap,  # todo: add StatusMapping
+    (96, 3, 10): DisconnectControlMap,
+    (96, 3, tuple(range(20, 29))): ArbitratorMap,
+    (96, (4, 5), 0): (DataMap, ProfileGenericMap),  # todo: add RegisterTable, StatusMapping
+    (96, (4, 5), (1, 2, 3, 4)): DataMap,  # todo: add StatusMapping
+    (96, 6, tuple(range(0, 7))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 7, tuple(range(0, 22))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 8, tuple(range(0, 64))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 9, (0, 1, 2)): (RegisterMap,  ExtendedRegisterMap),
+    (96, 10, tuple(range(1, 10))): DataMap,  # todo: add StatusMapping
+    (96, 11, tuple(range(100))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 12, (0, 1, 2, 3, 5, 6)): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 12, 4): ClassMap({0: impl.data.CommunicationPortParameter}),
+    (96, 13, (0, 1)): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
+    (96, 14, tuple(range(16))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 15, tuple(range(100))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 16, tuple(range(10))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 17, tuple(range(128))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (96, 20): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (97, 97, tuple(range(10))): DataMap,
+    (97, (97, 98), 255): ProfileGenericMap,  # todo: add RegisterTable
+    (97, 98, tuple(range(10))+tuple(range(10, 30))): DataMap,
+    (98,): ProfileGenericMap,
+    (99, 98): ProfileGenericMap,
+    #
+}
+# SPODES3 Update
+__func_map_abstract_for_create.update({
+    (96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
+    (96, 3, 20): ClassMap({0: impl.arbitrator.SPODES3Arbitrator}),
+    (96, 5, 132): ClassMap({0: impl.data.Unsigned}),  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
+    (96, 11, 0): ClassMap({0: impl.data.SPODES3VoltageEvent}),
+    (96, 11, 1): ClassMap({0: impl.data.SPODES3CurrentEvent}),
+    (96, 11, 2): ClassMap({0: impl.data.SPODES3CommutationEvent}),
+    (96, 11, 3): ClassMap({0: impl.data.SPODES3ProgrammingEvent}),
+    (96, 11, 4): ClassMap({0: impl.data.SPODES3ExternalEvent}),
+    (96, 11, 5): ClassMap({0: impl.data.SPODES3CommunicationEvent}),
+    (96, 11, 6): ClassMap({0: impl.data.SPODES3AccessEvent}),
+    (96, 11, 7): ClassMap({0: impl.data.SPODES3SelfDiagnosticEvent}),
+    (96, 11, 8): ClassMap({0: impl.data.SPODES3ReactivePowerEvent}),
+    (0, 96, 51, 0): ClassMap({0: impl.data.OpeningBody}),
+    (0, 96, 51, 5): ClassMap({0: impl.data.SealStatus}),
+    (0, 96, 51, (1, 3, 4, 6, 7)): UnsignedDataMap,
+    (0, 96, 51, (8, 9)): ClassMap({0: impl.data.OctetStringDateTime}),
+})
+# KPZ Update
+__func_map_abstract_for_create.update({
+    (0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
+})
+# Utility Update
+__func_map_abstract_for_create.update({
+    (0, 199, 255, 255): ClientSetupMap,
+})
+
+FUNC_MAP: TypeAlias = dict[bytes, dict[int, CosemClassMap]]
+"""ln.BCDE | ln.CDE | ln.CD | ln.C: {class_id: {version: CosemInterfaceClass}}"""
+
+
+def get_func_map(for_create_map: dict) -> FUNC_MAP:
+    ret: FUNC_MAP = dict()
+    for it in for_create_map:
+        keys: list[bytes] = list()
+        match len(it):
+            case 3:
+                match it[1], it[2]:
+                    case int(), tuple() as e_g:
+                        for e in e_g:
+                            keys.append(pack(">BBB", it[0], it[1], e))
+                    case tuple() as d_g, int():
+                        for d in d_g:
+                            keys.append(pack(">BBB", it[0], d, it[2]))
+                    case tuple() as d_g, tuple() as e_g:
+                        for d in d_g:
+                            for e in e_g:
+                                keys.append(pack(">BBB", it[0], d, e))
+                    case int(), int():
+                        keys.append(bytes(it))
+                    case _:
+                        raise ValueError(F"unknown {it[1]=} and {it[2]=} in dict values: {it}")
+            case 2:
+                match it[0], it[1]:
+                    case int(), int():
+                        keys.append(bytes(it))
+                    case tuple() as c_g, int():
+                        for c in c_g:
+                            keys.append(pack(">BB", c, it[1]))
+                    case int(), tuple() as d_g:
+                        for d in d_g:
+                            keys.append(pack(">BB", it[0], d))
+                    case tuple() as c_g, tuple() as d_g:
+                        for c in c_g:
+                            for d in d_g:
+                                keys.append(pack(">BB", c, d))
+                    case err:
+                        raise ValueError(F"unknown {it[0]=} in dict values: {err}")
+            case 4:
+                match it[3]:
+                    case int():
+                        keys.append(bytes(it))
+                    case tuple() as e_g:
+                        for e in e_g:
+                            keys.append(pack(">BBBB", it[0], it[1], it[2], e))
+                    case _:
+                        raise ValueError(F"unknown dict values: {it}")
+            case 1:
+                keys.append(bytes(it))
+            case err_len:
+                raise ValueError(F"got {err_len=} map_for_create, expect 2..4")
+        for k in keys:
+            ret[k] = _create_map(for_create_map[it])
+    return ret
+
+
+func_map_abstract: FUNC_MAP = get_func_map(__func_map_abstract_for_create)
+
+
+def get_abstract(class_id: ut.CosemClassId,
+                 version: cdt.Unsigned | None,
+                 ln: cst.LogicalName) -> Type[InterfaceClass]:
+    # try search in CDE group
+    c_m = func_map_abstract.get((ln.contents[2:5]), None)
+    if not c_m:
+        # try search in CD group
+        c_m = func_map_abstract.get((ln.contents[2:4]), None)
+        if not c_m:
+            # try search in BCDE group
+            c_m = func_map_abstract.get((ln.contents[1:5]), None)
+            if not c_m:
+                # try search in C group
+                c_m = func_map_abstract.get((ln.contents[3:4]), common_interface_class_map)
+    return get_interface_class(class_map=c_m,
+                               c_id=class_id,
+                               ver=version)
+
+
+__func_map_electricity_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClassMap, ...] | CosemClassMap] = {
+    (0, 0, tuple(range(10))): DataMap,
+    (0, 0, 255): ProfileGenericMap,  # todo: add RegisterTable
+    (0, 1): DataMap,
+    (0, 2): DataMap,
+    (0, (3, 4, 7, 8, 9)): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (0, (6, 10)): (RegisterMap,  ExtendedRegisterMap),
+    (0, 11, tuple(range(1, 8))): DataMap,
+    (96, 1, tuple(range(10))): DataMap,
+    (96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
+    (96, 5, (0, 1, 2, 3, 4, 5)): DataMap,  # todo: add StatusMapping
+    (96, 10, (0, 1, 2, 3)): DataMap,  # todo: add StatusMapping
+    (98,): ProfileGenericMap,
+    (99, (1, 2, 11, 12, 97, 98, 99)): ProfileGenericMap,
+    (99, (3, 13, 14), 0): ProfileGenericMap,
+    (99, 10, (1, 2, 3)): ProfileGenericMap,
+}
+# SPODES3 Update
+__func_map_electricity_for_create.update({
+    (0, 8, (4, 5)): UnsignedDataMap,
+    (98, 1): ClassMap({1: impl.profile_generic.SPODES3MonthProfile}),
+    (98, 2): ClassMap({1: impl.profile_generic.SPODES3DailyProfile}),
+    (99, (1, 2)): ClassMap({1: impl.profile_generic.SPODES3LoadProfile}),
+    (0, 131, 35, 0): RegisterMap,
+    (0, 133, 35, 0): RegisterMap,
+    (0, 147, 133, 0): RegisterMap,
+    (0, 148, 136, 0): RegisterMap,
+    (94, 7, 0): ClassMap({1: impl.profile_generic.SPODES3CurrentProfile}),
+    (94, 7, (1, 2, 3, 4, 5, 6)): ProfileGenericMap,  # Todo: RU. Scaler-profile With 1 entry and more
+    (99, (1, 2)): ClassMap({1: impl.profile_generic.SPODES3LoadProfile}),
+    (_CUMULATIVE, _RU_CHANGE_LIMIT_LEVEL): RegisterMap,
+    (_NOT_PROCESSING_OF_MEASUREMENT_VALUES, tuple(chain(_CUMULATIVE, _TIME_INTEGRAL_VALUES, _CONTRACTED_VALUES,
+                                                        _UNDER_OVER_LIMIT_THRESHOLDS, _UNDER_OVER_LIMIT_OCCURRENCE_COUNTERS,
+                                                        _UNDER_OVER_LIMIT_DURATIONS, _UNDER_OVER_LIMIT_MAGNITUDES))): (RegisterMap, ExtendedRegisterMap),
+    (_NOT_PROCESSING_OF_MEASUREMENT_VALUES, _INSTANTANEOUS_VALUES): RegisterMap,
+    (_NOT_PROCESSING_OF_MEASUREMENT_VALUES, _MAX_MIN_VALUES): (RegisterMap, ExtendedRegisterMap, ProfileGenericMap),
+    (_NOT_PROCESSING_OF_MEASUREMENT_VALUES, _CURRENT_AND_LAST_AVERAGE_VALUES): (RegisterMap, ExtendedRegisterMap),  # TODO: add DemandRegister below
+    (_NOT_PROCESSING_OF_MEASUREMENT_VALUES, 40): (DataMap, RegisterMap),
+})
+func_map_electricity: FUNC_MAP = get_func_map(__func_map_electricity_for_create)
+
+
+def get_electricity(class_id: ut.CosemClassId,
+                    version: cdt.Unsigned | None,
+                    ln: cst.LogicalName) -> Type[InterfaceClass]:
+    # try search in CDE group
+    c_m = func_map_electricity.get((ln.contents[2:5]), None)
+    if not c_m:
+        # try search in CD group
+        c_m = func_map_electricity.get((ln.contents[2:4]), None)
+        if not c_m:
+            # try search in BCDE group
+            c_m = func_map_electricity.get((ln.contents[1:5]), None)
+            if not c_m:
+                # try search in C group
+                c_m = func_map_electricity.get((ln.contents[3:4]), common_interface_class_map)
+    return get_interface_class(class_map=c_m,
+                               c_id=class_id,
+                               ver=version)
+
+
+def __get_manufacture_128(class_id: ut.CosemClassId,
+                          version: cdt.Unsigned | None,
+                          ln: cst.LogicalName) -> Type[InterfaceClass]:
+    match class_id, int(version), ln.b, ln.c, ln.d, ln.e:
+        case ClassID.REGISTER, 0,                                       128, 0, c, 0, 0 if c <= 19:
+            return Register
+        case _:
+            raise exc.NoObject(F'DLMS Object: {class_id=} {version=} {ln=} not searched in relation library')
+
+
+_func_map_A: dict[int, Callable[[ut.CosemClassId, cdt.Unsigned, cst.LogicalName], Type[InterfaceClass]]] = {
+    0: get_abstract,
+    1: get_electricity,
+    128: __get_manufacture_128}
 
 
 class Collection:
@@ -322,238 +721,15 @@ class Collection:
         """ TODO: naming"""
         if version is None:
             version = self.set_version(class_id, version)
-        match class_id, int(version), ln:
-            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(a, b, 99, 98, e):
-                return ProfileGeneric(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0 | 1, b, 0, 2, e):
-                return Data(ln)
-            case ClassID.CLOCK,                                             0, cst.LogicalName(0, b, 1, 0, e):
-                return Clock(ln)
-            case ClassID.MODEM_CONFIGURATION,                               v, cst.LogicalName(0, b, 2, 0, e) if v < len(ModemConfiguration_c):
-                return ModemConfiguration_c[v](ln)
-            case ClassID.SCRIPT_TABLE,                                      0, cst.LogicalName(0, b, 10, 0, e) if e in (0, 1, 125) or 100 <= e <= 111:
-                return ScriptTable(ln)
-            case ClassID.SPECIAL_DAYS_TABLE,                                0, cst.LogicalName(0, b, 11, 0, e):
-                return SpecialDaysTable(ln)
-            case ClassID.SCHEDULE,                                          0, cst.LogicalName(0, b, 12, 0, e):
-                return Schedule(ln)
-            case ClassID.ACTIVITY_CALENDAR,                                 0, cst.LogicalName(0, b, 13, 0, e):
-                return ActivityCalendar(ln)
-            case ClassID.SINGLE_ACTION_SCHEDULE,                            0, cst.LogicalName(0, b, 15, 0, e) if 0 <= e <= 7:
-                return SingleActionSchedule(ln)
-            case ClassID.REGISTER_MONITOR,                                  0, cst.LogicalName(0, b, 16, 0, e) | cst.LogicalName(0, b, 16, 1, e) if 0 <= e <= 9:
-                return RegisterMonitor(ln)
-            case ClassID.LIMITER,                                           0, cst.LogicalName(0, b, 17, 0, e):
-                return Limiter(ln)
-            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 21, 0, e):
-                return ProfileGeneric(ln)
-            case ClassID.IEC_HDLC_SETUP,                                    1, cst.LogicalName(0, b, 22, 0, 0):
-                return IECHDLCSetup(ln)
-            case ClassID.TCP_UDP_SETUP,                                     0, cst.LogicalName(0, b, 25, 0, 0):
-                return TCPUDPSetup(ln)
-            case ClassID.IPV4_SETUP,                                        0, cst.LogicalName(0, b, 25, 1, 0):
-                return IPv4Setup(ln)
-            case ClassID.GPRS_MODEM_SETUP,                                  0, cst.LogicalName(0, b, 25, 4, 0):
-                return GPRSModemSetup(ln)
-            case ClassID.GSM_DIAGNOSTIC,                                    0, cst.LogicalName(0, b, 25, 6, 0):
-                return GSMDiagnostic(ln)
-            case ClassID.PUSH_SETUP,                                        2, cst.LogicalName(0, b, 25, 9, 0):
-                return PushSetup(ln)
-            case ClassID.ASSOCIATION_LN_CLASS,                              v, cst.LogicalName(0, 0, 40, 0, e) if v < len(AssociationLN_c):
-                return AssociationLN_c[v](ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 42, 0, 0) | cst.LogicalName(0, _, 43, 1, _):
-                return Data(ln)
-            case ClassID.SECURITY_SETUP,                                    v, cst.LogicalName(0, 0, 43, 0, e) if v < len(SecuritySetup_c):
-                return SecuritySetup_c[v](ln)
-            case ClassID.IMAGE_TRANSFER,                                    0, cst.LogicalName(0, 0, 44, 0, e):
-                return ImageTransfer(ln)
-            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, 0, 94, 7, 1):
-                return ProfileGeneric(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 1, e) if 0 <= e <= 10:
-                return Data(ln)
-            # 6.2.44 Parameter changes and calibration objects
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 0 | 4 | 10 | 13):
-                return Data(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 2, 1 | 2 | 3 | 5 | 6 | 7 | 11 | 12):
-                return impl.data.AnyDateTime(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 3, e) if 0 <= e <= 4:
-                return Data(ln)
-            case ClassID.DISCONNECT_CONTROL,                                0, cst.LogicalName(0, b, 96, 3, 10):
-                return DisconnectControl(ln)
-            case ClassID.ARBITRATOR,                                        0, cst.LogicalName(0, b, 96, 3, 20):
-                ret = Arbitrator(ln)
-                ret.actors = (actors.MANUAL,
-                              actors.LOCAL_1,
-                              actors.LOCAL_2,
-                              actors.LOCAL_3,
-                              actors.LOCAL_4,
-                              actors.LOCAL_5,
-                              actors.LOCAL_6,
-                              actors.LOCAL_7)
-                return ret
-            case ClassID.ARBITRATOR,                                        0, cst.LogicalName(0, b, 96, 3, e) if 21 <= e <= 29:
-                return Arbitrator(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 4, e) if 0 <= e <= 4:
-                return Data(ln)
-            case ClassID.DATA | ClassID.PROFILE_GENERIC as i,                  v, cst.LogicalName(0, b, 96, 5, 0):  # TODO: add RegisterTable
-                return get_type_from_class(i, v)(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 5, e) if 1 <= e <= 4:  # TODO: add StatusMaping
-                return Data(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 5, 132):
-                return impl.data.Unsigned(ln)  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 8, e) if 0 <= e <= 63:
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.EXT_REGISTER,                                      0, cst.LogicalName(0, b, 96, 9, e) if 0 <= e <= 2:
-                return ExtendedRegister(ln)
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 0):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.voltage_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 1):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.current_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 2):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.commutation_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 3):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.programming_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 4):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.external_impact_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 5):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.communication_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 6):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.access_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 7):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.self_diagnostics_events
-                return ret
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 11, 8):
-                ret = get_type_from_class(i, 0)(ln)
-                ret.events = e_.reactive_power_events
-                return ret
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 4):
-                return impl.data.CommunicationPortParameter(ln)
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 12, e) if e in (0, 1, 2, 3, 5, 6):
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 96, 12, 128):
-                return Data(ln)
-            # 6.2.57 Consumer message objects
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 128, 96, 13, 1):
-                return impl.data.ITEBitMap(ln)
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 13, 0 | 1):
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 15, e) if 0 <= e <= 99:
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(0, b, 96, 20, e):
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, 0):
-                return impl.data.OpeningBody(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, 5):
-                return impl.data.SealStatus(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, e) if e in (1, 3, 4, 5, 6, 7):
-                return impl.data.Unsigned(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 96, 51, e) if e == 8 or e == 9:
-                return impl.data.OctetStringDateTime(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, b, 97, 98, e) if 0 <= e <= 9 or 10 <= e <= 29:
-                return Data(ln)
-            # 7.4.5 Data profile objects – Abstract
-            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 99, 3, 0):
-                return ProfileGeneric(ln)
-            case ClassID.PROFILE_GENERIC,                                   1, cst.LogicalName(0, b, 99, 1 | 2 | 12 | 13 | 14 | 15 | 16 | 17 | 18, e):
-                return ProfileGeneric(ln)
-            # ITE manufacture specific
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 128, 100 | 101 | 102 | 103 | 150 | 151 | 152 | 170, 0):
-                return Data(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(0, 0, 128, 160, 0):
-                return impl.data.ITEBitMap(ln)
-            case ClassID.CLIENT_SETUP,                                      0, cst.LogicalName(0, 0, 199, 255, 255):
-                return ClientSetup(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(1, b, 0, 0, e) if e <= 9:
-                return Data(ln)
-            case ClassID.DATA | ClassID.REGISTER | ClassID.EXT_REGISTER as i,     0, cst.LogicalName(1, b, 0, 3 | 4 | 7 | 9, e):
-                return get_type_from_class(i, 0)(ln)
-            # Nominal values
-            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, 0, 6, e) if e <= 5:
-                return get_type_from_class(i, 0)(ln)
-            # Measurement period- / recording interval- / billing period duration
-            case ClassID.DATA,                 0, cst.LogicalName(1, b, 0, 8, 4 | 5):
-                return impl.data.Unsigned(ln)
-            # Coefficients
-            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, 0, 10, e) if e <= 3:
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.DATA,                                              0, cst.LogicalName(1, b, 0, 11, e) if 1 <= e <= 7:
-                return Data(ln)
-            # RU. СТО 34.01-5.1-006-2021. 11.1 Рекомендуемые коды обозначения электрических величин
-            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 131, 35, 0):
-                return Register(ln)
-            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 133, 35, 0):
-                return Register(ln)
-            #
-            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
-                d in chain(_CUMULATIVE, _TIME_INTEGRAL_VALUES, _CONTRACTED_VALUES, _UNDER_OVER_LIMIT_THRESHOLDS, _UNDER_OVER_LIMIT_OCCURRENCE_COUNTERS,
-                           _UNDER_OVER_LIMIT_DURATIONS, _UNDER_OVER_LIMIT_MAGNITUDES):
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.REGISTER,                                          0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
-                                                                                                              d in _INSTANTANEOUS_VALUES:
-                return Register(ln)
-            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, c, d, 0) if c in _CUMULATIVE and \
-                                                                                                              d == _RU_CHANGE_LIMIT_LEVEL:
-                return Register(ln)
-            case ClassID.REGISTER | ClassID.EXT_REGISTER | ClassID.PROFILE_GENERIC as i, 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
-                                                                                                              d in _MAX_MIN_VALUES:
-                return get_type_from_class(i, 0)(ln)
-            # TODO: add DemandRegister below
-            case ClassID.REGISTER | ClassID.EXT_REGISTER as i,                 0, cst.LogicalName(1, b, c, d, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES and \
-                                                                                                              d in _CURRENT_AND_LAST_AVERAGE_VALUES:
-                return get_type_from_class(i, 0)(ln)
-            case ClassID.DATA | ClassID.REGISTER as i,                         0, cst.LogicalName(1, b, c, 40, e) if c not in _NOT_PROCESSING_OF_MEASUREMENT_VALUES:
-                return get_type_from_class(i, 0)(ln)
-            # RU. СТО 34.01-5.1-006-2021. 11.1 Рекомендуемые коды обозначения электрических величин
-            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 147, 133, 0):
-                return Register(ln)
-            case ClassID.REGISTER,                                          0, cst.LogicalName(1, 0, 148, 36, 0):
-                return Register(ln)
-            #
-            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 0):
-                ret = ProfileGeneric(ln)
-                ret.scaler_profile_key = bytes((1, 0, 94, 7, 3, 255))
-                return ret
-            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 1 | 2 | 3 | 4):
-                return ProfileGeneric(ln)                           # Todo: RU. Scaler-profile With 1 entry
-            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 94, 7, 5 | 6):
-                return ProfileGeneric(ln)                           # RU. Profile
-            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 98, 1, e):
-                ret = ProfileGeneric(ln)
-                ret.scaler_profile_key = bytes((1, 0, 94, 7, 1, 255))
-                return ret
-            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 98, 2, e):
-                ret = ProfileGeneric(ln)
-                ret.scaler_profile_key = bytes((1, 0, 94, 7, 2, 255))
-                return ret
-            case ClassID.PROFILE_GENERIC,                                1, cst.LogicalName(1, b, 99, 1 | 2, e):
-                ret = ProfileGeneric(ln)
-                ret.scaler_profile_key = bytes((1, 0, 94, 7, 4, 255))
-                return ret
-            case ClassID.REGISTER,                                      0, cst.LogicalName(128, 0, c, 0, 0) if c <= 19:
-                return Register(ln)
-            case _:
-                raise exc.NoObject(F'DLMS Object: {class_id=} {version=} {ln=} not searched in relation library')
+        ret: Type[InterfaceClass] = _func_map_A.get(ln.a, None)
+        if ret:
+            return ret(class_id, version, ln)(ln)
+        else:
+            raise ValueError(F"unknown {ln.a} in {ln} with: {class_id=}, {version=}")
 
-    def add_if_missing(self, class_id: ut.CosemClassId = None,
-                       version: cdt.Unsigned | None = cdt.Unsigned(),
-                       logical_name: cst.LogicalName = cst.LogicalName()) -> InterfaceClass | None:
+    def add_if_missing(self, class_id: ut.CosemClassId,
+                       version: cdt.Unsigned | None,
+                       logical_name: cst.LogicalName) -> InterfaceClass | None:
         """ like as add method with check for missing """
         if not self.is_in_collection(logical_name):
             return self.create(class_id=class_id,
@@ -573,8 +749,8 @@ class Collection:
         return len(self.__container)
 
     def create(self, class_id: ut.CosemClassId,
-               version: cdt.Unsigned | None = cdt.Unsigned(0),
-               logical_name: cst.LogicalName = cst.LogicalName(),
+               version: cdt.Unsigned | None,
+               logical_name: cst.LogicalName,
                is_major: bool = False) -> InterfaceClass:
         """ append new DLMS object in collection. <is_major>=True is not erased object """
         if self.is_in_collection(logical_name):
@@ -589,9 +765,9 @@ class Collection:
             logger.info(F'Create {new_object}')
         return new_object
 
-    def add(self, class_id: ut.CosemClassId = None,
-            version: cdt.Unsigned | None = cdt.Unsigned(0),
-            logical_name: cst.LogicalName = cst.LogicalName()) -> InterfaceClass:
+    def add(self, class_id: ut.CosemClassId,
+            version: cdt.Unsigned | None,
+            logical_name: cst.LogicalName) -> InterfaceClass:
         """ Use only in template. TODO: move to template """
         new_object = self.get_instance(class_id, version, logical_name)
         new_object.collection = self

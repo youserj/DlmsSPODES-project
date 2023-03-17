@@ -7,7 +7,7 @@ class TestType(unittest.TestCase):
 
     def test_ProfileGeneric(self):
         col = collection.Collection()
-        col.add_major(col.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255')))
+        col.add_major(col.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('3.0.40.0.0.255')))
         col.create(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
         col.create(class_id=ut.CosemClassId(47), version=cdt.Unsigned(0), logical_name=cst.LogicalName("0.0.25.6.0.255"))
         new = col.create(class_id=ut.CosemClassId(1), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.96.11.0.255'))
