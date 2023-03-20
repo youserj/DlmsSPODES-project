@@ -17,9 +17,12 @@ class TestType(unittest.TestCase):
 
     def test_get_instance(self):
         col = collection.Collection()
-        inst = col.get_instance(class_id=ut.CosemClassId(8),
+        inst = col.get_instance(class_id=ut.CosemClassId(3),
                                 version=cdt.Unsigned(0),
-                                ln=cst.LogicalName("0.128.1.0.0.255"))
+                                ln=cst.LogicalName("1.0.131.35.0.255"))
+        self.assertRaises(ValueError, col.get_instance, class_id=ut.CosemClassId(1),
+                          version=cdt.Unsigned(0),
+                          ln=cst.LogicalName("1.0.1.7.0.255"))
         print(inst)
 
     def test_ClassMap(self):
