@@ -822,6 +822,10 @@ class Collection:
             case cdt.Structure(logical_name=value.logical_name):             return self.__get_object(value.logical_name.contents)
             case _:                                                          raise exc.NoObject(F"Can't find DLMS Object from collection with {value=}")
 
+    def get_attr(self, value: ut.CosemAttributeDescriptor) -> cdt.CommonDataTypes:
+        """attribute value from descriptor"""
+        return self.__get_object(value.instance_id.contents).get_attr(int(value.attribute_id))
+
     def get_first(self, values: list[str | bytes | cst.LogicalName]) -> InterfaceClass:
         """ return first object from it exist in collection from value"""
         for val in values:

@@ -1,4 +1,3 @@
-import inspect
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, useful_types as ut
 
@@ -19,3 +18,9 @@ class TestType(unittest.TestCase):
     def test_Digital(self):
         value = ut.CosemClassId(1)
         self.assertEqual(value, 1, "compare with build-in <int>")
+
+    def test_CosemAttributeDescriptor(self):
+        value = ut.CosemAttributeDescriptor((8, "0.1.1.0.0.255", 2))
+        value2 = ut.CosemAttributeDescriptor((8, (0, 0, 1, 0, 0, 255), b'\x02'))
+        print(value, value2)
+        print(id(value.attribute_id), id(value2.attribute_id))

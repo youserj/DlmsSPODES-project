@@ -1,4 +1,5 @@
 from __future__ import annotations
+from functools import lru_cache
 from abc import ABC, abstractmethod
 from typing import Type, Any, Callable
 from dataclasses import dataclass
@@ -10,14 +11,19 @@ class _String(ABC):
 
     def __init__(self, value: bytes | bytearray | str | int | UsefulType = None):
         match value:
-            case None:                                                        self.contents = bytes(self.LENGTH)
-            case bytes() if self.LENGTH is None or self.LENGTH <= len(value): self.contents = value[:self.LENGTH]
+            case None:                                                        self.__dict__["contents"] = bytes(self.LENGTH)
+            case bytes() if self.LENGTH is None or self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
             # case bytes() if self.LENGTH <= len(value):                       self.contents = value[:self.LENGTH]
             case bytes():            raise ValueError(F'Length of contents for {self.__class__.__name__} must be at least {self.LENGTH}, but got {len(value)}')
-            case bytearray():                                                 self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
-            case str():                                                       self.contents = self.from_str(value)
-            case int():                                                       self.contents = self.from_int(value)
-            case UsefulType():                                                self.contents = value.contents  # TODO: make right type
+            case tuple():
+                if len(value) == self.LENGTH:
+                    self.__dict__["contents"] = bytes(value)
+                else:
+                    raise ValueError(F"in {self.__class__.__name__} with {value=} got length: {len(value)}, expect {self.LENGTH}")
+            case bytearray():                                                 self.__dict__["contents"] = bytes(value)  # Attention!!! changed method content getting from bytearray
+            case str():                                                       self.__dict__["contents"] = self.from_str(value)
+            case int():                                                       self.__dict__["contents"] = self.from_int(value)
+            case UsefulType():                                                self.__dict__["contents"] = value.contents  # TODO: make right type
             case _:                                                           raise ValueError(F'Error create {self.__class__.__name__} with value {value}')
 
     @abstractmethod
@@ -269,14 +275,14 @@ class DigitalMixin(ABC):
 
     def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = None):
         match value:
-            case bytes() if self.LENGTH <= len(value): self.contents = value[:self.LENGTH]
+            case bytes() if self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
             case bytes():            raise ValueError(F'Length of contents for {self.__class__.__name__} must be at least {self.LENGTH}, but got {len(value)}')
-            case bytearray():                          self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
-            case str('-') if self.SIGNED:              self.contents = bytes(self.LENGTH)
-            case int():                                self.contents = self.from_int(value)
-            case str():                                self.contents = self.from_str(value)
-            case None:                                 self.contents = bytes(self.LENGTH)
-            case self.__class__():                     self.contents = value.contents
+            case bytearray():                          self.__dict__["contents"] = bytes(value)  # Attention!!! changed method content getting from bytearray
+            case str('-') if self.SIGNED:              self.__dict__["contents"] = bytes(self.LENGTH)
+            case int():                                self.__dict__["contents"] = self.from_int(value)
+            case str():                                self.__dict__["contents"] = self.from_str(value)
+            case None:                                 self.__dict__["contents"] = bytes(self.LENGTH)
+            case self.__class__():                     self.__dict__["contents"] = value.contents
             case _:                                    raise ValueError(F'Error create {self.__class__.__name__} with value: {value}')
 
     def from_int(self, value: int | float) -> bytes:
@@ -415,6 +421,10 @@ class CosemObjectInstanceId(OCTET_STRING, UsefulType):
 
 class CosemObjectAttributeId(Integer8):
     """ TODO """
+
+    @lru_cache(14)  # for test
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
 
 
 class CosemObjectMethodId(Integer8):
