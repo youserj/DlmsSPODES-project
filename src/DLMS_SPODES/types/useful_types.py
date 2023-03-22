@@ -192,6 +192,9 @@ class SEQUENCE(ABC):
     def __str__(self):
         return F'{{{", ".join(map(lambda val: F"{val[0].NAME}: {val[1]}", zip(self.ELEMENTS, self.values)))}}}'
 
+    def __repr__(self):
+        return F'{self.__class__.__name__}(({(", ".join(map(str, self.values)))}))'
+
     def __get_index(self, name: str) -> int | None:
         """ get index by name. Return None if not found """
         for i, element in enumerate(self.ELEMENTS):
@@ -383,7 +386,7 @@ class CosemObjectInstanceId(OCTET_STRING, UsefulType):
     LENGTH = 6
 
     def __str__(self):
-        return '.'.join(map(str, self.contents))
+        return F"\"{'.'.join(map(str, self.contents))}\""
 
     def from_str(self, value: str) -> bytes:
         """ create logical_name: octet_string from string type ddd.ddd.ddd.ddd.ddd.ddd, ex.: 0.0.1.0.0.255 """
