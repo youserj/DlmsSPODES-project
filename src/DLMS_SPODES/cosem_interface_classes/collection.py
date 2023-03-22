@@ -1185,7 +1185,7 @@ class Collection:
         """ return names and type of element from collection"""
         names: list[str] = list()
         obj = self.__get_object(value.logical_name.contents)
-        names.append(obj.NAME)
+        names.append(get_name(obj.logical_name))
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
         data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
