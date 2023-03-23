@@ -16,7 +16,7 @@ class FlagEvents(dict):
 class Events(dict):
     """ special class for enumerate events indication """
     def get_report(self, value: int) -> str:
-        return self.get(value, "error enum")
+        return F'{self.get(value, "error enum")}({value})'
 
 
 voltage_events = Events(tuple((int(key.split('_')[-1]), e.__dict__[key]) for key in filter(lambda i: i.startswith("VOLTAGE"), e.__dict__)))
@@ -41,15 +41,3 @@ power_quality_status_1 = FlagEvents(tuple((int(key.split('_')[-1], base=16), e._
 """for 0.0.96.5.1.255 Статус качества сети (профиль суточных показаний) СТО 34.01-5.1-006-2021 таблица Е.2"""
 power_quality_status_2 = FlagEvents(tuple((int(key.split('_')[-1], base=16), e.__dict__[key]) for key in filter(lambda i: i.startswith("POWER_QUALITY2"), e.__dict__)))
 """for 0.0.96.5.4.255 Статус качества сети (журнал качества сети) СТО 34.01-5.1-006-2021 таблица Е.1"""
-
-
-def get_report(self, value=None, *args) -> str:
-    """ get value of event code by value(attribute 2) in order to event codes table """
-    value = self.value if value is None else value
-    if isinstance(value, (cdt.Unsigned, cdt.LongUnsigned, cdt.DoubleLongUnsigned, cdt.Long64Unsigned)):
-        try:
-            return self.events[value.decode()]
-        except KeyError:
-            return F'Unknown event code: {value.decode()}'
-    else:
-        raise TypeError(F'For object {self} wrong value type, got {value.NAME}')

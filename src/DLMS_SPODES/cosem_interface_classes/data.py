@@ -15,6 +15,6 @@ class Data(ic.COSEMInterfaceClasses):
         """nothing do it"""
 
     @property
-    def value(self) -> cdt.CommonDataType:
+    def value(self) -> cdt.CommonDataTypes:
         """Contains the data"""
         return self.get_attr(2)

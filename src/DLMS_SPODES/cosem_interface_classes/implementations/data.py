@@ -108,47 +108,100 @@ class AnyDateTime(Data):
     A_ELEMENTS = ic.ICAElement(an.VALUE, choices.any_date_time, classifier=ic.Classifier.STATIC),
 
 
+class VoltageEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.voltage_events.get_report(int(self))
+
+
 class SPODES3VoltageEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением"""
-    events = ev.voltage_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, VoltageEventValues, classifier=ic.Classifier.STATIC),
+
+
+class CurrentEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.current_events.get_report(int(self))
 
 
 class SPODES3CurrentEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
-    events = ev.current_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, CurrentEventValues, classifier=ic.Classifier.STATIC),
+
+
+class CommutationEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.commutation_events.get_report(int(self))
 
 
 class SPODES3CommutationEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
-    events = ev.commutation_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, CommutationEventValues, classifier=ic.Classifier.STATIC),
+
+
+class ProgrammingEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.programming_events.get_report(int(self))
 
 
 class SPODES3ProgrammingEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
-    events = ev.programming_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, ProgrammingEventValues, classifier=ic.Classifier.STATIC),
+
+
+class ExternalEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.external_impact_events.get_report(int(self))
 
 
 class SPODES3ExternalEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    events = ev.external_impact_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, ExternalEventValues, classifier=ic.Classifier.STATIC),
+
+
+class CommunicationEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.communication_events.get_report(int(self))
 
 
 class SPODES3CommunicationEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
-    events = ev.communication_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, CommunicationEventValues, classifier=ic.Classifier.STATIC),
+
+
+class AccessEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.access_events.get_report(int(self))
 
 
 class SPODES3AccessEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
-    events = ev.access_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, AccessEventValues, classifier=ic.Classifier.STATIC),
+
+
+class SelfDiagnosticEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.self_diagnostics_events.get_report(int(self))
 
 
 class SPODES3SelfDiagnosticEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
-    events = ev.self_diagnostics_events
+    A_ELEMENTS = ic.ICAElement(an.VALUE, SelfDiagnosticEventValues, classifier=ic.Classifier.STATIC),
+
+
+class ReactivePowerEventValues(cdt.LongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.reactive_power_events.get_report(int(self))
 
 
 class SPODES3ReactivePowerEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
-    events = ev.reactive_power_events
-
+    A_ELEMENTS = ic.ICAElement(an.VALUE, ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
