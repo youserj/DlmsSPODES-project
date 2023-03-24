@@ -4,7 +4,7 @@ from src.DLMS_SPODES.types.common_data_types import encode_length
 from src.DLMS_SPODES.cosem_interface_classes import ic, collection
 from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl
 from src.DLMS_SPODES import relation_to_OBIS
-from src.DLMS_SPODES.cosem_interface_classes.collection import get_type_from_class, Collection
+from src.DLMS_SPODES.cosem_interface_classes.collection import Collection
 
 
 class TestType(unittest.TestCase):
@@ -100,3 +100,8 @@ class TestType(unittest.TestCase):
         col = Collection()
         col.create(class_id=ut.CosemClassId(18), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.44.0.0.255'))
         print(col)
+
+    def test_UTF8(self):
+        value = cdt.Utf8String()
+        value.set('ООО "Курганский приборостроительный завод"')
+        print(value)

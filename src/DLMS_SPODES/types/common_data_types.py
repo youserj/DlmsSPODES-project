@@ -1518,20 +1518,19 @@ class VisibleString(_String, SimpleDataType):
         return self.decode()
 
 
-# TODO:  Utf8String will make differed from OctetString
 class Utf8String(_String, SimpleDataType):
     """ An ordered sequence of characters encoded as UTF-8 """
     TAG = b'\x0c'
     NAME = tn.UTF8_STRING
 
     def from_str(self, value: str) -> bytes:
-        return bytes(value, 'cp1251')
+        return bytes(value, "utf-8")
 
     def from_int(self, value: int) -> bytes:
-        return bytes(str(value), 'cp1251')
+        return bytes(str(value), "utf-8")
 
     def __str__(self):
-        return self.contents.decode('cp1251')
+        return self.contents.decode("utf-8")
 
     def __len__(self):
         return len(self.contents)

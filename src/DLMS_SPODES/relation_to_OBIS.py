@@ -402,7 +402,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
             return F"{handle_B(b)}{rn.REACTIVE_FACTOR} {get_processing_names(d)}"
         case  1, 0, 147 as c, 133, 0: return F"{get_obj_names(c)} {rn.BILLING_PERIOD}"
         case  1, 0, 148, 36, 0: return F"{rn.OVER_VOLTAGE_COUNTER} {rn.BILLING_PERIOD}"
-        case cst.LogicalName(1, b, 81, 7, e) if e < 78:
+        case 1, b, 81, 7, e if e < 78:
             angel_values = (rn.U_L1, rn.U_L2, rn.U_L3, rn.ERROR, rn.I_L1, rn.I_L2, rn.I_L3, rn.I_L0)
             to_, from_ = divmod(logical_name.e, 10)
             return F"{F'{rn.ANGLE_FROM} {angel_values[from_]} {rn.TO} {angel_values[to_]}'}{handle_B(b)}"
