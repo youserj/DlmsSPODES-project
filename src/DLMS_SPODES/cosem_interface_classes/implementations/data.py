@@ -1,6 +1,20 @@
 from ..data import Data, ic, an, cdt, cst, choices
 from ... import enums as enu
 from .. import events as ev
+from ...types import implementations as impl
+
+
+class LDN(Data):
+    """for ldn"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, impl.octet_string.LDN, classifier=ic.Classifier.STATIC),
+
+    def characteristics_init(self):
+        self._cbs_attr_post_init.update(
+            {2: self.__set_manufacturer}
+        )
+
+    def __set_manufacturer(self):
+        self.collection.manufacturer = self.value.contents[:3]
 
 
 class Unsigned(Data):
@@ -205,3 +219,103 @@ class ReactivePowerEventValues(cdt.LongUnsigned):
 class SPODES3ReactivePowerEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
     A_ELEMENTS = ic.ICAElement(an.VALUE, ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
+
+
+# KPZ implements
+class KPZ1VoltageEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.voltage_events.get_report(int(self))
+
+
+class KPZ1SPODES3VoltageEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением with bag in value type"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1VoltageEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1CurrentEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.current_events.get_report(int(self))
+
+
+class KPZ1SPODES3CurrentEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1CurrentEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1CommutationEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.commutation_events.get_report(int(self))
+
+
+class KPZ1SPODES3CommutationEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1CommutationEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1ProgrammingEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.programming_events.get_report(int(self))
+
+
+class KPZ1SPODES3ProgrammingEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ProgrammingEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1ExternalEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.external_impact_events.get_report(int(self))
+
+
+class KPZ1SPODES3ExternalEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ExternalEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1CommunicationEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.communication_events.get_report(int(self))
+
+
+class KPZ1SPODES3CommunicationEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1CommunicationEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1AccessEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.access_events.get_report(int(self))
+
+
+class KPZ1SPODES3AccessEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1AccessEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1SelfDiagnosticEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.self_diagnostics_events.get_report(int(self))
+
+
+class KPZ1SPODES3SelfDiagnosticEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1SelfDiagnosticEventValues, classifier=ic.Classifier.STATIC),
+
+
+class KPZ1ReactivePowerEventValues(cdt.DoubleLongUnsigned):
+    @property
+    def report(self) -> str:
+        return ev.reactive_power_events.get_report(int(self))
+
+
+class KPZ1SPODES3ReactivePowerEvent(Data):
+    """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ReactivePowerEventValues, classifier=ic.Classifier.STATIC),

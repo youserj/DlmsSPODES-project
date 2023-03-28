@@ -599,7 +599,8 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         self.set_attr(5, None)
         self.set_attr(8, None)
         # init secret after set authentication_mechanism_name(6)
-        self._cbs_attr_post_init.update({6: self.__init_secret,
+        self._cbs_attr_post_init.update({5: self.__set_dlms_version_to_collection,
+                                         6: self.__init_secret,
                                          7: self.__check_mechanism_id_existing})
         # set cb change client SAP
         match self.logical_name.e:
@@ -665,6 +666,9 @@ class AssociationLN(ic.COSEMInterfaceClasses):
             case MechanismIdElement(en.HIGH):                              self.set_attr_link(7, LLCSecretHigh())
             case unknown:                                                  raise ValueError(F'Not support Secret with {unknown}')
         print(F'set secret class {self}, REMOVE it message')
+
+    def __set_dlms_version_to_collection(self):
+        self.collection.dlms_ver = int(self.xDLMS_context_info.dlms_version_number)
 
     @property
     def objects(self) -> list[ic.COSEMInterfaceClasses]:

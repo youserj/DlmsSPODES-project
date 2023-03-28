@@ -5,11 +5,11 @@ from struct import pack
 class AppVersion:
     __major: int
     __minor: int
-    __patch: int
+    __patch: int | None
     __additional: str
     __match_args__ = ('major', 'minor', 'patch')
 
-    def __init__(self, major: int, minor: int, patch: int, additional: str = ''):
+    def __init__(self, major: int, minor: int, patch: int = None, additional: str = ''):
         self.__major = major
         self.__minor = minor
         self.__patch = patch
@@ -29,6 +29,10 @@ class AppVersion:
                             digit_pos += 1
                         return cls(int(major), int(minor), int(patch_seq[:digit_pos]), patch_seq[digit_pos:].decode())
                     case _:                                      return cls(0, 0, 0)
+            case (major, minor):
+                match major.isdigit(), minor.isdigit():
+                    case True, True:                        return cls(int(major), int(minor))
+                    case _:                                      return cls(0, 0)
             case _:                                              return cls(0, 0, 0)
 
     @property
@@ -40,7 +44,7 @@ class AppVersion:
         return self.__minor
 
     @property
-    def patch(self) -> int:
+    def patch(self) -> int | None:
         return self.__patch
 
     @property
@@ -51,17 +55,51 @@ class AppVersion:
         return hash(self) == hash(other) and self.__additional == other.additional
 
     def __gt__(self, other: AppVersion):
-        return hash(self) > hash(other)
+        if self.__major > other.__major:
+            return True
+        elif self.__major < other.__major:
+            return False
+        elif self.__minor > other.__minor:
+            return True
+        elif self.__minor < other.__minor:
+            return False
+        if self.__patch is None:
+            return False
+        elif self.__patch > other.__patch:
+            return True
+        else:
+            return False
 
     def __ge__(self, other: AppVersion):
-        return hash(self) >= hash(other)
+        if self.__major > other.__major:
+            return True
+        elif self.__major < other.__major:
+            return False
+        elif self.__minor > other.__minor:
+            return True
+        elif self.__minor < other.__minor:
+            return False
+        if self.__patch is None:
+            return True
+        elif self.__patch > other.__patch:
+            return True
+        elif self.__patch < other.__patch:
+            return False
+        else:
+            return True
 
-    def __str__(self) -> str:
-        return F'{self.__major}.{self.__minor}.{self.__patch}{F" <{self.__additional}>" if len(self.__additional) != 0 else ""}'
+    def __str__(self):
+        return F'{self.__major}.{self.__minor}{F".{self.__patch}" if self.__patch is not None else ""}{F" <{self.__additional}>" if len(self.__additional) != 0 else ""}'
+
+    def __repr__(self):
+        return F"{self.__class__.__name__}({self.__major}, {self.__minor}{F', {self.__patch}' if self.__patch is not None else ''}{', additional='+repr(self.additional) if self.additional else ''})"
 
     def __hash__(self):
         """ to int6 every 2 byte for major, minor, patch """
-        return self.__major * 0x10000_0000 + self.__minor * 0x10000 + self.__patch
+        if self.__patch is not None:
+            return hash((self.__major, self.__minor, self.__patch))
+        else:
+            return hash((self.__major, self.__minor))
 
     def select_nearest(self, variants: list[AppVersion | str]) -> AppVersion | None:
         """ select left nearest from list. If version is absence return None """
@@ -74,17 +112,3 @@ class AppVersion:
         app_versions.sort()
         app_versions.append(None)
         return app_versions[app_versions.index(self)-1]
-
-
-if __name__ == '__main__':
-    from time import perf_counter
-    a = AppVersion.from_str('1.1.9d1')
-    b = AppVersion(3,3,7)
-    c = AppVersion(1,3,6)
-    d = [a,b,c]
-    d1 = sorted(d)
-    print(a == b)
-    print(b > a)
-    match b:
-        case AppVersion(3,3, patch) if patch<5:
-            print('ok')

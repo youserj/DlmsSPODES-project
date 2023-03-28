@@ -93,7 +93,7 @@ def get_instance_and_pdu(meta: Type[CommonDataType], value: bytes) -> tuple[Comm
     return instance, value[len(instance.encoding):]
 
 
-def get_instance_and_pdu_from_value(value: bytes | bytearray) -> Tuple[CommonDataType, bytes]:
+def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDataType, bytes]:
     instance = get_common_data_type_from(value[:1])(value)
     try:    # TODO: remove it in future
         return instance, value[len(instance.encoding):]
@@ -1457,7 +1457,7 @@ class OctetString(_String, SimpleDataType):
         return to_bytes_with(length)
 
     def __str__(self):
-        return self.contents.hex(' ')
+        return F"{self.contents.hex(' ')}"
 
     def __len__(self):
         return len(self.contents)

@@ -1,7 +1,8 @@
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
-from src.DLMS_SPODES.cosem_interface_classes import collection
+from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES.cosem_interface_classes import implementations as impl
+from src.DLMS_SPODES.version import AppVersion
 
 
 class TestType(unittest.TestCase):
@@ -20,8 +21,14 @@ class TestType(unittest.TestCase):
 
     def test_ExternalEventData(self):
         col = collection.Collection()
+        col.manufacturer = b'KPZ'
+        col.country_ver = AppVersion.from_str("3.0")
+        col.server_ver = AppVersion(1, 4, 0)
+        col.server_type = cdt.OctetString("4d324d5f33")
+        col.set_spec()
         col.add(class_id=ut.CosemClassId(1), version=cdt.Unsigned(0), logical_name=cst.LogicalName("0.0.96.11.4.255"))
         obj = col.get_object("0.0.96.11.4.255")
-        obj.set_attr(2, 2)
+        obj.set_attr(2, b'\x06\x00\x00\x00\x02')
+        # obj.set_attr(2, 2)
         print(obj.value, obj.value.report)
         self.assertEqual(obj.value.report, "Магнитное поле - окончание(2)", "report match")

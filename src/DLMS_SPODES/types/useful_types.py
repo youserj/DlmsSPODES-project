@@ -9,7 +9,7 @@ from ..types import common_data_types as cdt
 class _String(ABC):
     LENGTH: int | None
 
-    def __init__(self, value: bytes | bytearray | str | int | UsefulType = None):
+    def __init__(self, value: bytes | bytearray | str | int | tuple | UsefulType = None):
         match value:
             case None:                                                        self.__dict__["contents"] = bytes(self.LENGTH)
             case bytes() if self.LENGTH is None or self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
