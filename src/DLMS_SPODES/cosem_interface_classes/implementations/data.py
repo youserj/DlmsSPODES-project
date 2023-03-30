@@ -2,6 +2,7 @@ from ..data import Data, ic, an, cdt, cst, choices
 from ... import enums as enu
 from .. import events as ev
 from ...types import implementations as impl
+from ...version import AppVersion
 
 
 class LDN(Data):
@@ -319,3 +320,17 @@ class KPZ1ReactivePowerEventValues(cdt.DoubleLongUnsigned):
 class KPZ1SPODES3ReactivePowerEvent(Data):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
     A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
+
+
+class SPODES3SPODESVersionValue(cdt.OctetString):
+    def __init__(self, value):
+        super(SPODES3SPODESVersionValue, self).__init__(value)
+        match AppVersion.from_str(self.contents.decode("utf-8")):
+            case AppVersion(0, 0, 0): raise ValueError(F"got invalid SPODES VERSION VALUE with: {self}")
+            case AppVersion(_, _, None): """valid version"""
+            case _: raise ValueError(F"got invalid SPODES VERSION VALUE with: {self}")
+
+
+class SPODES3SPODESVersion(Data):
+    """СТО_34.01-5.1-006-2019v3 Г.1 Примечание 2"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, SPODES3SPODESVersionValue, classifier=ic.Classifier.STATIC),

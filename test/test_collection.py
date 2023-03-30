@@ -21,6 +21,10 @@ class TestType(unittest.TestCase):
         col.manufacturer = b"KPZ"
         col.server_ver = AppVersion(1, 4, 0)
         col.set_spec()
+        ver_obj = col.add(class_id=ut.CosemClassId(1),
+                          version=cdt.Unsigned(0),
+                          logical_name=cst.LogicalName("0.0.96.1.6.255"))
+        ver_obj.set_attr(2, "33 30")
         inst = col.get_instance(class_id=ut.CosemClassId(3),
                                 version=cdt.Unsigned(0),
                                 ln=cst.LogicalName("1.0.131.35.0.255"))
