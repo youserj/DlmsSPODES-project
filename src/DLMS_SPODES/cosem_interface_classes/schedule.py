@@ -279,7 +279,7 @@ class Schedule(ic.COSEMInterfaceClasses):
             self.insert.index.set_callback(indexes)
             self.delete.firstIndex.set_callback(indexes)
             self.delete.lastIndex.set_callback(indexes)
-            print('set delete')
+            # print('set delete')
         except KeyError:  # At init time
             print('set delete NO:')
 

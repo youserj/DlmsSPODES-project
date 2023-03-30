@@ -665,7 +665,6 @@ class AssociationLN(ic.COSEMInterfaceClasses):
             case MechanismIdElement(en.NONE) | MechanismIdElement(en.LOW): self.set_attr_link(7, LLCSecret())
             case MechanismIdElement(en.HIGH):                              self.set_attr_link(7, LLCSecretHigh())
             case unknown:                                                  raise ValueError(F'Not support Secret with {unknown}')
-        print(F'set secret class {self}, REMOVE it message')
 
     def __set_dlms_version_to_collection(self):
         self.collection.dlms_ver = int(self.xDLMS_context_info.dlms_version_number)
@@ -703,7 +702,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         """ Only for current association. Replacement attributes except logical_name and Client_SAP on attributes of association switching """
         for association in self.collection.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association is not self:
-                print('switch to: ', association)  # TODO: for debug
+                # print('switch to: ', association)  # TODO: for debug
                 for index, attr in association.get_index_with_attributes():
                     match index:
                         case 1: continue

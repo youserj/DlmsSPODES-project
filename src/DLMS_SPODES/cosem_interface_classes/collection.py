@@ -55,7 +55,7 @@ from .. import ITE_exceptions as exc
 import xml.etree.ElementTree as ET
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
-from ..cosem_interface_classes.overview import ClassID, Version
+from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
 from ..enums import TagsName, MechanismId
 from . import obis as o
 from .. import pdu_enums as pdu
@@ -261,6 +261,70 @@ FOR_C: TypeAlias = tuple[A, C]
 FOR_CD: TypeAlias = tuple[A, C | tuple[C, ...], D] | tuple[A, tuple[C, ...], tuple[D, ...]]
 FOR_CDE: TypeAlias = tuple[A, C, D | tuple[D, ...], E | tuple[E, ...]]
 FOR_BCDE: TypeAlias = tuple[A, B, C, D, E | tuple[E, ...]]
+FUNC_MAP: TypeAlias = dict[bytes, dict[int, CosemClassMap]]
+"""ln.BCDE | ln.CDE | ln.CD | ln.C: {class_id: {version: CosemInterfaceClass}}"""
+
+
+func_maps: dict[str, FUNC_MAP] = dict()
+
+
+def get_func_map(for_create_map: dict) -> FUNC_MAP:
+    ret: FUNC_MAP = dict()
+    for it in for_create_map:
+        keys: list[bytes] = list()
+        match len(it):
+            case 4:
+                match it[2], it[3]:
+                    case int(), tuple() as e_g:
+                        for e in e_g:
+                            keys.append(pack(">BBBB", it[0], it[1], it[2], e))
+                    case tuple() as d_g, int():
+                        for d in d_g:
+                            keys.append(pack(">BBBB", it[0], it[1], d, it[3]))
+                    case tuple() as d_g, tuple() as e_g:
+                        for d in d_g:
+                            for e in e_g:
+                                keys.append(pack(">BBBB", it[0], it[1], d, e))
+                    case int(), int():
+                        keys.append(bytes(it))
+                    case _:
+                        raise ValueError(F"unknown {it[2]=} and {it[3]=} in dict values: {it}")
+            case 3:
+                match it[1], it[2]:
+                    case int(), int():
+                        keys.append(bytes(it))
+                    case tuple() as c_g, int():
+                        for c in c_g:
+                            keys.append(pack(">BBB", it[0], c, it[2]))
+                    case int(), tuple() as d_g:
+                        for d in d_g:
+                            keys.append(pack(">BBB", it[0], it[1], d))
+                    case tuple() as c_g, tuple() as d_g:
+                        for c in c_g:
+                            for d in d_g:
+                                keys.append(pack(">BBB", it[0], c, d))
+                    case err:
+                        raise ValueError(F"unknown {it[1]=} in dict values: {err}")
+            case 5:
+                match it[2], it[4]:
+                    case int(), int():
+                        keys.append(bytes(it))
+                    case int(), tuple() as e_g:
+                        for e in e_g:
+                            keys.append(pack(">BBBBB", it[0], it[1], it[2], it[3], e))
+                    case tuple() as c_g, int():
+                        for c in c_g:
+                            keys.append(pack(">BBBBB", it[0], it[1], c, it[3], it[4]))
+                    case _:
+                        raise ValueError(F"unknown dict values: {it}")
+            case 2:
+                keys.append(bytes(it))
+            case err_len:
+                raise ValueError(F"got {err_len=} map_for_create, expect 2..5")
+        for k in keys:
+            ret[k] = _create_map(for_create_map[it])
+    return ret
+
 
 __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClassMap, ...] | CosemClassMap] = {
     # abstract
@@ -335,7 +399,6 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     (0, 96, 12, (0, 1, 2, 3, 5, 6)): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 12, 4): ClassMap({0: impl.data.CommunicationPortParameter}),
     (0, 96, 13, (0, 1)): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
     (0, 96, 14, tuple(range(16))): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 15, tuple(range(100))): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 16, tuple(range(10))): (DataMap, RegisterMap,  ExtendedRegisterMap),
@@ -371,6 +434,14 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _CURRENT_AND_LAST_AVERAGE_VALUES): (RegisterMap, ExtendedRegisterMap),  # TODO: add DemandRegister below
     (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, 40): (DataMap, RegisterMap),
 }
+
+func_maps["DLMS_6"] = get_func_map(__func_map_for_create)
+
+# Utility Update
+__func_map_for_create.update({
+    (0, 0, 199, 255, 255): ClientSetupMap,
+})
+
 # SPODES3 Update
 __func_map_for_create.update({
     (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
@@ -404,94 +475,50 @@ __func_map_for_create.update({
     # KPZ
     (128, 0, tuple(range(20)), 0, 0): RegisterMap
 })
+
+func_maps["SPODES_3"] = get_func_map(__func_map_for_create)
+
 # KPZ Update
 __func_map_for_create.update({
+    (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
     (0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
 })
-# Utility Update
+func_maps["KPZ"]: FUNC_MAP = get_func_map(__func_map_for_create)
+# KPZ1 with bag in log event profiles
 __func_map_for_create.update({
-    (0, 0, 199, 255, 255): ClientSetupMap,
+    (0, 96, 11, 0): ClassMap({0: impl.data.KPZ1SPODES3VoltageEvent}),
+    (0, 96, 11, 1): ClassMap({0: impl.data.KPZ1SPODES3CurrentEvent}),
+    (0, 96, 11, 2): ClassMap({0: impl.data.KPZ1SPODES3CommutationEvent}),
+    (0, 96, 11, 3): ClassMap({0: impl.data.KPZ1SPODES3ProgrammingEvent}),
+    (0, 96, 11, 4): ClassMap({0: impl.data.KPZ1SPODES3ExternalEvent}),
+    (0, 96, 11, 5): ClassMap({0: impl.data.KPZ1SPODES3CommunicationEvent}),
+    (0, 96, 11, 6): ClassMap({0: impl.data.KPZ1SPODES3AccessEvent}),
+    (0, 96, 11, 7): ClassMap({0: impl.data.KPZ1SPODES3SelfDiagnosticEvent}),
+    (0, 96, 11, 8): ClassMap({0: impl.data.KPZ1SPODES3ReactivePowerEvent}),
 })
-
-FUNC_MAP: TypeAlias = dict[bytes, dict[int, CosemClassMap]]
-"""ln.BCDE | ln.CDE | ln.CD | ln.C: {class_id: {version: CosemInterfaceClass}}"""
-
-
-def get_func_map(for_create_map: dict) -> FUNC_MAP:
-    ret: FUNC_MAP = dict()
-    for it in for_create_map:
-        keys: list[bytes] = list()
-        match len(it):
-            case 4:
-                match it[2], it[3]:
-                    case int(), tuple() as e_g:
-                        for e in e_g:
-                            keys.append(pack(">BBBB", it[0], it[1], it[2], e))
-                    case tuple() as d_g, int():
-                        for d in d_g:
-                            keys.append(pack(">BBBB", it[0], it[1], d, it[3]))
-                    case tuple() as d_g, tuple() as e_g:
-                        for d in d_g:
-                            for e in e_g:
-                                keys.append(pack(">BBBB", it[0], it[1], d, e))
-                    case int(), int():
-                        keys.append(bytes(it))
-                    case _:
-                        raise ValueError(F"unknown {it[2]=} and {it[3]=} in dict values: {it}")
-            case 3:
-                match it[1], it[2]:
-                    case int(), int():
-                        keys.append(bytes(it))
-                    case tuple() as c_g, int():
-                        for c in c_g:
-                            keys.append(pack(">BBB", it[0], c, it[2]))
-                    case int(), tuple() as d_g:
-                        for d in d_g:
-                            keys.append(pack(">BBB", it[0], it[1], d))
-                    case tuple() as c_g, tuple() as d_g:
-                        for c in c_g:
-                            for d in d_g:
-                                keys.append(pack(">BBB", it[0], c, d))
-                    case err:
-                        raise ValueError(F"unknown {it[1]=} in dict values: {err}")
-            case 5:
-                match it[2], it[4]:
-                    case int(), int():
-                        keys.append(bytes(it))
-                    case int(), tuple() as e_g:
-                        for e in e_g:
-                            keys.append(pack(">BBBBB", it[0], it[1], it[2], it[3], e))
-                    case tuple() as c_g, int():
-                        for c in c_g:
-                            keys.append(pack(">BBBBB", it[0], it[1], c, it[3], it[4]))
-                    case _:
-                        raise ValueError(F"unknown dict values: {it}")
-            case 2:
-                keys.append(bytes(it))
-            case err_len:
-                raise ValueError(F"got {err_len=} map_for_create, expect 2..5")
-        for k in keys:
-            ret[k] = _create_map(for_create_map[it])
-    return ret
-
-
-func_map: FUNC_MAP = get_func_map(__func_map_for_create)
+func_maps["KPZ1"]: FUNC_MAP = get_func_map(__func_map_for_create)
 
 
 def get_type(class_id: ut.CosemClassId,
              version: cdt.Unsigned | None,
-             ln: cst.LogicalName) -> Type[InterfaceClass]:
-    # try search in CDE group
-    c_m = func_map.get((ln.contents[:1]+ln.contents[2:5]), None)
+             ln: cst.LogicalName,
+             func_map: FUNC_MAP) -> Type[InterfaceClass]:
+    c_m = None
+    if ln.b >= 128:
+        # try search in BCDE group for manufacture object before in CDE
+        c_m = func_map.get((ln.contents[:5]), None)
     if not c_m:
-        # try search in CD group
-        c_m = func_map.get((ln.contents[:1]+ln.contents[2:4]), None)
+        # try search in CDE group
+        c_m = func_map.get((ln.contents[:1]+ln.contents[2:5]), None)
         if not c_m:
-            # try search in BCDE group
-            c_m = func_map.get((ln.contents[:5]), None)
+            # try search in CD group
+            c_m = func_map.get((ln.contents[:1]+ln.contents[2:4]), None)
             if not c_m:
-                # try search in C group
-                c_m = func_map.get((ln.contents[:1]+ln.contents[3:4]), common_interface_class_map)
+                # try search in BCDE group
+                c_m = func_map.get((ln.contents[:5]), None)
+                if not c_m:
+                    # try search in C group
+                    c_m = func_map.get((ln.contents[:1]+ln.contents[3:4]), common_interface_class_map)
     return get_interface_class(class_map=c_m,
                                c_id=class_id,
                                ver=version)
@@ -509,15 +536,35 @@ def __get_manufacture_128(class_id: ut.CosemClassId,
 
 
 class Collection:
+    dlms_ver: int
+    manufacturer: bytes | None
+    country: CountrySpecificIdentifiers
+    country_ver: AppVersion | None
+    server_type: cdt.CommonDataType | None
+    server_ver: AppVersion | None
     __container: deque[InterfaceClass]
     __const_objs: list[ic.COSEMInterfaceClasses]
+    __spec: str
 
-    def __init__(self):
+    def __init__(self, country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA):
         self.__container = deque()
         """ all DLMS objects container with obis key """
 
         self.__const_objs = list()
         """ container for major(constant) DLMS objects LN. They don't deletable """
+
+        self.dlms_ver = 6
+        self.manufacturer = None
+        self.country = country
+        self.country_ver = None
+        """country version specification"""
+        self.server_type = None
+        self.server_ver = None
+        self.__spec = "DLMS_6"
+
+    def __str__(self):
+        return F"[{len(self.__container)}] DLMS version: {self.dlms_ver}, country: {self.country.name}, country specific version: {self.country_ver}, " \
+               F"manufacturer: {self.manufacturer}, server type: {repr(self.server_type)}, server version: {self.server_ver}, uses specification: {self.__spec}"
 
     def __iter__(self) -> Iterator[ic.COSEMInterfaceClasses]:
         return iter(self.__container)
@@ -544,84 +591,16 @@ class Collection:
         if use is None and objects.tag != TagsName.DEVICE_ROOT.value:
             raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT.value}")
         root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
+        self.dlms_ver = int(objects.findtext("dlms_ver", default="6"))
+        self.country = CountrySpecificIdentifiers(int(objects.findtext("country", default="7")))
+        self.country_ver = AppVersion.from_str(objects.findtext("country_ver", default="3.0"))
+        self.manufacturer = objects.findtext("manufacturer", default="").encode("utf-8")
+        self.server_type, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(objects.findtext("server_type", default="")))
+        self.server_ver = AppVersion.from_str(objects.findtext("server_ver", default="0.0.1"))
+        self.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
-            case AppVersion(1):
-                attempts: iter = count(3, -1)
-                """ attempts counter """
-                while len(objects) != 0 and next(attempts):
-                    logger.info(F'{attempts=}')
-                    for obj in objects.findall('object'):
-                        new_object: ic.COSEMInterfaceClasses | None = None
-                        indexes: list[int] = list()
-                        """ got attributes indexes for current object """
-                        for attr in obj.findall('attribute'):
-                            index: ET.Element = attr.find('index')
-                            if index.text.isdigit():
-                                indexes.append(int(index.text))
-                            else:
-                                raise ValueError(F'ERROR: for {new_object.logical_name if new_object is not None else ""} got index {index.text} and it is not digital')
-                            if isinstance(index, ET.Element):
-                                if indexes[-1] == 1:
-                                    try:
-                                        ln_encoding: str = attr.findtext('encoding')
-                                        if ln_encoding is None:
-                                            raise ValueError('logical_name not found')
-                                        class_id: str = obj.findtext('class_id')
-                                        if class_id is None:
-                                            raise ValueError('class_id not found')
-                                        version: str = obj.findtext('version')
-                                        if version is None:
-                                            raise ValueError('version not found')
-                                        new_object = self.add_if_missing(class_id=ut.CosemClassId(class_id),
-                                                                         version=cdt.Unsigned(version),
-                                                                         logical_name=cst.LogicalName(bytes.fromhex(ln_encoding)))
-                                        if use is not None:
-                                            use[new_object.logical_name] = set()
-                                    except TypeError as e:
-                                        logger.error(F'Object {obj.attrib["name"]} not created : {e}')
-                                    except ValueError as e:
-                                        logger.error(F'Object {obj.attrib["name"]} not created : {e}')
-                                else:
-                                    if new_object is None:
-                                        logger.info(F'ERROR. Object "{obj.attrib["name"]}" not created : Attribute with index <1> not found')
-                                        break
-                                    else:
-                                        try:
-                                            match attr.find('encoding'), attr.find('tag'):
-                                                case ET.Element() as encoding, _:
-                                                    record_time: ET.Element = attr.find('record_time')
-                                                    if record_time is not None:
-                                                        new_object.set_record_time(indexes[-1], bytes.fromhex(record_time.text))
-                                                    if new_object.logical_name == cst.LogicalName('1.0.94.7.2.255') and indexes[-1] == 2:
-                                                        print('stop')
-                                                    new_object.set_attr(indexes[-1], bytes.fromhex(encoding.text))
-                                                    if use is not None:
-                                                        use[new_object.logical_name].add(indexes[-1])
-                                                case None, ET.Element() as tag:
-                                                    choice = new_object.get_attr_element(indexes[-1])
-                                                    if new_object.get_attr(indexes[-1]) is None and isinstance(choice, ut.CHOICE):
-                                                        new_object.set_attr(indexes[-1], int(tag.text))
-                                                case _ as error:
-                                                    raise ValueError(F'encoding and tag not found: {error}')
-                                            obj.remove(attr)
-                                        except exc.NoObject as e:
-                                            logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. Skip. {e}.")
-                                            break
-                                        except exc.ITEApplication as e:
-                                            logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. {e}")
-                                        except IndexError:
-                                            logger.error(F'Object "{new_object}" not has attribute with index {index.text}')
-                                        except TypeError as e:
-                                            logger.error(F'Object {new_object} attr:{index.text} do not write, encoding wrong : {e}')
-                                        except ValueError as e:
-                                            logger.error(F'Object {new_object} attr:{index.text} do not fill: {e}')
-                                        except AttributeError as e:
-                                            logger.error(F'Object {new_object} attr:{index.text} do not fill: {e}')
-                        if len(obj.findall('attribute')) == 1:  # only logical name
-                            objects.remove(obj)
-                    logger.info(F'Not parsed DLMS objects: {len(objects)}')
-            case AppVersion(2, 0 | 1 | 2):
+            case AppVersion(3, 0 | 1 | 2):
                 attempts: iter = count(3, -1)
                 """ attempts counter """
                 while len(objects) != 0 and next(attempts):
@@ -658,6 +637,8 @@ class Collection:
                             else:
                                 raise ValueError(F'ERROR: for {new_object.logical_name if new_object is not None else ""} got index {index} and it is not digital')
                             try:
+                                # if new_object.logical_name == cst.LogicalName("0.0.21.0.1.255") and index == '3':
+                                #     print("stop debug")
                                 match len(attr.text), new_object.get_attr_element(indexes[-1]).DATA_TYPE:
                                     case 1 | 2, ut.CHOICE():
                                         if new_object.get_attr(indexes[-1]) is None:
@@ -696,14 +677,30 @@ class Collection:
     def add_major(self, obj: InterfaceClass):
         self.__const_objs.append(obj)
 
+    def set_spec(self):
+        """set functional map to specification by identification fields"""
+        match self.dlms_ver:
+            case 6: self.__spec = "DLMS_6"
+            case _: raise ValueError(F"unsupport {self.dlms_ver=}")
+        if self.country == CountrySpecificIdentifiers.RUSSIA:
+            if self.country_ver == AppVersion(3, 0):
+                self.__spec = "SPODES_3"
+            if self.manufacturer == b"KPZ":
+                if self.server_ver < AppVersion(1, 4, 0):
+                    self.__spec = "KPZ1"
+                else:
+                    self.__spec = "KPZ"
+            pass
+        else:
+            """not support other country"""
+
     def get_instance(self, class_id: ut.CosemClassId,
                      version: cdt.Unsigned | None,
                      ln: cst.LogicalName) -> InterfaceClass:
         """ TODO: naming"""
         if version is None:
             version = self.set_version(class_id, version)
-        ty_ = get_type(class_id, version, ln)
-        return get_type(class_id, version, ln)(ln)
+        return get_type(class_id, version, ln, func_maps[self.__spec])(ln)
         # ret: Type[InterfaceClass] = _func_map_A.get(ln.a, None)
         # if ret:
         #     return ret(class_id, version, ln)(ln)
@@ -1201,9 +1198,7 @@ class Collection:
                 data_type = el.TYPE
         elif isinstance(obj, ProfileGeneric) and attr_index == 2:
             """according to DLMS UA 1000-1 Ed 14. ProfileGeneric.capture_object.data_index annex"""
-            captured_object = obj.capture_objects[data_index - 1]  # TODO: need test
-            names.append(captured_object.NAME)
-            data_type = captured_object.TYPE
+            return self.get_name_and_type(obj.capture_objects[data_index - 1])  # todo: is recurse need rewrite here
         else:
             pass
         return names, data_type

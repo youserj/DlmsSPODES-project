@@ -151,10 +151,10 @@ class Limiter(ic.COSEMInterfaceClasses):
             try:
                 match self.collection.get_object(self.monitored_value):
                     case cosem_interface_classes.register.Register() | cosem_interface_classes.extended_register.ExtendedRegister() as obj:
+                        #  set post name
                         for index in attr_indexes:
                             if self.get_attr(index) is not None:
                                 self.get_attr(index).SCALER_UNIT = obj.scaler_unit
-                        print('set post name')
             except exc.NoObject as e:
                 print(F'For {self} threshold Scaler-unit not set. {e}')
         else:

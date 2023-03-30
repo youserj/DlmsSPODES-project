@@ -23,7 +23,7 @@ class TestType(unittest.TestCase):
         col = collection.Collection()
         col.manufacturer = b'KPZ'
         col.country_ver = AppVersion.from_str("3.0")
-        col.server_ver = AppVersion(1, 4, 0)
+        col.server_ver = AppVersion(1, 3, 0)
         col.server_type = cdt.OctetString("4d324d5f33")
         col.set_spec()
         col.add(class_id=ut.CosemClassId(1), version=cdt.Unsigned(0), logical_name=cst.LogicalName("0.0.96.11.4.255"))
@@ -32,3 +32,4 @@ class TestType(unittest.TestCase):
         # obj.set_attr(2, 2)
         print(obj.value, obj.value.report)
         self.assertEqual(obj.value.report, "Магнитное поле - окончание(2)", "report match")
+        print(col)

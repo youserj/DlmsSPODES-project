@@ -184,3 +184,6 @@ class CountrySpecificIdentifiers(IntEnum):
     SAUDI_ARABIA = 96
     UNITED_ARAB_EMIRATES = 97
     IRAN = 98
+
+    def __str__(self):
+        return self.name
