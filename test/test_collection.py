@@ -39,7 +39,9 @@ class TestType(unittest.TestCase):
     def test_ClassMap(self):
         print(hash(collection.DataMap))
 
-    def test_xmlParse(self):
+    def test_xmlCodingDecoding(self):
         col = collection.Collection()
         col.from_xml("09054d324d5f33_0906312e342e3130.typ")
         print(col)
+        col.to_xml("test.xml")
+        col.save_type("test.typ")

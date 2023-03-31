@@ -4,7 +4,8 @@ from src.DLMS_SPODES.version import AppVersion
 
 class TestType(unittest.TestCase):
     def test_encode_length(self):
-        a = AppVersion.from_str('1.1.9')
+        a = AppVersion.from_str("1.1.9")
+        self.assertEqual(str(a), "1.1.9", "str conversion")
         b = AppVersion(1, 1, 9)
         self.assertEqual(a, b, "patch custom equal")
         self.assertNotEqual(AppVersion(1, 3), AppVersion(1, 3, 0), "different semver")

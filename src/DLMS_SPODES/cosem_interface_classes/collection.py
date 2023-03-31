@@ -53,12 +53,14 @@ from .special_days_table import SpecialDaysTable
 from .tcp_udp_setup import TCPUDPSetup
 from .. import ITE_exceptions as exc
 import xml.etree.ElementTree as ET
+from xml.dom import minidom
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
 from ..enums import TagsName, MechanismId
 from . import obis as o
 from .. import pdu_enums as pdu
+from ..configure import get_saved_parameters
 
 AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
@@ -674,6 +676,99 @@ class Collection:
                     logger.info(F'Not parsed DLMS objects: {len(objects)}')
             case _ as error:
                 raise exc.VersionError(error, additional='Xml')
+
+    def __get_base_xml_element(self, root_tag: str = TagsName.DEVICE_ROOT.value) -> ET.Element:
+        objects = ET.Element(root_tag, attrib={'version': '3.0.0'})
+        ET.SubElement(objects, 'dlms_ver').text = str(self.dlms_ver)
+        ET.SubElement(objects, 'country').text = str(self.country.value)
+        if self.country_ver:
+            ET.SubElement(objects, 'country_ver').text = str(self.country_ver)
+        if self.manufacturer is not None:
+            ET.SubElement(objects, 'manufacturer').text = self.manufacturer.decode("utf-8")
+        if self.server_type is not None:
+            ET.SubElement(objects, 'server_type').text = self.server_type.encoding.hex()
+        if self.server_ver:
+            ET.SubElement(objects, 'server_ver').text = str(self.server_ver)
+        return objects
+
+    def to_xml(self, file_name: str,
+               root_tag: str = TagsName.DEVICE_ROOT.value,
+               with_comment: bool = False):
+        """Save attributes of client. For types only STATIC save """
+        classes: set[ut.CosemClassId] = set()
+        objects = self.__get_base_xml_element(root_tag)
+        for obj in self.values():
+            object_node = ET.SubElement(objects, 'object', attrib={'name': F'{get_name(obj.logical_name)}', 'ln': str(obj.logical_name)})
+            ET.SubElement(object_node, 'class_id').text = str(obj.CLASS_ID)
+            if obj.CLASS_ID not in classes:
+                ET.SubElement(object_node, 'version').text = str(obj.VERSION)
+            classes.add(obj.CLASS_ID)
+            if root_tag == TagsName.DEVICE_ROOT.value and obj is self.current_association:
+                ET.SubElement(object_node, 'attribute', attrib={'index': '3'}).text = obj.associated_partners_id.encoding.hex()
+                continue
+            for index, attr in obj.get_index_with_attributes():
+                if index == 1:  # don't keep ln
+                    continue
+                el = obj.get_attr_element(index)
+                match attr, el.DATA_TYPE:
+                    case None, ut.CHOICE:
+                        logger.warning(F'PASS choice {obj} {index}')
+                    case None, cdt.CommonDataType():
+                        if with_comment:
+                            object_node.append(ET.Comment(F'{el.NAME}. Type: {el.DATA_TYPE}'))
+                        ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = str(el.DATA_TYPE.TAG[0])
+                    case cdt.CommonDataType(), _:
+                        record_time = obj.get_record_time(index)
+                        el_attrib: dict = {'index': str(index)}
+                        if record_time is not None:
+                            el_attrib.update({'rec_time': record_time.encoding.hex()})
+                        if with_comment:
+                            object_node.append(ET.Comment(F'{el.NAME}: {attr}'))
+                        ET.SubElement(object_node, 'attribute', attrib=el_attrib).text = attr.encoding.hex()
+                    case _:
+                        logger.warning('PASS')
+
+        # TODO: '<!DOCTYPE ITE_util_tree SYSTEM "setting.dtd"> or xsd
+        xml_string = ET.tostring(objects, encoding='cp1251', method='xml')
+        dom_xml = minidom.parseString(xml_string)
+        str_ = dom_xml.toprettyxml(indent="  ", encoding='cp1251')
+        with open(file_name, "wb") as f:
+            f.write(str_)
+
+    def save_type(self, file_name: str, root_tag: str = TagsName.DEVICE_ROOT.value):
+        """ For concrete device save all attributes. For types only STATIC save """
+        objects = self.__get_base_xml_element(root_tag)
+        classes: set[ut.CosemClassId] = set()
+        for obj in self.values():
+            object_node = ET.SubElement(objects, 'object', attrib={'name': F'{get_name(obj.logical_name)}', 'ln': str(obj.logical_name)})
+            ET.SubElement(object_node, 'class_id').text = str(obj.CLASS_ID)
+            if obj.CLASS_ID not in classes:
+                ET.SubElement(object_node, 'version').text = str(obj.VERSION)
+            classes.add(obj.CLASS_ID)
+            for index, method in get_saved_parameters(obj).items():
+                attr = obj.get_attr(index)
+                match method, attr:
+                    case 1, None if isinstance(obj.get_attr_element(index).DATA_TYPE, ut.CHOICE):
+                        logger.warning(F'For {obj} {attr} not selected type from: {obj.get_attr_element(index).DATA_TYPE}')
+                    case 1, None:
+                        logger.warning(F'REMOVE {obj} {attr} for saving in type')
+                    case 1, _:
+                        object_node.append(ET.Comment(F'{obj.get_attr_element(index).NAME}. Type: {attr.NAME}'))
+                        ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = str(attr.TAG[0])
+                    case 0, cdt.CommonDataType():
+                        object_node.append(ET.Comment(F'{obj.get_attr_element(index).NAME}: {attr}'))
+                        ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = attr.encoding.hex()
+                    case 0, None:
+                        logger.warning(F'For {obj} attr: {index} value not set')
+                    case _ as unknown:
+                        logger.warning(F'Unknown pattern for select keep attribute: {unknown}')
+
+        # TODO: '<!DOCTYPE ITE_util_tree SYSTEM "setting.dtd"> or xsd
+        xml_string = ET.tostring(objects, encoding='cp1251', method='xml')
+        dom_xml = minidom.parseString(xml_string)
+        str_ = dom_xml.toprettyxml(indent="  ", encoding='cp1251')
+        with open(file_name, "wb") as f:
+            f.write(str_)
 
     def add_major(self, obj: InterfaceClass):
         self.__const_objs.append(obj)
