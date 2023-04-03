@@ -190,7 +190,7 @@ class COSEMInterfaceClasses(ABC):
 
     def get_index_with_attributes(self, in_init_order: bool = False) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
         """ if by initiation order is True then need override method for concrete class"""
-        return iter(zip(range(1, self.get_attr_length()), self.__attributes))
+        return iter(zip(range(1, self.get_attr_length()+1), self.__attributes))
 
     def get_attr_length(self) -> int:
         """common attributes amount"""
