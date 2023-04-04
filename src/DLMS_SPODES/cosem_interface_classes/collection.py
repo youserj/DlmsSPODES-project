@@ -378,7 +378,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     #
     (0, 0, 40, 0, tuple(range(8))): (AssociationSNMap, AssociationLNMap),  # todo: now limit by 8 association, solve it
     #
-    (0, 0, 42, 0, 0): DataMap,
+    (0, 0, 42, 0, 0): ClassMap({0: impl.data.LDN}),
     (0, 0, 43, 0, tuple(range(256))): SecuritySetupMap,
     (0, 43, 1): DataMap,
     #
@@ -527,24 +527,13 @@ def get_type(class_id: ut.CosemClassId,
                                ver=version)
 
 
-#  Todo: rewrite this!!!!
-def __get_manufacture_128(class_id: ut.CosemClassId,
-                          version: cdt.Unsigned | None,
-                          ln: cst.LogicalName) -> Type[InterfaceClass]:
-    match class_id, int(version), ln.b, ln.c, ln.d, ln.e:
-        case ClassID.REGISTER, 0,                                       128, 0, c, 0, 0 if c <= 19:
-            return Register
-        case _:
-            raise exc.NoObject(F'DLMS Object: {class_id=} {version=} {ln=} not searched in relation library')
-
-
 class Collection:
-    dlms_ver: int
-    manufacturer: bytes | None
-    country: CountrySpecificIdentifiers
-    country_ver: AppVersion | None
-    server_type: cdt.CommonDataType | None
-    server_ver: AppVersion | None
+    __dlms_ver: int
+    __manufacturer: bytes | None
+    __country: CountrySpecificIdentifiers
+    __country_ver: AppVersion | None
+    __server_type: cdt.CommonDataType | None
+    __server_ver: AppVersion | None
     __container: deque[InterfaceClass]
     __const_objs: list[ic.COSEMInterfaceClasses]
     __spec: str
@@ -556,18 +545,97 @@ class Collection:
         self.__const_objs = list()
         """ container for major(constant) DLMS objects LN. They don't deletable """
 
-        self.dlms_ver = 6
-        self.manufacturer = None
-        self.country = country
-        self.country_ver = None
+        self.__dlms_ver = 6
+        self.__manufacturer = None
+        self.__country = country
+        self.__country_ver = None
         """country version specification"""
-        self.server_type = None
-        self.server_ver = None
+        self.__server_type = None
+        self.__server_ver = None
         self.__spec = "DLMS_6"
 
+    @property
+    def dlms_ver(self):
+        return self.__dlms_ver
+
+    def set_dlms_ver(self, value: int):
+        if not self.__dlms_ver:
+            self.__dlms_ver = value
+        else:
+            if value != self.__dlms_ver:
+                raise ValueError(F"got dlms_version: {value}, expected {self.__dlms_ver}")
+            else:
+                """success validation"""
+
+    @property
+    def manufacturer(self):
+        return self.__manufacturer
+
+    def set_manufacturer(self, value: bytes):
+        if not self.__manufacturer:
+            self.__manufacturer = value
+        else:
+            if value != self.__manufacturer:
+                raise ValueError(F"got manufacturer: {value}, expected {self.__manufacturer}")
+            else:
+                """success validation"""
+
+    @property
+    def country(self):
+        return self.__country
+
+    def set_country(self, value: CountrySpecificIdentifiers):
+        if not self.__country:
+            self.__country = value
+        else:
+            if value != self.__country:
+                raise ValueError(F"got country: {value}, expected {self.__country}")
+            else:
+                """success validation"""
+
+    @property
+    def country_ver(self):
+        return self.__country_ver
+
+    def set_country_ver(self, value: AppVersion):
+        """country version specification"""
+        if not self.__country_ver:
+            self.__country_ver = value
+        else:
+            if value != self.__country_ver:
+                raise ValueError(F"got country version: {value}, expected {self.__country_ver}")
+            else:
+                """success validation"""
+
+    @property
+    def server_type(self):
+        return self.__server_type
+
+    def set_server_type(self, value: cdt.CommonDataTypes):
+        if not self.__server_type:
+            self.__server_type = value
+        else:
+            if value != self.__server_type:
+                raise ValueError(F"got server type: {value}, expected {self.__server_type}")
+            else:
+                """success validation"""
+
+    @property
+    def server_ver(self):
+        return self.__server_ver
+
+    def set_server_ver(self, value: AppVersion):
+        if not self.__server_ver:
+            self.__server_ver = value
+        else:
+            if value != self.__server_ver:
+                raise ValueError(F"got server version: {value}, expected {self.__server_ver}")
+            else:
+                """success validation"""
+
     def __str__(self):
-        return F"[{len(self.__container)}] DLMS version: {self.dlms_ver}, country: {self.country.name}, country specific version: {self.country_ver}, " \
-               F"manufacturer: {self.manufacturer}, server type: {repr(self.server_type)}, server version: {self.server_ver}, uses specification: {self.__spec}"
+        return F"[{len(self.__container)}] DLMS version: {self.__dlms_ver}, country: {self.__country.name}, country specific version: {self.__country_ver}, " \
+               F"manufacturer: {self.__manufacturer}, server type: {repr(self.__server_type)}, server version: {self.__server_ver}, uses specification: {self.__spec}"
 
     def __iter__(self) -> Iterator[ic.COSEMInterfaceClasses]:
         return iter(self.__container)
@@ -594,12 +662,20 @@ class Collection:
         if use is None and objects.tag != TagsName.DEVICE_ROOT.value:
             raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT.value}")
         root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
-        self.dlms_ver = int(objects.findtext("dlms_ver", default="6"))
-        self.country = CountrySpecificIdentifiers(int(objects.findtext("country", default="7")))
-        self.country_ver = AppVersion.from_str(objects.findtext("country_ver", default="3.0"))
-        self.manufacturer = objects.findtext("manufacturer", default="").encode("utf-8")
-        self.server_type, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(objects.findtext("server_type", default="00")))
-        self.server_ver = AppVersion.from_str(objects.findtext("server_ver", default="0.0.1"))
+        if (dlms_ver := objects.findtext("dlms_ver")) is not None:
+            self.set_dlms_ver(int(dlms_ver))
+        if (country := objects.findtext("country")) is not None:
+            self.set_country(CountrySpecificIdentifiers(int(country)))
+        if (country_ver := objects.findtext("country_ver")) is not None:
+            self.set_country_ver(AppVersion.from_str(country_ver))
+        if (manufacturer := objects.findtext("manufacturer")) is not None:
+            self.set_manufacturer(manufacturer.encode("utf-8"))
+        if (server_type := objects.findtext("server_type")) is not None:
+            tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type))
+            self.set_server_type(tmp)
+        if (server_ver := objects.findtext("server_ver")) is not None:
+            tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_ver))
+            self.set_server_ver(AppVersion.from_str(server_ver))
         self.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
@@ -989,7 +1065,7 @@ class Collection:
             return obj
 
     @cached_property
-    def LDN(self) -> Data:
+    def LDN(self) -> impl.data.LDN:
         return self.__get_object(o.LDN)
 
     @cached_property
