@@ -17,6 +17,10 @@ class LDN(Data):
     def __set_manufacturer(self):
         self.collection.manufacturer = self.value.contents[:3]
 
+    @property
+    def manufacturer(self) -> bytes:
+        return self.value.contents[:3]
+
 
 class Unsigned(Data):
     """ with value type: Unsigned """
