@@ -674,7 +674,6 @@ class Collection:
             tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type))
             self.set_server_type(tmp)
         if (server_ver := objects.findtext("server_ver")) is not None:
-            tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_ver))
             self.set_server_ver(AppVersion.from_str(server_ver))
         self.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
