@@ -106,8 +106,8 @@ class AdjacentCells(cdt.Array):
 
 class DemandRegister(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed 14 4.3.4.Demand register"""
-    NAME = cn.GSM_DIAGNOSTIC
-    CLASS_ID = ClassID.GSM_DIAGNOSTIC
+    NAME = cn.DEMAND_REGISTER
+    CLASS_ID = ClassID.DEMAND_REGISTER
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.CURRENT_AVERAGE_VALUE, choices.register, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.LAST_AVERAGE_VALUE, choices.register, classifier=ic.Classifier.DYNAMIC),
