@@ -33,6 +33,7 @@ def get_attr_index(obj: ic.COSEMInterfaceClasses) -> list[int]:
         case ClassID.ARBITRATOR, _:                                                   return [2]
         case ClassID.SECURITY_SETUP, _:                                               return [2, 3, 5]
         case ClassID.REGISTER_MONITOR, _:                                             return [3, 2, 4]
+        case ClassID.DEMAND_REGISTER, _:                                              return [4, 2, 3, 5, 6, 7, 8, 9]
         case _: raise exc.NoObject(F"Configuring. Not found {obj} with {obj.CLASS_ID} for read attributes")
 
 
@@ -73,6 +74,7 @@ def get_saved_parameters(obj: ic.COSEMInterfaceClasses) -> dict[int, int]:
         case collection.Arbitrator.CLASS_ID, _:                                                  return {2: 0}
         case collection.SecuritySetupVer0.CLASS_ID, _:                                           return {2: 0, 3: 0, 5: 0}
         case collection.RegisterMonitor.CLASS_ID, _:                                             return {3: 0, 2: 0, 4: 0}
+        case ClassID.DEMAND_REGISTER, _:                                                         return {2: 1, 3: 1, 4: 0, 5: 1, 8: 0, 9: 0}
         case _: raise exc.NoObject(F'Save configure. Not found {obj} with {obj.CLASS_ID} for read attributes')
 
 
