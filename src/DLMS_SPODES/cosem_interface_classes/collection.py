@@ -28,7 +28,6 @@ from .client_setup import ClientSetup
 from .clock import Clock
 from .data import Data
 from .disconnect_control import DisconnectControl
-from .extended_register import ExtendedRegister
 from .gprs_modem_setup import GPRSModemSetup
 from .gsm_diagnostic.ver0 import GSMDiagnostic as GSMDiagnosticVer0
 from .gsm_diagnostic.ver1 import GSMDiagnostic as GSMDiagnosticVer1
@@ -43,6 +42,8 @@ from .limiter import Limiter
 from .profile_generic.ver0 import ProfileGeneric as ProfileGenericVer0
 from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
 from .register import Register
+from .extended_register import ExtendedRegister
+from .demand_register.ver0 import DemandRegister as DemandRegisterVer0
 from .register_monitor import RegisterMonitor
 from .schedule import Schedule
 from .security_setup.ver0 import SecuritySetup as SecuritySetupVer0
@@ -68,11 +69,12 @@ ModemConfiguration: TypeAlias = PSTNModemConfiguration | ModemConfigurationVer1
 SecuritySetup: TypeAlias = SecuritySetupVer0 | SecuritySetupVer1
 PushSetup: TypeAlias = PushSetupVer0 | PushSetupVer1 | PushSetupVer2
 ProfileGeneric: TypeAlias = ProfileGenericVer1
+DemandRegister: TypeAlias = DemandRegisterVer0
 IECHDLCSetup: TypeAlias = IECHDLCSetupVer0 | IECHDLCSetupVer1
 GSMDiagnostic: TypeAlias = GSMDiagnosticVer0 | GSMDiagnosticVer1 | GSMDiagnosticVer2
-InterfaceClass: TypeAlias = Data | Register | ProfileGeneric | Clock | ScriptTable | Schedule | SpecialDaysTable | ActivityCalendar | SingleActionSchedule | AssociationLN | \
-                            IECHDLCSetup | ExtendedRegister | DisconnectControl | Limiter | ModemConfiguration | PSTNModemConfiguration | ImageTransfer | GPRSModemSetup | \
-                            GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN
+InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister | ProfileGeneric | Clock | ScriptTable | Schedule | SpecialDaysTable | ActivityCalendar | \
+                            SingleActionSchedule | AssociationLN | IECHDLCSetup | DisconnectControl | Limiter | ModemConfiguration | PSTNModemConfiguration | ImageTransfer | \
+                            GPRSModemSetup | GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN
 
 
 class ClassMap(dict):
@@ -86,6 +88,8 @@ RegisterMap = ClassMap({
     0: Register})
 ExtendedRegisterMap = ClassMap({
     0: ExtendedRegister})
+DemandRegisterMap = ClassMap({
+    0: DemandRegisterVer0})
 ProfileGenericMap = ClassMap({
     0: ProfileGenericVer0,
     1: ProfileGenericVer1})
@@ -167,9 +171,10 @@ UnsignedDataMap = ClassMap({
     0: impl.data.Unsigned
 })
 
-CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | AssociationLNMap | \
-                           ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | TCPUDPSetupMap | \
-                           IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | ClientSetupMap
+CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | DemandRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | \
+                           AssociationLNMap | ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | \
+                           TCPUDPSetupMap | IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | \
+                           ClientSetupMap
 
 
 LN_C: TypeAlias = int
@@ -180,6 +185,7 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
     1: DataMap,
     3: RegisterMap,
     4: ExtendedRegisterMap,
+    5: DemandRegisterMap,
     7: ProfileGenericMap,
     8: ClockMap,
     9: ScriptTableMap,
@@ -433,7 +439,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
                                                            _UNDER_OVER_LIMIT_DURATIONS, _UNDER_OVER_LIMIT_MAGNITUDES))): (RegisterMap, ExtendedRegisterMap),
     (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _INSTANTANEOUS_VALUES): RegisterMap,
     (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _MAX_MIN_VALUES): (RegisterMap, ExtendedRegisterMap, ProfileGenericMap),
-    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _CURRENT_AND_LAST_AVERAGE_VALUES): (RegisterMap, ExtendedRegisterMap),  # TODO: add DemandRegister below
+    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _CURRENT_AND_LAST_AVERAGE_VALUES): (RegisterMap, DemandRegisterMap),
     (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, 40): (DataMap, RegisterMap),
 }
 

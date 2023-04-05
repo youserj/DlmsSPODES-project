@@ -13,7 +13,9 @@ class Register(ic.COSEMInterfaceClasses):
     scaler_unit_not_settable: bool
     A_ELEMENTS = (ic.ICAElement(an.VALUE, choices.register, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.SCALER_UNIT, cdt.ScalUnitType))
-    M_ELEMENTS = ic.ICMElement(mn.RESET, integers.Only0),
+    M_ELEMENTS = (
+        ic.ICMElement(mn.RESET, integers.Only0),
+        ic.ICMElement(mn.NEXT_PERIOD, integers.Only0))
 
     def characteristics_init(self):
         self._cbs_attr_post_init.update({2: self.__set_value_data_type,
@@ -23,7 +25,7 @@ class Register(ic.COSEMInterfaceClasses):
         """ usability scaler unit flag. if True then it not used"""
 
     @property
-    def value(self) -> cdt.CommonDataTypes:
+    def value(self) -> choices.RegisterValues:
         return self.get_attr(2)
 
     @property

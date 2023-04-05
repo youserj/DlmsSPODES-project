@@ -1,5 +1,6 @@
 from abc import ABC
 from itertools import chain
+from typing import TypeAlias
 from ..types import cdt, ut, cst
 
 
@@ -100,3 +101,8 @@ extended_register = ExtendedRegisterChoice()
 register = RegisterChoice()
 access_selectors = AccessSelectorsChoice()
 any_date_time = AnyDateTimeChoice()
+
+
+ExtendedRegisterValues: TypeAlias = cdt.NullData | cdt.BitString | cdt.DoubleLongUnsigned | cdt.OctetString | cdt.VisibleString | cdt.Utf8String | cdt.Unsigned \
+                                    | cdt.LongUnsigned | cdt.Long64Unsigned
+RegisterValues: TypeAlias = ExtendedRegisterValues | cdt.DoubleLong | cdt.Integer | cdt.Long | cdt.Long64 | cdt.Enum | cdt.Float32 | cdt.Float64

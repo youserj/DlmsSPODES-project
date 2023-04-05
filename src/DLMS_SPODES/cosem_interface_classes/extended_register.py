@@ -17,7 +17,7 @@ class ExtendedRegister(register.Register, ic.COSEMInterfaceClasses):
     M_ELEMENTS = register.Register.get_meth_element(1),
 
     @property
-    def status(self) -> cdt.CommonDataTypes:
+    def status(self) -> choices.ExtendedRegisterValues:
         return self.get_attr(4)
 
     @property

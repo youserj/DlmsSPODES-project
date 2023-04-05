@@ -32,3 +32,5 @@ EXPORT_CERTIFICATE = "Экспорт сертификата"
 REMOVE_CERTIFICATE = "Удаление сертификата"
 REQUEST_ACTION = "Запрос действия"
 PUSH = "Протолнуть"
+# demand register
+NEXT_PERIOD = "Следующий период"

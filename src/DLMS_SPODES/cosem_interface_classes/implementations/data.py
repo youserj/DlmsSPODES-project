@@ -11,11 +11,8 @@ class LDN(Data):
 
     def characteristics_init(self):
         self._cbs_attr_post_init.update(
-            {2: self.__set_manufacturer}
+            {2: lambda: self.collection.set_manufacturer(self.value.contents[:3])}
         )
-
-    def __set_manufacturer(self):
-        self.collection.manufacturer = self.value.contents[:3]
 
     @property
     def manufacturer(self) -> bytes:
