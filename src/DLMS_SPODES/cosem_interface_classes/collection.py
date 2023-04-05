@@ -877,7 +877,10 @@ class Collection:
         """ TODO: naming"""
         if version is None:
             version = self.set_version(class_id, version)
-        return get_type(class_id, version, ln, func_maps[self.__spec])(ln)
+        try:
+            return get_type(class_id, version, ln, func_maps[self.__spec])(ln)
+        except ValueError as e:
+            raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {ln=}: {e}")
         # ret: Type[InterfaceClass] = _func_map_A.get(ln.a, None)
         # if ret:
         #     return ret(class_id, version, ln)(ln)
