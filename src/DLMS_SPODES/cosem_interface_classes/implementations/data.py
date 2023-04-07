@@ -22,18 +22,12 @@ class LDN(Data):
 class ActiveFirmwareId(Data):
     """for keep version in collection"""
     def characteristics_init(self):
-        self._cbs_attr_post_init.update({2: lambda: self.value.register_cb_post_set(self.__set_to_collection)})
-            # {2: lambda: self.collection.set_server_ver(instance=self.logical_name.b,
-            #                                            value=AppVersion.from_str(self.value.contents.decode("utf-8")))}
-        #)
+        self._cbs_attr_post_init.update({2: lambda: self.value.register_cb_preset(self.__set_to_collection)})
 
-    def __register_value_cb(self):
-        self.value.register_cb_post_set(self.__set_to_collection)
-
-    def __set_to_collection(self):
+    def __set_to_collection(self, value: cdt.CommonDataTypes):
         if self.collection:
             self.collection.set_server_ver(instance=self.logical_name.b,
-                                           value=AppVersion.from_str(self.value.contents.decode("utf-8")))
+                                           value=AppVersion.from_str(value.contents.decode("utf-8")))
 
 
 class Unsigned(Data):

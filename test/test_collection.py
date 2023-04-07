@@ -48,4 +48,4 @@ class TestType(unittest.TestCase):
         ver = col.get_object("0.0.0.2.1.255")
         col.clear_server_ver()
         ver.value.set("312e312e33")
-        print(ver)
+        print(ver.value)
