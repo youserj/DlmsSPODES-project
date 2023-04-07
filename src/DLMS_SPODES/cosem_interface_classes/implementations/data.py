@@ -19,6 +19,23 @@ class LDN(Data):
         return self.value.contents[:3]
 
 
+class ActiveFirmwareId(Data):
+    """for keep version in collection"""
+    def characteristics_init(self):
+        self._cbs_attr_post_init.update({2: lambda: self.value.register_cb_post_set(self.__set_to_collection)})
+            # {2: lambda: self.collection.set_server_ver(instance=self.logical_name.b,
+            #                                            value=AppVersion.from_str(self.value.contents.decode("utf-8")))}
+        #)
+
+    def __register_value_cb(self):
+        self.value.register_cb_post_set(self.__set_to_collection)
+
+    def __set_to_collection(self):
+        if self.collection:
+            self.collection.set_server_ver(instance=self.logical_name.b,
+                                           value=AppVersion.from_str(self.value.contents.decode("utf-8")))
+
+
 class Unsigned(Data):
     """ with value type: Unsigned """
     A_ELEMENTS = ic.ICAElement(an.VALUE, cdt.Unsigned, classifier=ic.Classifier.DYNAMIC),

@@ -338,6 +338,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     # abstract
     (0, 0, 1): DataMap,
     (0, 0, 2): DataMap,
+    (0, 0, 2, 1): ClassMap({0: impl.data.ActiveFirmwareId}),
     (0, 0, 9): DataMap,
     (0, 1, 0): ClockMap,
     (0, 1, 1): DataMap,
@@ -539,7 +540,7 @@ class Collection:
     __country: CountrySpecificIdentifiers
     __country_ver: AppVersion | None
     __server_type: cdt.CommonDataType | None
-    __server_ver: AppVersion | None
+    __server_ver: dict[int, AppVersion]
     __container: deque[InterfaceClass]
     __const_objs: list[ic.COSEMInterfaceClasses]
     __spec: str
@@ -557,7 +558,8 @@ class Collection:
         self.__country_ver = None
         """country version specification"""
         self.__server_type = None
-        self.__server_ver = None
+        self.__server_ver = dict()
+        """key: instance of 0.b.2.0.1.255, value AppVersion"""
         self.__spec = "DLMS_6"
 
     @property
@@ -631,14 +633,14 @@ class Collection:
         return self.__server_ver
 
     def clear_server_ver(self):
-        self.__server_ver = None
+        self.__server_ver.clear()
 
-    def set_server_ver(self, value: AppVersion):
-        if not self.__server_ver:
-            self.__server_ver = value
+    def set_server_ver(self, instance: int, value: AppVersion):
+        if self.__server_ver.get(instance) is None:
+            self.__server_ver[instance] = value
         else:
-            if value != self.__server_ver:
-                raise ValueError(F"got server version: {value}, expected {self.__server_ver}. Execute search type")
+            if value != self.__server_ver[instance]:
+                raise ValueError(F"got server version[{instance}]: {value}, expected {self.__server_ver[instance]}. Execute search type")
             else:
                 """success validation"""
 
@@ -682,8 +684,9 @@ class Collection:
         if (server_type := objects.findtext("server_type")) is not None:
             tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type))
             self.set_server_type(tmp)
-        if (server_ver := objects.findtext("server_ver")) is not None:
-            self.set_server_ver(AppVersion.from_str(server_ver))
+        for server_ver in objects.findall("server_ver"):
+            self.set_server_ver(instance=int(server_ver.attrib.get("instance", "0")),
+                                value=AppVersion.from_str(server_ver.text))
         self.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
@@ -762,7 +765,7 @@ class Collection:
                 raise exc.VersionError(error, additional='Xml')
 
     def __get_base_xml_element(self, root_tag: str = TagsName.DEVICE_ROOT.value) -> ET.Element:
-        objects = ET.Element(root_tag, attrib={'version': '3.0.0'})
+        objects = ET.Element(root_tag, attrib={'version': '3.1.0'})
         ET.SubElement(objects, 'dlms_ver').text = str(self.dlms_ver)
         ET.SubElement(objects, 'country').text = str(self.country.value)
         if self.country_ver:
@@ -771,8 +774,9 @@ class Collection:
             ET.SubElement(objects, 'manufacturer').text = self.manufacturer.decode("utf-8")
         if self.server_type is not None:
             ET.SubElement(objects, 'server_type').text = self.server_type.encoding.hex()
-        if self.server_ver:
-            ET.SubElement(objects, 'server_ver').text = str(self.server_ver)
+        for ver in self.server_ver:
+            server_ver_node = ET.SubElement(objects, 'server_ver', attrib={"instance": str(ver)})
+            server_ver_node.text = str(self.server_ver[ver])
         return objects
 
     def to_xml(self, file_name: str,
@@ -866,7 +870,7 @@ class Collection:
             if self.country_ver == AppVersion(3, 0):
                 self.__spec = "SPODES_3"
             if self.manufacturer == b"KPZ":
-                if self.server_ver and self.server_ver < AppVersion(1, 4, 0):
+                if self.server_ver.get(0) < AppVersion(1, 4, 0):
                     self.__spec = "KPZ1"
                 else:
                     self.__spec = "KPZ"

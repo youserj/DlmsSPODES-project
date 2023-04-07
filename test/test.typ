@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="cp1251"?>
-<Objects version="3.0.0">
+<Objects version="3.1.0">
   <dlms_ver>6</dlms_ver>
   <country>7</country>
   <country_ver>3.0</country_ver>
   <manufacturer>KPZ</manufacturer>
   <server_type>09054d324d5f33</server_type>
-  <server_ver>1.4.10</server_ver>
+  <server_ver instance="0">1.4.10</server_ver>
   <object name="Соединение типа &lt;Публичный клиент&gt;" ln="0.0.40.0.1.255">
     <class_id>15</class_id>
     <version>1</version>
@@ -168,8 +168,6 @@
   </object>
   <object name="Логическое имя устройства" ln="0.0.42.0.0.255">
     <class_id>1</class_id>
-    <!--Значение. Type: Последовательность байтов-->
-    <attribute index="2">9</attribute>
   </object>
   <object name="Наименование производителя" ln="0.0.96.1.3.255">
     <class_id>1</class_id>
