@@ -40,7 +40,7 @@ from .modem_configuration.ver0 import PSTNModemConfiguration
 from .modem_configuration.ver1 import ModemConfigurationVer1
 from .limiter import Limiter
 from .profile_generic.ver0 import ProfileGeneric as ProfileGenericVer0
-from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
+from .profile_generic.ver1 import ProfileGenericVer1 as ProfileGenericVer1
 from .register import Register
 from .extended_register import ExtendedRegister
 from .demand_register.ver0 import DemandRegister as DemandRegisterVer0
@@ -630,12 +630,15 @@ class Collection:
     def server_ver(self):
         return self.__server_ver
 
+    def clear_server_ver(self):
+        self.__server_ver = None
+
     def set_server_ver(self, value: AppVersion):
         if not self.__server_ver:
             self.__server_ver = value
         else:
             if value != self.__server_ver:
-                raise ValueError(F"got server version: {value}, expected {self.__server_ver}")
+                raise ValueError(F"got server version: {value}, expected {self.__server_ver}. Execute search type")
             else:
                 """success validation"""
 
