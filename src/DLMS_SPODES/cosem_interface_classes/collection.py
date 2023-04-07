@@ -40,7 +40,7 @@ from .modem_configuration.ver0 import PSTNModemConfiguration
 from .modem_configuration.ver1 import ModemConfigurationVer1
 from .limiter import Limiter
 from .profile_generic.ver0 import ProfileGeneric as ProfileGenericVer0
-from .profile_generic.ver1 import ProfileGenericVer1 as ProfileGenericVer1
+from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
 from .register import Register
 from .extended_register import ExtendedRegister
 from .demand_register.ver0 import DemandRegister as DemandRegisterVer0
