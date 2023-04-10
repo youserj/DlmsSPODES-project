@@ -137,9 +137,11 @@ class COSEMInterfaceClasses(ABC):
     def set_attr(self, index: int, value, with_time: bool | datetime = False) -> timedelta:
         if self.__attributes[index-1] is None:
             self.__attributes[index-1] = self.get_attr_element(index).DATA_TYPE(value if value is not None else self.get_attr_element(index).default)
-            match self._cbs_attr_post_init.pop(index, None):
-                case None:         """without callback post init"""
-                case _ as cb_func: cb_func()
+            if cb_func := self._cbs_attr_post_init.get(index, None):
+                cb_func()
+                self._cbs_attr_post_init.pop(index)
+            else:
+                """without callback post init"""
         else:
             self.__attributes[index-1].set(value)
         # todo: make better all below

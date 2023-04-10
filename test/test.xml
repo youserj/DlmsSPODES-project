@@ -1095,6 +1095,7 @@
     <attribute index="2">020312000309060100010700ff0f02</attribute>
     <attribute index="3">0500000000</attribute>
     <attribute index="4">0500000000</attribute>
+    <attribute index="5">0500000000</attribute>
     <attribute index="6">0600000000</attribute>
     <attribute index="7">0600000258</attribute>
     <attribute index="11">02020202090600000a006aff1200050202090600000a006aff120006</attribute>
@@ -1104,6 +1105,7 @@
     <attribute index="2">0203120003090601000b0700ff0f02</attribute>
     <attribute index="3">06000186a0</attribute>
     <attribute index="4">06000186a0</attribute>
+    <attribute index="5">0600000000</attribute>
     <attribute index="6">0600000000</attribute>
     <attribute index="7">0600000005</attribute>
     <attribute index="11">02020202090600000a006aff1200070202090600000a006aff120008</attribute>
@@ -1113,6 +1115,7 @@
     <attribute index="2">0203120003090601000c0700ff0f02</attribute>
     <attribute index="3">0600000000</attribute>
     <attribute index="4">0600000000</attribute>
+    <attribute index="5">0600000000</attribute>
     <attribute index="6">0600000000</attribute>
     <attribute index="7">0600000005</attribute>
     <attribute index="11">02020202090600000a006aff1200090202090600000a006aff12000a</attribute>
@@ -1129,8 +1132,9 @@
   <object name="Ограничитель по превышению температуры" ln="0.0.17.0.5.255">
     <class_id>71</class_id>
     <attribute index="2">020312000309060000600900ff0f02</attribute>
-    <attribute index="3">00</attribute>
-    <attribute index="4">00</attribute>
+    <attribute index="3">100000</attribute>
+    <attribute index="4">100000</attribute>
+    <attribute index="5">100000</attribute>
     <attribute index="6">0600000000</attribute>
     <attribute index="7">0600000005</attribute>
     <attribute index="11">02020202090600000a006aff12000f0202090600000a006aff120010</attribute>

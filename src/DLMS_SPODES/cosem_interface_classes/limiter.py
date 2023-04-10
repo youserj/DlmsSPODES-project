@@ -4,6 +4,7 @@ from .. import ITE_exceptions as exc
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import structs
+from .overview import ClassIDCDT
 threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 
@@ -148,19 +149,22 @@ class Limiter(ic.COSEMInterfaceClasses):
 
     def __set_threshold_scaler_unit(self, attr_indexes: tuple[int, ...]):
         if self.monitored_value is not None:
-            try:
-                match self.collection.get_object(self.monitored_value):
-                    case cosem_interface_classes.register.Register() | cosem_interface_classes.extended_register.ExtendedRegister() as obj:
-                        #  set post name
-                        for index in attr_indexes:
-                            if self.get_attr(index) is not None:
-                                self.get_attr(index).SCALER_UNIT = obj.scaler_unit
-            except exc.NoObject as e:
-                print(F'For {self} threshold Scaler-unit not set. {e}')
+            match self.monitored_value.class_id:
+                case ClassIDCDT.REGISTER | ClassIDCDT.EXT_REGISTER:
+                    obj: cosem_interface_classes.collection.Register = self.collection.get_object(self.monitored_value)
+                    for index in attr_indexes:
+                        if self.get_attr(index) is not None:
+                            self.get_attr(index).SCALER_UNIT = obj.scaler_unit
+                        else:
+                            attr = obj.get_attr(int(self.monitored_value.attribute_index))
+                            if attr is not None:
+                                self.set_attr(index, attr.encoding)
+                                set_attr = self.get_attr(index)
+                                set_attr.clear()
+                                set_attr.SCALER_UNIT = obj.scaler_unit
+                            else:
+                                raise exc.EmptyObj(F"monitored_value: {obj} hasn't value")
+                case err_class_id:
+                    raise ValueError(F"got {err_class_id=} for monitoring value, expected Register or Extended Register")
         else:
-            print('monitored_value is empty')
-
-
-if __name__ == '__main__':
-    a = Limiter('0.0.0.0.0.0')
-    print(a)
+            raise exc.EmptyObj(F"{self}: monitored_value is empty")
