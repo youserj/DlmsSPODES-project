@@ -616,7 +616,7 @@ class Collection:
                 """success validation"""
 
     @property
-    def server_type(self):
+    def server_type(self) -> cdt.CommonDataTypes | None:
         return self.__server_type
 
     def set_server_type(self, value: cdt.CommonDataTypes, force: bool = False):
@@ -870,7 +870,7 @@ class Collection:
             if self.country_ver == AppVersion(3, 0):
                 self.__spec = "SPODES_3"
             if self.manufacturer == b"KPZ":
-                if self.server_ver.get(0) < AppVersion(1, 4, 0):
+                if self.server_ver and self.server_ver.get(0) < AppVersion(1, 4, 0):
                     self.__spec = "KPZ1"
                 else:
                     self.__spec = "KPZ"

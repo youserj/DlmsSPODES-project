@@ -12,3 +12,4 @@ class TestType(unittest.TestCase):
         variants = [AppVersion(1, 1, 3, "d1"), AppVersion(1, 0, 9)]
         self.assertEqual(b.select_nearest(variants), variants[0], "select left")
         self.assertTrue(AppVersion(1, 3, 0) < AppVersion(1, 4, 0), "check1")
+        print(b)
