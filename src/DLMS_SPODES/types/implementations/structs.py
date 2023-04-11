@@ -1,5 +1,6 @@
 """ COMMON Structs """
 from ...types import common_data_types as cdt, cosem_service_types as cst
+from ...types.implementations import long_unsigneds
 
 
 class ActionItem(cdt.Structure):
@@ -18,13 +19,13 @@ class ActionItem(cdt.Structure):
 
 class ValueDefinition(cdt.Structure):
     """ Defines an attribute of an object to be monitored. Only attributes with simple data types are allowed. """
-    values: tuple[cdt.LongUnsigned, cst.LogicalName, cdt.Integer]
-    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, cdt.LongUnsigned),
+    values: tuple[long_unsigneds.ClassId, cst.LogicalName, cdt.Integer]
+    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, long_unsigneds.ClassId),
                 cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName),
                 cdt.StructElement(cdt.se.ATTRIBUTE_INDEX, cdt.Integer))
 
     @property
-    def class_id(self) -> cdt.LongUnsigned:
+    def class_id(self) -> long_unsigneds.ClassId:
         return self.values[0]
 
     @property

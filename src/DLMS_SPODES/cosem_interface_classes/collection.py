@@ -619,8 +619,8 @@ class Collection:
     def server_type(self):
         return self.__server_type
 
-    def set_server_type(self, value: cdt.CommonDataTypes):
-        if not self.__server_type:
+    def set_server_type(self, value: cdt.CommonDataTypes, force: bool = False):
+        if not self.__server_type or force:
             self.__server_type = value
         else:
             if value != self.__server_type:
@@ -635,8 +635,8 @@ class Collection:
     def clear_server_ver(self):
         self.__server_ver.clear()
 
-    def set_server_ver(self, instance: int, value: AppVersion):
-        if self.__server_ver.get(instance) is None:
+    def set_server_ver(self, instance: int, value: AppVersion, force: bool = False):
+        if self.__server_ver.get(instance) is None or force:
             self.__server_ver[instance] = value
         else:
             if value != self.__server_ver[instance]:

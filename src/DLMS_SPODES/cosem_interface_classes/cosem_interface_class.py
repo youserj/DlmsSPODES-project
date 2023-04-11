@@ -98,6 +98,9 @@ class COSEMInterfaceClasses(ABC):
         self._cbs_attr_post_init = dict()
         """container with callbacks for post initial attribute by index"""
 
+        self._cbs_attr_before_init = dict()
+        """container with callbacks for before initial attribute by index"""
+
         self.__record_time = [None] * len(self.A_ELEMENTS)
 
         # init all attributes with default value
@@ -136,7 +139,11 @@ class COSEMInterfaceClasses(ABC):
 
     def set_attr(self, index: int, value, with_time: bool | datetime = False) -> timedelta:
         if self.__attributes[index-1] is None:
-            self.__attributes[index-1] = self.get_attr_element(index).DATA_TYPE(value if value is not None else self.get_attr_element(index).default)
+            new_value = self.get_attr_element(index).DATA_TYPE(value if value is not None else self.get_attr_element(index).default)
+            if cb_func := self._cbs_attr_before_init.get(index, None):
+                cb_func(new_value)
+                self._cbs_attr_before_init.pop(index)
+            self.__attributes[index-1] = new_value
             if cb_func := self._cbs_attr_post_init.get(index, None):
                 cb_func()
                 self._cbs_attr_post_init.pop(index)
