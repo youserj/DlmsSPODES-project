@@ -553,7 +553,7 @@ class Collection:
         self.init_ids(country)
 
     def init_ids(self, country):
-        """identifications initiate"""
+        """initiate of identificators"""
         self.__dlms_ver = 6
         self.__manufacturer = None
         self.__country = country
@@ -1036,6 +1036,7 @@ class Collection:
             if obj not in self.__const_objs:
                 self.__container.remove(obj)
         self.__get_object.cache_clear()
+        self.init_ids(CountrySpecificIdentifiers.RUSSIA)
 
     def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:
         """ copy all attributes value from other and return bool result """
