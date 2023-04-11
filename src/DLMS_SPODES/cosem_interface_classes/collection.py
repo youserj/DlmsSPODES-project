@@ -548,10 +548,12 @@ class Collection:
     def __init__(self, country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA):
         self.__container = deque()
         """ all DLMS objects container with obis key """
-
         self.__const_objs = list()
         """ container for major(constant) DLMS objects LN. They don't deletable """
+        self.init_ids(country)
 
+    def init_ids(self, country):
+        """identifications initiate"""
         self.__dlms_ver = 6
         self.__manufacturer = None
         self.__country = country
