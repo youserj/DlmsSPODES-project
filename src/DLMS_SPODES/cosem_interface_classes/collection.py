@@ -641,8 +641,8 @@ class Collection:
         if self.__server_ver.get(instance) is None or force:
             self.__server_ver[instance] = value
         else:
-            if value.major != self.__server_ver[instance].major and value.minor != self.__server_ver[instance].minor:
-                raise ValueError(F"got server version[{instance}]: {value}, expected {self.__server_ver[instance]}. Execute search type")
+            if value.major != self.__server_ver[instance].major or value.minor != self.__server_ver[instance].minor:
+                raise ValueError(F"attempt set server version[{instance}]: {value}, existed {self.__server_ver[instance]}. Execute search of type")
             elif value.patch <= self.__server_ver[instance].patch:
                 """success validation"""
             else:

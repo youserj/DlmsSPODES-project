@@ -41,6 +41,7 @@ class TestType(unittest.TestCase):
 
     def test_xmlCodingDecoding(self):
         col = collection.Collection()
+        col.set_server_ver(0, AppVersion(1, 5, 1))
         col.from_xml("09054d324d5f33_0906312e342e3130.typ")
         print(col)
         col.to_xml("test.xml")
