@@ -641,10 +641,12 @@ class Collection:
         if self.__server_ver.get(instance) is None or force:
             self.__server_ver[instance] = value
         else:
-            if value != self.__server_ver[instance]:
+            if value.major != self.__server_ver[instance].major and value.minor != self.__server_ver[instance].minor:
                 raise ValueError(F"got server version[{instance}]: {value}, expected {self.__server_ver[instance]}. Execute search type")
-            else:
+            elif value.patch <= self.__server_ver[instance].patch:
                 """success validation"""
+            else:
+                raise ValueError(F"got more hi patch: {value} expected before {self.__server_ver[instance].patch}")
 
     def __str__(self):
         return F"[{len(self.__container)}] DLMS version: {self.__dlms_ver}, country: {self.__country.name}, country specific version: {self.__country_ver}, " \
