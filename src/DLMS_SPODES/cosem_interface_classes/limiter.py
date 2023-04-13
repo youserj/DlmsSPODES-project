@@ -3,7 +3,7 @@ from .. import cosem_interface_classes
 from .. import ITE_exceptions as exc
 from .__class_init__ import *
 from ..types import choices
-from ..types.implementations import structs, long_unsigneds
+from ..types.implementations import structs, long_unsigneds, double_long_usingneds
 threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 
@@ -31,10 +31,10 @@ class EmergencyProfileType(cdt.Structure):
     """ An emergency_profile is defined by three elements: emergency_profile_id, emergency_activation_time and emergency_duration.
     An emergency profile is activated if the emergency_profile_id element matches one of the elements on the emergency_profile _group_id_list, and time matches the
     emergency_activation_time and emergency_duration element """
-    values: tuple[cdt.LongUnsigned, cst.OctetStringDateTime, cdt.DoubleLongUnsigned]
+    values: tuple[cdt.LongUnsigned, cst.OctetStringDateTime, double_long_usingneds.DoubleLongUnsignedSecond]
     ELEMENTS = (cdt.StructElement(cdt.se.EMERGENCY_PROFILE_ID, cdt.LongUnsigned),
                 cdt.StructElement(cdt.se.EMERGENCY_ACTIVATION_TIME, cst.OctetStringDateTime),
-                cdt.StructElement(cdt.se.EMERGENCY_DURATION, cdt.DoubleLongUnsigned))
+                cdt.StructElement(cdt.se.EMERGENCY_DURATION, double_long_usingneds.DoubleLongUnsignedSecond))
 
     @property
     def emergency_profile_id(self) -> cdt.LongUnsigned:
@@ -46,7 +46,7 @@ class EmergencyProfileType(cdt.Structure):
         return self.values[1]
 
     @property
-    def emergency_duration(self) -> cdt.DoubleLongUnsigned:
+    def emergency_duration(self) -> double_long_usingneds.DoubleLongUnsignedSecond:
         """defines the duration in seconds, for which the emergency_profile is activated"""
         return self.values[2]
 
@@ -88,17 +88,17 @@ class Limiter(ic.COSEMInterfaceClasses):
                   ic.ICAElement(an.THRESHOLD_ACTIVE, choices.simple_dt),
                   ic.ICAElement(an.THRESHOLD_NORMAL, choices.simple_dt),
                   ic.ICAElement(an.THRESHOLD_EMERGENCY, choices.simple_dt),
-                  ic.ICAElement(an.MIN_OVER_THRESHOLD_DURATION, cdt.DoubleLongUnsigned),
-                  ic.ICAElement(an.MIN_UNDER_THRESHOLD_DURATION, cdt.DoubleLongUnsigned),
+                  ic.ICAElement(an.MIN_OVER_THRESHOLD_DURATION, double_long_usingneds.DoubleLongUnsignedSecond),
+                  ic.ICAElement(an.MIN_UNDER_THRESHOLD_DURATION, double_long_usingneds.DoubleLongUnsignedSecond),
                   ic.ICAElement(an.EMERGENCY_PROFILE, EmergencyProfileType),
                   ic.ICAElement(an.EMERGENCY_PROFILE_GROUP_ID_LIST, EmergencyProfileGroupIdList),
                   ic.ICAElement(an.EMERGENCY_PROFILE_ACTIVE, cdt.Boolean),
                   ic.ICAElement(an.ACTIONS, ActionType))
 
     def characteristics_init(self):
-        self._cbs_attr_post_init.update({2: self.__set_threshold_scaler_unit,
-                                         6: lambda: self.__set_duration_scaler_unit(6),
-                                         7: lambda: self.__set_duration_scaler_unit(7)})
+        self.set_attr(6, None)
+        self.set_attr(7, None)
+        self._cbs_attr_post_init.update({2: self.__set_threshold_scaler_unit})
         self._cbs_attr_before_init.update({
             3: lambda value: self.__validate_threshold_scaler_unit(3, value),
             4: lambda value: self.__validate_threshold_scaler_unit(4, value),

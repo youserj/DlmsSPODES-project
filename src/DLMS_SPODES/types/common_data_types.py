@@ -350,13 +350,12 @@ class Digital(ABC):
     """ Default value is 0 """
     contents: bytes
     TAG: bytes
-    SCALER_UNIT: ScalUnitType | None
+    SCALER_UNIT: ScalUnitType | None = None
     DEFAULT = None
 
-    def __init__(self, value: bytes | bytearray | str | int | float | Digital = None, scaler_unit: ScalUnitType = None):
+    def __init__(self, value: bytes | bytearray | str | int | float | Digital = None):
         if value is None:
             value = self.DEFAULT
-        self.__dict__['SCALER_UNIT'] = scaler_unit
         match value:
             case bytes():
                 length_and_contents = value[1:]

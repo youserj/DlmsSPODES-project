@@ -105,3 +105,7 @@ class TestType(unittest.TestCase):
         value = cdt.Utf8String()
         value.set('ООО "Курганский приборостроительный завод"')
         print(value)
+
+    def test_Duration(self):
+        value = impl.double_long_usingneds.DoubleLongUnsignedSecond()
+        self.assertEqual(value.report, "0 c")
