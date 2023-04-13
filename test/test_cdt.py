@@ -108,4 +108,5 @@ class TestType(unittest.TestCase):
 
     def test_Duration(self):
         value = impl.double_long_usingneds.DoubleLongUnsignedSecond()
+        value.set(1)
         self.assertEqual(value.report, "0 c")

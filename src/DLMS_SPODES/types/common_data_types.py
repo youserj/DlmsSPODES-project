@@ -353,9 +353,11 @@ class Digital(ABC):
     SCALER_UNIT: ScalUnitType | None = None
     DEFAULT = None
 
-    def __init__(self, value: bytes | bytearray | str | int | float | Digital = None):
+    def __init__(self, value: bytes | bytearray | str | int | float | Digital = None, scaler_unit: ScalUnitType = None):
         if value is None:
             value = self.DEFAULT
+        if scaler_unit:
+            self.__dict__['SCALER_UNIT'] = scaler_unit
         match value:
             case bytes():
                 length_and_contents = value[1:]
