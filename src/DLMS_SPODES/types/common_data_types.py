@@ -450,9 +450,15 @@ class Digital(ABC):
     @property
     def report(self) -> str:
         """ report value with unit """
-        match self.SCALER_UNIT:
-            case None: return str(self)
-            case _:    return F'{self} {self.SCALER_UNIT.unit}'
+        if self.SCALER_UNIT is None:
+            return str(self)
+        else:
+            return F"{self} {self.SCALER_UNIT.unit}"
+
+    @property
+    def report_without_unit(self) -> str:
+        """ report value with unit """
+        return str(self)
 
     def __gt__(self, other: Digital | int):
         match other:
