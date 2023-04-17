@@ -1010,6 +1010,20 @@ class Collection:
             case cdt.Structure(logical_name=value.logical_name):             return self.__get_object(value.logical_name.contents)
             case _:                                                          raise exc.NoObject(F"Can't find DLMS Object from collection with {value=}")
 
+    @lru_cache(4)
+    def get_objects_list(self, value: ClientSAP) -> list[ic.COSEMInterfaceClasses]:
+        for association in self.get_objects_by_class_id(ut.CosemClassId(15)):
+            if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
+                if association.object_list is None:
+                    raise exc.EmptyObj(F'{association} attr: 2')
+                else:
+                    ret = list()
+                    for el in association.object_list:
+                        ret.append(self.__get_object(el.logical_name.contents))
+                    return ret
+        else:
+            raise ValueError(F'Not found association with client SAP: {value}')
+
     def get_attr(self, value: ut.CosemAttributeDescriptor) -> cdt.CommonDataTypes:
         """attribute value from descriptor"""
         return self.__get_object(value.instance_id.contents).get_attr(int(value.attribute_id))
@@ -1038,6 +1052,7 @@ class Collection:
             if obj not in self.__const_objs:
                 self.__container.remove(obj)
         self.__get_object.cache_clear()
+        self.get_objects_list.cache_clear()
         self.init_ids(CountrySpecificIdentifiers.RUSSIA)
 
     def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:

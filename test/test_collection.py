@@ -50,3 +50,10 @@ class TestType(unittest.TestCase):
         col.clear_server_ver()
         ver.value.set("312e312e33")
         print(ver.value)
+
+    def test_get_object_list(self):
+        col = collection.Collection()
+        col.from_xml("09054d324d5f33_0906312e342e3130.typ")
+        print(col)
+        a = col.get_objects_list(collection.ClientSAP(48))
+        print(a)
