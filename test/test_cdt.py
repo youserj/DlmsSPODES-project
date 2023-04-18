@@ -3,7 +3,7 @@ import unittest
 from src.DLMS_SPODES.types.common_data_types import encode_length
 from src.DLMS_SPODES.cosem_interface_classes import ic, collection
 from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl
-from src.DLMS_SPODES import relation_to_OBIS
+from src.DLMS_SPODES import relation_to_OBIS, enums
 from src.DLMS_SPODES.cosem_interface_classes.collection import Collection
 
 
@@ -110,3 +110,8 @@ class TestType(unittest.TestCase):
         value = impl.double_long_usingneds.DoubleLongUnsignedSecond()
         value.set(1)
         self.assertEqual(value.report, "0 c")
+
+    def test_ScalerUnitType(self):
+        value = cdt.ScalUnitType((1, 4))
+        value.unit.set(enums.Unit.CURRENT_AMPERE)
+        print(value.unit == cdt.Unit(enums.Unit.CURRENT_AMPERE))

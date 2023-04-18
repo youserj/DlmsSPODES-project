@@ -46,8 +46,7 @@ class OpeningBody(Data):
 
 
 class SealUnsigned(cdt.Unsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         def get_name(value: int):
             """ СПОДЭСv.3 Е.12.5"""
             match value & 0b11:
@@ -112,8 +111,7 @@ class ChannelNumberValue(cdt.Unsigned):
     def interface(self, value: enu.Interface):
         self.set((int(self) & 0b0001_1111) | (value << 3))
 
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}"
 
     def __str__(self):
@@ -136,8 +134,7 @@ class AnyDateTime(Data):
 
 
 class VoltageEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.voltage_events.get_report(int(self))
 
 
@@ -147,8 +144,7 @@ class SPODES3VoltageEvent(Data):
 
 
 class CurrentEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.current_events.get_report(int(self))
 
 
@@ -158,8 +154,7 @@ class SPODES3CurrentEvent(Data):
 
 
 class CommutationEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.commutation_events.get_report(int(self))
 
 
@@ -169,8 +164,7 @@ class SPODES3CommutationEvent(Data):
 
 
 class ProgrammingEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.programming_events.get_report(int(self))
 
 
@@ -180,8 +174,7 @@ class SPODES3ProgrammingEvent(Data):
 
 
 class ExternalEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.external_impact_events.get_report(int(self))
 
 
@@ -191,8 +184,7 @@ class SPODES3ExternalEvent(Data):
 
 
 class CommunicationEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.communication_events.get_report(int(self))
 
 
@@ -202,8 +194,7 @@ class SPODES3CommunicationEvent(Data):
 
 
 class AccessEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.access_events.get_report(int(self))
 
 
@@ -213,8 +204,7 @@ class SPODES3AccessEvent(Data):
 
 
 class SelfDiagnosticEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.self_diagnostics_events.get_report(int(self))
 
 
@@ -224,8 +214,7 @@ class SPODES3SelfDiagnosticEvent(Data):
 
 
 class ReactivePowerEventValues(cdt.LongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.reactive_power_events.get_report(int(self))
 
 
@@ -236,8 +225,7 @@ class SPODES3ReactivePowerEvent(Data):
 
 # KPZ implements
 class KPZ1VoltageEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.voltage_events.get_report(int(self))
 
 
@@ -247,8 +235,7 @@ class KPZ1SPODES3VoltageEvent(Data):
 
 
 class KPZ1CurrentEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.current_events.get_report(int(self))
 
 
@@ -258,8 +245,7 @@ class KPZ1SPODES3CurrentEvent(Data):
 
 
 class KPZ1CommutationEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.commutation_events.get_report(int(self))
 
 
@@ -269,8 +255,7 @@ class KPZ1SPODES3CommutationEvent(Data):
 
 
 class KPZ1ProgrammingEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.programming_events.get_report(int(self))
 
 
@@ -280,8 +265,7 @@ class KPZ1SPODES3ProgrammingEvent(Data):
 
 
 class KPZ1ExternalEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.external_impact_events.get_report(int(self))
 
 
@@ -291,8 +275,7 @@ class KPZ1SPODES3ExternalEvent(Data):
 
 
 class KPZ1CommunicationEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.communication_events.get_report(int(self))
 
 
@@ -302,8 +285,7 @@ class KPZ1SPODES3CommunicationEvent(Data):
 
 
 class KPZ1AccessEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.access_events.get_report(int(self))
 
 
@@ -313,8 +295,7 @@ class KPZ1SPODES3AccessEvent(Data):
 
 
 class KPZ1SelfDiagnosticEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.self_diagnostics_events.get_report(int(self))
 
 
@@ -324,8 +305,7 @@ class KPZ1SPODES3SelfDiagnosticEvent(Data):
 
 
 class KPZ1ReactivePowerEventValues(cdt.DoubleLongUnsigned):
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         return ev.reactive_power_events.get_report(int(self))
 
 

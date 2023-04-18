@@ -29,8 +29,7 @@ class PSStatus(cdt.Enum):
 
 class SignalQuality(cdt.Unsigned):
     """for string report"""
-    @property
-    def report(self) -> str:
+    def get_report(self, with_unit: bool = True) -> str:
         value = int(self)
         if value == 0:
             return F"–113 dBm {en.OR_LESS}(0)"

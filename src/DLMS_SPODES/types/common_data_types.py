@@ -449,16 +449,15 @@ class Digital(ABC):
 
     @property
     def report(self) -> str:
-        """ report value with unit """
-        if self.SCALER_UNIT is None:
+        """TODO: deprecated in future. report value with unit. """
+        return self.get_report()
+
+    def get_report(self, with_unit: bool = True) -> str:
+        """ report value"""
+        if self.SCALER_UNIT is None or with_unit:
             return str(self)
         else:
             return F"{self} {self.SCALER_UNIT.unit}"
-
-    @property
-    def report_without_unit(self) -> str:
-        """ report value with unit """
-        return str(self)
 
     def __gt__(self, other: Digital | int):
         match other:
