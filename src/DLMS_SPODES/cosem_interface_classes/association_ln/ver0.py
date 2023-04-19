@@ -677,8 +677,8 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         except AttributeError as e:
             raise exc.NoObject('Objects list is empty')
 
-    @cache
     def client_objects_list(self, value: ClientSAP) -> list[ic.COSEMInterfaceClasses]:
+        """rudiment. use collection.get_object_list. TODO: remove in future"""
         for association in self.collection.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
                 match association.object_list:

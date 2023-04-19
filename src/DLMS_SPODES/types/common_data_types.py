@@ -454,7 +454,7 @@ class Digital(ABC):
 
     def get_report(self, with_unit: bool = True) -> str:
         """ report value"""
-        if self.SCALER_UNIT is None or with_unit:
+        if self.SCALER_UNIT is None or not with_unit:
             return str(self)
         else:
             return F"{self} {self.SCALER_UNIT.unit}"
