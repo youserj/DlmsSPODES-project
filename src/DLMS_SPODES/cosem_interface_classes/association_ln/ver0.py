@@ -661,10 +661,12 @@ class AssociationLN(ic.COSEMInterfaceClasses):
 
     def __init_secret(self):
         """ before initiating secret need knowledge what kind of mechanism ID """
-        match self.authentication_mechanism_name.mechanism_id_element:
-            case MechanismIdElement(en.NONE) | MechanismIdElement(en.LOW): self.set_attr_link(7, LLCSecret())
-            case MechanismIdElement(en.HIGH):                              self.set_attr_link(7, LLCSecretHigh())
-            case unknown:                                                  raise ValueError(F'Not support Secret with {unknown}')
+        match self.authentication_mechanism_name.mechanism_id_element, self.LLS_secret:
+            case MechanismIdElement(en.NONE) | MechanismIdElement(en.LOW), LLCSecret(): """keep secret value"""
+            case MechanismIdElement(en.NONE) | MechanismIdElement(en.LOW), _:           self.set_attr_link(7, LLCSecret())
+            case MechanismIdElement(en.HIGH), LLCSecretHigh():                          """keep secret value"""
+            case MechanismIdElement(en.HIGH), _:                                        self.set_attr_link(7, LLCSecretHigh())
+            case unknown, _:                                                            raise ValueError(F'Not support Secret with {unknown}')
 
     def __set_dlms_version_to_collection(self):
         self.collection.dlms_ver = int(self.xDLMS_context_info.dlms_version_number)

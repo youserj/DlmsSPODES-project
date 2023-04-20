@@ -1049,7 +1049,7 @@ class Collection:
     def clear(self):
         """ clear to default objects amount """
         for obj in self.__container.copy():
-            if obj not in self.__const_objs:
+            if obj not in self.__const_objs and obj.CLASS_ID != ClassID.ASSOCIATION_LN_CLASS:  # keep all AssociationLN for keep it secret
                 self.__container.remove(obj)
         self.__get_object.cache_clear()
         self.get_objects_list.cache_clear()
