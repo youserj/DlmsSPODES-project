@@ -1051,8 +1051,11 @@ class Collection:
         for obj in self.__container.copy():
             if obj not in self.__const_objs and obj.CLASS_ID != ClassID.ASSOCIATION_LN_CLASS:  # keep all AssociationLN for keep it secret
                 self.__container.remove(obj)
+        # clear cached parameters
         self.__get_object.cache_clear()
         self.get_objects_list.cache_clear()
+        self.getDISCONNECT_CONTROL.cache_clear()
+        # end clear cached
         self.init_ids(CountrySpecificIdentifiers.RUSSIA)
 
     def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:
