@@ -1056,7 +1056,6 @@ class Collection:
         self.is_readable.cache_clear()
         self.is_accessable.cache_clear()
         self.get_name_and_type.cache_clear()
-        self.getDISCONNECT_CONTROL.cache_clear()
         # end clear cached
         self.init_ids(CountrySpecificIdentifiers.RUSSIA)
 
