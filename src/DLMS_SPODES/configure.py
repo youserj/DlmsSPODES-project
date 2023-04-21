@@ -59,7 +59,7 @@ def get_saved_parameters(obj: ic.COSEMInterfaceClasses) -> dict[int, int]:
         case collection.ActivityCalendar.CLASS_ID, _:                                            return empty_dict
         case collection.SingleActionSchedule.CLASS_ID, _:                                        return {2: 0, 3: 0, 4: 0}
         case collection.AssociationLNVer0.CLASS_ID, cst.LogicalName(0, 0, 40, 0, 0):             return {3: 0}
-        case collection.AssociationLNVer0.CLASS_ID:                                              return {2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 9: 0}
+        case collection.AssociationLNVer0.CLASS_ID, _:                                           return {2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 9: 0}
         case collection.IECHDLCSetupVer1.CLASS_ID, _:                                            return {2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
         case collection.DisconnectControl.CLASS_ID, _:                                           return {3: 0, 4: 0}
         case collection.Limiter.CLASS_ID, _:                                                     return {2: 0, 11: 0}

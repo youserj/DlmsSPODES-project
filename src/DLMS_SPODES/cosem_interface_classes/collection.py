@@ -731,8 +731,6 @@ class Collection:
                             else:
                                 raise ValueError(F'ERROR: for {new_object.logical_name if new_object is not None else ""} got index {index} and it is not digital')
                             try:
-                                # if new_object.logical_name == cst.LogicalName("0.0.21.0.1.255") and index == '3':
-                                #     print("stop debug")
                                 match len(attr.text), new_object.get_attr_element(indexes[-1]).DATA_TYPE:
                                     case 1 | 2, ut.CHOICE():
                                         if new_object.get_attr(indexes[-1]) is None:
@@ -1054,6 +1052,10 @@ class Collection:
         # clear cached parameters
         self.__get_object.cache_clear()
         self.get_objects_list.cache_clear()
+        self.is_writable.cache_clear()
+        self.is_readable.cache_clear()
+        self.is_accessable.cache_clear()
+        self.get_name_and_type.cache_clear()
         self.getDISCONNECT_CONTROL.cache_clear()
         # end clear cached
         self.init_ids(CountrySpecificIdentifiers.RUSSIA)
@@ -1118,7 +1120,7 @@ class Collection:
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, 1, 255)))
 
-    @cached_property
+    @property
     def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
         return self.__get_object(bytes((0, 0, 96, 12, 4, 255)))
 
@@ -1146,7 +1148,6 @@ class Collection:
     def TCP_UDP_setup(self) -> TCPUDPSetup:
         return self.__get_object(bytes((0, 0, 25, 0, 0, 255)))
 
-    @lru_cache(3)
     def getIPv4Setup(self, ch: int = 0) -> IPv4Setup:
         return self.__get_object(bytes((0, ch, 25, 1, 0, 255)))
 
@@ -1162,11 +1163,11 @@ class Collection:
     def firmware_image_transfer(self) -> ImageTransfer:
         return self.__get_object(bytes((0, 0, 44, 0, 0, 255)))
 
-    @cached_property
+    @property
     def RU_EXTENDED_PASSPORT_DATA(self) -> ProfileGeneric:
         return self.__get_object(bytes((0, 0, 94, 7, 1, 255)))
 
-    @cached_property
+    @property
     def firmware_version(self) -> Data:
         return self.__get_object(bytes((0, 0, 96, 1, 2, 255)))
 
@@ -1174,11 +1175,11 @@ class Collection:
     def device_type(self) -> Data:
         return self.__get_object(bytes((0, 0, 96, 1, 1, 255)))
 
-    @cached_property
+    @property
     def manufacturing_date(self) -> Data:
         return self.__get_object(bytes((0, 0, 96, 1, 4, 255)))
 
-    @cached_property
+    @property
     def RU_LOAD_LOCK_STATUS(self) -> Data:
         return self.__get_object(bytes((0, 0, 96, 4, 3, 255)))
 
@@ -1187,7 +1188,7 @@ class Collection:
         """ Consist from boot_version, descriptor, ex.: 0005PWRM_M2M_3_F1_5ppm_Spvq. 0.0.128.100.0.255 """
         return self.__get_object(bytes((0, 0, 128, 100, 0, 255)))
 
-    @cached_property
+    @property
     def serial_number(self) -> Data:
         """ Ex.: 0101000434322 """
         return self.__get_object(bytes((0, 0, 96, 1, 0, 255)))
@@ -1241,22 +1242,20 @@ class Collection:
         """ Russian. Profile of daily values """
         return self.__get_object(bytes((1, 0, 98, 2, 0, 255)))
 
-    @cached_property
+    @property
     def RU_MAXIMUM_CURRENT_EXCESS_LIMIT(self) -> Register:
         """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum current excess limit before the subscriber is disconnected, % of IMAX """
         return self.__get_object(bytes((1, 0, 11, 134, 0, 255)))
 
-    @cached_property
+    @property
     def RU_MAXIMUM_VOLTAGE_EXCESS_LIMIT(self) -> Register:
         """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum voltage excess limit before the subscriber is disconnected, % of Unominal """
         return self.__get_object(bytes((1, 0, 12, 134, 0, 255)))
 
-    @lru_cache(5)
     def getDISCONNECT_CONTROL(self, ch: int = 0) -> DisconnectControl:
         """DLMS UA 1000-1 Ed 14 6.2.46 Disconnect control objects by channel"""
         return self.__get_object(bytes((0, ch, 96, 3, 10, 255)))
 
-    @lru_cache(5)
     def getARBITRATOR(self, ch: int = 0) -> Arbitrator:
         """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
         return self.__get_object(bytes((0, ch, 96, 3, 20, 255)))
