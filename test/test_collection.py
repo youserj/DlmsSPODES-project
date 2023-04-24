@@ -1,6 +1,6 @@
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
-from src.DLMS_SPODES.cosem_interface_classes import collection
+from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES.version import AppVersion
 
 
@@ -18,13 +18,13 @@ class TestType(unittest.TestCase):
 
     def test_get_instance(self):
         col = collection.Collection()
-        col.manufacturer = b"KPZ"
-        col.server_ver = AppVersion(1, 4, 0)
+        col.set_manufacturer(b"KPZ")
+        col.set_server_ver(0, AppVersion(1, 4, 0))
         col.set_spec()
         ver_obj = col.add(class_id=ut.CosemClassId(1),
                           version=cdt.Unsigned(0),
                           logical_name=cst.LogicalName("0.0.96.1.6.255"))
-        ver_obj.set_attr(2, "33 30")
+        ver_obj.set_attr(2, "33 2e 30")
         inst = col.get_instance(class_id=ut.CosemClassId(3),
                                 version=cdt.Unsigned(0),
                                 ln=cst.LogicalName("1.0.131.35.0.255"))
@@ -57,3 +57,14 @@ class TestType(unittest.TestCase):
         print(col)
         a = col.get_objects_list(collection.ClientSAP(48))
         print(a)
+
+    def test_AssociationLN(self):
+        col = collection.Collection()
+        col.set_manufacturer(b"KPZ")
+        col.set_server_ver(0, AppVersion(1, 4, 0))
+        col.set_spec()
+        ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN_CLASS,
+                          version=overview.Version.V1,
+                          logical_name=cst.LogicalName("0.0.40.0.3.255"))
+        ass_obj.set_attr(6, bytes.fromhex("090760857405080202"))
+        print(ass_obj)

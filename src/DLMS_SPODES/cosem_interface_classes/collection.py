@@ -456,6 +456,8 @@ __func_map_for_create.update({
     (0, 96, 1, 6): ClassMap({0: impl.data.SPODES3SPODESVersion}),
     (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
     (0, 96, 3, 20): ClassMap({0: impl.arbitrator.SPODES3Arbitrator}),
+    (0, 96, 5, 1): ClassMap({0: impl.data.SPODES3PowerQuality1Event}),
+    (0, 96, 5, 4): ClassMap({0: impl.data.SPODES3PowerQuality2Event}),
     (0, 96, 5, 132): ClassMap({0: impl.data.Unsigned}),  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
     (0, 96, 11, 0): ClassMap({0: impl.data.SPODES3VoltageEvent}),
     (0, 96, 11, 1): ClassMap({0: impl.data.SPODES3CurrentEvent}),

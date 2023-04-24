@@ -223,6 +223,26 @@ class SPODES3ReactivePowerEvent(Data):
     A_ELEMENTS = ic.ICAElement(an.VALUE, ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
 
 
+class PowerQuality2EventValues(cdt.LongUnsigned):
+    def get_report(self, with_unit: bool = True) -> str:
+        return ev.power_quality_status_2.get_report(int(self))
+
+
+class SPODES3PowerQuality2Event(Data):
+    """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, PowerQuality2EventValues, classifier=ic.Classifier.STATIC),
+
+
+class PowerQuality1EventValues(cdt.LongUnsigned):
+    def get_report(self, with_unit: bool = True) -> str:
+        return ev.power_quality_status_1.get_report(int(self))
+
+
+class SPODES3PowerQuality1Event(Data):
+    """СТО_34.01-5.1-006-2019v3 E.2 Статус качества сети (профиль суточных показаний)"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, PowerQuality1EventValues, classifier=ic.Classifier.STATIC),
+
+
 # KPZ implements
 class KPZ1VoltageEventValues(cdt.DoubleLongUnsigned):
     def get_report(self, with_unit: bool = True) -> str:

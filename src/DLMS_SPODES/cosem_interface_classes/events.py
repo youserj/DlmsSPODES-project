@@ -1,4 +1,3 @@
-from ..types import common_data_types as cdt
 from ..settings import get_current_language, Language
 
 
