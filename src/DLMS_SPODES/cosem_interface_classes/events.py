@@ -9,7 +9,7 @@ match get_current_language():
 class FlagEvents(dict):
     """ special class for flag events indication """
     def get_report(self, value: int) -> str:
-        return '. '.join(filter(lambda it_: it_ is not None, map(lambda it: self.get(2 ** it, F"unknown bit: {it}"), filter(lambda it: value & 2 ** it, range(8)))))
+        return ". ".join(filter(lambda it_: it_ is not None, map(lambda it: self.get(2 ** it, F"unknown bit: {it}"), filter(lambda it: value & 2 ** it, range(8)))))+F"({value})"
 
 
 class Events(dict):
