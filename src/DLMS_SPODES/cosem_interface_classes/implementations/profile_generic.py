@@ -64,3 +64,7 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
             ELEMENTS = tuple(buffer_elements)
 
         self.buffer.set_type(Entry)
+
+    def get_attr_descriptor(self, value: int) -> ut.CosemAttributeDescriptor:
+        """ with selection for object_list. return only without selection"""
+        return super(ver1.ProfileGeneric, self).get_attr_descriptor(value)
