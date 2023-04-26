@@ -1,106 +1,66 @@
-from ..profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1, CaptureObjects
+from ..profile_generic import ver1
+from ...types.implementations import structs
+from ...types import ut, cdt
+from ... import ITE_exceptions as exc
 
 
-class SPODES3CurrentProfile(ProfileGenericVer1):
+class SPODES3CurrentProfile(ver1.ProfileGeneric):
     """Cosem3 Б.1 Текущие значения"""
     scaler_profile_key = bytes((1, 0, 94, 7, 3, 255))
 
 
-class SPODES3MonthProfile(ProfileGenericVer1):
+class SPODES3MonthProfile(ver1.ProfileGeneric):
     """СПОДЭС3 В.4 Параметры ежемесячного профиля"""
     scaler_profile_key = bytes((1, 0, 94, 7, 1, 255))
 
 
-class SPODES3DailyProfile(ProfileGenericVer1):
+class SPODES3DailyProfile(ver1.ProfileGeneric):
     """СПОДЭС3 В.3 Параметры ежесуточного профиля"""
     scaler_profile_key = bytes((1, 0, 94, 7, 2, 255))
 
 
-class SPODES3LoadProfile(ProfileGenericVer1):
+class SPODES3LoadProfile(ver1.ProfileGeneric):
     """СПОДЭС3 В.2 Параметры профиля нагрузки"""
     scaler_profile_key = bytes((1, 0, 94, 7, 4, 255))
 
 
-class SPODES3DisplayReadout(ProfileGenericVer1):
+class SPODES3DisplayReadout(ver1.ProfileGeneric):
     """СПОДЭС3 13.12. Настройка индикации"""
-    AVAILABLE_CAPTURE_OBJECTS: CaptureObjects = CaptureObjects([
-        (3, "1.0.1.8.0.255", 2, 0),
-        # 3    "1.0.1.8.0.255"    2
-        # 3    "1.0.1.8.1.255"    2
-        # 3    "1.0.1.8.2.255"    2
-        # 3    "1.0.1.8.3.255"    2
-        # 3    "1.0.2.8.4.255"    2
-        # 3    "1.0.2.8.0.255"    2
-        # 3    "1.0.2.8.1.255"    2
-        # 3    "1.0.2.8.2.255"    2
-        # 3    "1.0.2.8.3.255"    2
-        # 3    "1.0.2.8.4.255"    2
-        # 3    "1.0.3.8.0.255"    2
-        # 3    "1.0.3.8.1.255"    2
-        # 3    "1.0.3.8.2.255"    2
-        # 3    "1.0.3.8.3.255"    2
-        # 3    "1.0.3.8.4.255"    2
-        # 3    "1.0.4.8.0.255"    2
-        # 3    "1.0.4.8.1.255"    2
-        # 3    "1.0.4.8.2.255"    2
-        # 3    "1.0.4.8.3.255"    2
-        # 3    "1.0.4.8.3.255"    2
-        # 3    "1.0.12.7.0.255"    2
-        # 3    "1.0.12.7.0.255"    2
-        # 3    "1.0.32.7.0.255"    2
-        # 3    "1.0.52.7.0.255"    2
-        # 3    "1.0.124.7.0.255"    2
-        # 3    "1.0.125.7.0.255"    2
-        # 3    "1.0.126.7.0.255"    2
-        # 3    "1.0.11.7.0.255"    2
-        # 3    "1.0.91.7.0.255"    2
-        # 3    "1.0.31.7.0.255"    2
-        # 3    "1.0.51.7.0.255"    2
-        # 3    "1.0.71.7.0.255"    2
-        # 3    "1.0.1.7.0.255"    2
-        # 3    "1.0.21.7.0.255"    2
-        # 3    "1.0.41.7.0.255"    2
-        # 3    "1.0.61.7.0.255"    2
-        # 3    "1.0.3.7.0.255"    2
-        # 3    "1.0.23.7.0.255"    2
-        # 3    "1.0.43.7.0.255"    2
-        # 3    "1.0.63.7.0.255"    2
-        # 3    "1.0.9.7.0.255"    2
-        # 3    "1.0.29.7.0.255"    2
-        # 3    "1.0.49.7.0.255"    2
-        # 3    "1.0.69.7.0.255"    2
-        # 3    "1.0.13.7.0.255"    2
-        # 3    "1.0.33.7.0.255"    2
-        # 3    "1.0.53.7.0.255"    2
-        # 3    "1.0.73.7.0.255"    2
-        # 3    "1.0.14.7.0.255"    2
-        # 8    "0.0.1.0.0.255"    2
-        # 3    "1.0.1.8.0.101"    2
-        # 3    "1.0.1.8.1.101"    2
-        # 3    "1.0.1.8.2.101"    2
-        # 3    "1.0.1.8.3.101"    2
-        # 3    "1.0.2.8.4.101"    2
-        # 3    "1.0.2.8.0.101"    2
-        # 3    "1.0.2.8.1.101"    2
-        # 3    "1.0.2.8.2.101"    2
-        # 3    "1.0.2.8.3.101"    2
-        # 3    "1.0.2.8.4.101"    2
-        # 3    "1.0.3.8.0.101"    2
-        # 3    "1.0.3.8.1.101"    2
-        # 3    "1.0.3.8.2.101"    2
-        # 3    "1.0.3.8.3.101"    2
-        # 3    "1.0.3.8.4.101"    2
-        # 3    "1.0.4.8.0.101"    2
-        # 3    "1.0.4.8.1.101"    2
-        # 3    "1.0.4.8.2.101"    2
-        # 3    "1.0.4.8.3.101"    2
-        # 3    "1.0.4.8.3.101"    2
-        # 23    "0.0.22.0.0.255"    2
-        # 23    "0.1.22.0.0.255"    2
-        # 23    "0.2.22.0.0.255"    2
-        # 23    "0.3.22.0.0.255"    2
-        # 70    "0.0.96.3.10.255"    3
-        # 1    "0.0.96.1.2.255"    2
-        # 1    "0.0.96.1.8.255"    2
-        # 1    "0.0.96.4.3.255"    2
-    ])
+    def characteristics_init(self):
+        self.scaler_profile_key = None
+        """ obis of scaler profile for this profile if need """
+
+        self.set_attr(ver1.BUFFER, None)
+        self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type
+
+        self._cbs_attr_post_init.update({ver1.CAPTURE_OBJECTS: self.__create_buffer_struct_type})
+
+        self.__buffer_capture_objects = self.capture_objects
+        """ objects for buffer. Change with access_selection """
+
+    def __create_buffer_struct_type(self):
+        """ TODO: more refactoring !!! """
+        # rename CaptureObjectDefinition's and adding object if it absense in collection
+        for el_value in self.capture_objects:
+            el_value: structs.CaptureObjectDefinition
+            obj = self.collection.add_if_missing(class_id=ut.CosemClassId(el_value.class_id.contents),
+                                                 version=None,
+                                                 logical_name=el_value.logical_name)
+            self.collection.raise_before(obj, self)
+            el_value.set_name(self.collection.get_name_and_type(el_value)[0][-1])
+        self.__buffer_capture_objects = self.capture_objects
+        buffer_elements: list[cdt.StructElement] = list()
+        for el_value in self.__buffer_capture_objects:
+            names, type_ = self.collection.get_name_and_type(el_value)
+            buffer_elements.append(cdt.StructElement(NAME=". ".join(names), TYPE=cdt.Boolean))
+
+        class Entry(cdt.Structure):
+            """ The number and the order of the elements of the structure holding the entries is the same as in the definition of the capture_objects.
+                The buffer is filled by auto captures or by subsequent calls of the method (capture). The sequence of the entries within the array is ordered
+                according to the sort method specified. Default: The buffer is empty after reset.
+                REMARK 1 Reading the entire buffer delivers only those entries, which are “in use”.
+                REMARK 2 The value of a captured object may be replaced by “null-data” if it can be unambiguously recovered from the previous value
+                (e.g. for time: if it can be calculated from the previous value and capture_period; or for a value: if it is equal to the previous value). """
+            ELEMENTS = tuple(buffer_elements)
+
+        self.buffer.set_type(Entry)

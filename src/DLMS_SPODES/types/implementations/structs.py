@@ -68,15 +68,15 @@ class RestrictionByEntry(cdt.Structure):
 class CaptureObjectDefinition(cdt.Structure):
     """ Capture objects that are assigned to the object instance. Upon a call of the capture (data) method or automatically
     in defined intervals, the selected attributes are copied into the buffer of the profile. """
-    values: tuple[cdt.LongUnsigned, cst.LogicalName, cdt.Integer, cdt.LongUnsigned]
+    values: tuple[long_unsigneds.ClassId, cst.LogicalName, cdt.Integer, cdt.LongUnsigned]
     default = b'\x02\x04\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00'
-    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, cdt.LongUnsigned),
+    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, long_unsigneds.ClassId),
                 cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName),
                 cdt.StructElement(cdt.se.ATTRIBUTE_INDEX, cdt.Integer),
                 cdt.StructElement(cdt.se.DATA_INDEX, cdt.LongUnsigned))
 
     @property
-    def class_id(self) -> cdt.LongUnsigned:
+    def class_id(self) -> long_unsigneds.ClassId:
         return self.values[0]
 
     @property

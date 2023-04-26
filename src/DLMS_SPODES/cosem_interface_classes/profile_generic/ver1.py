@@ -181,7 +181,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type
 
         self._cbs_attr_post_init.update({CAPTURE_OBJECTS: self.__create_buffer_struct_type,
-                                         SORT_OBJECT: self.__create_range_descriptor})
+                                         SORT_OBJECT: self.__create_selective_access_descriptor})
 
         self.__buffer_capture_objects = self.capture_objects
         """ objects for buffer. Change with access_selection """
@@ -256,7 +256,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
             case None:
                 self.clear_attr(CAPTURE_OBJECTS)
                 self._cbs_attr_post_init[CAPTURE_OBJECTS] = self.__create_buffer_struct_type
-                raise exc.EmptyObj('Need set <sort_method> before')
+                raise exc.EmptyObj(F"need set <sort_object> before for {self}")
         buffer_elements: list[cdt.StructElement] = list()
         for el_value in self.__buffer_capture_objects:
             names, type_ = self.collection.get_name_and_type(el_value)
@@ -273,13 +273,13 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
 
         self.buffer.set_type(Entry)
 
-    def __create_range_descriptor(self):
-        """ Available after got sort object """
+    def __create_selective_access_descriptor(self):
+        """ Available after got sort object. TODO: need rewrite. maybe replace to collection level. Wrong used sort_obj, it can be any element from capture_objects"""
         sort_obj: ic.COSEMInterfaceClasses = self.collection.get_object(self.sort_object.logical_name)
-        if int(sort_obj.CLASS_ID) == self.sort_object.class_id.decode():
-            value_type: Type[cdt.CommonDataType] = sort_obj.get_attr_data_type(self.sort_object.attribute_index.decode())
+        if sort_obj.CLASS_ID.contents == self.sort_object.class_id.contents:
+            value_type: Type[cdt.CommonDataType] = sort_obj.get_attr_data_type(int(self.sort_object.attribute_index))
         else:
-            exc.NoObject(F'Got {self.sort_object.class_id=}, expected {sort_obj.CLASS_ID=} from collection')
+            exc.NoObject(F"got {self.sort_object.class_id=}, expected {sort_obj.CLASS_ID=} from collection")
 
         class RangeDescriptor(RangeDescriptorBase):
             # cb_preset = TODO: make check 'selected_values' from self.capture_objects or
@@ -291,14 +291,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                         cdt.StructElement(cdt.se.TO_VALUE, value_type),
                         cdt.StructElement(cdt.se.SELECTED_VALUES, CaptureObjects))
 
-        self.range_descriptor = RangeDescriptor
-        self.__set_attr_descriptor_with_selection()
-        # if self.capture_objects is not None:  # if capture_objects was init before sort_object
-        #     self.__create_buffer_struct_type()
-
-    def __set_attr_descriptor_with_selection(self):
         class Data(DataBase):
-            ELEMENTS = {1: ut.SequenceElement('range_descriptor', self.range_descriptor),
+            ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptor),
                         2: ut.SequenceElement('entry_descriptor', EntryDescriptor)}
 
         class SelectiveAccessDescriptor(SelectiveAccessDescriptorBase):
