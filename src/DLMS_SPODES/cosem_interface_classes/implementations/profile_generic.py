@@ -35,7 +35,7 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
 
         self._cbs_attr_post_init.update({ver1.CAPTURE_OBJECTS: self.__create_buffer_struct_type})
 
-        self.__buffer_capture_objects = self.capture_objects
+        self.buffer_capture_objects = self.capture_objects
         """ objects for buffer. Change with access_selection """
 
     def __create_buffer_struct_type(self):
@@ -48,9 +48,9 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
                                                  logical_name=el_value.logical_name)
             self.collection.raise_before(obj, self)
             el_value.set_name(self.collection.get_name_and_type(el_value)[0][-1])
-        self.__buffer_capture_objects = self.capture_objects
+        self.buffer_capture_objects = self.capture_objects
         buffer_elements: list[cdt.StructElement] = list()
-        for el_value in self.__buffer_capture_objects:
+        for el_value in self.buffer_capture_objects:
             names, type_ = self.collection.get_name_and_type(el_value)
             buffer_elements.append(cdt.StructElement(NAME=". ".join(names), TYPE=cdt.Boolean))
 

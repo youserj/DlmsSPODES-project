@@ -160,7 +160,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.PROFILE_GENERIC
     VERSION = Version.V1
     scaler_profile_key: bytes | None
-    __buffer_capture_objects: CaptureObjects
+    buffer_capture_objects: CaptureObjects
     range_descriptor: Type[cdt.Structure] = None
     attr_descriptor_with_selection: Type[ut.CosemAttributeDescriptorWithSelection] = None
     A_ELEMENTS = (ic.ICAElement(an.BUFFER, arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
@@ -183,7 +183,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         self._cbs_attr_post_init.update({CAPTURE_OBJECTS: self.__create_buffer_struct_type,
                                          SORT_OBJECT: self.__create_selective_access_descriptor})
 
-        self.__buffer_capture_objects = self.capture_objects
+        self.buffer_capture_objects = self.capture_objects
         """ objects for buffer. Change with access_selection """
 
     @property
@@ -243,22 +243,22 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         match self.buffer.selective_access:
             case ut.SelectiveAccessDescriptor() as desc:
                 match int(desc.access_selector):
-                    # case 0:                                                 self.__buffer_capture_objects = self.capture_objects
-                    case 1 if len(desc.access_parameters.selected_values) == 0: self.__buffer_capture_objects = self.capture_objects
-                    case 1:                                                     self.__buffer_capture_objects = desc.access_parameters.selected_values
+                    # case 0:                                                 self.buffer_capture_objects = self.capture_objects
+                    case 1 if len(desc.access_parameters.selected_values) == 0: self.buffer_capture_objects = self.capture_objects
+                    case 1:                                                     self.buffer_capture_objects = desc.access_parameters.selected_values
                     case 2:
                         from_selected_value = int(desc.access_parameters.from_selected_value)-1
                         to_selected_value = int(desc.access_parameters.to_selected_value)
                         if to_selected_value == 0:
                             to_selected_value = len(self.capture_objects)
-                        self.__buffer_capture_objects = self.capture_objects[from_selected_value:to_selected_value]
+                        self.buffer_capture_objects = self.capture_objects[from_selected_value:to_selected_value]
                     case _ as err:                                                raise ValueError(F'access_selection out of range, got {err}, must be (0..2)')
             case None:
                 self.clear_attr(CAPTURE_OBJECTS)
                 self._cbs_attr_post_init[CAPTURE_OBJECTS] = self.__create_buffer_struct_type
                 raise exc.EmptyObj(F"need set <sort_object> before for {self}")
         buffer_elements: list[cdt.StructElement] = list()
-        for el_value in self.__buffer_capture_objects:
+        for el_value in self.buffer_capture_objects:
             names, type_ = self.collection.get_name_and_type(el_value)
             buffer_elements.append(cdt.StructElement(NAME=". ".join(names), TYPE=type_))
 
@@ -316,13 +316,13 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
 
     def get_buffer_objects(self) -> list[cosem_interface_classes.collection.InterfaceClass]:
         """ get objects of current buffer container """
-        return [self.collection.get(obj_def.logical_name.contents) for obj_def in self.__buffer_capture_objects]
+        return [self.collection.get(obj_def.logical_name.contents) for obj_def in self.buffer_capture_objects]
 
     # TODO: remove use names created in create_buffer_struct_type
     def get_buffer_elements_names(self) -> list[str]:
         """ get class name + attribute name + unit if possible """
         ret: list[str] = list()
-        for capture_obj in self.__buffer_capture_objects:
+        for capture_obj in self.buffer_capture_objects:
             try:
                 capture_obj: structs.CaptureObjectDefinition
                 obj: ic.COSEMInterfaceClasses = self.collection.get_object(capture_obj)  # Attention New API!!! remove after test
@@ -349,14 +349,14 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
             else:
                 unit_scaler_profile = scaler_profile.buffer[0]
                 for scaler_unit, capture_object in zip(unit_scaler_profile, self.capture_objects):
-                    for buffer_capture_object in self.__buffer_capture_objects:
+                    for buffer_capture_object in self.buffer_capture_objects:
                         if capture_object == buffer_capture_object:
                             match scaler_unit:
                                 case cdt.ScalUnitType(): result.append(scaler_unit)
                                 case _:                  result.append(None)
                             break
         else:
-            for definition in self.__buffer_capture_objects:
+            for definition in self.buffer_capture_objects:
                 definition: structs.CaptureObjectDefinition
                 obj = self.collection.get_object(definition)
                 match obj, definition.attribute_index.decode():
