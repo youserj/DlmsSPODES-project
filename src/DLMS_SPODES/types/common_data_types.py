@@ -9,6 +9,8 @@ from math import log, ceil
 import datetime
 import logging
 from .. import settings
+from ..config_parser import config
+from .. import enums
 
 
 match settings.get_current_language():
@@ -385,7 +387,7 @@ class Digital(ABC):
     def from_int(self, value: int | float) -> bytes:
         try:
             match self.SCALER_UNIT:
-                case ScalUnitType(): value *= 10**(-self.SCALER_UNIT.scaler.decode())
+                case ScalUnitType(): value *= 10**(-self.SCALER_UNIT.scaler.decode()+self.SCALER_UNIT.unit.get_scaler())
                 case None:           """ no scaler """
                 case _ as error:     raise TypeError(F'Unknown scaler_unit: {error}')
             return int(value).to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
@@ -409,7 +411,7 @@ class Digital(ABC):
         """ return the build in integer type or float type """
         match self.SCALER_UNIT:
             case None:           return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
-            case ScalUnitType(): return int.from_bytes(self.contents, 'big', signed=self.SIGNED) * 10 ** self.SCALER_UNIT.scaler.decode()
+            case ScalUnitType(): return int.from_bytes(self.contents, 'big', signed=self.SIGNED) * 10 ** (self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler())
             case _ as error:     raise TypeError(F'Unknown scaler_unit type {error}')
 
     def __int__(self):
@@ -444,7 +446,7 @@ class Digital(ABC):
     def __str__(self):
         match self.decode():
             case int() as value:   return str(value)
-            case float() as value: return F'{self.decode():.{-min(self.SCALER_UNIT.scaler.decode(), 0)}f}'
+            case float() as value: return F'{value:.{-min(self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler(), 0)}f}'
             case _ as error:       return F'Error decoding type: {error}'
 
     @property
@@ -2131,6 +2133,9 @@ CommonDataTypes: TypeAlias = NullData | Array | Structure | Boolean | BitString 
                              Long | Unsigned | LongUnsigned | CompactArray | Long64 | Long64Unsigned | Enum | Float32 | Float64 | DateTime | Date | Time
 
 
+_s1 = {it.name: it.value.to_bytes(1, "big") for it in enums.Unit}
+
+
 class Unit(Enum):
     ELEMENTS = {b'\x01': en.TIME_YEAR,
                 b'\x02': en.TIME_MONTH,
@@ -2385,6 +2390,21 @@ class Unit(Enum):
                 b'\xfd': en.EXTENDED_TABLE_OF_UNITS,
                 b'\xfe': en.OTHER_UNIT,
                 b'\xff': en.NO_UNIT_UNITLESS_COUNT}
+    SCALERS: dict[bytes, int] = {it.to_bytes(1, "big"): 0 for it in range(256)}
+    if "units.scaler" in config:
+        for unit, value in config["units.scaler"].items():
+            v = int(value)
+            index = _s1[unit.upper()]
+            SCALERS[index] = v
+
+    def __str__(self):
+        additional: str = ""
+        match self.get_scaler():
+            case 3: additional = "к"
+        return F"{additional}{super(Unit, self).__str__()}"
+
+    def get_scaler(self) -> int:
+        return self.SCALERS[self.contents]
 
 
 class ScalUnitType(Structure):
