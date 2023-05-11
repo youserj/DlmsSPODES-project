@@ -1,4 +1,6 @@
 import configparser
 
 config = configparser.ConfigParser()
-config.read("./config.ini")
+config.read(
+    filenames="./config.ini",
+    encoding="utf-8")
