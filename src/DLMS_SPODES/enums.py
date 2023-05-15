@@ -54,6 +54,7 @@ class Application(ITEEnum):
     VERIFY_ERROR = 3, 'Ошибка верификации'
     ACTIVATION_ERROR = 3, 'Ошибка активации'
     RESULT_ERROR = 3, "Ошибка данных"  # COSEMpdu_GB83.asn
+    WAITING_RESULT = 3, "Oжидание результата"
 
 
 class TagsName(Enum):
