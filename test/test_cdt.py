@@ -115,3 +115,14 @@ class TestType(unittest.TestCase):
         value = cdt.ScalUnitType((1, 4))
         value.unit.set(enums.Unit.CURRENT_AMPERE)
         print(value.unit == cdt.Unit(enums.Unit.CURRENT_AMPERE))
+
+    def test_Array(self):
+        obj = collection.Data("1.1.1.1.1.1")
+        obj.set_attr(2, b'\x01\x00')
+        # check Type setting in empty Array
+        obj.set_attr(2, b'\x01\x01\x11\x02')
+
+    def test_get_copy(self):
+        value = cdt.Unsigned(3)
+        copy = value.get_copy(4)
+        self.assertNotEqual(value, copy, "check different value")

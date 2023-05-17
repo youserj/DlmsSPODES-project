@@ -3,7 +3,7 @@ from itertools import chain
 from dataclasses import dataclass
 from struct import pack, unpack
 from abc import ABC, abstractmethod
-from typing import Optional, Type, Tuple, Dict, List, Any, Callable, TypeAlias
+from typing import Optional, Type, Dict, List, Any, Callable, TypeAlias, Self
 from collections import deque
 from math import log, ceil
 import datetime
@@ -164,9 +164,15 @@ class CommonDataType(ABC):
         """ return DLMS type """
         return cls
 
-    @abstractmethod
-    def copy(self) -> CommonDataType:
+    def copy(self) -> Self:
         """ return copy of object """
+        return self.__class__(self.encoding)
+
+    def get_copy(self, value: SimpleDataType | bytes | bytearray | str | int | bool | float | datetime.date | None) -> Self:
+        """return copy with value setting"""
+        new = self.copy()
+        new.set(value)
+        return new
 
     @abstractmethod
     def decode(self) -> str | int | list | bytes | None | float:
@@ -209,9 +215,6 @@ class SimpleDataType(CommonDataType, ABC):
         type(self)(value=value)
         return value, cursor_position
 
-    def copy(self) -> SimpleDataType:
-        return self.__class__(self.encoding)
-
     def _new_instance(self, value) -> SimpleDataType:
         return self.__class__(value)
 
@@ -235,9 +238,6 @@ class ComplexDataType(CommonDataType, ABC):
     @abstractmethod
     def __len__(self):
         """ elements amount """
-
-    def copy(self) -> ComplexDataType:
-        return self.__class__(self.encoding)
 
     @property
     def encoding(self) -> bytes:
@@ -1072,9 +1072,14 @@ class Array(__Array, ComplexDataType):
 
     def set(self, value: bytes | bytearray | list | None):
         self.clear()
+        new_array = Array(value)
+        if self.TYPE is None and len(new_array) != 0:
+            self.set_type(new_array[0].__class__)
+        else:
+            """TYPE already initiated"""
         if hasattr(self, 'cb_preset'):
             self.cb_preset(value)
-        for el in Array(value):
+        for el in new_array:
             self.append(self.TYPE(el))
         if hasattr(self, 'cb_post_set'):
             self.cb_post_set()
