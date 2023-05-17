@@ -1074,13 +1074,13 @@ class Array(__Array, ComplexDataType):
 
     def set(self, value: bytes | bytearray | list | None):
         self.clear()
+        if hasattr(self, 'cb_preset'):
+            self.cb_preset(value)
         new_array = Array(value, type_=self.TYPE)
         if self.TYPE is None and len(new_array) != 0:
             self.set_type(new_array[0].__class__)
         else:
             """TYPE already initiated"""
-        if hasattr(self, 'cb_preset'):
-            self.cb_preset(value)
         for el in new_array:
             self.append(self.TYPE(el))
         if hasattr(self, 'cb_post_set'):
