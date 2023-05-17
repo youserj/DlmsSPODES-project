@@ -1000,15 +1000,16 @@ class NullData(SimpleDataType):
 class Array(__Array, ComplexDataType):
     """ The elements of the array are defined in the Attribute or Method description section of a COSEM IC
     specification """
-    TYPE: Type[CommonDataType] = None
+    TYPE: Type[CommonDataType] | None
     values: list[CommonDataTypes]
     TAG: bytes = b'\x01'
     NAME = tn.ARRAY
     unique: bool = False
     """ True for arrays with unique elements """
 
-    def __init__(self, value: bytes | list | None | Array = None):
+    def __init__(self, value: bytes | list | None | Array = None, type_: Type[CommonDataType] = None):
         self.__dict__['values'] = list()
+        self.__dict__["TYPE"] = type_
         match value:
             case bytes():
                 match value[:1], value[1:]:
@@ -1072,7 +1073,7 @@ class Array(__Array, ComplexDataType):
 
     def set(self, value: bytes | bytearray | list | None):
         self.clear()
-        new_array = Array(value)
+        new_array = Array(value, type_=self.TYPE)
         if self.TYPE is None and len(new_array) != 0:
             self.set_type(new_array[0].__class__)
         else:

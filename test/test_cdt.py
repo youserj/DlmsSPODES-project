@@ -121,6 +121,8 @@ class TestType(unittest.TestCase):
         obj.set_attr(2, b'\x01\x00')
         # check Type setting in empty Array
         obj.set_attr(2, b'\x01\x01\x11\x02')
+        a = obj.value.get_copy([1, 3])
+        print(a)
 
     def test_get_copy(self):
         value = cdt.Unsigned(3)
