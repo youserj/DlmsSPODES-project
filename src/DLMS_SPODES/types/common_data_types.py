@@ -1317,6 +1317,9 @@ class Boolean(SimpleDataType):
     def clear(self):
         self.contents = b'\x00'
 
+    def __int__(self):
+        return 0 if self.contents == b'\x00' else 1
+
 
 class BitString(SimpleDataType):
     """ An ordered sequence of boolean values """
