@@ -1,5 +1,6 @@
 from ..__class_init__ import *
 from ...types.implementations import structs, emuns, integers
+from itertools import chain
 
 
 class RestrictionValue(ut.CHOICE):
@@ -86,23 +87,12 @@ class PushObjectList(cdt.Array):
     TYPE = PushObjectDefinition
 
 
-class TransportServiceType(cdt.Enum):
-    ELEMENTS = {b'\x00': en.TCP,
-                b'\x01': en.UDP,
-                b'\x02': en.FTP_RESERVED,
-                b'\x03': en.SMTP_RESERVED,
-                b'\x04': en.SMS,
-                b'\x05': en.HDLC,
-                b'\x06': en.M_BUS,
-                b'\x07': en.ZIGBEE_RESERVED,
-                b'\x08': en.DLMS_GATEWAY}
-    ELEMENTS.update(((i.to_bytes(1, "big"), en.MANUFACTURER_SPECIFIC) for i in range(200, 256)))
+class TransportServiceType(cdt.Enum, elements=tuple(chain(range(9), range(200, 256)))):  # TODO: elements 200.. is manufacturer specific
+    """"""
 
 
-class MessageType(cdt.Enum):
-    ELEMENTS = {b'\x00': en.A_XDR,
-                b'\x01': en.XML}
-    ELEMENTS.update(((i.to_bytes(1, "big"), en.MANUFACTURER_SPECIFIC) for i in range(128, 256)))
+class MessageType(cdt.Enum, elements=tuple(chain((0, 1), range(128, 256)))):  # TODO: elements 128.. is manufacturer specific
+    """"""
 
 
 class SendDestinationAndMethod(cdt.Structure):
@@ -148,10 +138,8 @@ class RepetitionDelay(cdt.Structure):
         return self.values[2]
 
 
-class PushOperationMethod(cdt.Enum):
-    ELEMENTS = {b'\x00': en.UNCONFIRMED_FAILURE,
-                b'\x01': en.UNCONFIRMED_MISSING,
-                b'\x02': en.CONFIRMED}
+class PushOperationMethod(cdt.Enum, elements=(0, 1, 2)):
+    """"""
 
 
 class ConfirmationParameters(cdt.Structure):
@@ -168,13 +156,12 @@ class ConfirmationParameters(cdt.Structure):
         return self.values[1]
 
 
-class IdentifiedKeyInfoOptions(cdt.Enum):
-    ELEMENTS = {b'\x00': en.GLOB_UNI_ENCR_KEY,
-                b'\x01': en.GLOB_BROAD_ENCR_KEY}
+class IdentifiedKeyInfoOptions(cdt.Enum, elements=(0, 1)):
+    """"""
 
 
-class KEKId(cdt.Enum):
-    ELEMENTS = {b'\x00': en.MASTER_KEY}
+class KEKId(cdt.Enum, elements=(0,)):
+    """"""
 
 
 class WrappedKeyInfoOptions(cdt.Structure):

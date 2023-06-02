@@ -1,30 +1,16 @@
 from ..__class_init__ import *
 
 
-class Status(cdt.Enum):
+class Status(cdt.Enum, elements=tuple(range(6))):
     """ Indicates the registration status of the  modem. """
-    ELEMENTS = {b'\x00': en.NOT_REGISTERED,
-                b'\x01': en.REGISTERED_HOME_NETWORK,
-                b'\x02': en.NOT_REGISTERED_BUT_MT,
-                b'\x03': en.REGISTRATION_DENIED,
-                b'\x04': en.UNKNOWN,
-                b'\x05': en.REGISTERED_ROAMING}
 
 
-class CSAttachment(cdt.Enum):
+class CSAttachment(cdt.Enum, elements=(0, 1, 2)):
     """ Indicates the current circuit switched status."""
-    ELEMENTS = {b'\x00': en.INACTIVE,
-                b'\x01': en.INCOMING_CALL,
-                b'\x02': en.ACTIVE}
 
 
-class PSStatus(cdt.Enum):
+class PSStatus(cdt.Enum, elements=tuple(range(5))):
     """ Indicates the packet switched status of the modem. """
-    ELEMENTS = {b'\x00': en.INACTIVE,
-                b'\x01': en.GPRS,
-                b'\x02': en.EDGE,
-                b'\x03': en.UMTS,
-                b'\x04': en.HSDPA}
 
 
 class SignalQuality(cdt.Unsigned):

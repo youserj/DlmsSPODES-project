@@ -4,5 +4,5 @@ from ..types import common_data_types as cdt, cosem_service_types as cst, useful
 from ..settings import get_current_language, Language
 
 match get_current_language():
-    case Language.ENGLISH: from ..Values.EN import class_names as cn, attr_names as an, meth as mn, enum_names as en
-    case Language.RUSSIAN: from ..Values.RU import class_names as cn, attr_names as an, meth as mn, enum_names as en
+    case Language.ENGLISH: from ..Values.EN import class_names as cn, attr_names as an, meth as mn
+    case Language.RUSSIAN: from ..Values.RU import class_names as cn, attr_names as an, meth as mn

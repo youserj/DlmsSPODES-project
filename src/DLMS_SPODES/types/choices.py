@@ -12,86 +12,47 @@ class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
     the chosen data value is taken. ITU-T Rec. X.680 | ISO/IEC 8824-1 """
     TYPE = cdt.CommonDataType
 
-
-class SimpleDataTypeChoice(CommonDataTypeChoiceBase):
-    """All Simple Data Type"""
-    ELEMENTS = {0: ut.SequenceElement(cdt.tn.NULL_DATA, cdt.NullData),
-                3: ut.SequenceElement(cdt.tn.BOOLEAN, cdt.Boolean),
-                4: ut.SequenceElement(cdt.tn.BIT_STRING, cdt.BitString),
-                5: ut.SequenceElement(cdt.tn.DOUBLE_LONG, cdt.DoubleLong),
-                6: ut.SequenceElement(cdt.tn.DOUBLE_LONG_UNSIGNED, cdt.DoubleLongUnsigned),
-                9: ut.SequenceElement(cdt.tn.OCTET_STRING, cdt.OctetString),
-                10: ut.SequenceElement(cdt.tn.VISIBLE_STRING, cdt.VisibleString),
-                12: ut.SequenceElement(cdt.tn.UTF8_STRING, cdt.Utf8String),
-                13: ut.SequenceElement(cdt.tn.BCD, cdt.Bcd),
-                15: ut.SequenceElement(cdt.tn.INTEGER, cdt.Integer),
-                16: ut.SequenceElement(cdt.tn.LONG, cdt.Long),
-                17: ut.SequenceElement(cdt.tn.UNSIGNED, cdt.Unsigned),
-                18: ut.SequenceElement(cdt.tn.LONG_UNSIGNED, cdt.LongUnsigned),
-                20: ut.SequenceElement(cdt.tn.LONG64, cdt.Long64),
-                21: ut.SequenceElement(cdt.tn.LONG64_UNSIGNED, cdt.Long64Unsigned),
-                22: ut.SequenceElement(cdt.tn.ENUM, cdt.Enum),
-                23: ut.SequenceElement(cdt.tn.FLOAT32, cdt.Float32),
-                24: ut.SequenceElement(cdt.tn.FLOAT64, cdt.Float64),
-                25: ut.SequenceElement(cdt.tn.DATE_TIME, cdt.DateTime),
-                26: ut.SequenceElement(cdt.tn.DATE, cdt.Date),
-                27: ut.SequenceElement(cdt.tn.TIME, cdt.Time),
-                # TODO: and more 28..33
-                }
+    def __init_subclass__(cls, **kwargs):
+        cls.ELEMENTS = dict()
+        for t in kwargs["types"]:
+            if isinstance(t, dict):  # extended choice
+                cls.ELEMENTS[int.from_bytes(tuple(t.values())[0].TAG, "big")] = {k: ut.SequenceElement(v.NAME, v) for k, v in t.items()}
+            elif issubclass(t, cdt.CommonDataType):
+                cls.ELEMENTS[int.from_bytes(t.TAG, "big")] = ut.SequenceElement(t.NAME, t)
+            else:
+                raise TypeError(F"got {t.__class__} expected cdt or dict")
 
 
-class ComplexDataTypeChoice(CommonDataTypeChoiceBase):
+class SimpleDataTypeChoice(CommonDataTypeChoiceBase, types=cdt.SimpleDataType.__subclasses__()):
+    """All Simple Data Types"""
+
+
+class ComplexDataTypeChoice(CommonDataTypeChoiceBase, types=cdt.ComplexDataType.__subclasses__()):
     """All Complex Data Types"""
-    ELEMENTS = {0: ut.SequenceElement(cdt.tn.NULL_DATA, cdt.NullData),
-                1: ut.SequenceElement(cdt.tn.ARRAY, cdt.Array),
-                2: ut.SequenceElement(cdt.tn.STRUCTURE, cdt.Structure),
-                19: ut.SequenceElement(cdt.tn.COMPACT_ARRAY, cdt.CompactArray)}
 
 
-class AccessSelectorsChoice(CommonDataTypeChoiceBase):
+class AccessSelectorsChoice(CommonDataTypeChoiceBase, types=(cdt.NullData, cdt.Array)):
     """All Complex Data Types"""
-    ELEMENTS = {0: ut.SequenceElement(cdt.tn.NULL_DATA, cdt.NullData),
-                1: ut.SequenceElement(cdt.tn.ARRAY, cdt.Array)}
 
 
-class CommonDataTypeChoice(CommonDataTypeChoiceBase):
+class CommonDataTypeChoice(CommonDataTypeChoiceBase, types=chain(cdt.SimpleDataType.__subclasses__(), cdt.ComplexDataType.__subclasses__())):
     """Types of Data.value"""
-    ELEMENTS = dict(chain(SimpleDataTypeChoice.ELEMENTS.items(), ComplexDataTypeChoice.ELEMENTS.items()))
 
 
-class ExtendedRegisterChoice(CommonDataTypeChoiceBase):
+class ExtendedRegisterChoice(CommonDataTypeChoiceBase,
+                             types=(cdt.NullData, cdt.BitString, cdt.DoubleLongUnsigned, cdt.OctetString, cdt.VisibleString, cdt.Utf8String, cdt.Unsigned, cdt.LongUnsigned,
+                                    cdt.Long64Unsigned)):
     """Types of ExtendedRegister.value"""
-    ELEMENTS = {0: ut.SequenceElement(cdt.tn.NULL_DATA, cdt.NullData),
-                4: ut.SequenceElement(cdt.tn.BIT_STRING, cdt.BitString),
-                6: ut.SequenceElement(cdt.tn.DOUBLE_LONG_UNSIGNED, cdt.DoubleLongUnsigned),
-                9: ut.SequenceElement(cdt.tn.OCTET_STRING, cdt.OctetString),
-                10: ut.SequenceElement(cdt.tn.VISIBLE_STRING, cdt.VisibleString),
-                12: ut.SequenceElement(cdt.tn.UTF8_STRING, cdt.Utf8String),
-                17: ut.SequenceElement(cdt.tn.UNSIGNED, cdt.Unsigned),
-                18: ut.SequenceElement(cdt.tn.LONG_UNSIGNED, cdt.LongUnsigned),
-                21: ut.SequenceElement(cdt.tn.LONG64_UNSIGNED, cdt.Long64Unsigned)}
 
 
-class RegisterChoice(CommonDataTypeChoiceBase):
+class RegisterChoice(CommonDataTypeChoiceBase,
+                     types=(cdt.NullData, cdt.BitString, cdt.DoubleLongUnsigned, cdt.OctetString, cdt.VisibleString, cdt.Utf8String, cdt.Unsigned, cdt.LongUnsigned,
+                            cdt.Long64Unsigned, cdt.DoubleLong, cdt.Integer, cdt.Long, cdt.Long64, cdt.Enum, cdt.Float32, cdt.Float64)):
     """Types of ExtendedRegister.value"""
-    ELEMENTS = dict(ExtendedRegisterChoice.ELEMENTS)
-    ELEMENTS.update({5: ut.SequenceElement(cdt.tn.DOUBLE_LONG, cdt.DoubleLong),
-                     15: ut.SequenceElement(cdt.tn.INTEGER, cdt.Integer),
-                     16: ut.SequenceElement(cdt.tn.LONG, cdt.Long),
-                     20: ut.SequenceElement(cdt.tn.LONG64, cdt.Long64),
-                     22: ut.SequenceElement(cdt.tn.ENUM, cdt.Enum),
-                     23: ut.SequenceElement(cdt.tn.FLOAT32, cdt.Float32),
-                     24: ut.SequenceElement(cdt.tn.FLOAT64, cdt.Float64)})
 
 
-class AnyDateTimeChoice(CommonDataTypeChoiceBase):
+class AnyDateTimeChoice(CommonDataTypeChoiceBase, types=(cdt.DateTime, cdt.Date, cdt.Time, {12: cst.OctetStringDateTime, 5: cst.OctetStringDate, 4: cst.OctetStringTime})):
     """Date of the event may contain the date only, the time only or both, encoded as specified in 4.1.6.1."""
-    ELEMENTS = {25: ut.SequenceElement(cdt.tn.DATE_TIME, cdt.DateTime),
-                26: ut.SequenceElement(cdt.tn.DATE, cdt.Date),
-                27: ut.SequenceElement(cdt.tn.TIME, cdt.Time),
-                9: {12: ut.SequenceElement(cst.OctetStringDateTime.NAME, cst.OctetStringDateTime),
-                    5: ut.SequenceElement(cst.OctetStringDate.NAME, cst.OctetStringDate),
-                    4: ut.SequenceElement(cst.OctetStringTime.NAME, cst.OctetStringTime)}}
 
 
 simple_dt = SimpleDataTypeChoice()

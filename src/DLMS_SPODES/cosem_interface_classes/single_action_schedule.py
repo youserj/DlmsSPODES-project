@@ -2,12 +2,8 @@ from .__class_init__ import *
 from ..types.implementations import structs
 
 
-class TYPE(cdt.Enum):
-    ELEMENTS = {b'\x01': en.SCHEDULE_TYPE_1,
-                b'\x02': en.SCHEDULE_TYPE_2,
-                b'\x03': en.SCHEDULE_TYPE_3,
-                b'\x04': en.SCHEDULE_TYPE_4,
-                b'\x05': en.SCHEDULE_TYPE_5}
+class TYPE(cdt.Enum, elements=(1, 2, 3, 4, 5)):
+    """"""
 
 
 class ExecutionTimeDate(cdt.Structure):

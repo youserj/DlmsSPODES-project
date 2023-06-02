@@ -12,16 +12,8 @@ ACTIVATION_SUCCESSFUL = 6
 ACTIVATION_FAILED = 7
 
 
-class ImageTransferStatus(cdt.Enum):
+class ImageTransferStatus(cdt.Enum, elements=tuple(range(8))):
     """ Holds the status of the Image transfer process. """
-    ELEMENTS = {b'\x00': en.IMAGE_TRANSFER_NOT_INITIATED,
-                b'\x01': en.IMAGE_TRANSFER_INITIATED,
-                b'\x02': en.IMAGE_VERIFICATION_INITIATED,
-                b'\x03': en.IMAGE_VERIFICATION_SUCCESSFUL,
-                b'\x04': en.IMAGE_VERIFICATION_FAILED,
-                b'\x05': en.IMAGE_ACTIVATION_INITIATED,
-                b'\x06': en.IMAGE_ACTIVATION_SUCCESSFUL,
-                b'\x07': en.IMAGE_ACTIVATION_FAILED}
 
 
 class ImageToActivateInfoElement(cdt.Structure):
@@ -145,11 +137,11 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
         return self.get_meth(2)
 
     @property
-    def image_verify(self) -> cst.Integer0:
+    def image_verify(self) -> integers.Only0:
         return self.get_meth(3)
 
     @property
-    def image_activate(self) -> cst.Integer0:
+    def image_activate(self) -> integers.Only0:
         return self.get_meth(4)
 
     def set_image_for_update(self, value: bytes, identifier: bytearray):

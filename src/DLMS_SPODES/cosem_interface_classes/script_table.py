@@ -3,10 +3,8 @@ from .__class_init__ import *
 from ..types import choices
 
 
-class ServiceId(cdt.Enum):
-    """  defines which action to be applied to the referenced object . """
-    ELEMENTS = {b'\x01': en.WRITE_ATTRIBUTE,
-                b'\x02': en.EXECUTE_SPECIFIC_METHOD}
+class ServiceId(cdt.Enum, elements=(1, 2)):
+    """defines which action to be applied to the referenced object."""
 
 
 class ActionSpecification(cdt.Structure):

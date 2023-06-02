@@ -59,13 +59,13 @@ class TestType(unittest.TestCase):
         from src.DLMS_SPODES.types.implementations import structs
         col = Collection()
         col.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        col.create(class_id=ut.CosemClassId(8), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.1.0.0.255'))
+        col.create(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
         col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
         col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.1.29.0.255'))
         col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.3.29.0.255'))
         col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.4.29.0.255'))
-        profile = collection.create(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName('1.0.94.7.4.255'))
-        profile.collection = collection
+        profile = col.create(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName('1.0.94.7.4.255'))
+        profile.collection = col
         profile.set_attr(6, structs.CaptureObjectDefinition().encoding)
         profile.set_attr(3, bytes.fromhex('01 05 02 04 12 00 08 09 06 00 00 01 00 00 ff 0f 02 12 00 00 02 04 12 00 03 09 06 01 00 02 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 01 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 03 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 04 1d 00 ff 0f 03 12 00 00'))
         profile.object_list.selective_access.access_selector.set_contents_from(2)
@@ -114,6 +114,8 @@ class TestType(unittest.TestCase):
     def test_ScalerUnitType(self):
         value = cdt.ScalUnitType((1, 4))
         value.unit.set(enums.Unit.CURRENT_AMPERE)
+        a = str(value.unit)
+        a = str(value.unit)
         print(value.unit == cdt.Unit(enums.Unit.CURRENT_AMPERE))
 
     def test_Array(self):
@@ -128,3 +130,12 @@ class TestType(unittest.TestCase):
         value = cdt.Unsigned(3)
         copy = value.get_copy(4)
         self.assertNotEqual(value, copy, "check different value")
+
+    def test_Enum(self):
+        value = cdt.Unit(4)
+        match value:
+            case cdt.Unit(4): print("ok")
+
+    def test_integers(self):
+        value = impl.integers.Only0(1)
+        print(value)

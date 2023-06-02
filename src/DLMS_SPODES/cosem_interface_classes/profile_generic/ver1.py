@@ -18,18 +18,12 @@ ENTRIES_IN_USE = 7
 PROFILE_ENTRIES = 8
 
 
-class SortMethod(cdt.Enum):
+class SortMethod(cdt.Enum, elements=(1, 2, 3, 4, 5, 6)):
     """ If the profile is unsorted, it works as a “first in first out” buffer (it is hence sorted by capturing, and not necessarily by the time
     maintained in the clock object). If the buffer is full, the next call to capture () will push out the first (oldest) entry of the buffer to make
     space for the new entry. If the profile is sorted, a call to capture () will store the new entry at the appropriate position in the buffer, moving
     all following entries and probably losing the least interesting entry. If the new entry would enter the buffer after the last entry and if the
     buffer is already full, the new entry will not be retained at all. """
-    ELEMENTS = {b'\x01': en.FIFO,
-                b'\x02': en.LIFO,
-                b'\x03': en.LARGEST,
-                b'\x04': en.SMALLEST,
-                b'\x05': en.NEAREST_TO_ZERO,
-                b'\x06': en.FAREST_FROM_ZERO}
 
 
 class CaptureObjects(cdt.Array):
@@ -37,13 +31,8 @@ class CaptureObjects(cdt.Array):
     TYPE = structs.CaptureObjectDefinition
 
 
-class FromEntry(cdt.DoubleLongUnsigned):
+class FromEntry(cdt.DoubleLongUnsigned, min=1):
     """ Access selector value for selective access to the object_list attribute """
-    NAME = F'{cdt.tn.DOUBLE_LONG_UNSIGNED}(1..)'
-
-    def validate(self):
-        if int.from_bytes(self.contents, 'big') < 0x01:
-            raise ValueError(F'Length of {self.__class__.__name__} must be 1, but got {self.contents.hex()}')
 
 
 class EntryDescriptor(cdt.Structure):

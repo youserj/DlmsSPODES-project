@@ -5,18 +5,12 @@ from ... import ITE_exceptions as exc
 from ..__class_init__ import *
 
 
-class AccessMode(ver0.AccessMode,
-                 elements={b'\x04': en.AUTHENTICATION_READ_ONLY,
-                           b'\x05': en.AUTHENTICATION_WRITE_ONLY,
-                           b'\x06': en.AUTHENTICATION_READ_AND_WRITE}):
+class AccessMode(cdt.Enum, elements=tuple(range(7))):
     """Version 0 extension"""
 
 
-class AccessModeMeth(cdt.Enum):
+class AccessModeMeth(cdt.Enum, elements=(0, 1, 2)):
     """ Enum of access mode for methods """
-    ELEMENTS = {b'\x00': en.NO_ACCESS,
-                b'\x01': en.ACCESS,
-                b'\x02': en.AUTHENTICATED_ACCESS}
 
 
 # TODO: make as subclass of ver0

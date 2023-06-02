@@ -11,12 +11,11 @@ import logging
 from .. import settings
 from ..config_parser import config
 from .. import config_parser
-from .. import enums
 
 
 match settings.get_current_language():
-    case settings.Language.ENGLISH: from ..Values.EN import cdt as tn, se, enum_names as en
-    case settings.Language.RUSSIAN: from ..Values.RU import cdt as tn, se, enum_names as en
+    case settings.Language.ENGLISH: from ..Values.EN import se
+    case settings.Language.RUSSIAN: from ..Values.RU import se
     case _ as lang:                        raise ImportError(F'{lang} is absence')
 
 
@@ -110,6 +109,11 @@ class CommonDataType(ABC):
     cb_post_set: Callable
     cb_preset: Callable
     contents: bytes
+    NAME: str
+    TAG: bytes
+    SIZE: int = None
+    MIN: int
+    MAX: int
 
     @abstractmethod
     def __init__(self, value=None):
@@ -129,11 +133,6 @@ class CommonDataType(ABC):
     @abstractmethod
     def TAG(self) -> bytes:
         """ 62056-53 8.3 TypeDescription ::= CHOICE. Set at once, no supported change """
-
-    @property
-    @abstractmethod
-    def NAME(self) -> str:
-        """ return the type name which depends from language"""
 
     @property
     @abstractmethod
@@ -203,6 +202,16 @@ class CommonDataType(ABC):
     def __repr__(self):
         return F'{self.__class__.__name__}({self})'
 
+    def __init_subclass__(cls, **kwargs):
+        """initiate type.NAME use config.toml"""
+        base: Type[CommonDataType]
+        if base := kwargs.get("tag"):
+            cls.TAG = base.TAG
+            cls.NAME = base.NAME
+        if size := kwargs.get("size"):
+            cls.SIZE = size
+            cls.NAME += F"[{size}]"
+
 
 class SimpleDataType(CommonDataType, ABC):
 
@@ -267,6 +276,7 @@ class __Array(ABC):
 class _String(ABC):
     TAG: bytes
     DEFAULT: bytes = b''
+    SIZE: int
 
     def __init__(self, value: bytes | bytearray | str | int | SimpleDataType = None):
         match value:
@@ -286,6 +296,8 @@ class _String(ABC):
 
     def validation(self):
         """ do any thing """
+        if self.SIZE and len(self.contents) != self.SIZE:
+            raise ValueError(F'Length of {self.__class__.__name__} must be {self.SIZE}, but got {len(self.contents)}: {self.contents.hex()}')
 
     @abstractmethod
     def __len__(self):
@@ -355,6 +367,9 @@ class Digital(ABC):
     TAG: bytes
     SCALER_UNIT: ScalUnitType | None = None
     DEFAULT = None
+    MIN: int | None = None
+    MAX: int | None = None
+    VALUE: int | None = None
 
     def __init__(self, value: bytes | bytearray | str | int | float | Digital = None, scaler_unit: ScalUnitType = None):
         if value is None:
@@ -378,8 +393,27 @@ class Digital(ABC):
             case _:                                                                    raise ValueError(F'Error create {self.NAME} with value: {value}')
         self.validate()
 
+    def __init_subclass__(cls, **kwargs):
+        """initiate type.VALUE from subclass arg"""
+        cls.VALUE = kwargs.get("value")
+        if isinstance(cls.VALUE, int):
+            cls.NAME += F"({cls.VALUE})"
+        else:
+            cls.MIN = kwargs.get("min")
+            cls.MAX = kwargs.get("max")
+            if isinstance(cls.MIN, int) or isinstance(cls.MAX, int):
+                cls.NAME += F"({cls.MIN if cls.MIN is not None else ''}..{cls.MAX if cls.MAX is not None else ''})"
+            else:
+                pass
+
     def validate(self):
         """ receiving contents validate. override it if need """
+        if isinstance(self.VALUE, int) and int(self) != self.VALUE:
+            raise ValueError(F"for {self.NAME} got value: {int(self)}, expected {self.VALUE}")
+        if isinstance(self.MIN, int) and self.MIN > int(self):
+            raise ValueError(F"out of range {self.NAME}, got {int(self)} expected more than {self.MIN}")
+        if isinstance(self.MAX, int) and int(self) > self.MAX:
+            raise ValueError(F'out of range {self.NAME},  got {int(self)} expected less than {self.MAX}')
 
     def _new_instance(self, value) -> Digital:
         """ override SimpleDataType for send scaler_unit . use only for check and send contents """
@@ -975,7 +1009,6 @@ class __Time(ABC):
 class NullData(SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """
     TAG = b'\x00'
-    NAME = tn.NULL_DATA
 
     def __init__(self, value: bytes | str | NullData = None):
         match value:
@@ -1004,7 +1037,6 @@ class Array(__Array, ComplexDataType):
     TYPE: Type[CommonDataType] = None
     values: list[CommonDataTypes]
     TAG: bytes = b'\x01'
-    NAME = tn.ARRAY
     unique: bool = False
     """ True for arrays with unique elements """
 
@@ -1097,66 +1129,9 @@ class StructElement:
         return F'{self.NAME}: {self.TYPE.NAME}'
 
 
-class AXDR(ABC):
-    """ Use in structures for association LN objects """
-    is_xdr: bool
-    NAME = F'{tn.STRUCTURE} A-XDR'
-    ELEMENTS: tuple[StructElement, ...]
-    values: tuple[CommonDataType, None]
-
-    def __init__(self, value: bytes = None):
-        match value:
-            case bytes() as encoding:
-                tag, length_and_contents = encoding[:1], encoding[1:]
-                match tag:
-                    case b'\x09':
-                        values = [None] * len(self.ELEMENTS)
-                        self.__dict__['is_xdr'] = True
-                        self.__dict__['TAG'] = b'\x09'
-                        length, pdu = get_length_and_pdu(length_and_contents)
-                        if length <= len(pdu):
-                            xdr = pdu[:length]
-                            values_in: deque[int] = deque(xdr)
-                            values_index = iter(range(len(self.ELEMENTS)))
-                            # ger first two values
-                            two_values = divmod(values_in.popleft(), 40)
-                            # self._set_value(next(values_index), two_values[0])
-                            # self._set_value(next(values_index), two_values[1])
-                            i = next(values_index)
-                            values[i] = self.ELEMENTS[i].TYPE(two_values[0])
-                            i = next(values_index)
-                            values[i] = self.ELEMENTS[i].TYPE(two_values[1])
-                            tmp = 0
-                            while values_in:
-                                tmp = (tmp & 0b0111_1111) << 7
-                                if values_in[0] >= 0b1000_0000:
-                                    tmp += values_in.popleft() & 0b0111_1111
-                                else:
-                                    tmp += values_in.popleft()
-                                    # self._set_value(next(values_index), tmp)
-                                    i = next(values_index)
-                                    values[i] = self.ELEMENTS[i].TYPE(tmp)
-                                    tmp = 0
-                            self.__dict__['values'] = tuple(values)
-                        else:
-                            raise TypeError(F'Expected {self.NAME} type, got {get_common_data_type_from(encoding[:1]).NAME}')
-                    case _:
-                        self.__dict__['is_xdr'] = False
-                        super(AXDR, self).__init__(value)
-            case None:                                              self.__init__(self.default)
-
-    @property
-    def contents(self) -> bytes:
-        if self.is_xdr:
-            return self.get_a_xdr()
-        else:
-            return super(AXDR, self).contents
-
-
 class Structure(ComplexDataType):
     """ The elements of the structure are defined in the Attribute or Method description section of a COSEM IC specification """
     TAG = b'\x02'
-    NAME = tn.STRUCTURE
     ELEMENTS: tuple[StructElement, ...] = None
     values: tuple[CommonDataTypes, ...]
     default: bytes = None
@@ -1270,10 +1245,65 @@ class Structure(ComplexDataType):
         return bytes(res)
 
 
+class AXDR(ABC):
+    """ Use in structures for association LN objects """
+    is_xdr: bool
+    # NAME = Structure.NAME + " A-XDR"
+    ELEMENTS: tuple[StructElement, ...]
+    values: tuple[CommonDataType, None]
+
+    def __init__(self, value: bytes = None):
+        match value:
+            case bytes() as encoding:
+                tag, length_and_contents = encoding[:1], encoding[1:]
+                match tag:
+                    case b'\x09':
+                        values = [None] * len(self.ELEMENTS)
+                        self.__dict__['is_xdr'] = True
+                        self.__dict__['TAG'] = b'\x09'
+                        length, pdu = get_length_and_pdu(length_and_contents)
+                        if length <= len(pdu):
+                            xdr = pdu[:length]
+                            values_in: deque[int] = deque(xdr)
+                            values_index = iter(range(len(self.ELEMENTS)))
+                            # ger first two values
+                            two_values = divmod(values_in.popleft(), 40)
+                            # self._set_value(next(values_index), two_values[0])
+                            # self._set_value(next(values_index), two_values[1])
+                            i = next(values_index)
+                            values[i] = self.ELEMENTS[i].TYPE(two_values[0])
+                            i = next(values_index)
+                            values[i] = self.ELEMENTS[i].TYPE(two_values[1])
+                            tmp = 0
+                            while values_in:
+                                tmp = (tmp & 0b0111_1111) << 7
+                                if values_in[0] >= 0b1000_0000:
+                                    tmp += values_in.popleft() & 0b0111_1111
+                                else:
+                                    tmp += values_in.popleft()
+                                    # self._set_value(next(values_index), tmp)
+                                    i = next(values_index)
+                                    values[i] = self.ELEMENTS[i].TYPE(tmp)
+                                    tmp = 0
+                            self.__dict__['values'] = tuple(values)
+                        else:
+                            raise TypeError(F'Expected {self.NAME} type, got {get_common_data_type_from(encoding[:1]).NAME}')
+                    case _:
+                        self.__dict__['is_xdr'] = False
+                        super(AXDR, self).__init__(value)
+            case None:                                              self.__init__(self.default)
+
+    @property
+    def contents(self) -> bytes:
+        if self.is_xdr:
+            return self.get_a_xdr()
+        else:
+            return super(AXDR, self).contents
+
+
 class Boolean(SimpleDataType):
     """ boolean """
     TAG = b'\x03'
-    NAME = tn.BOOLEAN
 
     def __init__(self, value: bytes | bytearray | str | int | bool | float | datetime.datetime | datetime.time | Boolean = None):
         match value:
@@ -1325,7 +1355,6 @@ class Boolean(SimpleDataType):
 class BitString(SimpleDataType):
     """ An ordered sequence of boolean values """
     TAG = b'\x04'
-    NAME = tn.BIT_STRING
     __length: int
     default: bytes | bytearray | str | int = b'\x04\x00'
 
@@ -1441,7 +1470,6 @@ class BitString(SimpleDataType):
 class DoubleLong(Digital, SimpleDataType):
     """ Integer32 -2 147 483 648… 2 147 483 647 """
     TAG = b'\x05'
-    NAME = tn.DOUBLE_LONG
     SIGNED = True
     LENGTH = 4
 
@@ -1449,7 +1477,6 @@ class DoubleLong(Digital, SimpleDataType):
 class DoubleLongUnsigned(Digital, SimpleDataType):
     """ Unsigned32 0…4 294 967 295 """
     TAG = b'\x06'
-    NAME = tn.DOUBLE_LONG_UNSIGNED
     SIGNED = False
     LENGTH = 4
 
@@ -1457,7 +1484,6 @@ class DoubleLongUnsigned(Digital, SimpleDataType):
 class OctetString(_String, SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """
     TAG = b'\x09'
-    NAME = tn.OCTET_STRING
 
     def from_str(self, value: str) -> bytes:
         """ input as hex code """
@@ -1512,7 +1538,6 @@ class OctetString(_String, SimpleDataType):
 class VisibleString(_String, SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """
     TAG = b'\x0A'
-    NAME = tn.VISIBLE_STRING
 
     def from_str(self, value: str) -> bytes:
         return bytes(value, 'cp1251')
@@ -1540,7 +1565,6 @@ class VisibleString(_String, SimpleDataType):
 class Utf8String(_String, SimpleDataType):
     """ An ordered sequence of characters encoded as UTF-8 """
     TAG = b'\x0c'
-    NAME = tn.UTF8_STRING
 
     def from_str(self, value: str) -> bytes:
         return bytes(value, "utf-8")
@@ -1564,7 +1588,6 @@ class Utf8String(_String, SimpleDataType):
 class Bcd(SimpleDataType):
     """ binary coded decimal """
     TAG = b'\x0d'
-    NAME = tn.BCD
 
     def __init__(self, value: bytes | bytearray | str | int | Bcd = None):
         match value:  # TODO: replace priority case
@@ -1618,7 +1641,6 @@ class Bcd(SimpleDataType):
 class Integer(Digital, SimpleDataType):
     """ Integer8 -128…127"""
     TAG = b'\x0f'
-    NAME = tn.INTEGER
     SIGNED = True
     LENGTH = 1
 
@@ -1626,7 +1648,6 @@ class Integer(Digital, SimpleDataType):
 class Long(Digital, SimpleDataType):
     """ Integer16 -32 768…32 767 """
     TAG = b'\x10'
-    NAME = tn.LONG
     SIGNED = True
     LENGTH = 2
 
@@ -1634,7 +1655,6 @@ class Long(Digital, SimpleDataType):
 class Unsigned(Digital, SimpleDataType):
     """ Unsigned8 0…255 """
     TAG = b'\x11'
-    NAME = tn.UNSIGNED
     SIGNED = False
     LENGTH = 1
 
@@ -1642,7 +1662,6 @@ class Unsigned(Digital, SimpleDataType):
 class LongUnsigned(Digital, SimpleDataType):
     """ Unsigned16 0…65535"""
     TAG = b'\x12'
-    NAME = tn.LONG_UNSIGNED
     SIGNED = False
     LENGTH = 2
 
@@ -1650,7 +1669,6 @@ class LongUnsigned(Digital, SimpleDataType):
 class CompactArray(__Array, ComplexDataType):
     """ Provides an alternative, compact encoding of complex data. TODO: need test, may be don't work """
     TAG = b'\x13'
-    NAME = tn.COMPACT_ARRAY
 
     def __init__(self, elements_type: Type[SimpleDataType | Structure],
                  elements: list[SimpleDataType | Structure] = None,
@@ -1677,7 +1695,6 @@ class CompactArray(__Array, ComplexDataType):
 class Long64(Digital, SimpleDataType):
     """ Integer64 - 2**63…2**63-1 """
     TAG = b'\x14'
-    NAME = tn.LONG64
     SIGNED = True
     LENGTH = 8
 
@@ -1685,7 +1702,6 @@ class Long64(Digital, SimpleDataType):
 class Long64Unsigned(Digital, SimpleDataType):
     """ Unsigned64 0…2^64-1 """
     TAG = b'\x15'
-    NAME = tn.LONG64_UNSIGNED
     SIGNED = False
     LENGTH = 8
 
@@ -1694,9 +1710,8 @@ class Enum(SimpleDataType, ABC):
     """ The elements of the enumeration type are defined in the “Attribute description” section of a COSEM interface class specification """
     contents: bytes
     TAG = b'\x16'
-    NAME = tn.ENUM
     ELEMENTS: dict[bytes, str] = None
-    __match_args__ = ('value', )
+    __match_args__ = ('value2', )
 
     def __init__(self, value: bytes | bytearray | str | int | Enum = None):
         match value:  # TODO: replace priority case
@@ -1743,16 +1758,15 @@ class Enum(SimpleDataType, ABC):
         except AttributeError:
             logger.error("default enum values don't set. Look why...")
 
-    def __init_subclass__(cls, elements: dict[bytes, str] = None, **kwargs):
-        """ used for reinit elements of parent class """
-        match elements:
-            case dict():
-                if issubclass(cls.__base__, Enum):
-                    cls.ELEMENTS = cls.__base__.ELEMENTS.copy()
-                    cls.ELEMENTS.update(elements)
-                else:
-                    ValueError(F'Error Init {cls=} with {cls.__base__=}')
-            case _: pass
+    def __init_subclass__(cls, **kwargs):
+        """initiate ELEMENTS name use config.toml"""
+        elements: tuple[int, ...] = kwargs["elements"]
+        try:
+            c = {par["e"]: par["v"] for par in config["DLMS"][cls.__name__]}
+        except KeyError as e:
+            c = dict()
+            logger.warning(F"not find {e} in config.toml")
+        cls.ELEMENTS = {el.to_bytes(1, "big"): c.get(el, F"{cls.__name__}({el})") for el in elements}
 
     @property
     def encoding(self) -> bytes:
@@ -1770,6 +1784,10 @@ class Enum(SimpleDataType, ABC):
     def value(self) -> str:
         """ enum value name by according dlms """
         return str(self)
+
+    @property
+    def value2(self) -> int:
+        return int(self)
 
     def validate_from(self, value: str, cursor_position=None):
         """ return 'Ok' if string is valid else return valid Str """
@@ -1813,7 +1831,6 @@ class Float32(Float, SimpleDataType):
         - f is the fraction, it is 23 bits.
         Value = (-1)**s * 2**(e-127) * 1.f """
     TAG = b'\x17'
-    NAME = tn.FLOAT32
 
     @property
     def __len__(self): return 4
@@ -1837,7 +1854,6 @@ class Float64(Float, SimpleDataType):
         - f is the fraction, it is 52 bits.
         Value = (-1)**s * 2**(e-1023) * 1.f """
     TAG = b'\x18'
-    NAME = tn.FLOAT64
 
     @property
     def __len__(self): return 8
@@ -1884,7 +1900,6 @@ class DateTime(__DateTime, __Date, __Time, SimpleDataType):
             e Flag set to true: the transmitted time contains the daylight saving deviation (summer time).
                 Flag set to false: the transmitted time does not contain daylight saving deviation (normal time)."""
     TAG = b'\x19'
-    NAME = tn.DATE_TIME
     _separators = ('.', '.', '-', ' ', ':', ':', '.', ' ')
 
     def __init__(self, value: datetime.datetime | datetime.date | bytearray | bytes | str = None):
@@ -2040,7 +2055,6 @@ class Date(__DateTime, __Date, SimpleDataType):
         dayOfWeek: interpreted as unsigned range 1…7, 0xFF 1 is Monday
             0xFF = not specified"""
     TAG = b'\x1a'
-    NAME = tn.DATE
     _separators = ('.', '.', '-')
 
     def __init__(self, value: datetime.datetime | datetime.date | bytearray | bytes | str | int = None):
@@ -2082,7 +2096,6 @@ class Time(__DateTime, __Time, SimpleDataType):
     For hour, minute, second and hundredths: 0xFF = not specified.
     For repetitive times the unused parts shall be set to “not specified”."""
     TAG = b'\x1b'
-    NAME = tn.TIME
     _separators = (':', ':', '.')
 
     def __init__(self, value: datetime.datetime | datetime.time | bytearray | bytes | str = None):
@@ -2136,6 +2149,14 @@ class Time(__DateTime, __Time, SimpleDataType):
         return None
 
 
+# set type.NAME
+for c in chain(SimpleDataType.__subclasses__(), ComplexDataType.__subclasses__()):
+    try:
+        c.NAME = config["DLMS"]["class_name"][c.__name__]
+    except KeyError as e:
+        logger.warning(F"not find {e} in config.toml")
+        c.NAME = c.__name__
+
 __types: Dict[bytes, Type[CommonDataType]] = {dlms_type.TAG: dlms_type for dlms_type in chain(SimpleDataType.__subclasses__(), ComplexDataType.__subclasses__())}
 """ Common data type dictionary """
 
@@ -2144,276 +2165,22 @@ CommonDataTypes: TypeAlias = NullData | Array | Structure | Boolean | BitString 
                              Long | Unsigned | LongUnsigned | CompactArray | Long64 | Long64Unsigned | Enum | Float32 | Float64 | DateTime | Date | Time
 
 
-_s1 = {it.name: it.value.to_bytes(1, "big") for it in enums.Unit}
-
-
-class Unit(Enum):
-    ELEMENTS = {b'\x01': config_parser.get("values.enum", "time_year"),
-                b'\x02': config_parser.get("values.enum", "time_month"),
-                b'\x03': config_parser.get("values.enum", "time_week"),
-                b'\x04': config_parser.get("values.enum", "time_day"),
-                b'\x05': config_parser.get("values.enum", "time_hour"),
-                b'\x06': config_parser.get("values.enum", "time_minute"),
-                b'\x07': config_parser.get("values.enum", "time_second"),
-                b'\x08': config_parser.get("values.enum", "phase_angle_degree"),
-                b'\x09': config_parser.get("values.enum", "temperature"),
-                b'\x0a': config_parser.get("values.enum", "local_currency"),
-                b'\x0b': config_parser.get("values.enum", "length_metre"),
-                b'\x0c': config_parser.get("values.enum", "speed_metre_per_second"),
-                b'\x0d': config_parser.get("values.enum", "volume_value_cubic_metre"),
-                b'\x0e': config_parser.get("values.enum", "corrected_volume_cubic_metre"),
-                b'\x0f': config_parser.get("values.enum", "volume_flux_cubic_metre_per_hour"),
-                b'\x10': config_parser.get("values.enum", "corrected_volume_flux_cubic_metre_per_hour"),
-                b'\x11': config_parser.get("values.enum", "volume_flux_cubic_metre_per_day"),
-                b'\x12': config_parser.get("values.enum", "corrected_volume_flux_cubic_metre_per_day"),
-                b'\x13': config_parser.get("values.enum", "volume_litre"),
-                b'\x14': config_parser.get("values.enum", "mass_kilogram"),
-                b'\x15': config_parser.get("values.enum", "force_newton"),
-                b'\x16': config_parser.get("values.enum", "energy_newton_meter"),
-                b'\x17': config_parser.get("values.enum", "pressure_pascal"),
-                b'\x18': config_parser.get("values.enum", "pressure_bar"),
-                b'\x19': config_parser.get("values.enum", "energy_joule"),
-                b'\x1a': config_parser.get("values.enum", "thermal_power_rate_of_change_joule_per_hour"),
-                b'\x1b': config_parser.get("values.enum", "active_power_watt"),
-                b'\x1c': config_parser.get("values.enum", "apparent_power_volt_ampere"),
-                b'\x1d': config_parser.get("values.enum", "reactive_power_var"),
-                b'\x1e': config_parser.get("values.enum", "active_energy_value_watt_hour"),
-                b'\x1f': config_parser.get("values.enum", "apparent_energy_value_volt_ampere_hour"),
-                b'\x20': config_parser.get("values.enum", "reactive_energy_value_var_hour"),
-                b'\x21': config_parser.get("values.enum", "current_ampere"),
-                b'\x22': config_parser.get("values.enum", "electrical_charge_coulomb"),
-                b'\x23': config_parser.get("values.enum", "voltage_volt"),
-                b'\x24': config_parser.get("values.enum", "electric_field_strength_volt_per_metre"),
-                b'\x25': config_parser.get("values.enum", "capacitance_farad"),
-                b'\x26': config_parser.get("values.enum", "resistance_ohm"),
-                b'\x27': config_parser.get("values.enum", "resistivity"),
-                b'\x28': config_parser.get("values.enum", "magnetic_flux_weber"),
-                b'\x29': config_parser.get("values.enum", "magnetic_flux_density_tesla"),
-                b'\x2a': config_parser.get("values.enum", "magnetic_field_strength_ampere_per_metre"),
-                b'\x2b': config_parser.get("values.enum", "inductance_henry"),
-                b'\x2c': config_parser.get("values.enum", "frequency_hertz"),
-                b'\x2d': config_parser.get("values.enum", "rw_active_energy_value"),
-                b'\x2e': config_parser.get("values.enum", "rb_reactive_energy_value"),
-                b'\x2f': config_parser.get("values.enum", "rs_apparent_energy_value"),
-                b'\x30': config_parser.get("values.enum", "volt_squared_hour_volt_squared_hour_meter"),
-                b'\x31': config_parser.get("values.enum", "ampere_squared_hour"),
-                b'\x32': config_parser.get("values.enum", "mass_flux_kilogram_per_second"),
-                b'\x33': config_parser.get("values.enum", "conductance_siemens"),
-                b'\x34': config_parser.get("values.enum", "temperature_kelvin"),
-                b'\x35': config_parser.get("values.enum", "ru2h_volt_squared_hour_meter"),
-                b'\x36': config_parser.get("values.enum", "ri2h_ampere_squared_hour_meter"),
-                b'\x37': config_parser.get("values.enum", "rv_meter"),
-                b'\x38': config_parser.get("values.enum", "percentage"),
-                b'\x39': config_parser.get("values.enum", "ampere_hours"),
-                b'\x3a': config_parser.get("values.common", "reserved"),
-                b'\x3b': config_parser.get("values.common", "reserved"),
-                b'\x3c': config_parser.get("values.enum", "energy_per_volume"),
-                b'\x3d': config_parser.get("values.enum", "calorific_value_wobbe"),
-                b'\x3e': config_parser.get("values.enum", "molar_fraction_of_gas_composition_mole_percent"),
-                b'\x3f': config_parser.get("values.enum", "mass_density_quantity_of_material"),
-                b'\x40': config_parser.get("values.enum", "dynamic_viscosity_pascal_second"),
-                b'\x41': config_parser.get("values.enum", "specific_energy_joule_kilogram"),
-                b'\x42': config_parser.get("values.enum", "pressure_gram_per_square_centimeter"),
-                b'\x43': config_parser.get("values.enum", "pressure_atmosphere"),
-                b'\x46': config_parser.get("values.enum", "signal_strength_milliwatt"),
-                b'\x47': config_parser.get("values.enum", "signal_strength_microvolt"),
-                b'\x48': config_parser.get("values.enum", "logarithmic_unit"),
-                b'\x49': config_parser.get("values.common", "reserved"),
-                b'\x4a': config_parser.get("values.common", "reserved"),
-                b'\x4b': config_parser.get("values.common", "reserved"),
-                b'\x4c': config_parser.get("values.common", "reserved"),
-                b'\x4d': config_parser.get("values.common", "reserved"),
-                b'\x4e': config_parser.get("values.common", "reserved"),
-                b'\x4f': config_parser.get("values.common", "reserved"),
-                b'\x50': config_parser.get("values.common", "reserved"),
-                b'\x51': config_parser.get("values.common", "reserved"),
-                b'\x52': config_parser.get("values.common", "reserved"),
-                b'\x53': config_parser.get("values.common", "reserved"),
-                b'\x54': config_parser.get("values.common", "reserved"),
-                b'\x55': config_parser.get("values.common", "reserved"),
-                b'\x56': config_parser.get("values.common", "reserved"),
-                b'\x57': config_parser.get("values.common", "reserved"),
-                b'\x58': config_parser.get("values.common", "reserved"),
-                b'\x59': config_parser.get("values.common", "reserved"),
-                b'\x5a': config_parser.get("values.common", "reserved"),
-                b'\x5b': config_parser.get("values.common", "reserved"),
-                b'\x5c': config_parser.get("values.common", "reserved"),
-                b'\x5d': config_parser.get("values.common", "reserved"),
-                b'\x5e': config_parser.get("values.common", "reserved"),
-                b'\x5f': config_parser.get("values.common", "reserved"),
-                b'\x60': config_parser.get("values.common", "reserved"),
-                b'\x61': config_parser.get("values.common", "reserved"),
-                b'\x62': config_parser.get("values.common", "reserved"),
-                b'\x63': config_parser.get("values.common", "reserved"),
-                b'\x64': config_parser.get("values.common", "reserved"),
-                b'\x65': config_parser.get("values.common", "reserved"),
-                b'\x66': config_parser.get("values.common", "reserved"),
-                b'\x67': config_parser.get("values.common", "reserved"),
-                b'\x68': config_parser.get("values.common", "reserved"),
-                b'\x69': config_parser.get("values.common", "reserved"),
-                b'\x6a': config_parser.get("values.common", "reserved"),
-                b'\x6b': config_parser.get("values.common", "reserved"),
-                b'\x6c': config_parser.get("values.common", "reserved"),
-                b'\x6d': config_parser.get("values.common", "reserved"),
-                b'\x6e': config_parser.get("values.common", "reserved"),
-                b'\x6f': config_parser.get("values.common", "reserved"),
-                b'\x70': config_parser.get("values.common", "reserved"),
-                b'\x71': config_parser.get("values.common", "reserved"),
-                b'\x72': config_parser.get("values.common", "reserved"),
-                b'\x73': config_parser.get("values.common", "reserved"),
-                b'\x74': config_parser.get("values.common", "reserved"),
-                b'\x75': config_parser.get("values.common", "reserved"),
-                b'\x76': config_parser.get("values.common", "reserved"),
-                b'\x77': config_parser.get("values.common", "reserved"),
-                b'\x78': config_parser.get("values.common", "reserved"),
-                b'\x79': config_parser.get("values.common", "reserved"),
-                b'\x7a': config_parser.get("values.common", "reserved"),
-                b'\x7b': config_parser.get("values.common", "reserved"),
-                b'\x7c': config_parser.get("values.common", "reserved"),
-                b'\x7d': config_parser.get("values.common", "reserved"),
-                b'\x7e': config_parser.get("values.common", "reserved"),
-                b'\x7f': config_parser.get("values.common", "reserved"),
-                b'\x80': config_parser.get("values.enum", "length_inch"),
-                b'\x81': config_parser.get("values.enum", "length_foot"),
-                b'\x82': config_parser.get("values.enum", "mass_pound"),
-                b'\x83': config_parser.get("values.enum", "temperature_fahrenheit"),
-                b'\x84': config_parser.get("values.enum", "temperature_rankine"),
-                b'\x85': config_parser.get("values.enum", "area_square_inch"),
-                b'\x86': config_parser.get("values.enum", "area_square_foot"),
-                b'\x87': config_parser.get("values.enum", "area_acre"),
-                b'\x88': config_parser.get("values.enum", "volume_cubic_inch"),
-                b'\x89': config_parser.get("values.enum", "volume_cubic_foot"),
-                b'\x8a': config_parser.get("values.enum", "volume_acre_foot"),
-                b'\x8b': config_parser.get("values.enum", "volume_gallon_imperial"),
-                b'\x8c': config_parser.get("values.enum", "volume_gallon_us"),
-                b'\x8d': config_parser.get("values.enum", "force_pound_force"),
-                b'\x8e': config_parser.get("values.enum", "pressure_pound_force_per_square_inch"),
-                b'\x8f': config_parser.get("values.enum", "density_pound_per_cubic_foot"),
-                b'\x90': config_parser.get("values.enum", "dynamic_viscosity"),
-                b'\x91': config_parser.get("values.enum", "kinematic_viscosity_square_foot_per_second"),
-                b'\x92': config_parser.get("values.enum", "energy_british_thermal_unit"),
-                b'\x93': config_parser.get("values.enum", "energy_therm_eu"),
-                b'\x94': config_parser.get("values.enum", "energy_therm_us"),
-                b'\x95': config_parser.get("values.enum", "calorific_value_of_mass_lenthalpy"),
-                b'\x96': config_parser.get("values.enum", "calorific_value_wobbe"),
-                b'\x97': config_parser.get("values.enum", "volume_meter_cubic_feet_rv"),
-                b'\x98': config_parser.get("values.enum", "speed_foot_per_second"),
-                b'\x99': config_parser.get("values.enum", "volume_flux_cubic_foot_per_second"),
-                b'\x9a': config_parser.get("values.enum", "volume_flux_cubic_foot_per_min"),
-                b'\x9b': config_parser.get("values.enum", "volume_flux_cubic_foot_per_hour"),
-                b'\x9c': config_parser.get("values.enum", "volume_flux_cubic_foot_per_day"),
-                b'\x9d': config_parser.get("values.enum", "volume_flux_acre_foot_per_second"),
-                b'\x9e': config_parser.get("values.enum", "volume_flux_acre_foot_per_min"),
-                b'\x9f': config_parser.get("values.enum", "volume_flux_acre_foot_per_hour"),
-                b'\xa0': config_parser.get("values.enum", "volume_flux_acre_foot_per_day"),
-                b'\xa1': config_parser.get("values.enum", "volume_imperial_gallon_meter_rv"),
-                b'\xa2': config_parser.get("values.enum", "volume_flux_imperial_gallon_per_second"),
-                b'\xa3': config_parser.get("values.enum", "volume_flux_imperial_gallon_per_min"),
-                b'\xa4': config_parser.get("values.enum", "volume_flux_imperial_gallon_per_hour"),
-                b'\xa5': config_parser.get("values.enum", "volume_flux_imperial_gallon_per_day"),
-                b'\xa6': config_parser.get("values.enum", "volume_us_gallon_rv"),
-                b'\xa7': config_parser.get("values.enum", "volume_flux_us_gallon_per_second"),
-                b'\xa8': config_parser.get("values.enum", "volume_flux_us_gallon_per_min"),
-                b'\xa9': config_parser.get("values.enum", "volume_flux_us_gallon_per_hour"),
-                b'\xaa': config_parser.get("values.enum", "volume_flux_us_gallon_per_day"),
-                b'\xab': config_parser.get("values.enum", "energy_flow_british_thermal_unit_per_second"),
-                b'\xac': config_parser.get("values.enum", "energy_flow_british_thermal_unit_per_minute"),
-                b'\xad': config_parser.get("values.enum", "energy_flow_british_thermal_unit_per_hour"),
-                b'\xae': config_parser.get("values.enum", "energy_flow_british_thermal_unit_per_day"),
-                b'\xaf': config_parser.get("values.common", "reserved"),
-                b'\xb0': config_parser.get("values.common", "reserved"),
-                b'\xb1': config_parser.get("values.common", "reserved"),
-                b'\xb2': config_parser.get("values.common", "reserved"),
-                b'\xb3': config_parser.get("values.common", "reserved"),
-                b'\xb4': config_parser.get("values.common", "reserved"),
-                b'\xb5': config_parser.get("values.common", "reserved"),
-                b'\xb6': config_parser.get("values.common", "reserved"),
-                b'\xb7': config_parser.get("values.common", "reserved"),
-                b'\xb8': config_parser.get("values.common", "reserved"),
-                b'\xb9': config_parser.get("values.common", "reserved"),
-                b'\xba': config_parser.get("values.common", "reserved"),
-                b'\xbb': config_parser.get("values.common", "reserved"),
-                b'\xbc': config_parser.get("values.common", "reserved"),
-                b'\xbd': config_parser.get("values.common", "reserved"),
-                b'\xbe': config_parser.get("values.common", "reserved"),
-                b'\xbf': config_parser.get("values.common", "reserved"),
-                b'\xc0': config_parser.get("values.common", "reserved"),
-                b'\xc1': config_parser.get("values.common", "reserved"),
-                b'\xc2': config_parser.get("values.common", "reserved"),
-                b'\xc3': config_parser.get("values.common", "reserved"),
-                b'\xc4': config_parser.get("values.common", "reserved"),
-                b'\xc5': config_parser.get("values.common", "reserved"),
-                b'\xc6': config_parser.get("values.common", "reserved"),
-                b'\xc7': config_parser.get("values.common", "reserved"),
-                b'\xc8': config_parser.get("values.common", "reserved"),
-                b'\xc9': config_parser.get("values.common", "reserved"),
-                b'\xca': config_parser.get("values.common", "reserved"),
-                b'\xcb': config_parser.get("values.common", "reserved"),
-                b'\xcc': config_parser.get("values.common", "reserved"),
-                b'\xcd': config_parser.get("values.common", "reserved"),
-                b'\xce': config_parser.get("values.common", "reserved"),
-                b'\xcf': config_parser.get("values.common", "reserved"),
-                b'\xd0': config_parser.get("values.common", "reserved"),
-                b'\xd1': config_parser.get("values.common", "reserved"),
-                b'\xd2': config_parser.get("values.common", "reserved"),
-                b'\xd3': config_parser.get("values.common", "reserved"),
-                b'\xd4': config_parser.get("values.common", "reserved"),
-                b'\xd5': config_parser.get("values.common", "reserved"),
-                b'\xd6': config_parser.get("values.common", "reserved"),
-                b'\xd7': config_parser.get("values.common", "reserved"),
-                b'\xd8': config_parser.get("values.common", "reserved"),
-                b'\xd9': config_parser.get("values.common", "reserved"),
-                b'\xda': config_parser.get("values.common", "reserved"),
-                b'\xdb': config_parser.get("values.common", "reserved"),
-                b'\xdc': config_parser.get("values.common", "reserved"),
-                b'\xdd': config_parser.get("values.common", "reserved"),
-                b'\xde': config_parser.get("values.common", "reserved"),
-                b'\xdf': config_parser.get("values.common", "reserved"),
-                b'\xe0': config_parser.get("values.common", "reserved"),
-                b'\xe1': config_parser.get("values.common", "reserved"),
-                b'\xe2': config_parser.get("values.common", "reserved"),
-                b'\xe3': config_parser.get("values.common", "reserved"),
-                b'\xe4': config_parser.get("values.common", "reserved"),
-                b'\xe5': config_parser.get("values.common", "reserved"),
-                b'\xe6': config_parser.get("values.common", "reserved"),
-                b'\xe7': config_parser.get("values.common", "reserved"),
-                b'\xe8': config_parser.get("values.common", "reserved"),
-                b'\xe9': config_parser.get("values.common", "reserved"),
-                b'\xea': config_parser.get("values.common", "reserved"),
-                b'\xeb': config_parser.get("values.common", "reserved"),
-                b'\xec': config_parser.get("values.common", "reserved"),
-                b'\xed': config_parser.get("values.common", "reserved"),
-                b'\xee': config_parser.get("values.common", "reserved"),
-                b'\xef': config_parser.get("values.common", "reserved"),
-                b'\xf0': config_parser.get("values.common", "reserved"),
-                b'\xf1': config_parser.get("values.common", "reserved"),
-                b'\xf2': config_parser.get("values.common", "reserved"),
-                b'\xf3': config_parser.get("values.common", "reserved"),
-                b'\xf4': config_parser.get("values.common", "reserved"),
-                b'\xf5': config_parser.get("values.common", "reserved"),
-                b'\xf6': config_parser.get("values.common", "reserved"),
-                b'\xf7': config_parser.get("values.common", "reserved"),
-                b'\xf8': config_parser.get("values.common", "reserved"),
-                b'\xf9': config_parser.get("values.common", "reserved"),
-                b'\xfa': config_parser.get("values.common", "reserved"),
-                b'\xfb': config_parser.get("values.common", "reserved"),
-                b'\xfc': config_parser.get("values.common", "reserved"),
-                b'\xfd': config_parser.get("values.enum", "extended_table_of_units"),
-                b'\xfe': config_parser.get("values.enum", "other_unit"),
-                b'\xff': config_parser.get("values.enum", "no_unit_unitless_count")}
-    SCALERS: dict[bytes, int] = {it.to_bytes(1, "big"): 0 for it in range(256)}
-    """castom scaler depend from unit"""
-    if "units.scaler" in config:
-        for unit, value in config["units.scaler"].items():
-            v = int(value)
-            index = _s1[unit.upper()]
-            SCALERS[index] = v
+class Unit(Enum, elements=tuple(range(1, 256))):
+    SCALERS: dict[bytes, int] = {it.to_bytes(1, "big"): 0 for it in range(1, 256)}
+    """castom scaler depend from unit. initiate by 0 all"""
+    if unit_table := config_parser.get_values("DLMS", "Unit"):
+        for par in unit_table:
+            SCALERS[par["e"].to_bytes()] = par.get("scaler", 0)
+        SCALER_NAME = {it["value"]: it["name"] for it in config_parser.get_values("DLMS", "scaler_prefix")}
 
     def __str__(self):
         match self.get_scaler():
-            case 3: return config_parser.get("values.prefix", "kilo") + super(Unit, self).__str__()
             case 0: return super(Unit, self).__str__()
-            case err_value: raise ValueError(F"unsupport scaler preset: {err_value} in Unit")
+            case other:
+                if (prefix := self.SCALER_NAME.get(other)) is not None:
+                    return prefix + super(Unit, self).__str__()
+                else:
+                    raise ValueError(F"unsupport scaler preset: {other} in Unit")
 
     def get_scaler(self) -> int:
         return self.SCALERS[self.contents]

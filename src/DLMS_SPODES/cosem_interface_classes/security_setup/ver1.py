@@ -3,38 +3,20 @@ from . import ver0
 from ..__class_init__ import *
 
 
-class SecurityPolicy(cdt.FlagMixin, ver0.SecurityPolicy):
+class SecurityPolicyVer1(cdt.FlagMixin, cdt.Enum, elements=tuple(range(8))):
     """ Enforces authentication and/or encryption and/or digital signature using the security algorithms available within security suite. It applies independently for requests and
      responses. When enum value is interpreted as an unsigned, the meaning of each bit is as shown below """
-    ELEMENTS = {0: en.UNUSED,
-                1: en.UNUSED,
-                2: en.AUTHENTICATION_REQUEST,
-                3: en.ENCRYPTED_REQUEST,
-                4: en.DIGITALLY_SIGNED_REQUEST,
-                5: en.AUTHENTICATION_RESPONSE,
-                6: en.ENCRYPTED_RESPONSE,
-                7: en.DIGITALLY_SIGNED_RESPONSE}
 
 
-class CertificateEntity(cdt.Enum):
+class CertificateEntity(cdt.Enum, elements=(0, 1, 2, 3)):
     """TODO:"""
-    ELEMENTS = {b'\x00': en.SERVER,
-                b'\x01': en.CLIENT_OR_THIRD_PARTY,
-                b'\x02': en.CERTIFICATION_AUTHORITY,
-                b'\x03': en.OTHER}
 
 
-class CertificateType(cdt.Enum):
+class CertificateType(cdt.Enum, elements=(0, 1, 2, 3)):
     """TODO:"""
-    ELEMENTS = {b'\x00': en.DIGITAL_SIGNATURE,
-                b'\x01': en.KEY_AGREEMENT,
-                b'\x02': en.TLS,
-                b'\x03': en.OTHER}
 
 
-class SecuritySuite(ver0.SecuritySuite,
-                    elements={b'\x01': en.AES_GCM_128_ECDSA_P_256,
-                              b'\x02': en.AES_GCM_256_ECDSA_P_384}):
+class SecuritySuite(cdt.Enum, elements=(0, 1, 2)):
     """Version 0 extension"""
 
 
@@ -78,8 +60,7 @@ class Certificates(cdt.Array):
     TYPE = CertificateInfo
 
 
-class KeyID(ver0.KeyID,
-            elements={b'\x03': en.KEK}):
+class KeyID(cdt.Enum, elements=(0, 1, 2, 3)):
     """Version 0 extension"""
 
 
@@ -123,11 +104,8 @@ class KeyAgreement(cdt.Array):
     TYPE = KeyAgreementData
 
 
-class KeyPair(cdt.Enum):
+class KeyPair(cdt.Enum, elements=(0, 1, 2)):
     """TODO:"""
-    ELEMENTS = {b'\x00': en.DIGITAL_SIGNATURE_KEY_PAIR,
-                b'\x01': en.KEY_AGREEMENT_KEY_PAIR,
-                b'\x02': en.TLS_KEY_PAIR}
 
 
 class CertificateIdentificationByEntity(cdt.Structure):
@@ -165,10 +143,8 @@ class CertificateIdentificationBySerial(cdt.Structure):
         return self.values[1]
 
 
-class CertificateIdentificationType(cdt.Enum):
+class CertificateIdentificationType(cdt.Enum, elements=(0, 1)):
     """TODO:"""
-    ELEMENTS = {b'\x00': en.CERTIFICATE_IDENTIFICATION_ENTITY,
-                b'\x01': en.CERTIFICATE_IDENTIFICATION_SERIAL}
 
 
 class CertificateIdentificationOption(ut.CHOICE):
@@ -208,13 +184,13 @@ class CertificateIdentification(cdt.Structure):
 
 class SecuritySetup(ver0.SecuritySetup):
     VERSION = Version.V1
-    A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicy),
+    A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicyVer1),
                   ic.ICAElement(an.SECURITY_SUITE, SecuritySuite),
                   ver0.SecuritySetup.get_attr_element(4),
                   ver0.SecuritySetup.get_attr_element(5),
                   ic.ICAElement(an.CERTIFICATES, Certificates))
 
-    M_ELEMENTS = (ic.ICMElement(mn.SECURITY_ACTIVATE, SecurityPolicy),
+    M_ELEMENTS = (ic.ICMElement(mn.SECURITY_ACTIVATE, SecurityPolicyVer1),
                   ic.ICMElement(mn.KEY_TRANSFER, KeyTransfer),
                   ic.ICMElement(mn.KEY_AGREEMENT, KeyAgreement),
                   ic.ICMElement(mn.GENERATE_KEY_PAIR, KeyPair),
@@ -229,7 +205,7 @@ class SecuritySetup(ver0.SecuritySetup):
         self.set_attr(6, None)
 
     @property
-    def security_policy(self) -> SecurityPolicy:
+    def security_policy(self) -> SecurityPolicyVer1:
         return self.get_attr(2)
 
     @property
@@ -241,7 +217,7 @@ class SecuritySetup(ver0.SecuritySetup):
         return self.get_attr(6)
 
     @property
-    def security_activate(self) -> SecurityPolicy:
+    def security_activate(self) -> SecurityPolicyVer1:
         return self.get_meth(1)
 
     @property

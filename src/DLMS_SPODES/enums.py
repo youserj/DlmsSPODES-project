@@ -1,10 +1,5 @@
 from enum import Enum, IntEnum, auto
 from typing import Self
-from .settings import get_current_language, Language
-
-match get_current_language():
-    case Language.ENGLISH: from .Values.EN import enum_names as en
-    case Language.RUSSIAN: from .Values.RU import enum_names as en
 
 
 class ITEEnum(Enum):
@@ -131,42 +126,6 @@ class ChannelNumber(IntEnum):
     @staticmethod
     def from_str(value: str) -> Self:
         return next(filter(lambda i: i.name == value, ChannelNumber))
-
-
-class ConnectionType(IntEnum):
-    NO_STATION = 0,
-    CLIENT_MANAGEMENT_PROCESS = 1
-    PUBLIC_CLIENT = 0x10
-    METER_READER = 0x20
-    UTILITY_SETTING = 0x30
-    PUSH = 0x40
-    FIRMWARE_UPDATE = 0x50
-    IHD = 0x60
-
-    def __str__(self):
-        match self:
-            case self.NO_STATION:                return en.NO_STATION
-            case self.CLIENT_MANAGEMENT_PROCESS: return en.CLIENT_MANAGEMENT_PROCESS
-            case self.PUBLIC_CLIENT:             return en.PUBLIC_CLIENT
-            case self.METER_READER:              return en.METER_READER
-            case self.UTILITY_SETTING:           return en.UTILITY_SETTING
-            case self.PUSH:                      return en.PUSH
-            case self.FIRMWARE_UPDATE:           return en.FIRMWARE_UPDATE
-            case self.IHD:                       return en.IHD
-            case _:                              return str(self)
-
-    @classmethod
-    def from_str(cls, value: str) -> Self:
-        match value:
-            case en.NO_STATION:                return cls.NO_STATION
-            case en.CLIENT_MANAGEMENT_PROCESS: return cls.CLIENT_MANAGEMENT_PROCESS
-            case en.PUBLIC_CLIENT:             return cls.PUBLIC_CLIENT
-            case en.METER_READER:              return cls.METER_READER
-            case en.UTILITY_SETTING:           return cls.UTILITY_SETTING
-            case en.PUSH:                      return cls.PUSH
-            case en.FIRMWARE_UPDATE:           return cls.FIRMWARE_UPDATE
-            case en.IHD:                       return cls.IHD
-            case _:                            return cls(int(value))
 
 
 class MechanismId(IntEnum):

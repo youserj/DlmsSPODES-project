@@ -1,12 +1,8 @@
 from .__class_init__ import *
 
 
-class CommunicationChannel(cdt.Enum):
+class CommunicationChannel(cdt.Enum, elements=(0, 1, 2)):
     """ ONLY IN CLIENT. Current channel communication. Use with HDLC setup """
-    ELEMENTS = {
-        b'\x00': en.OPTICAL_PORT,
-        b'\x01': en.RS485,
-        b'\x02': en.TCP_IP}
 
 
 class LocalPortNames(cdt.Structure):

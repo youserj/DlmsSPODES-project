@@ -1,24 +1,9 @@
 from ...types import common_data_types as cdt
-from ...settings import get_current_language, Language
-
-match get_current_language():
-    case Language.ENGLISH: from ...Values.EN import enum_names as en
-    case Language.RUSSIAN: from ...Values.RU import enum_names as en
 
 
-class CommSpeed(cdt.Enum):
+class CommSpeed(cdt.Enum, elements=tuple(range(10))):
     """ The communication speed supported by the corresponding port. This communication speed can be overridden if the HDLC mode of a devive is entered through a special mode
     of another protocol. """
-    ELEMENTS = {b'\x00': en.BAUD_300,
-                b'\x01': en.BAUD_600,
-                b'\x02': en.BAUD_1200,
-                b'\x03': en.BAUD_2400,
-                b'\x04': en.BAUD_4800,
-                b'\x05': en.BAUD_9600,
-                b'\x06': en.BAUD_19200,
-                b'\x07': en.BAUD_38400,
-                b'\x08': en.BAUD_57600,
-                b'\x09': en.BAUD_115200}
 
     def decode(self) -> int:
         """ override enum key to enum value"""
@@ -51,20 +36,13 @@ class CommSpeed(cdt.Enum):
             case other:  return super(CommSpeed, self).from_int(other)
 
 
-class RestrictionType(cdt.Enum):
-    ELEMENTS = {b'\x00': en.NONE,
-                b'\x01': en.RESTRICTION_BY_DATE,
-                b'\x02': en.RESTRICTION_BY_ENTRY}
+class RestrictionType(cdt.Enum, elements=(0, 1, 2)):
+    """"""
 
 
-class KeyInfoType(cdt.Enum):
-    ELEMENTS = {b'\x00': en.IDENTIFIED_KEY,
-                b'\x01': en.WRAPPED_KEY,
-                b'\x02': en.AGREED_KEY}
+class KeyInfoType(cdt.Enum, elements=(0, 1, 2)):
+    """"""
 
 
-class ProtectionType(cdt.Enum):
-    ELEMENTS = {b'\x00': en.AUTHENTICATION,
-                b'\x01': en.ENCRYPTED_REQUEST,
-                b'\x02': en.WRAPPED_KEY,
-                b'\x03': en.AGREED_KEY}
+class ProtectionType(cdt.Enum, elements=(0, 1, 2, 3)):
+    """"""

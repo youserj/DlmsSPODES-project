@@ -6,7 +6,6 @@ from ..types.implementations import integers
 
 class ClockStatus(cdt.Unsigned):
     """ interpreted as 8 bit string """
-    NAME = F'{cdt.tn.UNSIGNED}(8bit string)'
 
     # TODO: finish write as bit_string
     def __str__(self):
@@ -27,24 +26,13 @@ class ClockStatus(cdt.Unsigned):
         return ret
 
 
-class DaylightSavingsDeviation(cdt.Integer):
+class DaylightSavingsDeviation(cdt.Integer, min=-120, max=120):
     """Contains the number of minutes by which the deviation in generalized time must be corrected at daylight savings begin.
     Deviation range of up to ± 120 min"""
-    NAME = F'{cdt.tn.UNSIGNED}(-120..120)'
-
-    def validate(self):
-        if -120 > self.decode() or self.decode() > 120:
-            raise ValueError(F'The deviation range out of range,  got {self.decode()} expected -120..120')
 
 
-class ClockBase(cdt.Enum):
+class ClockBase(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
     """ Defines where the basic timing information comes from. """
-    ELEMENTS = {b'\x00': en.NOT_DEFINED,
-                b'\x01': en.INTERNAL_CRYSTAL,
-                b'\x02': en.MAINS_FREQUENCY_50_HZ,
-                b'\x03': en.MAINS_FREQUENCY_60_HZ,
-                b'\x04': en.GPS_GLOBAL_POSITIONING_SYSTEM,
-                b'\x05': en.RADIO_CONTROLLED}
 
 
 class PresetAdjustingTime(cdt.Structure):
@@ -70,13 +58,8 @@ class PresetAdjustingTime(cdt.Structure):
         return self.values[2]
 
 
-class ShiftTime(cdt.Long):
+class ShiftTime(cdt.Long, min=-900, max=900):
     """ Limited Long -900..900 """
-    NAME = F'{cdt.tn.UNSIGNED}(-900..900)'
-
-    def validate(self):
-        if self.decode() > 900 or self.decode() < -900:
-            raise ValueError(F'The shift_time out of range, must be -900..900,  got {self.decode()}')
 
 
 class Clock(ic.COSEMInterfaceClasses):

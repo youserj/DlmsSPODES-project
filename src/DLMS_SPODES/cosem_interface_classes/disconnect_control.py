@@ -1,30 +1,15 @@
 from .__class_init__ import *
 from ..types.implementations import integers
+from itertools import chain
 
 
-class ControlState(cdt.Enum):
+class ControlState(cdt.Enum, elements=(0, 1, 2)):
     """ Shows the internal state of the disconnect control object. """
-    ELEMENTS = {b'\x00': en.DISCONNECTED,
-                b'\x01': en.CONNECTED,
-                b'\x02': en.READY_FOR_RECONNECTION}
 
 
-class ControlMode(cdt.Enum):
+class ControlMode(cdt.Enum, elements=tuple(chain(range(7), range(129, 135)))):
     """ Configures the behaviour of the disconnect control object for all triggers. Local disconnection is always possible.
     To suppress local disconnection, the corresponding trigger must be inhibited. """
-    ELEMENTS = {b'\x00':        F"0: {en.CONTROL_MODE_0}",
-                b'\x01':        F"1: {en.CONTROL_MODE_1}",
-                b'\x02':        F"2: {en.CONTROL_MODE_2}",
-                b'\x03':        F"3: {en.CONTROL_MODE_3}",
-                b'\x04':        F"4: {en.CONTROL_MODE_4}",
-                b'\x05':        F"5: {en.CONTROL_MODE_5}",
-                b'\x06':        F"6: {en.CONTROL_MODE_6}",
-                bytes((129,)):  F"129: {en.RU_CONTROL_MODE_129}",
-                bytes((130,)):  F"130: {en.RU_CONTROL_MODE_130}",
-                bytes((131,)):  F"131: {en.RU_CONTROL_MODE_131}",
-                bytes((132,)):  F"132: {en.RU_CONTROL_MODE_132}",
-                bytes((133,)):  F"133: {en.RU_CONTROL_MODE_133}",
-                bytes((134,)):  F"134: {en.RU_CONTROL_MODE_134}"}
 
     def get_letters(self) -> str:
         """return transition litters"""

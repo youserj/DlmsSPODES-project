@@ -1,5 +1,4 @@
 from __future__ import annotations
-from functools import cache
 from typing import Callable
 from enum import IntFlag, auto
 from ... import ITE_exceptions as exc
@@ -8,14 +7,11 @@ from ...types import choices
 from ...types.implementations.long_unsigneds import ClassId
 from ...types.implementations import arrays
 from ...pdu_enums import AttributeAccess, MethodAccess
+from ...enums import MechanismId
 
 
-class AccessMode(cdt.Enum):
+class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
     """ TODO: """
-    ELEMENTS = {b'\x00': en.NO_ACCESS,
-                b'\x01': en.READ_ONLY,
-                b'\x02': en.WRITE_ONLY,
-                b'\x03': en.READ_AND_WRITE}
 
 
 class AttributeAccessItem(cdt.Structure):
@@ -160,17 +156,9 @@ class ObjectListType(arrays.SelectionAccess):
             raise ValueError(F"not find in {ln} attribute index: {index}")
 
 
-class ClientSAP(cdt.Enum):
+class ClientSAP(cdt.Enum, elements=(0, 1, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60)):  # TODO: REWRITE elements here
     """ IEC 62056-46 2002 6.4.2.3 Reserved special HDLC addresses p.40. IS15952ver2 """
     TAG = b'\x0f'
-    ELEMENTS = {b'\x00': en.NO_STATION,
-                b'\x01': en.CLIENT_MANAGEMENT_PROCESS,
-                b'\x10': en.PUBLIC_CLIENT,
-                b'\x20': en.METER_READER,
-                b'\x30': en.UTILITY_SETTING,
-                b'\x40': en.PUSH,
-                b'\x50': en.FIRMWARE_UPDATE,
-                b'\x60': en.IHD}
 
 
 class ServerSAP(cdt.LongUnsigned):
@@ -368,16 +356,8 @@ class XDLMSContextType(cdt.Structure):
         return self.values[5]
 
 
-class MechanismIdElement(cdt.Enum):
+class MechanismIdElement(cdt.Enum, elements=tuple(range(8))):
     TAG = b'\x11'
-    ELEMENTS = {b'\x00': en.NONE,
-                b'\x01': en.LOW,
-                b'\x02': en.HIGH,
-                b'\x03': en.HIGH_MD5,
-                b'\x04': en.HIGH_SHA1,
-                b'\x05': en.HIGH_GMAC,
-                b'\x06': en.HIGH_SHA256,
-                b'\x07': en.HIGH_ECDSA}
 
 
 class AuthenticationMechanismName(cdt.Structure):
@@ -435,11 +415,8 @@ class AuthenticationMechanismName(cdt.Structure):
         return self.mechanism_id_element.contents
 
 
-class AssociationStatus(cdt.Enum):
+class AssociationStatus(cdt.Enum, elements=(0, 1, 2)):
     """ Enum of access mode for methods """
-    ELEMENTS = {b'\x00': en.NON_ASSOCIATED,
-                b'\x01': en.ASSOCIATION_PENDING,
-                b'\x02': en.ASSOCIATED}
 
 
 class ClassList(cdt.Array):
@@ -661,11 +638,11 @@ class AssociationLN(ic.COSEMInterfaceClasses):
 
     def __init_secret(self):
         """ before initiating secret need knowledge what kind of mechanism ID """
-        match self.authentication_mechanism_name.mechanism_id_element, self.LLS_secret:
-            case MechanismIdElement(en.NONE) | MechanismIdElement(en.LOW), LLCSecret(): """keep secret value"""
-            case MechanismIdElement(en.NONE) | MechanismIdElement(en.LOW), _:           self.set_attr_link(7, LLCSecret())
-            case MechanismIdElement(en.HIGH), LLCSecretHigh():                          """keep secret value"""
-            case MechanismIdElement(en.HIGH), _:                                        self.set_attr_link(7, LLCSecretHigh())
+        match int(self.authentication_mechanism_name.mechanism_id_element), self.LLS_secret:
+            case MechanismId.NONE | MechanismId.LOW, LLCSecret(): """keep secret value"""
+            case MechanismId.NONE | MechanismId.LOW, _:           self.set_attr_link(7, LLCSecret())
+            case MechanismId.HIGH, LLCSecretHigh():                          """keep secret value"""
+            case MechanismId.HIGH, _:                                        self.set_attr_link(7, LLCSecretHigh())
             case unknown, _:                                                            raise ValueError(F'Not support Secret with {unknown}')
 
     def __set_dlms_version_to_collection(self):

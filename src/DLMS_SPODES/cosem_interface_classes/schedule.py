@@ -4,15 +4,10 @@ from itertools import count
 from .__class_init__ import *
 
 
-class Index(cdt.LongUnsigned):
+class Index(cdt.LongUnsigned, min=1, max=9999):
     """ LongUnsigned type with validation """
     __cb_get_indexes: Callable
-    NAME = F'{cdt.tn.LONG_UNSIGNED}(1..9999)'
     DEFAULT = 1
-
-    def validate(self):
-        if self.decode() < 1 or self.decode() > 9999:
-            raise ValueError(F'Out of range: got {self.decode()}, expect (1..9999)')
 
     def set_callback(self, cb: Callable):
         self.__cb_get_indexes = cb
