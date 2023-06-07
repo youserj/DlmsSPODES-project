@@ -1,4 +1,3 @@
-from __future__ import annotations
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import structs
@@ -11,18 +10,8 @@ class Thresholds(cdt.Array):
 
 class ActionSet(cdt.Structure):
     """TODO:"""
-    values: tuple[structs.ActionItem, structs.ActionItem]
-    ELEMENTS = (cdt.StructElement(cdt.se.ACTION_UP, structs.ActionItem),
-                cdt.StructElement(cdt.se.ACTION_DOWN, structs.ActionItem))
-
-    @property
-    def action_up(self) -> structs.ActionItem:
-        """action when the attribute value of the monitored register crosses the threshold in the upwards direction"""
-        return self.values[0]
-
-    def action_down(self) -> structs.ActionItem:
-        """action when the attribute value of the monitored register crosses the threshold in the downwards direction"""
-        return self.values[1]
+    action_up: structs.ActionItem
+    action_down: structs.ActionItem
 
 
 class Actions(cdt.Array):

@@ -4,22 +4,9 @@ from . import ver0
 
 class InitializationStringElement(cdt.Structure):
     """ Request - Response strings"""
-    values: tuple[cdt.OctetString, cdt.OctetString, cdt.LongUnsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.REQUEST, cdt.OctetString),
-                cdt.StructElement(cdt.se.RESPONSE, cdt.OctetString),
-                cdt.StructElement(cdt.se.DELAY_AFTER_RESPONSE, cdt.LongUnsigned))
-
-    @property
-    def request(self) -> cdt.OctetString:
-        return self.values[0]
-
-    @property
-    def response(self) -> cdt.OctetString:
-        return self.values[1]
-
-    @property
-    def delay_after_response(self) -> cdt.LongUnsigned:
-        return self.values[2]
+    request: cdt.OctetString
+    response: cdt.OctetString
+    delay_after_response: cdt.LongUnsigned
 
 
 class InitializationString(cdt.Array):

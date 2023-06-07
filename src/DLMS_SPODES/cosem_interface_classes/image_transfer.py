@@ -17,25 +17,9 @@ class ImageTransferStatus(cdt.Enum, elements=tuple(range(8))):
 
 
 class ImageToActivateInfoElement(cdt.Structure):
-    values: tuple[cdt.DoubleLongUnsigned, cdt.OctetString, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.IMAGE_TO_ACTIVATE_SIZE, cdt.DoubleLongUnsigned),
-                cdt.StructElement(cdt.se.IMAGE_TO_ACTIVATE_IDENTIFICATION, cdt.OctetString),
-                cdt.StructElement(cdt.se.IMAGE_TO_ACTIVATE_SIGNATURE, cdt.OctetString))
-
-    @property
-    def image_to_activate_size(self) -> cdt.DoubleLongUnsigned:
-        """size of the Image to be activated, expressed in octets"""
-        return self.values[0]
-
-    @property
-    def image_to_activate_identification(self) -> cdt.OctetString:
-        """identification of the Image to be activated, and may contain information like manufacturer, device type, version information, etc."""
-        return self.values[1]
-
-    @property
-    def image_to_activate_signature(self) -> cdt.OctetString:
-        """signature of the Image to be activated"""
-        return self.values[2]
+    image_to_activate_size: cdt.DoubleLongUnsigned
+    image_to_activate_identification: cdt.OctetString
+    image_to_activate_signature: cdt.OctetString
 
 
 class ImageToActivateInfo(cdt.Array):
@@ -49,37 +33,16 @@ class ImageTransferInitiate(cdt.Structure):
     """ Initializes the Image transfer process. After a successful invocation of the method the image_transfer_status attribute is set to (1) and the
     image_first_not_transferred_block_number is set to 0. Any subsequent invocation of the method resets the whole Image transfer process and all ImageBlocks need to be
     transferred again. """
-    values: tuple[cdt.OctetString, cdt.DoubleLongUnsigned]
     default = (bytearray(b'default'), 0)
-    ELEMENTS = (cdt.StructElement(cdt.se.IMAGE_IDENTIFIER, cdt.OctetString),
-                cdt.StructElement(cdt.se.IMAGE_SIZE, cdt.DoubleLongUnsigned))
-
-    @property
-    def image_identifier(self) -> cdt.OctetString:
-        """identifies the Image to be transferred. Image to be transferred (container) bur it is not necessarily linked to its content, i.e. the Images which will be activated.
-        That information can be retrieved from the image_to_activate attribute after verification of the Image transferred"""
-        return self.values[0]
-
-    @property
-    def image_size(self) -> cdt.DoubleLongUnsigned:
-        """holds the ImageSize, expressed in octets"""
-        return self.values[1]
+    image_identifier: cdt.OctetString
+    image_size: cdt.DoubleLongUnsigned
 
 
 class ImageBlockTransfer(cdt.Structure):
     """ Transfers one block of the Image to the server. After a successful invocation of the method the corresponding bit in the image_transferred_block_status attribute
     is set to 1 and the image_first_bit_transferred_block_number attribute is updated """
-    values: tuple[cdt.DoubleLongUnsigned, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.IMAGE_BLOCK_NUMBER, cdt.DoubleLongUnsigned),
-                cdt.StructElement(cdt.se.IMAGE_BLOCK_VALUE, cdt.OctetString))
-
-    @property
-    def image_block_number(self) -> cdt.DoubleLongUnsigned:
-        return self.values[0]
-
-    @property
-    def image_block_value(self) -> cdt.OctetString:
-        return self.values[1]
+    image_block_number: cdt.DoubleLongUnsigned
+    image_block_value: cdt.OctetString
 
 
 class ImageTransfer(ic.COSEMInterfaceClasses):

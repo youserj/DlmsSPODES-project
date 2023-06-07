@@ -68,25 +68,9 @@ class TerminalsCoverOpeningState(Data):
 
 
 class BitMapData(cdt.Structure):
-    values: tuple[cst.OctetStringDateTime, cst.OctetStringDateTime, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.START_TIME, cst.OctetStringDateTime),
-                cdt.StructElement(cdt.se.STOP_TIME, cst.OctetStringDateTime),
-                cdt.StructElement(cdt.se.ITE_BIT_MAP, cdt.OctetString))
-
-    @property
-    def start_time(self) -> cst.OctetStringDateTime:
-        """time of start show bitmap"""
-        return self.values[0]
-
-    @property
-    def stop_time(self) -> cst.OctetStringDateTime:
-        """time of stop show bitmap"""
-        return self.values[1]
-
-    @property
-    def bitmap_data(self) -> cdt.OctetString:
-        """data with bitmap format"""
-        return self.values[2]
+    start_time: cst.OctetStringDateTime
+    stop_time: cst.OctetStringDateTime
+    bitmap_data: cdt.OctetString
 
 
 class ITEBitMap(Data):

@@ -1,4 +1,3 @@
-from __future__ import annotations
 import datetime
 from typing import Callable, Iterator
 from . import special_days_table as sdt
@@ -8,26 +7,9 @@ from ..types.implementations import integers
 
 class Season(cdt.Structure):
     """ Defined by their starting date and a specific week_profile to be executed """
-    values: tuple[cdt.OctetString, cst.OctetStringDateTime, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.SEASON_PROFILE_NAME, cdt.OctetString),
-                cdt.StructElement(cdt.se.SEASON_START, cst.OctetStringDateTime),
-                cdt.StructElement(cdt.se.WEEK_NAME, cdt.OctetString))
-
-    @property
-    def season_profile_name(self) -> cdt.OctetString:
-        """season_profile_name is a user defined name identifying the current season_profile"""
-        return self.values[0]
-
-    @property
-    def season_start(self) -> cst.OctetStringDateTime:
-        """season_start defines the starting time of the season, formatted as set in for date_time.
-        REMARK The current season is terminated by the season_start of the next season """
-        return self.values[1]
-
-    @property
-    def week_name(self) -> cdt.OctetString:
-        """week_name defines the week_profile active in this season"""
-        return self.values[2]
+    season_profile_name: cdt.OctetString
+    season_start: cst.OctetStringDateTime
+    week_name: cdt.OctetString
 
 
 class SeasonProfile(cdt.Array):
@@ -67,54 +49,14 @@ class SeasonProfile(cdt.Array):
 
 class WeekProfile(cdt.Structure):
     """ For each week_profile, the day_profile for every day of a week is identified. """
-    values: tuple[cdt.OctetString, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.WEEK_PROFILE_NAME, cdt.OctetString),
-                cdt.StructElement(cdt.se.MONDAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.TUESDAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.WEDNESDAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.THURSDAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.FRIDAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.SATURDAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.SUNDAY, cdt.Unsigned))
-
-    @property
-    def week_profile_name(self) -> cdt.OctetString:
-        """User defined name identifying the current week_profile"""
-        return self.values[0]
-
-    # TODO: make monday-sunday as enumerator from day_id of day_profile_table
-    @property
-    def monday(self) -> cdt.Unsigned:
-        """Monday defines the day_profile valid on Monday"""
-        return self.values[1]
-
-    @property
-    def tuesday(self) -> cdt.Unsigned:
-        return self.values[2]
-
-    @property
-    def wednesday(self) -> cdt.Unsigned:
-        return self.values[3]
-
-    @property
-    def thursday(self) -> cdt.Unsigned:
-        return self.values[4]
-
-    @property
-    def friday(self) -> cdt.Unsigned:
-        return self.values[5]
-
-    @property
-    def saturday(self) -> cdt.Unsigned:
-        return self.values[6]
-
-    @property
-    def sunday(self) -> cdt.Unsigned:
-        return self.values[7]
-
-    def get_days_id(self) -> tuple[int, ...]:
-        """ return days IDs container as integers """
-        return self.monday.decode(), self.tuesday.decode(), self.wednesday.decode(), self.thursday.decode(), self.friday.decode(), self.saturday.decode(), self.sunday.decode()
+    week_profile_name: cdt.OctetString
+    monday: cdt.Unsigned
+    tuesday: cdt.Unsigned
+    wednesday: cdt.Unsigned
+    thursday: cdt.Unsigned
+    friday: cdt.Unsigned
+    saturday: cdt.Unsigned
+    sunday: cdt.Unsigned
 
 
 class WeekProfileTable(cdt.Array):
@@ -170,25 +112,9 @@ class WeekProfileTable(cdt.Array):
 
 class DayProfileAction(cdt.Structure):
     """ Scheduled action is defined by a script to be executed and the corresponding activation time (start_time). """
-    values: tuple[cst.OctetStringTime, cst.LogicalName, cdt.LongUnsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.START_TIME, cst.OctetStringTime),
-                cdt.StructElement(cdt.se.SCRIPT_LOGICAL_NAME, cst.LogicalName),
-                cdt.StructElement(cdt.se.SCRIPT_SELECTOR, cdt.LongUnsigned))
-
-    @property
-    def start_time(self) -> cst.OctetStringTime:
-        """defines the time when the script is to be executed (no wildcards); the format follows the rules set in for time"""
-        return self.values[0]
-
-    @property
-    def script_logical_name(self) -> cst.LogicalName:
-        """defines the logical name of the “Script table” object"""
-        return self.values[1]
-
-    @property
-    def script_selector(self) -> cdt.LongUnsigned:
-        """ defines the script_identifier of the script to be executed. TODO: make getter from object with script_logical_name """
-        return self.values[2]
+    start_time: cst.OctetStringTime
+    script_logical_name: cst.LogicalName
+    script_selector: cdt.LongUnsigned
 
 
 # TODO: make unique by start_time
@@ -200,18 +126,8 @@ class DaySchedule(cdt.Array):
 
 class DayProfile(cdt.Structure):
     """ list of Scheduled actions is defined by a script to be executed and the corresponding activation time (start_time) with day ID. """
-    #   user defined identifier, identifying the current day_profile
-    values: tuple[cdt.Unsigned, DaySchedule]
-    ELEMENTS: tuple[cdt.StructElement, cdt.StructElement] = (cdt.StructElement(cdt.se.DAY_ID, cdt.Unsigned),
-                                                             cdt.StructElement(cdt.se.DAY_SCHEDULE, DaySchedule))
-
-    @property
-    def day_id(self) -> cdt.Unsigned:
-        return self.values[0]
-
-    @property
-    def day_schedule(self) -> DaySchedule:
-        return self.values[1]
+    day_id: cdt.Unsigned
+    day_schedule: DaySchedule
 
 
 class DayProfileTable(cdt.Array):

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from ..__class_init__ import *
 
 
@@ -16,17 +15,8 @@ class KeyID(cdt.Enum, elements=(0, 1, 2)):
 
 class KeyData(cdt.Structure):
     """ TODO: """
-    values: tuple[KeyID, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.KEY_ID, KeyID),
-                cdt.StructElement(cdt.se.KEY_WRAPPED, cdt.OctetString))
-
-    @property
-    def key_id(self) -> KeyID:
-        return self.values[0]
-
-    @property
-    def key_wrapped(self) -> cdt.OctetString:
-        return self.values[1]
+    key_id: KeyID
+    key_wrapped: cdt.OctetString
 
 
 class GlobalKeyTransfer(cdt.Array):

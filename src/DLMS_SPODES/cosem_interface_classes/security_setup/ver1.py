@@ -1,6 +1,6 @@
-from __future__ import annotations
 from . import ver0
 from ..__class_init__ import *
+from ...types import choices
 
 
 class SecurityPolicyVer1(cdt.FlagMixin, cdt.Enum, elements=tuple(range(8))):
@@ -22,37 +22,12 @@ class SecuritySuite(cdt.Enum, elements=(0, 1, 2)):
 
 class CertificateInfo(cdt.Structure):
     """ TODO: """
-    values: tuple[CertificateEntity, CertificateType, cdt.OctetString, cdt.OctetString, cdt.OctetString, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.CERTIFICATE_ENTITY, CertificateEntity),
-                cdt.StructElement(cdt.se.CERTIFICATE_TYPE, CertificateType),
-                cdt.StructElement(cdt.se.SERIAL_NUMBER, cdt.OctetString),
-                cdt.StructElement(cdt.se.ISSUER, cdt.OctetString),
-                cdt.StructElement(cdt.se.SUBJECT, cdt.OctetString),
-                cdt.StructElement(cdt.se.SUBJECT_ALT_NAME, cdt.OctetString))
-
-    @property
-    def certificate_entity(self) -> CertificateEntity:
-        return self.values[0]
-
-    @property
-    def certificate_type(self) -> CertificateType:
-        return self.values[1]
-
-    @property
-    def serial_number(self) -> cdt.OctetString:
-        return self.values[2]
-
-    @property
-    def issuer(self) -> cdt.OctetString:
-        return self.values[3]
-
-    @property
-    def subject(self) -> cdt.OctetString:
-        return self.values[4]
-
-    @property
-    def subject_alt_name(self) -> cdt.OctetString:
-        return self.values[5]
+    certificate_entity: CertificateEntity
+    certificate_type: CertificateType
+    serial_number: cdt.OctetString
+    issuer: cdt.OctetString
+    subject: cdt.OctetString
+    subject_alt_name: cdt.OctetString
 
 
 class Certificates(cdt.Array):
@@ -66,17 +41,8 @@ class KeyID(cdt.Enum, elements=(0, 1, 2, 3)):
 
 class KeyTransferData(cdt.Structure):
     """ TODO: """
-    values: tuple[KeyID, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.KEY_ID, KeyID),
-                cdt.StructElement(cdt.se.KEY_WRAPPED, cdt.OctetString))
-
-    @property
-    def key_id(self) -> KeyID:
-        return self.values[0]
-
-    @property
-    def key_wrapped(self) -> cdt.OctetString:
-        return self.values[1]
+    key_id: KeyID
+    key_wrapped: cdt.OctetString
 
 
 class KeyTransfer(cdt.Array):
@@ -86,17 +52,8 @@ class KeyTransfer(cdt.Array):
 
 class KeyAgreementData(cdt.Structure):
     """ TODO: """
-    values: tuple[KeyID, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.KEY_ID, KeyID),
-                cdt.StructElement(cdt.se.KEY_DATA, cdt.OctetString))
-
-    @property
-    def key_id(self) -> KeyID:
-        return self.values[0]
-
-    @property
-    def key_data(self) -> cdt.OctetString:
-        return self.values[1]
+    key_id: KeyID
+    key_data: cdt.OctetString
 
 
 class KeyAgreement(cdt.Array):
@@ -110,37 +67,15 @@ class KeyPair(cdt.Enum, elements=(0, 1, 2)):
 
 class CertificateIdentificationByEntity(cdt.Structure):
     """ TODO: """
-    values: tuple[CertificateEntity, CertificateType, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.CERTIFICATE_ENTITY, CertificateEntity),
-                cdt.StructElement(cdt.se.CERTIFICATE_TYPE, CertificateType),
-                cdt.StructElement(cdt.se.SYSTEM_TITLE, cdt.OctetString))
-
-    @property
-    def certificate_entity(self) -> CertificateEntity:
-        return self.values[0]
-
-    @property
-    def certificate_type(self) -> CertificateType:
-        return self.values[1]
-
-    @property
-    def system_title(self) -> cdt.OctetString:
-        return self.values[2]
+    certificate_entity: CertificateEntity
+    certificate_type: CertificateType
+    system_title: cdt.OctetString
 
 
 class CertificateIdentificationBySerial(cdt.Structure):
     """ TODO: """
-    values: tuple[cdt.OctetString, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.SERIAL_NUMBER, cdt.OctetString),
-                cdt.StructElement(cdt.se.ISSUER, cdt.OctetString))
-
-    @property
-    def serial_number(self) -> cdt.OctetString:
-        return self.values[0]
-
-    @property
-    def issuer(self) -> cdt.OctetString:
-        return self.values[1]
+    serial_number: cdt.OctetString
+    issuer: cdt.OctetString
 
 
 class CertificateIdentificationType(cdt.Enum, elements=(0, 1)):
@@ -156,30 +91,10 @@ class CertificateIdentificationOption(ut.CHOICE):
 certificate_identification_option = CertificateIdentificationOption()
 
 
-class CertificateIdentification(cdt.Structure):
+class CertificateIdentification(choices.StructureMixin, cdt.Structure):
     """Override several methods of cdt.Structure. It limited Structure."""
-    values: tuple[CertificateIdentificationType, CertificateIdentificationByEntity | CertificateIdentificationBySerial]
-
-    def __init__(self):
-        self.__dict__["values"] = (CertificateIdentificationType(0), CertificateIdentificationByEntity())
-        self.certificate_identification_type.register_cb_post_set(self.__set_certificate_identification_type)
-
-    def __set_certificate_identification_type(self):
-        self.__dict__["values"] = (self.certificate_identification_type, certificate_identification_option(int(self.certificate_identification_type)))
-
-    @property
-    def ELEMENTS(self) -> tuple[cdt.StructElement, cdt.StructElement]:
-        return (cdt.StructElement(cdt.se.CERTIFICATE_IDENTIFICATION_TYPE, CertificateIdentificationType),
-                cdt.StructElement(cdt.se.CERTIFICATION_IDENTIFICATION_OPTIONS,
-                                  CertificateIdentificationByEntity if int(self.certificate_identification_type) == 0 else CertificateIdentificationBySerial))
-
-    @property
-    def certificate_identification_type(self) -> CertificateIdentificationType:
-        return self.values[0]
-
-    @property
-    def certificate_identification_options(self) -> CertificateIdentificationByEntity | CertificateIdentificationBySerial:
-        return self.values[1]
+    certificate_identification_type: CertificateIdentificationType
+    certificate_identification_options: certificate_identification_option
 
 
 class SecuritySetup(ver0.SecuritySetup):

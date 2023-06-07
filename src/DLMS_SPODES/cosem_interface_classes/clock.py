@@ -1,4 +1,3 @@
-from __future__ import annotations
 import datetime
 from .__class_init__ import *
 from ..types.implementations import integers
@@ -37,25 +36,11 @@ class ClockBase(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
 
 class PresetAdjustingTime(cdt.Structure):
     """ Presets the time to a new value (preset_time) and defines a validity_interval within which the new time can be activated """
-    values: tuple[cdt.DateTime, cdt.DateTime, cdt.DateTime]
-    ELEMENTS: tuple[cdt.StructElement, cdt.StructElement, cdt.StructElement]
     default = b'\x02\x03\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
               b'\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff'
-    ELEMENTS = (cdt.StructElement(cdt.se.PRESET_TIME, cdt.DateTime),
-                cdt.StructElement(cdt.se.VALIDITY_INTERVAL_START, cdt.DateTime),
-                cdt.StructElement(cdt.se.VALIDITY_INTERVAL_END, cdt.DateTime))
-
-    @property
-    def preset_time(self) -> cdt.DateTime:
-        return self.values[0]
-
-    @property
-    def validity_interval_start(self) -> cdt.DateTime:
-        return self.values[1]
-
-    @property
-    def validity_interval_end(self) -> cdt.DateTime:
-        return self.values[2]
+    preset_time: cdt.DateTime
+    validity_interval_start: cdt.DateTime
+    validity_interval_end: cdt.DateTime
 
 
 class ShiftTime(cdt.Long, min=-900, max=900):

@@ -9,17 +9,8 @@ class TYPE(cdt.Enum, elements=(1, 2, 3, 4, 5)):
 class ExecutionTimeDate(cdt.Structure):
     """ Specifies the time and teh date when the script is executed. The two octet-string s contain time and date, in this order; time and date are
      formatted as specified in DLMS UA 1000-1 Ed.12.0 4.1.6.1. Hundredths of second shall be zero. """
-    values: tuple[cst.OctetStringTime, cst.OctetStringDate]
-    ELEMENTS = (cdt.StructElement(cdt.se.TIME, cst.OctetStringTime),
-                cdt.StructElement(cdt.se.DATE, cst.OctetStringDate))
-
-    @property
-    def time(self) -> cst.OctetStringTime:
-        return self.values[0]
-
-    @property
-    def date(self) -> cst.OctetStringDate:
-        return self.values[1]
+    time: cst.OctetStringTime
+    date: cst.OctetStringDate
 
 
 class ExecutionTime(cdt.Array):

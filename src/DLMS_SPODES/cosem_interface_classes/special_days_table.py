@@ -1,28 +1,12 @@
-from __future__ import annotations
 import datetime
 from .__class_init__ import *
 
 
 class SpecDayEntry(cdt.Structure):
     """ Specifies a special day identifier for a given date. The date may have wildcards for repeating special days like Christmas. """
-    values: tuple[cdt.LongUnsigned, cst.OctetStringDate, cdt.Unsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.INDEX, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.SPECIAL_DAY_DATE, cst.OctetStringDate),
-                cdt.StructElement(cdt.se.DAY_ID, cdt.Unsigned))  # TODO: must depend with  exec_specdays
-
-    @property
-    def index(self) -> cdt.LongUnsigned:
-        return self.values[0]
-
-    @property
-    def specialday_date(self) -> cst.OctetStringDate:
-        """specialday_date formatting follows the rules set in EN 62056-62:2007 4.4.1 for date"""
-        return self.values[1]
-
-    @property
-    def day_id(self) -> cdt.Unsigned:
-        """the range of the day_id must match the length of the bitstring exec_specdays in the related object of interface class “Schedule”"""
-        return self.values[2]
+    index: cdt.LongUnsigned
+    specialday_date: cst.OctetStringDate
+    day_id: cdt.Unsigned
 
 
 class Entries(cdt.Array):
@@ -119,8 +103,3 @@ class SpecialDaysTable(ic.COSEMInterfaceClasses):
                     return spec_day_entry.day_id
             else:
                 return None
-
-
-if __name__ == '__main__':
-    a = SpecialDaysTable('0.0.11.0.0.255')
-    print(a)

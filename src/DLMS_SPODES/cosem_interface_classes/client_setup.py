@@ -7,18 +7,8 @@ class CommunicationChannel(cdt.Enum, elements=(0, 1, 2)):
 
 class LocalPortNames(cdt.Structure):
     """ Consist names of optical_port and rs-485 by ordering of hdlc_setup """
-    values: tuple[cdt.VisibleString, cdt.VisibleString]
-    # values: tuple[cdt.Integer, cdt.Integer]
-    ELEMENTS = (cdt.StructElement(cdt.se.ITE_OPTICAL_PORT_NAME, cdt.VisibleString),
-                cdt.StructElement(cdt.se.ITE_RS485_NAME, cdt.VisibleString))
-
-    @property
-    def optical_port_name(self) -> cdt.VisibleString:
-        return self.values[0]
-
-    @property
-    def rs485_name(self) -> cdt.VisibleString:
-        return self.values[1]
+    optical_port_name: cdt.VisibleString
+    rs485_name: cdt.VisibleString
 
 
 class ClientSetup(ic.COSEMInterfaceClasses):

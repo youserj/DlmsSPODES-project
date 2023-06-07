@@ -107,7 +107,7 @@ class CHOICE(ABC):
     def is_key(self, value: int) -> bool:
         return value in self.ELEMENTS.keys()
 
-    def __call__(self, value: bytes | int) -> cdt.CommonDataType:
+    def __call__(self, value: bytes | int = None) -> cdt.CommonDataType:
         """ get instance from encoding or tag(with default value). For CommonDataType only """
         try:
             match value:
@@ -121,6 +121,7 @@ class CHOICE(ABC):
                                 raise ValueError(F"got type with tag: {encoding[0]} and length: {encoding[1]}, expected length {tuple(ch.keys())}")
                         case err:                     raise ValueError(F"got {err.__name__}, expected {SequenceElement.__name__} or {dict.__name__}")
                 case int() as tag:                    return self.ELEMENTS[tag].TYPE()
+                case None:                            return tuple(self.ELEMENTS.values())[0].TYPE()
                 case error:                           raise ValueError(F'Unknown value type {error}')
         except KeyError as e:
             raise ValueError(F'For {self.__class__.__name__} got key: {e.args[0]}, expected {tuple(self.ELEMENTS.keys())}')

@@ -4,17 +4,8 @@ from ...types.implementations.emuns import CommSpeed
 
 class InitializationStringElement(cdt.Structure):
     """ Request - Response strings"""
-    values: tuple[cdt.OctetString, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.REQUEST, cdt.OctetString),
-                cdt.StructElement(cdt.se.RESPONSE, cdt.OctetString))
-
-    @property
-    def request(self) -> cdt.OctetString:
-        return self.values[0]
-
-    @property
-    def response(self) -> cdt.OctetString:
-        return self.values[1]
+    request: cdt.OctetString
+    response: cdt.OctetString
 
 
 class InitializationString(cdt.Array):

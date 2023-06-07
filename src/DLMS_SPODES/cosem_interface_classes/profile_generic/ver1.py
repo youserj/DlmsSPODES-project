@@ -1,5 +1,4 @@
-from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Type
 from ... import cosem_interface_classes
 from ..register import Register
@@ -38,32 +37,11 @@ class FromEntry(cdt.DoubleLongUnsigned, min=1):
 class EntryDescriptor(cdt.Structure):
     """ Only buffer elements corresponding to the entry_descriptor shall be returned in the response.
     NOTE: from_entry and to_entry identify the lines, from_selected_value to_selected_value identify the columns of the buffer to be retrieved. """
-    values: tuple[FromEntry, cdt.DoubleLongUnsigned, cdt.LongUnsigned, cdt.LongUnsigned]
     default = (1, 0, 1, 0)
-    ELEMENTS = (cdt.StructElement(cdt.se.FROM_ENTRY, FromEntry),
-                cdt.StructElement(cdt.se.TO_ENTRY,  cdt.DoubleLongUnsigned),
-                cdt.StructElement(cdt.se.FROM_SELECTED_VALUE, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.TO_SELECTED_VALUE, cdt.LongUnsigned))
-
-    @property
-    def from_entry(self) -> FromEntry:
-        """first entry to retrieve. TODO: make type from 1"""
-        return self.values[0]
-
-    @property
-    def to_entry(self) ->  cdt.DoubleLongUnsigned:
-        """last entry to retrieve to_entry == 0: highest possible entry"""
-        return self.values[1]
-
-    # index of first value to retrieve
-    @property
-    def from_selected_value(self) -> cdt.LongUnsigned:
-        return self.values[2]
-
-    @property
-    def to_selected_value(self) -> cdt.LongUnsigned:
-        """index of last value to retrieve to_selected_value == 0: highest possible selected_value"""
-        return self.values[3]
+    from_entry: FromEntry
+    to_entry: cdt.DoubleLongUnsigned
+    from_selected_value: cdt.LongUnsigned
+    to_selected_value: cdt.LongUnsigned
 
 
 class AccessSelector(ut.Unsigned8):
@@ -76,36 +54,12 @@ class AccessSelector(ut.Unsigned8):
 
 class RangeDescriptorBase(cdt.Structure, ABC):
     """ Only buffer elements corresponding to the range_descriptor shall be returned in the response """
-    values: tuple[structs.CaptureObjectDefinition, cdt.SimpleDataType, cdt.SimpleDataType, CaptureObjects]
-    # cb_preset = TODO: make check 'selected_values' from self.capture_objects or
-    # cb_post_set = TODO: make check 'selected_values' from self.capture_objects
     default = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
               b'\x09\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00'
-
-    @abstractmethod
-    def ELEMENTS(self) -> tuple[cdt.StructElement, ...]:
-        """need definite in subclasses"""
-
-    @property
-    def restricting_object(self) -> structs.CaptureObjectDefinition:
-        """Defines the capture_object restricting the range of entries to be retrieved. Only simple data types are allowed"""
-        return self.values[0]
-
-    @property
-    def from_value(self) -> cdt.SimpleDataType:
-        """Oldest or smallest entry to retrieve"""
-        return self.values[1]
-
-    @property
-    def to_value(self) -> cdt.SimpleDataType:
-        """Newest or largest entry to retrieve"""
-        return self.values[2]
-
-    @property
-    def selected_values(self) -> CaptureObjects:
-        """List of columns to retrieve. If the array is empty (has no entries), all captured data are returned. Otherwise, only the columns specified in
-        the array are returned. The type capture_object_definition is specified above (capture_objects)"""
-        return self.values[3]
+    restricting_object: structs.CaptureObjectDefinition
+    from_value: cdt.SimpleDataType
+    to_value: cdt.SimpleDataType
+    selected_values: CaptureObjects
 
 
 class DataBase(ut.Data, ABC):
@@ -270,15 +224,15 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         else:
             exc.NoObject(F"got {self.sort_object.class_id=}, expected {sort_obj.CLASS_ID=} from collection")
 
-        class RangeDescriptor(RangeDescriptorBase):
+        class RangeDescriptor(cdt.Structure):
             # cb_preset = TODO: make check 'selected_values' from self.capture_objects or
             # cb_post_set = TODO: make check 'selected_values' from self.capture_objects
             default = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
                       b'\x09\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00'
-            ELEMENTS = (cdt.StructElement(cdt.se.RESTRICTING_OBJECT, structs.CaptureObjectDefinition),
-                        cdt.StructElement(cdt.se.FROM_VALUE, value_type),
-                        cdt.StructElement(cdt.se.TO_VALUE, value_type),
-                        cdt.StructElement(cdt.se.SELECTED_VALUES, CaptureObjects))
+            restricting_object: structs.CaptureObjectDefinition
+            from_value: value_type
+            to_value: value_type
+            selected_values: CaptureObjects
 
         class Data(DataBase):
             ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptor),
@@ -303,7 +257,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
             case CaptureObjects(): return list(map(lambda definition: get_name(self.collection.get_object(definition).logical_name), self.capture_objects))
             case _:                raise ValueError(F'{self}: Empty capture objects')
 
-    def get_buffer_objects(self) -> list[cosem_interface_classes.collection.InterfaceClass]:
+    def get_buffer_objects(self) -> list[cosem_interface_classes.cosem_interface_class.COSEMInterfaceClasses]:
         """ get objects of current buffer container """
         return [self.collection.get(obj_def.logical_name.contents) for obj_def in self.buffer_capture_objects]
 

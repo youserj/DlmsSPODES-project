@@ -3,49 +3,19 @@ from . __class_init__ import *
 
 class QoSElement(cdt.Structure):
     """ Params of element """
-    values: tuple[cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.PRECEDENCE, cdt.Unsigned),
-                cdt.StructElement(cdt.se.DELAY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.RELIABILITY, cdt.Unsigned),
-                cdt.StructElement(cdt.se.PEAK_THROUGHPUT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.MEAN_THROUGHPUT, cdt.Unsigned))
-
-    @property
-    def precedence(self) -> cdt.Unsigned:
-        return self.values[0]
-
-    @property
-    def delay(self) -> cdt.Unsigned:
-        return self.values[1]
-
-    @property
-    def reliability(self) -> cdt.Unsigned:
-        return self.values[2]
-
-    @property
-    def peak_throughput(self) -> cdt.Unsigned:
-        return self.values[3]
-
-    @property
-    def mean_throughput(self) -> cdt.Unsigned:
-        return self.values[4]
+    precedence: cdt.Unsigned
+    delay: cdt.Unsigned
+    reliability: cdt.Unsigned
+    peak_throughput: cdt.Unsigned
+    mean_throughput: cdt.Unsigned
 
 
 class QualityOfService(cdt.Structure):
     """ Specifies the quality of service parameters. It is a structure of 2 elements:
             1: defines the default or minimum characteristics of the network concerned. These parameters have to be set to best effort value;
             2: defines the requested parameters. """
-    values: tuple[QoSElement, QoSElement]
-    ELEMENTS = (cdt.StructElement(cdt.se.DEFAULT, QoSElement),
-                cdt.StructElement(cdt.se.REQUESTED, QoSElement))
-
-    @property
-    def default(self) -> QoSElement:
-        return self.values[0]
-
-    @property
-    def requested(self) -> QoSElement:
-        return self.values[1]
+    default: QoSElement
+    requested: QoSElement
 
 
 class GPRSModemSetup(ic.COSEMInterfaceClasses):

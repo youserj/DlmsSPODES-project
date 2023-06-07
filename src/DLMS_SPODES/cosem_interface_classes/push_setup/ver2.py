@@ -1,46 +1,13 @@
 from ..__class_init__ import *
 from ...types.implementations import structs, emuns, integers
 from itertools import chain
+from ...types import choices
 
 
-class RestrictionValue(ut.CHOICE):
-    TYPE = (cdt.Structure, cdt.NullData)
-    ELEMENTS = {0: ut.SequenceElement("no restriction apply", cdt.NullData),
-                1: ut.SequenceElement("restriction by date", structs.RestrictionByDate),
-                2: ut.SequenceElement("restriction by entry", structs.RestrictionByEntry)}
-
-
-restriction_value = RestrictionValue()
-
-
-class RestrictionElement(cdt.Structure):
+class RestrictionElement(choices.StructureMixin, cdt.Structure):
     """Override several methods of cdt.Structure. It limited Structure."""
-    values: tuple[emuns.RestrictionType, cdt.NullData | structs.RestrictionByDate | structs.RestrictionByEntry]
-
-    def __init__(self):
-        self.__dict__["values"] = (emuns.RestrictionType(0), cdt.NullData())
-        self.restriction_type.register_cb_post_set(self.__set_certificate_identification_type)
-
-    def __set_certificate_identification_type(self):
-        self.__dict__["values"] = (self.restriction_type, restriction_value(int(self.restriction_type)))
-
-    @property
-    def ELEMENTS(self) -> tuple[cdt.StructElement, cdt.StructElement]:
-        match int(self.restriction_type):
-            case 0: r_v = cdt.NullData
-            case 1: r_v = structs.RestrictionByDate
-            case 2: r_v = structs.RestrictionByEntry
-            case err: raise ValueError(F"got {err} type of {self.__class__.__name__}, expect 0, 1, 2")
-        return (cdt.StructElement(cdt.se.RESTRICTION_TYPE, emuns.RestrictionType),
-                cdt.StructElement(cdt.se.RESTRICTION_VALUE, r_v))
-
-    @property
-    def restriction_type(self) -> emuns.RestrictionType:
-        return self.values[0]
-
-    @property
-    def restriction_value(self) -> cdt.NullData | structs.RestrictionByDate | structs.RestrictionByEntry:
-        return self.values[1]
+    restriction_type: emuns.RestrictionType
+    restriction_value: choices.restriction_value
 
 
 class ColumnElement(cdt.Array):
@@ -49,37 +16,12 @@ class ColumnElement(cdt.Array):
 
 
 class PushObjectDefinition(cdt.Structure):
-    values: tuple[cdt.LongUnsigned, cst.LogicalName, cdt.Integer, cdt.LongUnsigned, RestrictionElement, ColumnElement]
-    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName),
-                cdt.StructElement(cdt.se.ATTRIBUTE_INDEX, cdt.Integer),
-                cdt.StructElement(cdt.se.DATA_INDEX, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.RESTRICTION, RestrictionElement),
-                cdt.StructElement(cdt.se.COLUMN, ColumnElement))
-
-    @property
-    def class_id(self) -> cdt.LongUnsigned:
-        return self.values[0]
-
-    @property
-    def logical_name(self) -> cst.LogicalName:
-        return self.values[1]
-
-    @property
-    def attribute_index(self) -> cdt.Integer:
-        return self.values[2]
-
-    @property
-    def data_index(self) -> cdt.LongUnsigned:
-        return self.values[3]
-
-    @property
-    def restriction(self) -> RestrictionElement:
-        return self.values[4]
-
-    @property
-    def column(self) -> ColumnElement:
-        return self.values[5]
+    class_id: cdt.LongUnsigned
+    logical_name: cst.LogicalName
+    attribute_index: cdt.Integer
+    data_index: cdt.LongUnsigned
+    restriction: RestrictionElement
+    column: ColumnElement
 
 
 class PushObjectList(cdt.Array):
@@ -96,22 +38,9 @@ class MessageType(cdt.Enum, elements=tuple(chain((0, 1), range(128, 256)))):  # 
 
 
 class SendDestinationAndMethod(cdt.Structure):
-    values: tuple[TransportServiceType, cdt.OctetString, MessageType]
-    ELEMENTS = (cdt.StructElement(cdt.se.TRANSPORT_SERVICE, TransportServiceType),
-                cdt.StructElement(cdt.se.DESTINATION, cdt.OctetString),
-                cdt.StructElement(cdt.se.MESSAGE, MessageType))
-
-    @property
-    def transport_service(self) -> TransportServiceType:
-        return self.values[0]
-
-    @property
-    def destination(self) -> cdt.OctetString:
-        return self.values[1]
-
-    @property
-    def message(self) -> MessageType:
-        return self.values[2]
+    transport_service: TransportServiceType
+    destination: cdt.OctetString
+    message: MessageType
 
 
 class CommunicationWindow(cdt.Array):
@@ -120,22 +49,9 @@ class CommunicationWindow(cdt.Array):
 
 
 class RepetitionDelay(cdt.Structure):
-    values: tuple[cdt.LongUnsigned, cdt.LongUnsigned, cdt.LongUnsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.REPETITION_DELAY_MIN, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.REPETITION_DELAY_EXPONENT, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.REPETITION_DELAY_MAX, cdt.LongUnsigned))
-
-    @property
-    def repetition_delay_min(self) -> cdt.LongUnsigned:
-        return self.values[0]
-
-    @property
-    def repetition_delay_exponent(self) -> cdt.LongUnsigned:
-        return self.values[1]
-
-    @property
-    def repetition_delay_max(self) -> cdt.LongUnsigned:
-        return self.values[2]
+    repetition_delay_min: cdt.LongUnsigned
+    repetition_delay_exponent: cdt.LongUnsigned
+    repetition_delay_max: cdt.LongUnsigned
 
 
 class PushOperationMethod(cdt.Enum, elements=(0, 1, 2)):
@@ -143,136 +59,27 @@ class PushOperationMethod(cdt.Enum, elements=(0, 1, 2)):
 
 
 class ConfirmationParameters(cdt.Structure):
-    values: tuple[cdt.DateTime, cdt.DoubleLongUnsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.CONFIRMATION_START_DATE, cdt.DateTime),
-                cdt.StructElement(cdt.se.CONFIRMATION_INTERVAL, cdt.DoubleLongUnsigned))
-
-    @property
-    def confirmation_start_date(self) -> cdt.DateTime:
-        return self.values[0]
-
-    @property
-    def confirmation_interval(self) -> cdt.DoubleLongUnsigned:
-        return self.values[1]
+    confirmation_start_date: cdt.DateTime
+    confirmation_interval: cdt.DoubleLongUnsigned
 
 
-class IdentifiedKeyInfoOptions(cdt.Enum, elements=(0, 1)):
-    """"""
-
-
-class KEKId(cdt.Enum, elements=(0,)):
-    """"""
-
-
-class WrappedKeyInfoOptions(cdt.Structure):
-    values: tuple[KEKId, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.KEY_ID, KEKId),
-                cdt.StructElement(cdt.se.KEY_CIPHERED_DATA, cdt.OctetString))
-
-    @property
-    def kek_id(self) -> KEKId:
-        return self.values[0]
-
-    @property
-    def key_ciphered_data(self) -> cdt.OctetString:
-        return self.values[1]
-
-
-class AgreedKeyInfoOptions(cdt.Structure):
-    values: tuple[cdt.OctetString, cdt.OctetString]
-    ELEMENTS = (cdt.StructElement(cdt.se.KEY_PARAMETERS, cdt.OctetString),
-                cdt.StructElement(cdt.se.KEY_CIPHERED_DATA, cdt.OctetString))
-
-    @property
-    def kek_id(self) -> cdt.OctetString:
-        return self.values[0]
-
-    @property
-    def key_ciphered_data(self) -> cdt.OctetString:
-        return self.values[1]
-
-
-class KeyInfoOptions(ut.CHOICE):
-    TYPE = (cdt.Enum, cdt.Structure)
-    ELEMENTS = {0: ut.SequenceElement("identified_key", IdentifiedKeyInfoOptions),
-                1: ut.SequenceElement("wrapped_key", WrappedKeyInfoOptions),
-                2: ut.SequenceElement("agreed_key", AgreedKeyInfoOptions)}
-
-
-key_info_options = KeyInfoOptions()
-
-
-class KeyInfoElement(cdt.Structure):
+class KeyInfoElement(choices.StructureMixin, cdt.Structure):
     """Override several methods of cdt.Structure. It limited Structure."""
-    values: tuple[emuns.KeyInfoType, IdentifiedKeyInfoOptions | WrappedKeyInfoOptions | AgreedKeyInfoOptions]
-
-    def __init__(self):
-        self.__dict__["values"] = (emuns.KeyInfoType(0), IdentifiedKeyInfoOptions())
-        self.key_info_type.register_cb_post_set(self.__set_key_info_type)
-
-    def __set_key_info_type(self):
-        self.__dict__["values"] = (self.key_info_type, key_info_options(int(self.key_info_type)))
-
-    @property
-    def ELEMENTS(self) -> tuple[cdt.StructElement, cdt.StructElement]:
-        match int(self.key_info_type):
-            case 0: key_o = IdentifiedKeyInfoOptions
-            case 1: key_o = WrappedKeyInfoOptions
-            case 2: key_o = AgreedKeyInfoOptions
-            case err: raise ValueError(F"got {err} type of {self.__class__.__name__}, expect 0, 1, 2")
-        return (cdt.StructElement(cdt.se.KEY_INFO_TYPE, emuns.KeyInfoType),
-                cdt.StructElement(cdt.se.KEY_INFO_OPTIONS, key_o))
-
-    @property
-    def key_info_type(self) -> emuns.KeyInfoType:
-        return self.values[0]
-
-    @property
-    def key_info_options(self) -> IdentifiedKeyInfoOptions | WrappedKeyInfoOptions | AgreedKeyInfoOptions:
-        return self.values[1]
+    key_info_type: emuns.KeyInfoType
+    key_info_options: choices.KeyInfoOptions
 
 
 class ProtectionOptions(cdt.Structure):
-    values: tuple[cdt.OctetString, cdt.OctetString, cdt.OctetString, cdt.OctetString, KeyInfoElement]
-    ELEMENTS = (cdt.StructElement(cdt.se.TRANSACTION_ID, cdt.OctetString),
-                cdt.StructElement(cdt.se.ORIGINATOR_SYSTEM_TITLE, cdt.OctetString),
-                cdt.StructElement(cdt.se.RECIPIENT_SYSTEM_TITLE, cdt.OctetString),
-                cdt.StructElement(cdt.se.OTHER_INFORMATION, cdt.OctetString),
-                cdt.StructElement(cdt.se.KEY_INFO, cdt.OctetString))
-
-    @property
-    def transaction_id(self) -> cdt.OctetString:
-        return self.values[0]
-
-    @property
-    def originator_system_title(self) -> cdt.OctetString:
-        return self.values[1]
-
-    @property
-    def recipient_system_title(self) -> cdt.OctetString:
-        return self.values[2]
-
-    @property
-    def other_information(self) -> cdt.OctetString:
-        return self.values[3]
-
-    @property
-    def key_info(self) -> KeyInfoElement:
-        return self.values[4]
+    transaction_id: cdt.OctetString
+    originator_system_title: cdt.OctetString
+    recipient_system_title: cdt.OctetString
+    other_information: cdt.OctetString
+    key_info: KeyInfoElement
 
 
 class ProtectionParametersElement(cdt.Structure):
-    values: tuple[emuns.ProtectionType, ProtectionOptions]
-    ELEMENTS = (cdt.StructElement(cdt.se.PROTECTION_TYPE, emuns.ProtectionType),
-                cdt.StructElement(cdt.se.PROTECTION_OPTIONS, ProtectionOptions))
-
-    @property
-    def protection_type(self) -> emuns.ProtectionType:
-        return self.values[0]
-
-    @property
-    def protection_options(self) -> ProtectionOptions:
-        return self.values[1]
+    protection_type: emuns.ProtectionType
+    protection_options: ProtectionOptions
 
 
 class PushProtectionParameters(cdt.Array):

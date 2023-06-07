@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Callable
 from enum import IntFlag, auto
 from ... import ITE_exceptions as exc
@@ -16,23 +15,10 @@ class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
 
 class AttributeAccessItem(cdt.Structure):
     """ Implemented attribute and it access . Use in Association LN """
-    values: tuple[cdt.Integer, AccessMode, cdt.NullData | cdt.Array]
     default = b'\x02\x03\x0f\x01\x16\x00\x00'
-    ELEMENTS = (cdt.StructElement(cdt.se.ATTRIBUTE_ID, cdt.Integer),
-                cdt.StructElement(cdt.se.ACCESS_MODE, AccessMode),
-                cdt.StructElement(cdt.se.ACCESS_SELECTORS, choices.access_selectors))
-
-    @property
-    def attribute_id(self) -> cdt.Integer:
-        return self.values[0]
-
-    @property
-    def access_mode(self) -> AccessMode:
-        return self.values[1]
-
-    @property
-    def access_selectors(self) -> cdt.NullData | cdt.Array:
-        return self.values[2]
+    attribute_id: cdt.Integer
+    access_mode: AccessMode
+    access_selectors: choices.access_selectors
 
 
 class AttributeAccessDescriptor(cdt.Array):
@@ -42,17 +28,8 @@ class AttributeAccessDescriptor(cdt.Array):
 
 class MethodAccessItem(cdt.Structure):
     """ Implemented method and it access . Use in Association LN """
-    values: tuple[cdt.Integer, cdt.Boolean]
-    ELEMENTS = (cdt.StructElement(cdt.se.METHOD_ID, cdt.Integer),
-                cdt.StructElement(cdt.se.ACCESS_MODE, cdt.Boolean))
-
-    @property
-    def method_id(self) -> cdt.Integer:
-        return self.values[0]
-
-    @property
-    def access_mode(self) -> cdt.Boolean:
-        return self.values[1]
+    method_id: cdt.Integer
+    access_mode: cdt.Boolean
 
 
 class MethodAccessDescriptor(cdt.Array):
@@ -62,42 +39,16 @@ class MethodAccessDescriptor(cdt.Array):
 
 class AccessRight(cdt.Structure):
     """ TODO: """
-    values: tuple[AttributeAccessDescriptor, MethodAccessDescriptor]
-    ELEMENTS = (cdt.StructElement(cdt.se.ATTRIBUTE_ACCESS, AttributeAccessDescriptor),
-                cdt.StructElement(cdt.se.METHOD_ACCESS, MethodAccessDescriptor))
-
-    @property
-    def attribute_access(self) -> AttributeAccessDescriptor:
-        return self.values[0]
-
-    @property
-    def method_access(self) -> MethodAccessDescriptor:
-        return self.values[1]
+    attribute_access: AttributeAccessDescriptor
+    method_access: MethodAccessDescriptor
 
 
 class ObjectListElement(cdt.Structure):
     """ Visible COSEM objects with their class_id, version, logical name and the access rights to their attributes and methods within the given application association"""
-    values: tuple[cdt.LongUnsigned, cdt.Unsigned, cst.LogicalName, AccessRight]
-    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.VERSION, cdt.Unsigned),
-                cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName),
-                cdt.StructElement(cdt.se.ACCESS_RIGHTS, AccessRight))
-
-    @property
-    def class_id(self) -> cdt.LongUnsigned:
-        return self.values[0]
-
-    @property
-    def version(self) -> cdt.Unsigned:
-        return self.values[1]
-
-    @property
-    def logical_name(self) -> cst.LogicalName:
-        return self.values[2]
-
-    @property
-    def access_rights(self) -> AccessRight:
-        return self.values[3]
+    class_id: cdt.LongUnsigned
+    version: cdt.Unsigned
+    logical_name: cst.LogicalName
+    access_rights: AccessRight
 
 
 class ObjectListType(arrays.SelectionAccess):
@@ -171,60 +122,22 @@ class ServerSAP(cdt.LongUnsigned):
 class AssociatedPartnersType(cdt.Structure):
     """ Contains the identifiers of the COSEM client and the COSEM server (logical device) application processes within the physical devices
     hosting these processes, which belong to the application association modelled by the “Association LN” object. """
-    values: tuple[ClientSAP, ServerSAP]
     default = (0x10, 1)
-    ELEMENTS = (cdt.StructElement(cdt.se.CLIENT_SAP, ClientSAP),
-                cdt.StructElement(cdt.se.SERVER_SAP, ServerSAP))
-
-    @property
-    def client_SAP(self) -> ClientSAP:
-        return self.values[0]
-
-    @property
-    def server_SAP(self) -> ServerSAP:
-        return self.values[1]
+    client_SAP: ClientSAP
+    server_SAP: ServerSAP
 
 
 class ApplicationContextName(cdt.Structure):
     """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
     application association. This attribute contains the name of the application context for that association."""
-    values: tuple[cdt.Unsigned, cdt.Unsigned, cdt.LongUnsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned]
     default = (2, 16, 116, 5, 8, 1, 1)
-    ELEMENTS = (cdt.StructElement(cdt.se.JOINT_ISO_CTT_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.COUNTRY_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.COUNTRY_NAME_ELEMENT, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.IDENTIFIED_ORGANIZATION_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.DLMS_UA_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.APPLICATION_CONTEXT_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.CONTEXT_ID_ELEMENT, cdt.Unsigned))
-
-    @property
-    def joint_iso_ctt_element(self) -> cdt.Unsigned:
-        return self.values[0]
-
-    @property
-    def country_element(self) -> cdt.Unsigned:
-        return self.values[1]
-
-    @property
-    def country_name_element(self) -> cdt.LongUnsigned:
-        return self.values[2]
-
-    @property
-    def identified_organization_element(self) -> cdt.Unsigned:
-        return self.values[3]
-
-    @property
-    def DLMS_UA_element(self) -> cdt.Unsigned:
-        return self.values[4]
-
-    @property
-    def application_context_element(self) -> cdt.Unsigned:
-        return self.values[5]
-
-    @property
-    def context_id_element(self) -> cdt.Unsigned:
-        return self.values[6]
+    joint_iso_ctt_element: cdt.Unsigned
+    country_element: cdt.Unsigned
+    country_name_element: cdt.LongUnsigned
+    identified_organization_element: cdt.Unsigned
+    DLMS_UA_element: cdt.Unsigned
+    application_context_element: cdt.Unsigned
+    context_id_element: cdt.Unsigned
 
 
 # TODO: join with cdt.FlagMixin
@@ -314,46 +227,13 @@ class Conformance(cdt.BitString):
 
 class XDLMSContextType(cdt.Structure):
     """ Contains all the necessary information on the xDLMS context for the given association. """
-    values: tuple[Conformance, cdt.LongUnsigned, cdt.LongUnsigned, cdt.Unsigned, cdt.Integer, cdt.OctetString]
     default = (None, 1024, 1024, 6, 0, b'\x09\x07\x60\x85\x74\x05\x08\x02\x00')
-    ELEMENTS = (cdt.StructElement(cdt.se.CONFORMANCE, Conformance),
-                cdt.StructElement(cdt.se.MAX_RECEIVE_PDU_SIZE, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.MAX_SEND_PDU_SIZE, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.DLMS_VERSION_NUMBER, cdt.Unsigned),
-                cdt.StructElement(cdt.se.QUALITY_OF_SERVICE, cdt.Integer),
-                cdt.StructElement(cdt.se.CYPHERING_INFO, cdt.OctetString))
-
-    @property
-    def conformance(self) -> Conformance:
-        """the conformance element contains the xDLMS conformance block supported by the server"""
-        return self.values[0]
-
-    @property
-    def max_receive_pdu_size(self) -> cdt.LongUnsigned:
-        """the max_receive_pdu_size element contains the maximum  length for an xDLMS APDU, expressed in bytes that the client may send. This is the same
-        as the server-max-receive-pdu-size parameter of the DLMS-Initiate.response pdu (see IEC 62056-53)"""
-        return self.values[1]
-
-    @property
-    def max_send_pdu_size(self) -> cdt.LongUnsigned:
-        """the max_send_pdu_size, in an active association contains the maximum length for an xDLMS APDU, expressed in bytes that the server may send.
-        This is the same as the client-max-receive-pdu-size parameter of the DLMS-Initiate.request pdu (see IEC 62056-53)"""
-        return self.values[2]
-
-    @property
-    def dlms_version_number(self) -> cdt.Unsigned:
-        """the dlms_version_number element contains the DLMS version number supported by the server"""
-        return self.values[3]
-
-    @property
-    def quality_of_service(self) -> cdt.Integer:
-        """the quality_of _service element is not used"""
-        return self.values[4]
-
-    @property
-    def cyphering_info(self) -> cdt.OctetString:
-        """the cyphering_info, in an active association, contains the dedicated key parameter of the DLMS-Initiate.request pdu (See 62056-53)"""
-        return self.values[5]
+    conformance: Conformance
+    max_receive_pdu_size: cdt.LongUnsigned
+    max_send_pdu_size: cdt.LongUnsigned
+    dlms_version_number: cdt.Unsigned
+    quality_of_service: cdt.Integer
+    cyphering_info: cdt.OctetString
 
 
 class MechanismIdElement(cdt.Enum, elements=tuple(range(8))):
@@ -363,43 +243,14 @@ class MechanismIdElement(cdt.Enum, elements=tuple(range(8))):
 class AuthenticationMechanismName(cdt.Structure):
     """ Contains the name of the authentication mechanism for the association (see IEC 62056-53). The authentication mechanism name is specified as an
     OBJECT IDENTIFIER in 7.3.7.2 of IEC 62056-53. The authentication_mechanism_name attribute includes the arc labels of the OBJECT IDENTIFIER. """
-    values: tuple[cdt.Unsigned, cdt.Unsigned, cdt.LongUnsigned, cdt.Unsigned, cdt.Unsigned, cdt.Unsigned, MechanismIdElement]
     default = (2, 16, 756, 5, 8, 2, 0)
-    ELEMENTS = (cdt.StructElement(cdt.se.JOINT_ISO_CTT_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.COUNTRY_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.COUNTRY_NAME_ELEMENT, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.IDENTIFIED_ORGANIZATION_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.DLMS_UA_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.AUTHENTICATION_MECHANISM_NAME_ELEMENT, cdt.Unsigned),
-                cdt.StructElement(cdt.se.MECHANISM_ID_ELEMENT, MechanismIdElement))
-
-    @property
-    def joint_iso_ctt_element(self) -> cdt.Unsigned:
-        return self.values[0]
-
-    @property
-    def country_element(self) -> cdt.Unsigned:
-        return self.values[1]
-
-    @property
-    def country_name_element(self) -> cdt.LongUnsigned:
-        return self.values[2]
-
-    @property
-    def identified_organization_element(self) -> cdt.Unsigned:
-        return self.values[3]
-
-    @property
-    def DLMS_UA_element(self) -> cdt.Unsigned:
-        return self.values[4]
-
-    @property
-    def authentication_mechanism_name_element(self) -> cdt.Unsigned:
-        return self.values[5]
-
-    @property
-    def mechanism_id_element(self) -> MechanismIdElement:
-        return self.values[6]
+    joint_iso_ctt_element: cdt.Unsigned
+    country_element: cdt.Unsigned
+    country_name_element: cdt.LongUnsigned
+    identified_organization_element: cdt.Unsigned
+    DLMS_UA_element: cdt.Unsigned
+    authentication_mechanism_name_element: cdt.Unsigned
+    mechanism_id_element: MechanismIdElement
 
     def get_info(self) -> bytes:
         """ info for PDU from application_context_name. """
@@ -426,18 +277,9 @@ class ClassList(cdt.Array):
 
 
 class ObjectId(cdt.Structure):
-    values: tuple[ClassId, cst.LogicalName]
     default = b'\x02\x02\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff'
-    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, ClassId),
-                cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName))
-
-    @property
-    def class_id(self) -> ClassId:
-        return self.values[0]
-
-    @property
-    def logical_name(self) -> cst.LogicalName:
-        return self.values[1]
+    class_id: ClassId
+    logical_name: cst.LogicalName
 
 
 class ObjectIdList(cdt.Array):

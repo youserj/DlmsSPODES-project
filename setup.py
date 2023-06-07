@@ -4,7 +4,6 @@ import src.DLMS_SPODES.settings
 
 
 setuptools.setup(
-    name="DlmsSPODES",
     version=src.DLMS_SPODES.settings.version(),
     long_description_content_type="text/markdown",
     url="https://github.com/youserj/DlmsSPODES",

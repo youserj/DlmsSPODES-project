@@ -1,5 +1,4 @@
-from __future__ import annotations
-from typing import Callable, List, Optional
+from typing import Callable, Self
 from itertools import count
 from .__class_init__ import *
 
@@ -12,7 +11,7 @@ class Index(cdt.LongUnsigned, min=1, max=9999):
     def set_callback(self, cb: Callable):
         self.__cb_get_indexes = cb
 
-    def get_indexes(self) -> List[int]:
+    def get_indexes(self) -> list[int]:
         """ return indexes container """
         return self.__cb_get_indexes()
 
@@ -23,7 +22,7 @@ class Index(cdt.LongUnsigned, min=1, max=9999):
             raise ValueError('New index not unique')
 
     @classmethod
-    def with_cb(cls, value, cb: Callable) -> Index:
+    def with_cb(cls, value, cb: Callable) -> Self:
         """ get instance with callback """
         ret = cls(value)
         ret.set_callback(cb)
@@ -32,66 +31,16 @@ class Index(cdt.LongUnsigned, min=1, max=9999):
 
 class ScheduleTableEntry(cdt.Structure):
     """ Specifies the scripts to be executed at given times. There is only one script that can be executed per entry. """
-    values: tuple[Index, cdt.Boolean, cst.LogicalName, cdt.LongUnsigned, cst.OctetStringTime, cdt.LongUnsigned, cdt.BitString, cdt.BitString, cst.OctetStringDate, cst.OctetStringDate]
-    ELEMENTS = (cdt.StructElement(cdt.se.INDEX, Index),
-                cdt.StructElement(cdt.se.ENABLE, cdt.Boolean),
-                cdt.StructElement(cdt.se.SCRIPT_LOGICAL_NAME, cst.LogicalName),
-                cdt.StructElement(cdt.se.SCRIPT_SELECTOR, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.SWITCH_TIME, cst.OctetStringTime),
-                cdt.StructElement(cdt.se.VALIDITY_WINDOW, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.EXEC_WEEKDAYS, cdt.BitString),
-                cdt.StructElement(cdt.se.EXEC_SPEC_DAYS, cdt.BitString),
-                cdt.StructElement(cdt.se.BEGIN_DATE, cst.OctetStringDate),
-                cdt.StructElement(cdt.se.END_DATE, cst.OctetStringDate))
-
-    @property
-    def index(self) -> Index:
-        return self.values[0]
-
-    @property
-    def enable(self) -> cdt.Boolean:
-        return self.values[1]
-
-    @property
-    def script_logical_name(self) -> cst.LogicalName:
-        """defines the logical name of the “Script table” object"""
-        return self.values[2]
-
-    @property
-    def script_selector(self) -> cdt.LongUnsigned:
-        """defines the script_identifier of the script to be executed"""
-        return self.values[3]
-
-    @property
-    def switch_time(self) -> cst.OctetStringTime:
-        """accepts wildcards to define repetitive entries. The format of the octet-string follows the rules set in EN 62056-62:2007 4.4.1 for time"""
-        return self.values[4]
-
-    @property
-    def validity_window(self) -> cdt.LongUnsigned:
-        """defines a period in minutes, in which an entry must be processed after power fail. (time between defined switch_time and actual power_up)
-        0xFFFF: the script must be processed any time"""
-        return self.values[5]
-
-    @property
-    def exec_weekdays(self) -> cdt.BitString:
-        """defines the days of the week on which the entry is valid"""
-        return self.values[6]
-
-    @property
-    def exec_specdays(self) -> cdt.BitString:
-        """perform the link to the IC “Special days table”, day_ID"""
-        return self.values[7]
-
-    @property
-    def begin_date(self) -> cst.OctetStringDate:
-        """define the begin date period in which the entry is valid (wildcards are allowed). The format follows the rules set for date"""
-        return self.values[8]
-
-    @property
-    def end_date(self) -> cst.OctetStringDate:
-        """define the end date period in which the entry is valid (wildcards are allowed). The format follows the rules set for date"""
-        return self.values[9]
+    index: Index
+    enable: cdt.Boolean
+    script_logical_name: cst.LogicalName
+    script_selector: cdt.LongUnsigned
+    switch_time: cst.OctetStringTime
+    validity_window: cdt.LongUnsigned
+    exec_weekdays: cdt.BitString
+    exec_specdays: cdt.BitString
+    begin_date: cst.OctetStringDate
+    end_date: cst.OctetStringDate
 
 
 # TODO: rewrite to new API
@@ -107,7 +56,7 @@ class Entries(cdt.Array):
             schedule_table_entry: ScheduleTableEntry
             schedule_table_entry.index.set_callback(self.get_indexes)
 
-    def append(self, element: Optional[ScheduleTableEntry] = None):
+    def append(self, element: ScheduleTableEntry | None = None):
         """ append element to end with unique index """
         if element is None:
             element: ScheduleTableEntry = self.get_type()()
@@ -127,7 +76,7 @@ class Entries(cdt.Array):
         else:
             raise ValueError(F'Types not equal. Must be {self.TYPE.NAME} got {type(element).__name__}')
 
-    def get_indexes(self) -> List[int]:
+    def get_indexes(self) -> list[int]:
         """ getter for callback Index """
         return [entries_element.index.decode() for entries_element in self]
 
@@ -138,31 +87,10 @@ class DataED(cdt.Structure):
     * firstIndexA/B == lastIndexA/B: one entry is disabled/enabled,
     * firstIndexA/B > lastIndexA/B: nothing disabled/enabled,
     * firstIndexA/B and lastIndexA/B > 9999: no entry is disabled/enabled """
-    values: tuple[Index, Index, Index, Index]
-    ELEMENTS = (cdt.StructElement(cdt.se.FIRST_INDEX_A, Index),
-                cdt.StructElement(cdt.se.LAST_INDEX_A, Index),
-                cdt.StructElement(cdt.se.FIRST_INDEX_B, Index),
-                cdt.StructElement(cdt.se.LAST_INDEX_B, Index))
-
-    @property
-    def firstIndexA(self) -> Index:
-        """first index of the range that is disabled"""
-        return self.values[0]
-
-    @property
-    def lastIndexA(self) -> Index:
-        """last index of the range that is disabled"""
-        return self.values[1]
-
-    @property
-    def firstIndexB(self) -> Index:
-        """first index of the range that is enabled"""
-        return self.values[2]
-
-    @property
-    def lastIndexB(self) -> Index:
-        """last index of the range that is enabled"""
-        return self.values[3]
+    firstIndexA: Index
+    lastIndexA: Index
+    firstIndexB: Index
+    lastIndexB: Index
 
 
 class DataDelete(cdt.Structure):
@@ -170,19 +98,8 @@ class DataDelete(cdt.Structure):
     * firstIndex < lastIndex: all entries of the range A/B are deleted,
     * firstIndex ::= lastIndex: one entry is deleted,
     * firstIndex > lastIndex: nothing deleted  """
-    values: tuple[Index, Index]
-    ELEMENTS = (cdt.StructElement(cdt.se.FIRST_INDEX, Index),
-                cdt.StructElement(cdt.se.LAST_INDEX, Index))
-
-    @property
-    def firstIndex(self) -> Index:
-        """first index of the range that is deleted"""
-        return self.values[0]
-
-    @property
-    def lastIndex(self) -> Index:
-        """last index of the range that is deleted"""
-        return self.values[1]
+    firstIndex: Index
+    lastIndex: Index
 
 
 class Schedule(ic.COSEMInterfaceClasses):

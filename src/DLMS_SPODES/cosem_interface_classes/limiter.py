@@ -1,4 +1,3 @@
-from __future__ import annotations
 from .. import cosem_interface_classes
 from .. import ITE_exceptions as exc
 from .__class_init__ import *
@@ -9,46 +8,18 @@ threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 class ValueDefinitionType(cdt.Structure):
     """ Defines an attribute of an object to be monitored. Only attributes with simple data types are allowed. """
-    values: tuple[cdt.LongUnsigned, cst.LogicalName, cdt.Integer]
-    ELEMENTS = (cdt.StructElement(cdt.se.CLASS_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName),
-                cdt.StructElement(cdt.se.ATTRIBUTE_INDEX, cdt.Integer))
-
-    @property
-    def class_id(self) -> cdt.LongUnsigned:
-        return self.values[0]
-
-    @property
-    def logical_name(self) -> cst.LogicalName:
-        return self.values[1]
-
-    @property
-    def attribute_index(self) -> cdt.Integer:
-        return self.values[2]
+    class_id: cdt.LongUnsigned
+    logical_name: cst.LogicalName
+    attribute_index: cdt.Integer
 
 
 class EmergencyProfileType(cdt.Structure):
     """ An emergency_profile is defined by three elements: emergency_profile_id, emergency_activation_time and emergency_duration.
     An emergency profile is activated if the emergency_profile_id element matches one of the elements on the emergency_profile _group_id_list, and time matches the
     emergency_activation_time and emergency_duration element """
-    values: tuple[cdt.LongUnsigned, cst.OctetStringDateTime, double_long_usingneds.DoubleLongUnsignedSecond]
-    ELEMENTS = (cdt.StructElement(cdt.se.EMERGENCY_PROFILE_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.EMERGENCY_ACTIVATION_TIME, cst.OctetStringDateTime),
-                cdt.StructElement(cdt.se.EMERGENCY_DURATION, double_long_usingneds.DoubleLongUnsignedSecond))
-
-    @property
-    def emergency_profile_id(self) -> cdt.LongUnsigned:
-        return self.values[0]
-
-    @property
-    def emergency_activation_time(self) -> cst.OctetStringDateTime:
-        """defines the date and time when the emergency_profile activated"""
-        return self.values[1]
-
-    @property
-    def emergency_duration(self) -> double_long_usingneds.DoubleLongUnsignedSecond:
-        """defines the duration in seconds, for which the emergency_profile is activated"""
-        return self.values[2]
+    emergency_profile_id: cdt.LongUnsigned
+    emergency_activation_time: cst.OctetStringDateTime
+    emergency_duration: double_long_usingneds.DoubleLongUnsignedSecond
 
 
 class EmergencyProfileGroupIdList(cdt.Array):
@@ -59,20 +30,8 @@ class EmergencyProfileGroupIdList(cdt.Array):
 
 class ActionType(cdt.Structure):
     """ Defines the scripts to be executed when the monitored value crosses the threshold for minimal duration time. """
-    values: tuple[structs.ActionItem, structs.ActionItem]
-    ELEMENTS = (cdt.StructElement(cdt.se.ACTION_OVER_THRESHOLD, structs.ActionItem),
-                cdt.StructElement(cdt.se.ACTION_UNDER_THRESHOLD, structs.ActionItem))
-
-    @property
-    def action_over_threshold(self) -> structs.ActionItem:
-        """defines the action when the value of the attribute monitored crosses the threshold in upwards direction and remains over threshold
-        for minimal over threshold duration time"""
-        return self.values[0]
-
-    def action_under_threshold(self) -> structs.ActionItem:
-        """the action when the value of the attribute monitored crosses the threshold in the downwards direction and remains under threshold
-        for minimal under threshold duration time."""
-        return self.values[1]
+    action_over_threshold: structs.ActionItem
+    action_under_threshold: structs.ActionItem
 
 
 class Limiter(ic.COSEMInterfaceClasses):

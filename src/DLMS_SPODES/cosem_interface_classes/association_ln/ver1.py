@@ -1,4 +1,3 @@
-from __future__ import annotations
 from . import ver0
 from ...types import choices
 from ... import ITE_exceptions as exc
@@ -16,22 +15,9 @@ class AccessModeMeth(cdt.Enum, elements=(0, 1, 2)):
 # TODO: make as subclass of ver0
 class AttributeAccessItem(cdt.Structure):
     """ Implemented attribute and it access . Use in Association LN """
-    values: tuple[cdt.Integer, AccessMode, cdt.NullData | cdt.Array]
-    ELEMENTS = (cdt.StructElement(cdt.se.ATTRIBUTE_ID, cdt.Integer),
-                cdt.StructElement(cdt.se.ACCESS_MODE, AccessMode),
-                cdt.StructElement(cdt.se.ACCESS_SELECTORS, choices.access_selectors))
-
-    @property
-    def attribute_id(self) -> cdt.Integer:
-        return self.values[0]
-
-    @property
-    def access_mode(self) -> AccessMode:
-        return self.values[1]
-
-    @property
-    def access_selectors(self) -> cdt.NullData | cdt.Array:
-        return self.values[2]
+    attribute_id: cdt.Integer
+    access_mode: AccessMode
+    access_selectors: choices.access_selectors
 
 
 class AttributeAccessDescriptor(cdt.Array):
@@ -42,17 +28,8 @@ class AttributeAccessDescriptor(cdt.Array):
 # TODO: make as subclass of ver0
 class MethodAccessItem(cdt.Structure):
     """ Implemented method and it access . Use in Association LN """
-    values: tuple[cdt.Integer, AccessModeMeth]
-    ELEMENTS = (cdt.StructElement(cdt.se.METHOD_ID, cdt.Integer),
-                cdt.StructElement(cdt.se.ACCESS_MODE, AccessModeMeth))
-
-    @property
-    def method_id(self) -> cdt.Integer:
-        return self.values[0]
-
-    @property
-    def access_mode(self) -> AccessModeMeth:
-        return self.values[1]
+    method_id: cdt.Integer
+    access_mode: AccessModeMeth
 
 
 class MethodAccessDescriptor(cdt.Array):
@@ -62,29 +39,15 @@ class MethodAccessDescriptor(cdt.Array):
 
 class AccessRight(cdt.Structure):
     """ TODO: """
-    values: tuple[AttributeAccessDescriptor, MethodAccessDescriptor]
     attribute_access: AttributeAccessDescriptor
     method_access: MethodAccessDescriptor
-    ELEMENTS = (cdt.StructElement(cdt.se.ATTRIBUTE_ACCESS, AttributeAccessDescriptor),
-                cdt.StructElement(cdt.se.METHOD_ACCESS, MethodAccessDescriptor))
-
-    @property
-    def attribute_access(self) -> AttributeAccessDescriptor:
-        return self.values[0]
-
-    @property
-    def method_access(self) -> MethodAccessDescriptor:
-        return self.values[1]
 
 
-class ObjectListElement(ver0.ObjectListElement):
-    values: tuple[cdt.LongUnsigned, cdt.Unsigned, cst.LogicalName, AccessRight]
-    ELEMENTS = (*ver0.ObjectListElement.ELEMENTS[:3],
-                cdt.StructElement(cdt.se.ACCESS_RIGHTS, AccessRight))
-
-    @property
-    def access_rights(self) -> AccessRight:
-        return self.values[3]
+class ObjectListElement(cdt.Structure):
+    class_id: cdt.LongUnsigned
+    version: cdt.Unsigned
+    logical_name: cst.LogicalName
+    access_rights: AccessRight
 
 
 class ObjectListType(ver0.ObjectListType):

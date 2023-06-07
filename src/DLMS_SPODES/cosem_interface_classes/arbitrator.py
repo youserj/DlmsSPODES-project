@@ -1,4 +1,3 @@
-from __future__ import annotations
 from .__class_init__ import *
 from ..types.implementations import structs, integers
 
@@ -40,17 +39,8 @@ class MostRecentRequestTable(cdt.Array):
 
 class RequestAction(cdt.Structure):
     """Defines the actions that are requested by an actorDefines the actions that are requested by an actor"""
-    values: tuple[cdt.Unsigned, cdt.BitString]
-    ELEMENTS = (cdt.StructElement(cdt.se.REQUEST_ACTOR, cdt.Unsigned),
-                cdt.StructElement(cdt.se.REQUEST_ACTION_LIST, cdt.BitString))
-
-    @property
-    def request_actor(self) -> cdt.Unsigned:
-        return self.values[0]
-
-    @property
-    def request_action_list(self) -> cdt.BitString:
-        return self.values[1]
+    request_actor: cdt.Unsigned
+    request_action_list: cdt.BitString
 
 
 class Arbitrator(ic.COSEMInterfaceClasses):

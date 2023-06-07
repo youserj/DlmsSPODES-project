@@ -33,54 +33,15 @@ class SignalQuality(cdt.Unsigned):
 
 class CellInfoType(cdt.Structure):
     """ Params of element """
-    values: tuple[cdt.LongUnsigned, cdt.LongUnsigned, SignalQuality, cdt.Unsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.CELL_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.LOCATION_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.SIGNAL_QUALITY, SignalQuality),
-                cdt.StructElement(cdt.se.BER, cdt.Unsigned))
-
-    @property
-    def cell_ID(self) -> cdt.LongUnsigned:
-        """Two-byte cell ID in hexadecimal format"""
-        return self.values[0]
-
-    @property
-    def location_ID(self) -> cdt.LongUnsigned:
-        """Two-byte location area code (LAC) in hexadecimal format"""
-        return self.values[1]
-
-    @property
-    def signal_quality(self) -> SignalQuality:
-        """represents the signal quality"""
-        return self.values[2]
-
-    @property
-    def ber(self) -> cdt.Unsigned:
-        """Bit error (BER) measurement in percent:
-        (0...7) as RXQUAL_n values specified in ETSI GSM 05.08 8.2.4
-        (99) not known or not detectable."""
-        return self.values[3]
+    cell_ID: cdt.LongUnsigned
+    location_ID: cdt.LongUnsigned
+    signal_quality: SignalQuality
+    ber: cdt.Unsigned
 
 
 class AdjacentCellInfo(cdt.Structure):
-    values: tuple[cdt.LongUnsigned, cdt.Unsigned]
-    ELEMENTS = (cdt.StructElement(cdt.se.CELL_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.SIGNAL_QUALITY, cdt.Unsigned))
-
-    @property
-    def cell_ID(self) -> cdt.LongUnsigned:
-        """Two-byte cell ID in hexadecimal format"""
-        return self.values[0]
-
-    @property
-    def signal_quality(self) -> cdt.Unsigned:
-        """represents the signal quality:
-            0: -113 dBm or less,
-            1: -11q dBm,
-            2..30: -109...53 dBm,
-            31: -51 or greater,
-            99 not known or not detectable"""
-        return self.values[1]
+    cell_ID: cdt.LongUnsigned
+    signal_quality: cdt.Unsigned
 
 
 class AdjacentCells(cdt.Array):

@@ -10,34 +10,11 @@ class ServiceId(cdt.Enum, elements=(1, 2)):
 class ActionSpecification(cdt.Structure):
     """ Specifies the different scripts, i.e. the lists of actions. The first attribute (logical_name) has index 1, the first specific method has
     index 1 as well. NOTE The action_specification is limited to activate methods that do not produce any response (from the server to the client). """
-    values: tuple[ServiceId, cdt.LongUnsigned, cst.LogicalName, cdt.Integer, cdt.CommonDataType]
-    getter_type_parameter: Callable  # TODO: need write
-    ELEMENTS = (cdt.StructElement(cdt.se.SERVICE_ID, ServiceId),
-                cdt.StructElement(cdt.se.CLASS_ID, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.LOGICAL_NAME, cst.LogicalName),
-                cdt.StructElement(cdt.se.INDEX, cdt.Integer),
-                cdt.StructElement(cdt.se.PARAMETER, choices.common_dt))
-
-    @property
-    def service_id(self) -> ServiceId:
-        return self.values[0]
-
-    @property
-    def class_id(self) -> cdt.LongUnsigned:
-        return self.values[1]
-
-    @property
-    def logical_name(self) -> cst.LogicalName:
-        return self.values[2]
-
-    @property
-    def index(self) -> cdt.Integer:
-        """defines (with service_id 1) which attribute of the selected object is affected or (with service_id 2) which specific method is to be executed"""
-        return self.values[3]
-
-    @property
-    def parameter(self) -> cdt.CommonDataType:
-        return self.values[4]
+    service_id: ServiceId
+    class_id: cdt.LongUnsigned
+    logical_name: cst.LogicalName
+    index: cdt.Integer
+    parameter: cdt.CommonDataType
 
 
 class Actions(cdt.Array):
@@ -47,18 +24,8 @@ class Actions(cdt.Array):
 
 class Script(cdt.Structure):
     """ Specifies the different scripts. The script_identifier 0 is reserved. If specified with an execute method, it results in a null script (no actions to perform)"""
-    values: tuple[cdt.LongUnsigned, Actions]
-    ELEMENTS = (cdt.StructElement(cdt.se.SCRIPT_IDENTIFIER, cdt.LongUnsigned),
-                cdt.StructElement(cdt.se.ACTIONS, Actions))
-
-    @property
-    def script_identifier(self) -> cdt.LongUnsigned:
-        """TODO: will make unique type"""
-        return self.values[0]
-
-    @property
-    def actions(self) -> Actions:
-        return self.values[1]
+    script_identifier: cdt.LongUnsigned
+    actions: Actions
 
 
 class Scripts(cdt.Array):

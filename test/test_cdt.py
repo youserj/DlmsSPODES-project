@@ -2,9 +2,10 @@ import datetime
 import unittest
 from src.DLMS_SPODES.types.common_data_types import encode_length
 from src.DLMS_SPODES.cosem_interface_classes import ic, collection
-from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl
+from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl, choices
 from src.DLMS_SPODES import relation_to_OBIS, enums
 from src.DLMS_SPODES.cosem_interface_classes.collection import Collection
+
 
 
 class TestType(unittest.TestCase):
@@ -68,7 +69,7 @@ class TestType(unittest.TestCase):
         profile.collection = col
         profile.set_attr(6, structs.CaptureObjectDefinition().encoding)
         profile.set_attr(3, bytes.fromhex('01 05 02 04 12 00 08 09 06 00 00 01 00 00 ff 0f 02 12 00 00 02 04 12 00 03 09 06 01 00 02 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 01 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 03 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 04 1d 00 ff 0f 03 12 00 00'))
-        profile.object_list.selective_access.access_selector.set_contents_from(2)
+        profile.buffer.selective_access.access_selector.set_contents_from(2)
         profile.set_attr(2, bytes.fromhex('01 01 02 05 09 0c 07 6e 08 1f 07 00 00 ff ff 80 00 00 02 02 0f fd 16 1e 02 02 0f fd 16 1e 02 02 0f fd 16 20 02 02 0f fd 16 20'))
         a = ObjectListElement((3, 0, '1.0.1.29.0.255', None))
         b = col.get_object(a)
@@ -137,5 +138,26 @@ class TestType(unittest.TestCase):
             case cdt.Unit(4): print("ok")
 
     def test_integers(self):
-        value = impl.integers.Only0(1)
+        value = impl.integers.Only0(0)
         print(value)
+
+    def test_Structs(self):
+        for s in cdt.Structure.__subclasses__():
+            print(s)
+            self.assertIsInstance(s.NAME, str, "check name")
+            for el in s.ELEMENTS:
+                self.assertIsInstance(el.NAME, str, "check element type name")
+                self.assertTrue(isinstance(el.TYPE, choices.CommonDataTypeChoiceBase) or issubclass(el.TYPE, cdt.CommonDataType), F"check element type is CDT: {s}.{el}")
+
+    def test_RestrictionElement(self):
+        from src.DLMS_SPODES.cosem_interface_classes.push_setup.ver2 import RestrictionElement
+        self.assertEqual(RestrictionElement().encoding, b'\x02\x02\x16\x00\x00', "empty init")
+        self.assertEqual(RestrictionElement((0, None)).encoding, b'\x02\x02\x16\x00\x00', "init by None")
+        self.assertEqual(RestrictionElement((1, ("01.01.2000", "02.01.2000"))).encoding, b'\x02\x02\x16\x01\x02\x02\t\x05\x07\xd0\x01\x01\xff\t\x05\x07\xd0\x01\x02\xff', "init by DateRestriction")
+        self.assertEqual(RestrictionElement((2, (1, 100000))).encoding, b'\x02\x02\x16\x02\x02\x02\x06\x00\x00\x00\x01\x06\x00\x01\x86\xa0', "init by EntryRestriction")
+        self.assertEqual(RestrictionElement(b'\x02\x02\x16\x00\x00').decode(), (0, None), "init from bytes by None")
+        self.assertEqual(RestrictionElement(b'\x02\x02\x16\x01\x02\x02\t\x05\x07\xd0\x01\x01\xff\t\x05\x07\xd0\x01\x02\xff').encoding, b'\x02\x02\x16\x01\x02\x02\t\x05\x07\xd0\x01\x01\xff\t\x05\x07\xd0\x01\x02\xff', "init from bytes by DateRestriction")
+        self.assertEqual(RestrictionElement(b'\x02\x02\x16\x02\x02\x02\x06\x00\x00\x00\x01\x06\x00\x01\x86\xa0').decode(), (2, (1, 100000)), "init from bytes by EntryRestriction")
+        value = RestrictionElement()
+        value.restriction_type.set(1)
+        print('ok')

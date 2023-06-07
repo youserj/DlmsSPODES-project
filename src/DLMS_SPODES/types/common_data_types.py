@@ -1,22 +1,14 @@
-from __future__ import annotations
 from itertools import chain
 from dataclasses import dataclass
 from struct import pack, unpack
 from abc import ABC, abstractmethod
-from typing import Optional, Type, Dict, List, Any, Callable, TypeAlias, Self
+from typing import Type, Any, Callable, TypeAlias, Self
 from collections import deque
 from math import log, ceil
 import datetime
 import logging
-from .. import settings
 from ..config_parser import config
 from .. import config_parser
-
-
-match settings.get_current_language():
-    case settings.Language.ENGLISH: from ..Values.EN import se
-    case settings.Language.RUSSIAN: from ..Values.RU import se
-    case _ as lang:                        raise ImportError(F'{lang} is absence')
 
 
 logger = logging.getLogger(__name__)
@@ -50,14 +42,6 @@ def separate(value: str, pattern: str, max_sep: int) -> tuple[str, list[str]]:
     return separators, paths
 
 
-def get_common_data_type_from(tag: bytes) -> Type[CommonDataType]:
-    """ search and get class from tag if existed """
-    try:
-        return __types[tag[:1]]
-    except KeyError:
-        raise ValueError(F'type with tag:{tag[:1]} is absence in Common Data Type')
-
-
 def encode_length(length: int) -> bytes:
     """ convert int to ASN.1 format """
     if length < 0x80:
@@ -88,19 +72,6 @@ def get_length_and_pdu(input_pdu: bytes) -> tuple[int, bytes]:
         length = define_length
     pdu = input_pdu[content_start:]
     return length, pdu
-
-
-def get_instance_and_pdu(meta: Type[CommonDataType], value: bytes) -> tuple[CommonDataType, bytes]:
-    instance = meta(value)
-    return instance, value[len(instance.encoding):]
-
-
-def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDataType, bytes]:
-    instance = get_common_data_type_from(value[:1])(value)
-    try:    # TODO: remove it in future
-        return instance, value[len(instance.encoding):]
-    except Exception as e:
-        print(F'{e.args}')
 
 
 class CommonDataType(ABC):
@@ -152,7 +123,7 @@ class CommonDataType(ABC):
             case _:                                                   raise ValueError(F'Unknown equal type <{other}>{other.__class__}')
 
     @abstractmethod
-    def set(self, value: SimpleDataType | bytes | bytearray | str | int | bool | float | datetime.date | None):
+    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
         """ get new instance from value and set to content with validation """
 
     def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
@@ -168,7 +139,7 @@ class CommonDataType(ABC):
         """ return copy of object """
         return self.__class__(self.encoding)
 
-    def get_copy(self, value: SimpleDataType | bytes | bytearray | str | int | bool | float | datetime.date | None) -> Self:
+    def get_copy(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None) -> Self:
         """return copy with value setting"""
         new = self.copy()
         new.set(value)
@@ -213,6 +184,27 @@ class CommonDataType(ABC):
             cls.NAME += F"[{size}]"
 
 
+def get_common_data_type_from(tag: bytes) -> Type[CommonDataType]:
+    """ search and get class from tag if existed """
+    try:
+        return __types[tag[:1]]
+    except KeyError:
+        raise ValueError(F'type with tag:{tag[:1]} is absence in Common Data Type')
+
+
+def get_instance_and_pdu(meta: Type[CommonDataType], value: bytes) -> tuple[CommonDataType, bytes]:
+    instance = meta(value)
+    return instance, value[len(instance.encoding):]
+
+
+def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDataType, bytes]:
+    instance = get_common_data_type_from(value[:1])(value)
+    try:    # TODO: remove it in future
+        return instance, value[len(instance.encoding):]
+    except Exception as e:
+        print(F'{e.args}')
+
+
 class SimpleDataType(CommonDataType, ABC):
 
     def __setattr__(self, key, value):
@@ -225,10 +217,10 @@ class SimpleDataType(CommonDataType, ABC):
         type(self)(value=value)
         return value, cursor_position
 
-    def _new_instance(self, value) -> SimpleDataType:
+    def _new_instance(self, value) -> Self:
         return self.__class__(value)
 
-    def set(self, value: SimpleDataType | bytes | bytearray | str | int | bool | float | datetime.date | None):
+    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
         new_value = self._new_instance(value)
         if hasattr(self, 'cb_preset'):
             self.cb_preset(new_value)
@@ -256,10 +248,10 @@ class ComplexDataType(CommonDataType, ABC):
 
 
 class __Array(ABC):
-    TYPE: Type[SimpleDataType | Structure]
-    values: list[SimpleDataType | Structure]
+    TYPE: Type[CommonDataType]
+    values: list[CommonDataType]
 
-    def remove(self, element: SimpleDataType | Structure):
+    def remove(self, element: CommonDataType):
         if isinstance(element, self.TYPE):
             self.values.remove(element)
 
@@ -365,13 +357,13 @@ class Digital(ABC):
     """ Default value is 0 """
     contents: bytes
     TAG: bytes
-    SCALER_UNIT: ScalUnitType | None = None
+    SCALER_UNIT = None  # ScalerUnitType | None
     DEFAULT = None
     MIN: int | None = None
     MAX: int | None = None
     VALUE: int | None = None
 
-    def __init__(self, value: bytes | bytearray | str | int | float | Digital = None, scaler_unit: ScalUnitType = None):
+    def __init__(self, value: bytes | bytearray | str | int | float | Self = None, scaler_unit=None):
         if value is None:
             value = self.DEFAULT
         if scaler_unit:
@@ -415,7 +407,7 @@ class Digital(ABC):
         if isinstance(self.MAX, int) and int(self) > self.MAX:
             raise ValueError(F'out of range {self.NAME},  got {int(self)} expected less than {self.MAX}')
 
-    def _new_instance(self, value) -> Digital:
+    def _new_instance(self, value) -> Self:
         """ override SimpleDataType for send scaler_unit . use only for check and send contents """
         return self.__class__(value, self.SCALER_UNIT)
 
@@ -496,7 +488,7 @@ class Digital(ABC):
         else:
             return F"{self} {self.SCALER_UNIT.unit}"
 
-    def __gt__(self, other: Digital | int):
+    def __gt__(self, other: Self | int):
         match other:
             case int():     return self.decode() > other
             case Digital(): return self.decode() > other.decode()
@@ -714,7 +706,7 @@ class __Date(ABC):
 
     # TODO: add 0xfe, 0xfd code
     @property
-    def month(self) -> Optional[int]:
+    def month(self) -> int | None:
         """ return month if specific or None """
         match self.contents[2]:
             case 0xff:                           return None
@@ -723,7 +715,7 @@ class __Date(ABC):
 
     # TODO: add 0xfe, 0xfd code
     @property
-    def day(self) -> Optional[int]:
+    def day(self) -> int | None:
         """ return day if specific or None """
         match self.contents[3]:
             case 0xff:                       return None
@@ -731,7 +723,7 @@ class __Date(ABC):
             case _ as wrong_value:           raise ValueError(F'Got day={wrong_value} from {self.NAME} contents, must be: 1..31, fe, fd, ff')
 
     @property
-    def weekday(self) -> Optional[int]:
+    def weekday(self) -> int | None:
         """ return weekday if specific or None """
         match self.contents[4]:
             case 0xff:                              return None
@@ -1010,7 +1002,7 @@ class NullData(SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """
     TAG = b'\x00'
 
-    def __init__(self, value: bytes | str | NullData = None):
+    def __init__(self, value: bytes | str | Self = None):
         match value:
             case bytes() if value[:1] == self.TAG: pass
             case bytes():                          raise TypeError(F'Expected {self.NAME} type, got {get_common_data_type_from(value[:1]).NAME}')
@@ -1035,12 +1027,12 @@ class Array(__Array, ComplexDataType):
     """ The elements of the array are defined in the Attribute or Method description section of a COSEM IC
     specification """
     TYPE: Type[CommonDataType] = None
-    values: list[CommonDataTypes]
+    values: list[CommonDataType]
     TAG: bytes = b'\x01'
     unique: bool = False
     """ True for arrays with unique elements """
 
-    def __init__(self, value: bytes | list | None | Array = None, type_: Type[CommonDataType] = None):
+    def __init__(self, value: bytes | list | None | Self = None, type_: Type[CommonDataType] = None):
         self.__dict__['values'] = list()
         if type_:
             self.__dict__["TYPE"] = type_
@@ -1090,14 +1082,14 @@ class Array(__Array, ComplexDataType):
             case 'TYPE' | 'values' as prop:                                         raise ValueError(F"Don't support set {prop}")
             case _:                                                                 super().__setattr__(key, value)
 
-    def __getitem__(self, item: int) -> CommonDataTypes:
+    def __getitem__(self, item: int) -> CommonDataType:
         """ get element by index """
         return self.values[item]
 
     def get_type(self) -> Type[CommonDataType]:
         return self.TYPE
 
-    def set_type(self, value: Type[Structure] | Type[SimpleDataType]):
+    def set_type(self, value: Type[CommonDataType]):
         """ set new type with clear array"""
         self.clear()
         self.__dict__['TYPE'] = value
@@ -1132,24 +1124,83 @@ class StructElement:
 class Structure(ComplexDataType):
     """ The elements of the structure are defined in the Attribute or Method description section of a COSEM IC specification """
     TAG = b'\x02'
-    ELEMENTS: tuple[StructElement, ...] = None
-    values: tuple[CommonDataTypes, ...]
+    ELEMENTS: tuple[StructElement, ...]
+    values: list[CommonDataType, ...]
     default: bytes = None
 
-    def __init__(self, value: bytes | tuple | list | None | bytearray | Structure = None):
+    def __init__(self, value: bytes | tuple | list | None | bytearray | Self = None):
         if value is None:
             value = self.default
+        self.__dict__['values'] = list()
         match value:
-            case bytes():                  self.__from_bytes(value)
-            case tuple() | list():         self.__from_sequence(value)
-            case None:                     self.__dict__['values'] = tuple((el.TYPE() for el in self.ELEMENTS))
-            case bytearray():              self.__from_bytearray(value)
-            case Structure():              self.__from_bytearray(bytearray(value.contents))
+            case bytes():                  self.from_bytes(value)
+            case tuple() | list():         self.from_sequence(value)
+            case None:
+                for el in self.ELEMENTS:
+                    self.values.append(el.TYPE())
+            case bytearray():              self.from_content(bytes(value))
+            case Structure():              self.from_content(value.contents)
             # case Structure():              self.__from_sequence(value)
-            case _:                        raise TypeError(F'For {self.NAME} "{value=}" not supported')
+            case _:                        raise TypeError(F'for {self.__class__.__name__} "{value=}" not supported')
 
-    def __from_bytes(self, encoding: bytes):
-        values = list()
+    @property
+    def get_el0(self):
+        return self.values[0]
+
+    @property
+    def get_el1(self):
+        return self.values[1]
+
+    @property
+    def get_el2(self):
+        return self.values[2]
+
+    @property
+    def get_el3(self):
+        return self.values[3]
+
+    @property
+    def get_el4(self):
+        return self.values[4]
+
+    @property
+    def get_el5(self):
+        return self.values[5]
+
+    @property
+    def get_el6(self):
+        return self.values[6]
+
+    @property
+    def get_el7(self):
+        return self.values[7]
+
+    @property
+    def get_el8(self):
+        return self.values[8]
+
+    @property
+    def get_el9(self):
+        return self.values[9]
+
+    def __init_subclass__(cls, **kwargs):  # TODO: add init from toml NAME structure
+        if hasattr(cls, "ELEMENTS"):
+            """init manualy, ex: Entry in ProfileGeneric"""
+        else:
+            elements = list()
+            for (name, type_), f in zip(cls.__annotations__.items(), (
+                    Structure.get_el0, Structure.get_el1, Structure.get_el2, Structure.get_el3, Structure.get_el4, Structure.get_el5, Structure.get_el6, Structure.get_el7,
+                    Structure.get_el8, Structure.get_el9)):
+                try:
+                    el_name = config["DLMS"]["struct_name"][name]
+                except KeyError as e:
+                    logger.warning(F"in set name {cls.__name__}.{name} not find {e}")
+                    el_name = name
+                elements.append((StructElement(el_name, type_)))
+                setattr(cls, name, f)
+            cls.ELEMENTS = tuple(elements)
+
+    def from_bytes(self, encoding: bytes):
         tag, length_and_contents = encoding[:1], encoding[1:]
         if tag != self.TAG:
             raise TypeError(F'Expected {self.NAME} type, got {get_common_data_type_from(tag).NAME}')
@@ -1159,28 +1210,23 @@ class Structure(ComplexDataType):
             for i in range(length):
                 el.append(StructElement(F'#{i}', get_common_data_type_from(pdu[:1])))
                 el_value, pdu = get_instance_and_pdu(el[i].TYPE, pdu)
-                values.append(el_value)
+                self.values.append(el_value)
             self.__dict__['ELEMENTS'] = tuple(el)
         else:
             if len(self) != length:
                 raise ValueError(F'Struct {self.NAME} got length:{length}, expected length:{len(self)}')
-            for el in self.ELEMENTS:
-                el_value, pdu = get_instance_and_pdu(el.TYPE, pdu)
-                values.append(el_value)
-        self.__dict__['values'] = tuple(values)
+            self.from_content(pdu)
 
-    def __from_sequence(self, sequence: tuple):
+    def from_sequence(self, sequence: tuple):
         if len(sequence) != len(self):
             raise ValueError(F'Struct {self.__class__.__name__} got length:{len(sequence)}, expected length:{len(self)}')
-        self.__dict__['values'] = tuple((el.TYPE(val) for val, el in zip(sequence, self.ELEMENTS)))
+        for val, el in zip(sequence, self.ELEMENTS):
+            self.values.append(el.TYPE(val))
 
-    def __from_bytearray(self, value: bytearray):
-        values = list()
-        pdu = bytes(value)
+    def from_content(self, value: bytes):
         for el in self.ELEMENTS:
-            el_value, pdu = get_instance_and_pdu(el.TYPE, pdu)
-            values.append(el_value)
-        self.__dict__['values'] = tuple(values)
+            el_value, value = get_instance_and_pdu(el.TYPE, value)
+            self.values.append(el_value)
 
     def __len__(self):
         return len(self.ELEMENTS)
@@ -1305,7 +1351,7 @@ class Boolean(SimpleDataType):
     """ boolean """
     TAG = b'\x03'
 
-    def __init__(self, value: bytes | bytearray | str | int | bool | float | datetime.datetime | datetime.time | Boolean = None):
+    def __init__(self, value: bytes | bytearray | str | int | bool | float | datetime.datetime | datetime.time | Self = None):
         match value:
             case None:                                                       self.clear()
             case bytes():                                                    self.contents = self.from_bytes(value)
@@ -1358,7 +1404,7 @@ class BitString(SimpleDataType):
     __length: int
     default: bytes | bytearray | str | int = b'\x04\x00'
 
-    def __init__(self, value: bytearray | bytes | str | int | BitString = None):
+    def __init__(self, value: bytearray | bytes | str | int | Self = None):
         match value:
             case None:
                 new_instance = self.__class__(self.default)
@@ -1398,7 +1444,7 @@ class BitString(SimpleDataType):
         self.__length = len(value) << 3
         return bytes(value)
 
-    def set(self, value: BitString | bytes | bytearray | str | int | bool | float | datetime.date | None):
+    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
         """ TODO: partly copypast of SimpleDataType"""
         new_value = self._new_instance(value)
         if hasattr(self, 'cb_preset'):
@@ -1589,7 +1635,7 @@ class Bcd(SimpleDataType):
     """ binary coded decimal """
     TAG = b'\x0d'
 
-    def __init__(self, value: bytes | bytearray | str | int | Bcd = None):
+    def __init__(self, value: bytes | bytearray | str | int | Self = None):
         match value:  # TODO: replace priority case
             case None: bytes(self.contents_length)
             case bytes():                                                    self.contents = self.from_bytes(value)
@@ -1672,7 +1718,7 @@ class CompactArray(__Array, ComplexDataType):
 
     def __init__(self, elements_type: Type[SimpleDataType | Structure],
                  elements: list[SimpleDataType | Structure] = None,
-                 length: Optional[int] = None):
+                 length: int = None):
         super(CompactArray, self).__init__(elements_type, elements, length)
         dummy_type_instance = elements_type()
         self.__element_types = b'' if not len(dummy_type_instance) else \
@@ -1713,7 +1759,7 @@ class Enum(SimpleDataType, ABC):
     ELEMENTS: dict[bytes, str] = None
     __match_args__ = ('value2', )
 
-    def __init__(self, value: bytes | bytearray | str | int | Enum = None):
+    def __init__(self, value: bytes | bytearray | str | int | Self = None):
         match value:  # TODO: replace priority case
             case bytes() as encoding:
                 match encoding[:1]:
@@ -1802,7 +1848,7 @@ class Enum(SimpleDataType, ABC):
                 raise ValueError
 
     @classmethod
-    def get_values(cls) -> List[str]:
+    def get_values(cls) -> list[str]:
         """ TODO: """
         return [values_dict for values_dict in cls.ELEMENTS.values()]
 
@@ -1813,7 +1859,7 @@ class Enum(SimpleDataType, ABC):
     def __int__(self):
         return int.from_bytes(self.contents, 'big')
 
-    def __gt__(self, other: Enum):
+    def __gt__(self, other: Self):
         return self.contents > other.contents
 
     def __hash__(self):
@@ -1978,7 +2024,7 @@ class DateTime(__DateTime, __Date, __Time, SimpleDataType):
                                  tzinfo=datetime.timezone.utc if deviation == 0x8000 else datetime.timezone(datetime.timedelta(minutes=deviation)))
 
     @property
-    def time_zone(self) -> Optional[datetime.timezone]:
+    def time_zone(self) -> datetime.timezone | None:
         """ Return timezone from deviation """
         deviation = self.contents[9]*256 + self.contents[10]
         if deviation == 0x8000:
@@ -1988,7 +2034,7 @@ class DateTime(__DateTime, __Date, __Time, SimpleDataType):
         else:
             raise ValueError(F'Deviation must be from -720..720 got {deviation}')
 
-    def get_left_nearest_date(self, point: datetime.datetime) -> Optional[datetime.datetime]:
+    def get_left_nearest_date(self, point: datetime.datetime) -> datetime.datetime | None:
         """ search and return date(datetime format) in left from point """
         l_point: datetime.datetime = self.decode()
         """ time in left from point """
@@ -2012,7 +2058,7 @@ class DateTime(__DateTime, __Date, __Time, SimpleDataType):
             months = range(12, 0, -1) if self.month is None else point.month,
         return None
 
-    def get_left_nearest_datetime(self, point: datetime.datetime) -> Optional[datetime.datetime]:
+    def get_left_nearest_datetime(self, point: datetime.datetime) -> datetime.datetime | None:
         """ search and return datetime in left from point """
         l_point: datetime.datetime = self.get_left_nearest_date(point)
         """ time in left from point """
@@ -2127,7 +2173,7 @@ class Time(__DateTime, __Time, SimpleDataType):
                              second=second if second != 0xff else 0,
                              microsecond=hundredths*10000 if hundredths != 0xff else 0)
 
-    def get_left_nearest_time(self, point: datetime.time) -> Optional[datetime.time]:
+    def get_left_nearest_time(self, point: datetime.time) -> datetime.time | None:
         """ search and return time in left from point """
         l_point: datetime.time = self.decode()
         """ time in left from point """
@@ -2157,7 +2203,7 @@ for c in chain(SimpleDataType.__subclasses__(), ComplexDataType.__subclasses__()
         logger.warning(F"not find {e} in config.toml")
         c.NAME = c.__name__
 
-__types: Dict[bytes, Type[CommonDataType]] = {dlms_type.TAG: dlms_type for dlms_type in chain(SimpleDataType.__subclasses__(), ComplexDataType.__subclasses__())}
+__types: dict[bytes, Type[CommonDataType]] = {dlms_type.TAG: dlms_type for dlms_type in chain(SimpleDataType.__subclasses__(), ComplexDataType.__subclasses__())}
 """ Common data type dictionary """
 
 
@@ -2187,85 +2233,17 @@ class Unit(Enum, elements=tuple(range(1, 256))):
 
 
 class ScalUnitType(Structure):
-    """ Provides information on the unit and the scaler of the value.
-        scaler: This is the exponent (to the base of 10) of the multiplication factor. REMARK If the value is not numerical, then the scaler shall be set to 0.
-        unit: Enumeration defining the physical unit; for details see Table 4 below"""
-    values: tuple[Integer, Unit]
-    __match_args__ = ('scaler', 'unit')
-    ELEMENTS: tuple[StructElement, StructElement] = (StructElement(se.SCALER, Integer),
-                                                     StructElement(se.UNIT, Unit))
-    default = b'\x02\x02\x0f\x00\x16\xff'
+    """ DLMS UA 1000-1 Ed. 14 4.3.2 Register scaler_unit"""
+    scaler: Integer
+    unit: Unit
+    # values: tuple[Integer, Unit]
+    # __match_args__ = ('scaler', 'unit')
+    # default = b'\x02\x02\x0f\x00\x16\xff'
 
-    @property
-    def scaler(self) -> Integer:
-        return self.values[0]
-
-    @property
-    def unit(self) -> Unit:
-        return self.values[1]
-
-
-if __name__ == '__main__':
-    a = ScalUnitType()
-    b = a.scaler
-    a = Integer()
-    b = Integer(2)
-    a.set(b)
-    b = OctetString('12 43 00')
-    a = b[0]
-    b = SimpleDataType.__subclasses__()
-    a = issubclass(Unsigned, SimpleDataType)
-    # a = DateTime(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=3))))
-    a = DateTime(b'\x19\x07\xe4\x01\x01\xff\x00\x00\x00\x00\x80\x00\xff')
-    c = str(a)
-    b = a.hour
-    a = BitString(b'\x04\x18\x00\x1E\x1D')
-    one_bit = a[21]
-    one_bit2 = a.decode()[21]
-    a1 = Unsigned(2)
-    # print(a > a1)
-    b = a.decode()
-    a, b = get_instance_and_pdu(OctetString, b'\x09\x02\x01\x01\x01\x07\x01\x01\x07\x01\x01\x07\x01\x01\x07\x01')
-    logical_name = OctetString(a)
-    a = OctetString(logical_name)
-    print(__types)
-    print(get_common_data_type_from(b'\x06'))
-    a = NullData()
-    if a:
-        print(a)
-    a = Array(b'\x01\x00', Boolean)
-    print(a.TAG)
-    a = Unsigned('121')
-    print(a, len(a))
-    a.contents = Integer(2)
-    print(a)
-    a = Unsigned('12')
-    print(a.encoding)
-    from widgets.entry import Entry
-    import tkinter as tk
-
-    class Test:
-        def __init__(self, value):
-            self.value = value
-
-        def get(self, id_):
-            return self.value
-
-        def set(self, id_, value):
-            self.value = value
-            print(value)
-
-    a = Float32(1.32)
-    # a = Unsigned(34)
-    b = isinstance(a, SimpleDataType)
-    # a = DateTime('01.01')
-    # a = Date('01.01')
-    # a = Time('1:')
-    # a = OctetString('0102')
-    print(str(a))
-
-    root = tk.Tk()
-    test = Test(a)
-    widget1 = Entry(font=None, master=root, id_=1, cb_set_to_source=test.set, cb_get_from_source=test.get)
-    widget1.widget.grid()
-    root.mainloop()
+    # @property
+    # def scaler(self) -> Integer:
+    #     return self.values[0]
+    #
+    # @property
+    # def unit(self) -> Unit:
+    #     return self.values[1]
