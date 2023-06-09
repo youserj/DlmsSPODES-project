@@ -319,7 +319,7 @@ class KPZ1SPODES3ReactivePowerEvent(Data):
 
 
 class SPODES3SPODESVersionValue(cdt.OctetString):
-    def __init__(self, value):
+    def __init__(self, value="332e30"):
         super(SPODES3SPODESVersionValue, self).__init__(value)
         match AppVersion.from_str(self.contents.decode("utf-8")):
             case AppVersion(0, 0, 0): raise ValueError(F"got invalid SPODES VERSION VALUE with: {self}")

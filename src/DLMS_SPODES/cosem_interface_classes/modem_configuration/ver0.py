@@ -20,9 +20,9 @@ class ModemProfileElement(cdt.OctetString):
     """ TODO: can be OK, CONNECT, RING, NO CARRIER, ERROR, CONNECT 1 200, NO DIAL TONE, BUSY, NO ANSWER, CONNECT 600, CONNECT 2 400, CONNECT 4 800, CONNECT 9 600, CONNECT 14 400,
     CONNECT 28 800, CONNECT 36 600, CONNECT 56 000"""
 
-    def __init__(self, value: bytes):
+    def __init__(self, value: bytes = b'OK'.hex()):
         super(ModemProfileElement, self).__init__(value)
-        if self.decode() not in self.get_validate_values:
+        if self.decode() not in self.get_validate_values():
             raise ValueError(F'Got modem profile element {self.decode()}, expected {b", ".join(self.get_validate_values())}')
         else:
             pass

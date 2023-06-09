@@ -28,7 +28,7 @@ class RestrictionByEntry(cdt.Structure):
 class CaptureObjectDefinition(cdt.Structure):
     """ Capture objects that are assigned to the object instance. Upon a call of the capture (data) method or automatically
     in defined intervals, the selected attributes are copied into the buffer of the profile. """
-    default = b'\x02\x04\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00'
+    DEFAULT = b'\x02\x04\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00'
     class_id: long_unsigneds.ClassId
     logical_name: cst.LogicalName
     attribute_index: cdt.Integer

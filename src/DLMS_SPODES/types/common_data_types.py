@@ -184,6 +184,18 @@ class CommonDataType(ABC):
             cls.NAME += F"[{size}]"
 
 
+def get_type_name(value: CommonDataType | Type[CommonDataType]) -> str:
+    """type name from type or instance of CDT with length and constant value"""
+    if isinstance(value, CommonDataType):
+        value = value.__class__
+    ret = F"{get_common_data_type_from(value.TAG).NAME}"
+    if value.SIZE is not None:
+        ret += F"[{value.SIZE}]"
+    elif issubclass(value, Digital) and value.VALUE is not None:
+        ret += F"({value.VALUE})"
+    return ret
+
+
 def get_common_data_type_from(tag: bytes) -> Type[CommonDataType]:
     """ search and get class from tag if existed """
     try:
@@ -395,6 +407,8 @@ class Digital(ABC):
             cls.MAX = kwargs.get("max")
             if isinstance(cls.MIN, int) or isinstance(cls.MAX, int):
                 cls.NAME += F"({cls.MIN if cls.MIN is not None else ''}..{cls.MAX if cls.MAX is not None else ''})"
+                if cls.MIN is not None:
+                    cls.DEFAULT = max(0, cls.MIN)
             else:
                 pass
 
@@ -1126,11 +1140,11 @@ class Structure(ComplexDataType):
     TAG = b'\x02'
     ELEMENTS: tuple[StructElement, ...]
     values: list[CommonDataType, ...]
-    default: bytes = None
+    DEFAULT: bytes = None
 
     def __init__(self, value: bytes | tuple | list | None | bytearray | Self = None):
         if value is None:
-            value = self.default
+            value = self.DEFAULT
         self.__dict__['values'] = list()
         match value:
             case bytes():                  self.from_bytes(value)
@@ -1199,6 +1213,7 @@ class Structure(ComplexDataType):
                 elements.append((StructElement(el_name, type_)))
                 setattr(cls, name, f)
             cls.ELEMENTS = tuple(elements)
+            cls.SIZE = len(cls.ELEMENTS)
 
     def from_bytes(self, encoding: bytes):
         tag, length_and_contents = encoding[:1], encoding[1:]
@@ -1337,7 +1352,7 @@ class AXDR(ABC):
                     case _:
                         self.__dict__['is_xdr'] = False
                         super(AXDR, self).__init__(value)
-            case None:                                              self.__init__(self.default)
+            case None:                                              self.__init__(self.DEFAULT)
 
     @property
     def contents(self) -> bytes:
@@ -1812,7 +1827,7 @@ class Enum(SimpleDataType, ABC):
         except KeyError as e:
             c = dict()
             logger.warning(F"not find {e} in config.toml")
-        cls.ELEMENTS = {el.to_bytes(1, "big"): c.get(el, F"{cls.__name__}({el})") for el in elements}
+        cls.ELEMENTS = {el if issubclass(cls, FlagMixin) else el.to_bytes(1, "big"): c.get(el, F"{cls.__name__}({el})") for el in elements}
 
     @property
     def encoding(self) -> bytes:
@@ -1868,6 +1883,9 @@ class Enum(SimpleDataType, ABC):
     def clear(self):
         """ nothing do it. TODO: may be to default? """
 
+    def __len__(self):
+        return len(self.ELEMENTS)
+
 
 class Float32(Float, SimpleDataType):
     """ Floating point number formats are defined in ISO/IEC/IEEE 60559:2011
@@ -1878,7 +1896,6 @@ class Float32(Float, SimpleDataType):
         Value = (-1)**s * 2**(e-127) * 1.f """
     TAG = b'\x17'
 
-    @property
     def __len__(self): return 4
 
     @property
@@ -1901,7 +1918,6 @@ class Float64(Float, SimpleDataType):
         Value = (-1)**s * 2**(e-1023) * 1.f """
     TAG = b'\x18'
 
-    @property
     def __len__(self): return 8
 
     @property
@@ -2198,7 +2214,7 @@ class Time(__DateTime, __Time, SimpleDataType):
 # set type.NAME
 for c in chain(SimpleDataType.__subclasses__(), ComplexDataType.__subclasses__()):
     try:
-        c.NAME = config["DLMS"]["class_name"][c.__name__]
+        c.NAME = config["DLMS"]["type_name"][c.__name__]
     except KeyError as e:
         logger.warning(F"not find {e} in config.toml")
         c.NAME = c.__name__
@@ -2236,14 +2252,3 @@ class ScalUnitType(Structure):
     """ DLMS UA 1000-1 Ed. 14 4.3.2 Register scaler_unit"""
     scaler: Integer
     unit: Unit
-    # values: tuple[Integer, Unit]
-    # __match_args__ = ('scaler', 'unit')
-    # default = b'\x02\x02\x0f\x00\x16\xff'
-
-    # @property
-    # def scaler(self) -> Integer:
-    #     return self.values[0]
-    #
-    # @property
-    # def unit(self) -> Unit:
-    #     return self.values[1]

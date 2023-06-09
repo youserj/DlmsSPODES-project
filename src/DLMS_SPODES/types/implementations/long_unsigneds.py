@@ -5,6 +5,7 @@ from ...cosem_interface_classes import overview
 
 class ClassId(cdt.LongUnsigned):
     """ Class ID type """
+    DEFAULT = 1
 
     def validate(self):
         if not int(self) in overview.ClassID.get_all_id():

@@ -77,13 +77,13 @@ class ObjectListType(ver0.ObjectListType):
 class ContextNameType(cdt.AXDR, ver0.ApplicationContextName):
     """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
     application association. This attribute contains the name of the application context for that association."""
-    default = b'\x09\x07\x60\x85\x74\x05\x08\x01\x01'
+    DEFAULT = b'\x09\x07\x60\x85\x74\x05\x08\x01\x01'
 
 
 class MechanismNameType(cdt.AXDR, ver0.AuthenticationMechanismName):
     """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
     application association. This attribute contains the name of the application context for that association."""
-    default = b'\x09\x07\x60\x85\x74\x05\x08\x02\x00'
+    DEFAULT = b'\x09\x07\x60\x85\x74\x05\x08\x02\x00'
 
 
 class AssociationLN(ver0.AssociationLN):

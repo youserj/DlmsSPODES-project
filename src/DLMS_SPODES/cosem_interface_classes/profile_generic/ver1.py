@@ -37,7 +37,7 @@ class FromEntry(cdt.DoubleLongUnsigned, min=1):
 class EntryDescriptor(cdt.Structure):
     """ Only buffer elements corresponding to the entry_descriptor shall be returned in the response.
     NOTE: from_entry and to_entry identify the lines, from_selected_value to_selected_value identify the columns of the buffer to be retrieved. """
-    default = (1, 0, 1, 0)
+    DEFAULT = (1, 0, 1, 0)
     from_entry: FromEntry
     to_entry: cdt.DoubleLongUnsigned
     from_selected_value: cdt.LongUnsigned
@@ -50,36 +50,6 @@ class AccessSelector(ut.Unsigned8):
         super(AccessSelector, self).__init__(value)
         if int(self) not in (1, 2):
             raise ValueError(F'The {self.__class__.__name__} got {int(self)}, expected 1..2')
-
-
-class RangeDescriptorBase(cdt.Structure, ABC):
-    """ Only buffer elements corresponding to the range_descriptor shall be returned in the response """
-    default = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
-              b'\x09\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00'
-    restricting_object: structs.CaptureObjectDefinition
-    from_value: cdt.SimpleDataType
-    to_value: cdt.SimpleDataType
-    selected_values: CaptureObjects
-
-
-class DataBase(ut.Data, ABC):
-    restricting_object: structs.CaptureObjectDefinition
-    from_value: cdt.SimpleDataType
-    to_value: cdt.SimpleDataType
-    selected_values: CaptureObjects
-    from_entry: FromEntry
-    to_entry:  cdt.DoubleLongUnsigned
-    from_selected_value: cdt.LongUnsigned
-    to_selected_value: cdt.LongUnsigned
-    ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptorBase),
-                2: ut.SequenceElement('entry_descriptor', EntryDescriptor)}
-
-
-class SelectiveAccessDescriptorBase(ut.SelectiveAccessDescriptor, ABC):
-    access_selector: AccessSelector
-    access_parameters: DataBase
-    ELEMENTS = (ut.SequenceElement('access_selector', AccessSelector),
-                ut.SequenceElement('access_parameters', DataBase))
 
 
 class ProfileGeneric(ic.COSEMInterfaceClasses):
@@ -227,18 +197,27 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         class RangeDescriptor(cdt.Structure):
             # cb_preset = TODO: make check 'selected_values' from self.capture_objects or
             # cb_post_set = TODO: make check 'selected_values' from self.capture_objects
-            default = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
+            DEFAULT = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
                       b'\x09\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00'
             restricting_object: structs.CaptureObjectDefinition
             from_value: value_type
             to_value: value_type
             selected_values: CaptureObjects
 
-        class Data(DataBase):
+        class Data(ut.Data):
+            restricting_object: structs.CaptureObjectDefinition
+            from_value: cdt.SimpleDataType
+            to_value: cdt.SimpleDataType
+            selected_values: CaptureObjects
+            from_entry: FromEntry
+            to_entry: cdt.DoubleLongUnsigned
+            from_selected_value: cdt.LongUnsigned
+            to_selected_value: cdt.LongUnsigned
             ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptor),
                         2: ut.SequenceElement('entry_descriptor', EntryDescriptor)}
 
-        class SelectiveAccessDescriptor(SelectiveAccessDescriptorBase):
+        class SelectiveAccessDescriptor(ut.SelectiveAccessDescriptor):
+            access_selector: AccessSelector
             access_parameters: Data
             ELEMENTS = (ut.SequenceElement('access_selector', AccessSelector),
                         ut.SequenceElement('access_parameters', Data))

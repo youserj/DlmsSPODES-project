@@ -33,7 +33,7 @@ class ImageTransferInitiate(cdt.Structure):
     """ Initializes the Image transfer process. After a successful invocation of the method the image_transfer_status attribute is set to (1) and the
     image_first_not_transferred_block_number is set to 0. Any subsequent invocation of the method resets the whole Image transfer process and all ImageBlocks need to be
     transferred again. """
-    default = (bytearray(b'default'), 0)
+    DEFAULT = (bytearray(b'default'), 0)
     image_identifier: cdt.OctetString
     image_size: cdt.DoubleLongUnsigned
 

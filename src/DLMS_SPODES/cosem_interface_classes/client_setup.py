@@ -1,7 +1,7 @@
 from .__class_init__ import *
 
 
-class CommunicationChannel(cdt.Enum, elements=(0, 1, 2)):
+class CommunicationChannel(cdt.Enum, elements=(0, 1, 2, 3)):
     """ ONLY IN CLIENT. Current channel communication. Use with HDLC setup """
 
 

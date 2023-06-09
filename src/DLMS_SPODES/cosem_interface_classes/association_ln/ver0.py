@@ -15,7 +15,7 @@ class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
 
 class AttributeAccessItem(cdt.Structure):
     """ Implemented attribute and it access . Use in Association LN """
-    default = b'\x02\x03\x0f\x01\x16\x00\x00'
+    DEFAULT = b'\x02\x03\x0f\x01\x16\x00\x00'
     attribute_id: cdt.Integer
     access_mode: AccessMode
     access_selectors: choices.access_selectors
@@ -122,7 +122,7 @@ class ServerSAP(cdt.LongUnsigned):
 class AssociatedPartnersType(cdt.Structure):
     """ Contains the identifiers of the COSEM client and the COSEM server (logical device) application processes within the physical devices
     hosting these processes, which belong to the application association modelled by the “Association LN” object. """
-    default = (0x10, 1)
+    DEFAULT = (0x10, 1)
     client_SAP: ClientSAP
     server_SAP: ServerSAP
 
@@ -130,7 +130,7 @@ class AssociatedPartnersType(cdt.Structure):
 class ApplicationContextName(cdt.Structure):
     """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
     application association. This attribute contains the name of the application context for that association."""
-    default = (2, 16, 116, 5, 8, 1, 1)
+    DEFAULT = (2, 16, 116, 5, 8, 1, 1)
     joint_iso_ctt_element: cdt.Unsigned
     country_element: cdt.Unsigned
     country_name_element: cdt.LongUnsigned
@@ -227,7 +227,7 @@ class Conformance(cdt.BitString):
 
 class XDLMSContextType(cdt.Structure):
     """ Contains all the necessary information on the xDLMS context for the given association. """
-    default = (None, 1024, 1024, 6, 0, b'\x09\x07\x60\x85\x74\x05\x08\x02\x00')
+    DEFAULT = (None, 1024, 1024, 6, 0, b'\x09\x07\x60\x85\x74\x05\x08\x02\x00')
     conformance: Conformance
     max_receive_pdu_size: cdt.LongUnsigned
     max_send_pdu_size: cdt.LongUnsigned
@@ -243,7 +243,7 @@ class MechanismIdElement(cdt.Enum, elements=tuple(range(8))):
 class AuthenticationMechanismName(cdt.Structure):
     """ Contains the name of the authentication mechanism for the association (see IEC 62056-53). The authentication mechanism name is specified as an
     OBJECT IDENTIFIER in 7.3.7.2 of IEC 62056-53. The authentication_mechanism_name attribute includes the arc labels of the OBJECT IDENTIFIER. """
-    default = (2, 16, 756, 5, 8, 2, 0)
+    DEFAULT = (2, 16, 756, 5, 8, 2, 0)
     joint_iso_ctt_element: cdt.Unsigned
     country_element: cdt.Unsigned
     country_name_element: cdt.LongUnsigned
@@ -277,7 +277,7 @@ class ClassList(cdt.Array):
 
 
 class ObjectId(cdt.Structure):
-    default = b'\x02\x02\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff'
+    DEFAULT = b'\x02\x02\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff'
     class_id: ClassId
     logical_name: cst.LogicalName
 

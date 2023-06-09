@@ -82,19 +82,19 @@ class CertificateIdentificationType(cdt.Enum, elements=(0, 1)):
     """TODO:"""
 
 
-class CertificateIdentificationOption(ut.CHOICE):
+class CertificationIdentificationOption(ut.CHOICE):
     TYPE = cdt.Structure
     ELEMENTS = {0: ut.SequenceElement('by entity', CertificateIdentificationByEntity),
                 1: ut.SequenceElement('by serial', CertificateIdentificationBySerial)}
 
 
-certificate_identification_option = CertificateIdentificationOption()
+certification_identification_option = CertificationIdentificationOption()
 
 
 class CertificateIdentification(choices.StructureMixin, cdt.Structure):
     """Override several methods of cdt.Structure. It limited Structure."""
     certificate_identification_type: CertificateIdentificationType
-    certificate_identification_options: certificate_identification_option
+    certification_identification_options: certification_identification_option
 
 
 class SecuritySetup(ver0.SecuritySetup):

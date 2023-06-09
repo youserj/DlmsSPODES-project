@@ -36,7 +36,7 @@ class ClockBase(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
 
 class PresetAdjustingTime(cdt.Structure):
     """ Presets the time to a new value (preset_time) and defines a validity_interval within which the new time can be activated """
-    default = b'\x02\x03\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
+    DEFAULT = b'\x02\x03\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
               b'\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff\x19\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff'
     preset_time: cdt.DateTime
     validity_interval_start: cdt.DateTime

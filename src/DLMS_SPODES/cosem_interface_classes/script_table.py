@@ -1,4 +1,3 @@
-from typing import Callable
 from .__class_init__ import *
 from ..types import choices
 
@@ -14,7 +13,7 @@ class ActionSpecification(cdt.Structure):
     class_id: cdt.LongUnsigned
     logical_name: cst.LogicalName
     index: cdt.Integer
-    parameter: cdt.CommonDataType
+    parameter: choices.common_dt
 
 
 class Actions(cdt.Array):

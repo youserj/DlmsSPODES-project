@@ -1,5 +1,7 @@
 import datetime
 import unittest
+import inspect
+from itertools import count
 from src.DLMS_SPODES.types.common_data_types import encode_length
 from src.DLMS_SPODES.cosem_interface_classes import ic, collection
 from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl, choices
@@ -161,3 +163,27 @@ class TestType(unittest.TestCase):
         value = RestrictionElement()
         value.restriction_type.set(1)
         print('ok')
+
+    def test_cdt_type_name(self):
+        from src.DLMS_SPODES.cosem_interface_classes.push_setup.ver2 import RestrictionElement
+        value = RestrictionElement()
+        print(cdt.get_type_name(value))
+        print(cdt.get_type_name(RestrictionElement))
+        value = cdt.VisibleString("hello")
+        print(cdt.get_type_name(value))
+        value = cst.LogicalName("1.1.1.1.1.255")
+        print(cdt.get_type_name(value))
+        value = cdt.Unsigned(1)
+        print(cdt.get_type_name(value))
+        value = impl.integers.Only0()
+        print(cdt.get_type_name(value))
+        print(cdt.get_type_name(value))
+
+    def test_all_cdt(self):
+        from src.DLMS_SPODES.cosem_interface_classes.gprs_modem_setup import QualityOfService
+        c = [cdt.CommonDataType]
+        count1 = count()
+        while len(c) != 0:
+            t = c.pop()
+            c.extend(t.__subclasses__())
+            print(next(count1), t, t.TAG, F"{t().type_name} {t.NAME}" if (not inspect.isabstract(t) and t != cdt.Structure and t != cdt.Enum) else "abstract")
