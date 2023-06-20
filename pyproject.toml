@@ -1,17 +1,20 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backed = "setuptools.build_meta"
-
+requires = [
+    "setuptools",
+    "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+[tool.setuptools]
+package-dir = {"" = "src1"}
 [project]
 name = "DLMS_SPODES"
-version = "0.34.0"
+version = "0.34.2"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
 description="dlms-spodes"
 readme = "README.md"
 requires-python = ">=3.11"
-keywords=['dlms', 'string', 'constant', 'values']
+keywords=["dlms"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

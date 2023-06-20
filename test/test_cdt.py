@@ -186,4 +186,4 @@ class TestType(unittest.TestCase):
         while len(c) != 0:
             t = c.pop()
             c.extend(t.__subclasses__())
-            print(next(count1), t, t.TAG, F"{t().type_name} {t.NAME}" if (not inspect.isabstract(t) and t != cdt.Structure and t != cdt.Enum) else "abstract")
+            print(next(count1), t, t.TAG, F"{cdt.get_type_name(t)} {t.NAME}" if (not inspect.isabstract(t) and t != cdt.Structure and t != cdt.Enum) else "abstract")

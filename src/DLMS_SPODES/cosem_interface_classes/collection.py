@@ -1142,9 +1142,8 @@ class Collection:
     def special_day_table(self) -> SpecialDaysTable:
         return self.__get_object(bytes((0, 0, 11, 0, 0, 255)))
 
-    @property
-    def IEC_HDLS_setup(self) -> IECHDLCSetup:
-        return self.__get_object(bytes((0, int(self.client_setup.channel_communication), 22, 0, 0, 255)))
+    def getIECHDLCSetup(self, ch: int = 0) -> IECHDLCSetup:
+        return self.__get_object(bytes((0, ch, 22, 0, 0, 255)))
 
     @cached_property
     def TCP_UDP_setup(self) -> TCPUDPSetup:
