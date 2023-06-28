@@ -72,7 +72,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     NAME = cn.PROFILE_GENERIC
     CLASS_ID = ClassID.PROFILE_GENERIC
     VERSION = Version.V1
-    scaler_profile_key: bytes | None
+    scaler_profile_key: bytes | None = None
+    """ obis of scaler profile for this profile if need """
     buffer_capture_objects: CaptureObjects
     range_descriptor: Type[cdt.Structure] = None
     attr_descriptor_with_selection: Type[ut.CosemAttributeDescriptorWithSelection] = None
@@ -87,9 +88,6 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                   ic.ICMElement(mn.CAPTURE, integers.Only0))
 
     def characteristics_init(self):
-        self.scaler_profile_key = None
-        """ obis of scaler profile for this profile if need """
-
         self.set_attr(BUFFER, None)
         self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type
 
@@ -139,13 +137,18 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         """ with selection for object_list. TODO: Copypast AssociationLN"""
         descriptor: ut.CosemAttributeDescriptor = super(ProfileGeneric, self).get_attr_descriptor(value)
         if value == BUFFER and bool(self.collection.current_association.xDLMS_context_info.conformance.decode()[21]):
-            return self.attr_descriptor_with_selection((descriptor, self.buffer.selective_access))
+            if self.attr_descriptor_with_selection is None:
+                raise ValueError(F"{self}: get attribute descriptor, not set attribute descriptor with selection. Need initiate capture_objects before")
+            else:
+                return self.attr_descriptor_with_selection((descriptor, self.buffer.selective_access))
         else:
             return descriptor
 
     def __create_buffer_struct_type(self):
         """ TODO: more refactoring !!! """
         # rename CaptureObjectDefinition's and adding object if it absense in collection
+        if self.capture_objects is None:
+            raise ValueError(F"{self}: create buffer Struct type, not set <capture_object> attribute. Need initiate <capture_objects> before")
         for el_value in self.capture_objects:
             el_value: structs.CaptureObjectDefinition
             obj = self.collection.add_if_missing(class_id=ut.CosemClassId(el_value.class_id.contents),

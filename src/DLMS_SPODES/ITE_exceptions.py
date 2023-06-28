@@ -98,10 +98,6 @@ class UnknownError(ITException):
     error = Transmit.UNKNOWN
 
 
-if __name__ == '__main__':
-    from gurux_dlms.enums import AssociationResult, SourceDiagnostic
-    a = ResultError(pdu.ActionResult.NO_LONG_ACTION_IN_PROGRESS)
-    print(a.__dict__)
-    match a:
-        case AssociationResultError(): print('ok')
-        case _: print('nok')
+class NeedUpdate(ITEApplication):
+    """error until there is no action"""
+    error = Application.VERSION_ERROR

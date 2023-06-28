@@ -2,6 +2,7 @@ import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES.version import AppVersion
+from src.DLMS_SPODES.ITE_exceptions import NeedUpdate
 
 
 class TestType(unittest.TestCase):
@@ -66,5 +67,12 @@ class TestType(unittest.TestCase):
         ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN_CLASS,
                           version=overview.Version.V1,
                           logical_name=cst.LogicalName("0.0.40.0.3.255"))
+        ver_obj = col.add(class_id=overview.ClassID.DATA,
+                          version=overview.Version.V0,
+                          logical_name=cst.LogicalName("0.0.0.2.1.255"))
+        self.assertRaises(NeedUpdate,
+                          ver_obj.set_attr,
+                          2,
+                          bytes.fromhex("0905312e352e30"))
         ass_obj.set_attr(6, bytes.fromhex("090760857405080202"))
         print(ass_obj)

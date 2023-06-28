@@ -27,9 +27,6 @@ class SPODES3LoadProfile(ver1.ProfileGeneric):
 class SPODES3DisplayReadout(ver1.ProfileGeneric):
     """СПОДЭС3 13.12. Настройка индикации"""
     def characteristics_init(self):
-        self.scaler_profile_key = None
-        """ obis of scaler profile for this profile if need """
-
         self.set_attr(ver1.BUFFER, None)
         self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type
 

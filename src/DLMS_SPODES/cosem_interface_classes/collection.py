@@ -484,7 +484,6 @@ __func_map_for_create.update({
     (1, 0, 148, 136, 0): RegisterMap,
     (1, 94, 7, 0): ClassMap({1: impl.profile_generic.SPODES3CurrentProfile}),
     (1, 94, 7, (1, 2, 3, 4, 5, 6)): ProfileGenericMap,  # Todo: RU. Scaler-profile With 1 entry and more
-    (1, 99, (1, 2)): ClassMap({1: impl.profile_generic.SPODES3LoadProfile}),
     # KPZ
     (128, 0, tuple(range(20)), 0, 0): RegisterMap
 })
@@ -632,6 +631,16 @@ class Collection:
                 raise ValueError(F"got server type: {value}, expected {self.__server_type}")
             else:
                 """success validation"""
+
+    def pop(self, class_id: ClassID) -> list[InterfaceClass]:
+        """pop from collection by Class_ID"""
+        ret: list[InterfaceClass] = list()
+        for obj in self.__container:
+            if obj.CLASS_ID == class_id:
+                ret.append(obj)
+        for obj in ret:
+            self.__container.remove(obj)
+        return ret
 
     @property
     def server_ver(self):

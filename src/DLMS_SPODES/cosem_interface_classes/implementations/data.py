@@ -3,6 +3,7 @@ from ... import enums as enu
 from .. import events as ev
 from ...types import implementations as impl
 from ...version import AppVersion
+from ... import ITE_exceptions as exc
 
 
 class LDN(Data):
@@ -22,12 +23,23 @@ class LDN(Data):
 class ActiveFirmwareId(Data):
     """for keep version in collection"""
     def characteristics_init(self):
-        self._cbs_attr_post_init.update({2: lambda: self.value.register_cb_preset(self.__set_to_collection)})
+        self._cbs_attr_post_init.update({2: self.__register_value_preset})
 
-    def __set_to_collection(self, value: cdt.CommonDataTypes):
-        if self.collection:
-            self.collection.set_server_ver(instance=self.logical_name.b,
-                                           value=AppVersion.from_str(value.contents.decode("utf-8")))
+    def __register_value_preset(self):
+        """need for start control"""
+        self.value.register_cb_post_set(self.__handle_value)
+        self.__handle_value()
+
+    def __handle_value(self):
+        """check new version for more than current collection_version"""
+        version = AppVersion.from_str(self.value.contents.decode("utf-8"))
+        if (collection_ver := self.collection.server_ver.get(self.logical_name.b)) is not None:
+            if version > collection_ver:
+                raise exc.NeedUpdate(F"got {version}, but used {collection_ver}. need update server configuration")
+            else:
+                """ok validation"""
+        else:
+            """set without check"""
 
 
 class Unsigned(Data):

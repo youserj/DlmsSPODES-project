@@ -1199,7 +1199,7 @@ class Structure(ComplexDataType):
 
     def __init_subclass__(cls, **kwargs):  # TODO: add init from toml NAME structure
         if hasattr(cls, "ELEMENTS"):
-            """init manualy, ex: Entry in ProfileGeneric"""
+            """init manually, ex: Entry in ProfileGeneric"""
         else:
             elements = list()
             for (name, type_), f in zip(cls.__annotations__.items(), (
@@ -1220,7 +1220,7 @@ class Structure(ComplexDataType):
         if tag != self.TAG:
             raise TypeError(F'Expected {self.NAME} type, got {get_common_data_type_from(tag).NAME}')
         length, pdu = get_length_and_pdu(length_and_contents)
-        if self.ELEMENTS is None:
+        if not hasattr(self, "ELEMENTS"):
             el: list[StructElement] = list()
             for i in range(length):
                 el.append(StructElement(F'#{i}', get_common_data_type_from(pdu[:1])))

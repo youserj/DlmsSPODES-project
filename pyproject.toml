@@ -2,12 +2,14 @@
 requires = [
     "setuptools",
     "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-[tool.setuptools]
-package-dir = {"" = "src1"}
+#build-backend = "setuptools.build_meta"
+
+#[tool.setuptools]
+#package-dir = {"" = "src"}
+
 [project]
 name = "DLMS_SPODES"
-version = "0.34.2"
+version = "0.34.11"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
