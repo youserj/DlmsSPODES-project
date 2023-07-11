@@ -33,7 +33,7 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicy, 0, 3, 0),
                   ic.ICAElement(an.SECURITY_SUITE, SecuritySuite, 0, 0, 0),
-                  ic.ICAElement(an.CLIENT_SYSTEM_TITLE, cdt.OctetString),
+                  ic.ICAElement(an.CLIENT_SYSTEM_TITLE, cdt.OctetString, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.SERVER_SYSTEM_TITLE, cdt.OctetString))
 
     M_ELEMENTS = (ic.ICMElement(mn.SECURITY_ACTIVATE, SecurityPolicy),

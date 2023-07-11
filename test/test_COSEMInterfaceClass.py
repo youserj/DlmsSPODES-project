@@ -12,3 +12,14 @@ class TestType(unittest.TestCase):
         obj.set_attr(2, cdt.Unsigned(8).encoding)
         self.assertEqual(2, len(list(obj.get_index_with_attributes())), "return amount")
 
+    def test_copy(self):
+        col = collection.Collection()
+        col.from_xml("09054d324d5f33_0906312e342e3130.typ")
+        obj = col.get_object("0.0.1.0.0.255")
+        obj.set_attr(2, cst.OctetStringDateTime("1.1.23"))
+        print(obj)
+        obj = col.get_object("0.0.22.0.0.255")
+        print(obj)
+        obj.windows_size_transmit.set(2)
+        new_obj = obj.copy()
+        print(new_obj)

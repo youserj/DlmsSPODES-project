@@ -52,11 +52,11 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
     VERSION = Version.V0
     __blocks_for_update: list[bytearray]
     A_ELEMENTS = (ic.ICAElement(an.IMAGE_BLOCK_SIZE, cdt.DoubleLongUnsigned),
-                  ic.ICAElement(an.IMAGE_TRANSFERRED_BLOCKS_STATUS, cdt.BitString),
-                  ic.ICAElement(an.IMAGE_FIRST_NOT_TRANSFERRED_BLOCK_NUMBER, cdt.DoubleLongUnsigned),
+                  ic.ICAElement(an.IMAGE_TRANSFERRED_BLOCKS_STATUS, cdt.BitString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.IMAGE_FIRST_NOT_TRANSFERRED_BLOCK_NUMBER, cdt.DoubleLongUnsigned, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.IMAGE_TRANSFER_ENABLED, cdt.Boolean),
-                  ic.ICAElement(an.IMAGE_TRANSFER_STATUS, ImageTransferStatus),
-                  ic.ICAElement(an.IMAGE_TO_ACTIVATE_INFO, ImageToActivateInfo))
+                  ic.ICAElement(an.IMAGE_TRANSFER_STATUS, ImageTransferStatus, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.IMAGE_TO_ACTIVATE_INFO, ImageToActivateInfo, classifier=ic.Classifier.DYNAMIC))
     M_ELEMENTS = (ic.ICMElement(mn.IMAGE_TRANSFER_INITIATE, ImageTransferInitiate),
                   ic.ICMElement(mn.IMAGE_BLOCK_TRANSFER, ImageBlockTransfer),
                   ic.ICMElement(mn.IMAGE_VERIFY, integers.Only0),

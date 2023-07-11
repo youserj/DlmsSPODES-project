@@ -11,7 +11,7 @@ class Register(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.REGISTER
     VERSION = Version.V0
     scaler_unit_not_settable: bool
-    A_ELEMENTS = (ic.ICAElement(an.VALUE, choices.register, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = (ic.ICAElement(an.VALUE, choices.register, classifier=ic.Classifier.NOT_SPECIFIC),
                   ic.ICAElement(an.SCALER_UNIT, cdt.ScalUnitType))
     M_ELEMENTS = (
         ic.ICMElement(mn.RESET, integers.Only0),

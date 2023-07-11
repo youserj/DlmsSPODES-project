@@ -1,5 +1,4 @@
 from __future__ import annotations
-from struct import pack
 
 
 class AppVersion:
@@ -55,35 +54,35 @@ class AppVersion:
         return hash(self) == hash(other) and self.__additional == other.additional
 
     def __gt__(self, other: AppVersion):
-        if self.__major > other.__major:
+        if self.__major > other.major:
             return True
-        elif self.__major < other.__major:
+        elif self.__major < other.major:
             return False
-        elif self.__minor > other.__minor:
+        elif self.__minor > other.minor:
             return True
-        elif self.__minor < other.__minor:
+        elif self.__minor < other.minor:
             return False
         if self.__patch is None:
             return False
-        elif self.__patch > other.__patch:
+        elif self.__patch > other.patch:
             return True
         else:
             return False
 
     def __ge__(self, other: AppVersion):
-        if self.__major > other.__major:
+        if self.__major > other.major:
             return True
-        elif self.__major < other.__major:
+        elif self.__major < other.major:
             return False
-        elif self.__minor > other.__minor:
+        elif self.__minor > other.minor:
             return True
-        elif self.__minor < other.__minor:
+        elif self.__minor < other.minor:
             return False
         if self.__patch is None:
             return True
-        elif self.__patch > other.__patch:
+        elif self.__patch > other.patch:
             return True
-        elif self.__patch < other.__patch:
+        elif self.__patch < other.patch:
             return False
         else:
             return True
@@ -101,14 +100,6 @@ class AppVersion:
         else:
             return hash((self.__major, self.__minor))
 
-    def select_nearest(self, variants: list[AppVersion | str]) -> AppVersion | None:
-        """ select left nearest from list. If version is absence return None """
-        app_versions: list[AppVersion | None] = [self]
-        for version in variants:
-            match version:
-                case AppVersion(): app_versions.append(version)
-                case str():        app_versions.append(self.from_str(version))
-                case _:            pass
-        app_versions.sort()
-        app_versions.append(None)
-        return app_versions[app_versions.index(self)-1]
+    def select_nearest(self, variants: list[AppVersion]) -> AppVersion | None:
+        """ select left nearest from list in minor branch else return None """
+        return max(filter(lambda var: var.major == self.__major and var.minor == self.__minor and var.patch <= self.__patch, variants), default=None)

@@ -51,8 +51,8 @@ class Arbitrator(ic.COSEMInterfaceClasses):
     A_ELEMENTS = (ic.ICAElement(an.ACTIONS, Actions),
                   ic.ICAElement(an.PERMISSION_TABLE, PermissionsTable),
                   ic.ICAElement(an.WEIGHTINGS_TABLE, WeightingsTable),
-                  ic.ICAElement(an.MOST_RECENT_REQUESTS_TABLE, MostRecentRequestTable),
-                  ic.ICAElement(an.LAST_OUTCOME, cdt.Unsigned, min=0, default=0))  # TODO: max = n what it?
+                  ic.ICAElement(an.MOST_RECENT_REQUESTS_TABLE, MostRecentRequestTable, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.LAST_OUTCOME, cdt.Unsigned, min=0, default=0, classifier=ic.Classifier.DYNAMIC))  # TODO: max = n what it?
 
     M_ELEMENTS = (ic.ICMElement(mn.REQUEST_ACTION, RequestAction),
                   ic.ICMElement(mn.RESET, integers.Only0))

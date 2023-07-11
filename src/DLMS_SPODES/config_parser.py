@@ -36,6 +36,7 @@ def get_values2(*args: str) -> tuple[str, int]:
             return ".".join(list(args)), -1
     return par, 0
 
+
 try:
     with open("./config.toml", "rb") as f:
         config = tomllib.load(f)

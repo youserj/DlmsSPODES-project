@@ -1,0 +1,7 @@
+dlmsSpodes_env/
+build/
+dist/
+.idea/
+*.pyc
+*.egg-info
+

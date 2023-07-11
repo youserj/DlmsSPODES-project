@@ -55,13 +55,13 @@ class GSMDiagnostic(ic.COSEMInterfaceClasses):
     NAME = cn.GSM_DIAGNOSTIC
     CLASS_ID = ClassID.GSM_DIAGNOSTIC
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString),
-                  ic.ICAElement(an.STATUS, Status, 0, 255, 0),
-                  ic.ICAElement(an.CS_ATTACHMENT, CSAttachment, 0, 255, 0),
-                  ic.ICAElement(an.PS_STATUS, PSStatus, 0, 255, 0),
-                  ic.ICAElement(an.CELL_INFO, CellInfoType),
-                  ic.ICAElement(an.ADJACENT_CELL, AdjacentCells),
-                  ic.ICAElement(an.CAPTURE_TIME, cdt.DateTime))
+    A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.STATUS, Status, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CS_ATTACHMENT, CSAttachment, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.PS_STATUS, PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CELL_INFO, CellInfoType, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.ADJACENT_CELL, AdjacentCells, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CAPTURE_TIME, cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
 
     def characteristics_init(self):
         """nothing do it"""

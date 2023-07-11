@@ -97,10 +97,6 @@
     <class_id>42</class_id>
     <version>0</version>
   </object>
-  <object name="Настройки клиента" ln="0.0.199.255.255.255">
-    <class_id>32767</class_id>
-    <version>0</version>
-  </object>
   <object name="Тип ПУ" ln="0.0.96.1.1.255">
     <class_id>1</class_id>
     <version>0</version>

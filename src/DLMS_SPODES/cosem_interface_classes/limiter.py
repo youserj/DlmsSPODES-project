@@ -44,14 +44,14 @@ class Limiter(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.LIMITER
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.MONITORED_VALUE, structs.ValueDefinition),
-                  ic.ICAElement(an.THRESHOLD_ACTIVE, choices.simple_dt),
+                  ic.ICAElement(an.THRESHOLD_ACTIVE, choices.simple_dt, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.THRESHOLD_NORMAL, choices.simple_dt),
                   ic.ICAElement(an.THRESHOLD_EMERGENCY, choices.simple_dt),
                   ic.ICAElement(an.MIN_OVER_THRESHOLD_DURATION, double_long_usingneds.DoubleLongUnsignedSecond),
                   ic.ICAElement(an.MIN_UNDER_THRESHOLD_DURATION, double_long_usingneds.DoubleLongUnsignedSecond),
                   ic.ICAElement(an.EMERGENCY_PROFILE, EmergencyProfileType),
                   ic.ICAElement(an.EMERGENCY_PROFILE_GROUP_ID_LIST, EmergencyProfileGroupIdList),
-                  ic.ICAElement(an.EMERGENCY_PROFILE_ACTIVE, cdt.Boolean),
+                  ic.ICAElement(an.EMERGENCY_PROFILE_ACTIVE, cdt.Boolean, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.ACTIONS, ActionType))
 
     def characteristics_init(self):

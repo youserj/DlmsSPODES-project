@@ -103,7 +103,7 @@ class SecuritySetup(ver0.SecuritySetup):
                   ic.ICAElement(an.SECURITY_SUITE, SecuritySuite),
                   ver0.SecuritySetup.get_attr_element(4),
                   ver0.SecuritySetup.get_attr_element(5),
-                  ic.ICAElement(an.CERTIFICATES, Certificates))
+                  ic.ICAElement(an.CERTIFICATES, Certificates, classifier=ic.Classifier.DYNAMIC))
 
     M_ELEMENTS = (ic.ICMElement(mn.SECURITY_ACTIVATE, SecurityPolicyVer1),
                   ic.ICMElement(mn.KEY_TRANSFER, KeyTransfer),

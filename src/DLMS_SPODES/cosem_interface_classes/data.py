@@ -9,7 +9,7 @@ class Data(ic.COSEMInterfaceClasses):
     NAME = cn.DATA
     CLASS_ID = ClassID.DATA
     VERSION = Version.V0
-    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.common_dt, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
 
     def characteristics_init(self):
         """nothing do it"""

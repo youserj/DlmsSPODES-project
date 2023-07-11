@@ -3,13 +3,14 @@ principles (see Clause 4 EN 62056-62:2007), the identification of real data item
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
 from __future__ import annotations
+import os
 from struct import pack
 import datetime
 import dataclasses
 from itertools import count, chain
 from collections import deque
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Callable
+from typing import TypeAlias, Iterator, Type, Callable, Self
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
@@ -62,6 +63,8 @@ from ..enums import TagsName, MechanismId
 from . import obis as o
 from .. import pdu_enums as pdu
 from ..configure import get_saved_parameters
+from ..config_parser import config
+
 
 AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
@@ -554,6 +557,22 @@ class Collection:
         """ container for major(constant) DLMS objects LN. They don't deletable """
         self.init_ids(country)
 
+    def copy(self, association_id: int = 3) -> Self:
+        new_collection = Collection(self.__country)
+        new_collection.set_dlms_ver(self.__dlms_ver)
+        new_collection.set_manufacturer(self.__manufacturer)
+        new_collection.set_country_ver(self.__country_ver)
+        new_collection.set_server_type(self.__server_type)
+        for inst, ver in self.__server_ver.items():
+            new_collection.set_server_ver(inst, ver)
+        new_collection.set_spec()
+        for obj in self.__container:
+            new_obj: InterfaceClass = obj.__class__(obj.logical_name)
+            new_collection.__container.append(new_obj)
+            new_obj.collection = new_collection
+            new_obj.copy(obj, association_id)
+        return new_collection
+
     def init_ids(self, country):
         """initiate of identificators"""
         self.__dlms_ver = 6
@@ -682,28 +701,30 @@ class Collection:
                                 version=obj.VERSION,
                                 logical_name=obj.logical_name)
 
-    def from_xml(self, filename: str, use: dict[cst.LogicalName, set[int]] = None):
+    @classmethod
+    def from_xml(cls, filename: str, use: dict[cst.LogicalName, set[int]] = None) -> Self:
         """ append objects from xml file """
         tree = ET.parse(filename)
         objects = tree.getroot()
+        new = cls()
         if use is None and objects.tag != TagsName.DEVICE_ROOT.value:
             raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT.value}")
         root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
         if (dlms_ver := objects.findtext("dlms_ver")) is not None:
-            self.set_dlms_ver(int(dlms_ver))
+            new.set_dlms_ver(int(dlms_ver))
         if (country := objects.findtext("country")) is not None:
-            self.set_country(CountrySpecificIdentifiers(int(country)))
+            new.set_country(CountrySpecificIdentifiers(int(country)))
         if (country_ver := objects.findtext("country_ver")) is not None:
-            self.set_country_ver(AppVersion.from_str(country_ver))
+            new.set_country_ver(AppVersion.from_str(country_ver))
         if (manufacturer := objects.findtext("manufacturer")) is not None:
-            self.set_manufacturer(manufacturer.encode("utf-8"))
+            new.set_manufacturer(manufacturer.encode("utf-8"))
         if (server_type := objects.findtext("server_type")) is not None:
             tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type))
-            self.set_server_type(tmp)
+            new.set_server_type(tmp)
         for server_ver in objects.findall("server_ver"):
-            self.set_server_ver(instance=int(server_ver.attrib.get("instance", "0")),
-                                value=AppVersion.from_str(server_ver.text))
-        self.set_spec()
+            new.set_server_ver(instance=int(server_ver.attrib.get("instance", "0")),
+                               value=AppVersion.from_str(server_ver.text))
+        new.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
             case AppVersion(3, 0 | 1 | 2):
@@ -720,14 +741,14 @@ class Collection:
                         version: str | None = obj.findtext('version')
                         try:
                             logical_name: cst.LogicalName = cst.LogicalName(ln)
-                            if not self.is_in_collection(logical_name):
-                                new_object = self.add(class_id=ut.CosemClassId(class_id),
-                                                      version=None if version is None else cdt.Unsigned(version),
-                                                      logical_name=cst.LogicalName(ln))
+                            if not new.is_in_collection(logical_name):
+                                new_object = new.add(class_id=ut.CosemClassId(class_id),
+                                                     version=None if version is None else cdt.Unsigned(version),
+                                                     logical_name=cst.LogicalName(ln))
                                 if use is not None:
                                     use[new_object.logical_name] = set()
                             else:
-                                new_object = self.__get_object(logical_name.contents)
+                                new_object = new.__get_object(logical_name.contents)
                         except TypeError as e:
                             logger.error(F'Object {obj.attrib["name"]} not created : {e}')
                             continue
@@ -777,6 +798,7 @@ class Collection:
                     logger.info(F'Not parsed DLMS objects: {len(objects)}')
             case _ as error:
                 raise exc.VersionError(error, additional='Xml')
+        return new
 
     def __get_base_xml_element(self, root_tag: str = TagsName.DEVICE_ROOT.value) -> ET.Element:
         objects = ET.Element(root_tag, attrib={'version': '3.1.0'})
@@ -910,7 +932,7 @@ class Collection:
 
     def add_if_missing(self, class_id: ut.CosemClassId,
                        version: cdt.Unsigned | None,
-                       logical_name: cst.LogicalName) -> InterfaceClass | None:
+                       logical_name: cst.LogicalName) -> InterfaceClass:
         """ like as add method with check for missing """
         if not self.is_in_collection(logical_name):
             return self.create(class_id=class_id,
@@ -1421,3 +1443,22 @@ class Collection:
         else:
             pass
         return names, data_type
+
+
+@lru_cache(maxsize=100)
+def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion):
+    context: str = F"{m.decode('utf-8')}/{t.to_str()}/{ver}"
+    logger.info(F"start search in Type library: {context}")
+    path: str = F"{config['DLMS']['collection']['path']}{m.decode('utf-8')}/{t.encoding.hex()}/"
+    if not os.path.isfile(file_name := F"{path}{ver}.typ"):
+        logging.info(F"For {t.decode()}: version {ver} not type in Types")
+        if searched_version := ver.select_nearest([AppVersion.from_str(f_n.removesuffix(".typ")) for f_n in os.listdir(path)]):
+            return get(m, t, searched_version)
+        else:
+            raise exc.NoConfig(F"no support {context}")
+    return Collection.from_xml(file_name)
+
+
+def get_collection(manufacturer: bytes, server_type: cdt.CommonDataType, server_ver: AppVersion) -> Collection:
+    """get copy of collection with caching"""
+    return get(manufacturer, server_type, server_ver).copy()

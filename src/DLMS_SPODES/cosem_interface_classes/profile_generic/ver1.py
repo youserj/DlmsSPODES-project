@@ -1,5 +1,4 @@
-from abc import ABC
-from typing import Type
+from typing import Type, Iterator
 from ... import cosem_interface_classes
 from ..register import Register
 from ..clock import Clock
@@ -147,6 +146,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     def __create_buffer_struct_type(self):
         """ TODO: more refactoring !!! """
         # rename CaptureObjectDefinition's and adding object if it absense in collection
+        if self.buffer.selective_access is None:
+            self.__create_selective_access_descriptor()
         if self.capture_objects is None:
             raise ValueError(F"{self}: create buffer Struct type, not set <capture_object> attribute. Need initiate <capture_objects> before")
         for el_value in self.capture_objects:
@@ -288,3 +289,14 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                     case Register(), 2: result.append(obj.scaler_unit)
                     case _:             result.append(None)
         return result
+
+    def get_index_with_attributes(self, in_init_order: bool = False) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
+        """ override common method """
+        return iter(((1, self.logical_name),
+                    (6, self.sort_object),
+                    (3, self.capture_objects),
+                    (2, self.buffer),
+                    (4, self.capture_period),
+                    (5, self.sort_method),
+                    (7, self.entries_in_use),
+                    (8, self.profile_entries)))

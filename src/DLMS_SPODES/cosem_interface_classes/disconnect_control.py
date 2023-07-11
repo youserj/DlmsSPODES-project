@@ -38,39 +38,12 @@ class OutputState(cdt.Boolean):
 
 
 class DisconnectControl(ic.COSEMInterfaceClasses):
-    """ Instances of the Disconnect control interface class manage an internal or external disconnect unit of the meter (e.g. electricity breaker,
-    gas valve) in order to connect or disconnect, partly or entirely, the premises of the consumer.
-    Disconnect and reconnect can be requested:
-        • Remotely, via a communication channel: remote_disconnect, remote_reconnect;
-        • Manually, using e.g. a push button: manual_disconnect, manual_reconnect;
-        • Locally, by a function of the meter, e.g. limiter, prepayment: local_disconnect. Local reconnection is not possible: reconnection after a
-          local_disconnect always requires a manual intervention.
-    The possible states and state transitions of the Disconnect control interface class are shown in DLMS UA 1000-1 Ed. 12.0 table 25.The Disconnect
-    control object doesn't feature a memory, i.e. any commands are executed immediately
-                                States:
-    State number | State name            | State description
-    0            |Disconnected           |The output_state is set to FALSE and the consumer is disconnected.
-    1            |Connected              |The output_state is set to TRUE and the consumer is connected.
-    2            |Ready_for_reconnection |The output_state is set to FALSE and the consumer is disconnected.Reconnection requires manual intervention.
-                            State transitions:
-    Transition |Transition name  | State description
-    a          |remote_reconnect |Moves the Disconnect control object from the Disconnected (0) state directly to the Connected (1) state without
-                                  manual intervention
-    b          |remote_disconnect|Moves the Disconnect control object from the Connected (1) state to the Disconnected (0) state
-    c          |remote_disconnect| Moves the Disconnect control object from the Ready_for_reconnection (2) state to the Disconnected (0) state
-    d          |remote_reconnect | Moves the Disconnect control object from the Disconnected (0) state to the Ready_for_reconnection (2) state
-                                   From this state, it is possible to move to the Connected (2) state via the manual_reconnect transition (e)
-    e          |manual_reconnect | Moves the Disconnect control object from the Ready_for_connection (2) state to the Connected (1) state
-    f          |manual_disconnect| Moves the Disconnect control object from the Connected (1) state to the Ready_for_connection (2) state From this
-                                   state, it is possible to move back to the Connected (2) state via the manual_reconnect transition (e)
-    g          |local_disconnect | Moves the Disconnect control object from the Connected (1) state to the Ready_for_connection (2) state From this
-                                   state, it is possible to move back to the Connected (2) state via the manual_reconnect transition (e)
-                                   NOTE Transitions f) and g) are essentially the same, but their trigger is different."""
+    """DLMS UA 1000-1 Ed. 14 4.5.8 Disconnect control"""
     NAME = cn.DISCONNECT_CONTROL
     CLASS_ID = ClassID.DISCONNECT_CONTROL
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.OUTPUT_STATE, OutputState),
-                  ic.ICAElement(an.CONTROL_STATE, ControlState),
+    A_ELEMENTS = (ic.ICAElement(an.OUTPUT_STATE, OutputState, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CONTROL_STATE, ControlState, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.CONTROL_MODE, ControlMode))
     M_ELEMENTS = (ic.ICMElement(mn.REMOTE_DISCONNECT, integers.Only0),
                   ic.ICMElement(mn.REMOTE_RECONNECT, integers.Only0))

@@ -1,30 +1,16 @@
 from .__class_init__ import *
 
 
-class Status(cdt.Enum):
+class Status(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
     """ Indicates the registration status of the  modem. """
-    ELEMENTS = {b'\x00': en.NOT_REGISTERED,
-                b'\x01': en.REGISTERED_HOME_NETWORK,
-                b'\x02': en.NOT_REGISTERED_BUT_MT,
-                b'\x03': en.REGISTRATION_DENIED,
-                b'\x04': en.UNKNOWN,
-                b'\x05': en.REGISTERED_ROAMING}
 
 
-class CSAttachment(cdt.Enum):
+class CSAttachment(cdt.Enum, elements=(0, 1, 2)):
     """ Indicates the current circuit switched status."""
-    ELEMENTS = {b'\x00': en.INACTIVE,
-                b'\x01': en.INCOMING_CALL,
-                b'\x02': en.ACTIVE}
 
 
-class PSStatus(cdt.Enum):
+class PSStatus(cdt.Enum, elements=(0, 1, 2, 3, 4)):
     """ Indicates the packet switched status of the modem. """
-    ELEMENTS = {b'\x00': en.INACTIVE,
-                b'\x01': en.GPRS,
-                b'\x02': en.EDGE,
-                b'\x03': en.UMTS,
-                b'\x04': en.HSDPA}
 
 
 class SignalQuality(cdt.Unsigned):
@@ -69,13 +55,13 @@ class GSMDiagnostic(ic.COSEMInterfaceClasses):
     NAME = cn.GSM_DIAGNOSTIC
     CLASS_ID = ClassID.GSM_DIAGNOSTIC
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString),
-                  ic.ICAElement(an.STATUS, Status, 0, 255, 0),
-                  ic.ICAElement(an.CS_ATTACHMENT, CSAttachment, 0, 255, 0),
-                  ic.ICAElement(an.PS_STATUS, PSStatus, 0, 255, 0),
-                  ic.ICAElement(an.CELL_INFO, CellInfoType),
-                  ic.ICAElement(an.ADJACENT_CELL, AdjacentCells),
-                  ic.ICAElement(an.CAPTURE_TIME, cdt.DateTime))
+    A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.STATUS, Status, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CS_ATTACHMENT, CSAttachment, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.PS_STATUS, PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CELL_INFO, CellInfoType, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.ADJACENT_CELL, AdjacentCells, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(an.CAPTURE_TIME, cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
 
     def characteristics_init(self):
         """nothing do it"""

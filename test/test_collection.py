@@ -53,11 +53,19 @@ class TestType(unittest.TestCase):
         print(ver.value)
 
     def test_get_object_list(self):
-        col = collection.Collection()
-        col.from_xml("09054d324d5f33_0906312e342e3130.typ")
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.15"))
         print(col)
         a = col.get_objects_list(collection.ClientSAP(48))
         print(a)
+        for i in range(1000):
+            col_new = collection.get_collection(
+                manufacturer=b"KPZ",
+                server_type=cdt.OctetString("4d324d5f33"),
+                server_ver=AppVersion.from_str("1.4.16"))
+            print(col_new)
 
     def test_AssociationLN(self):
         col = collection.Collection()

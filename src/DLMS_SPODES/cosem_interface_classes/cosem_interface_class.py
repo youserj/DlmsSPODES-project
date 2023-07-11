@@ -1,7 +1,7 @@
 from __future__ import annotations
 import dataclasses
 from abc import ABC, abstractmethod
-from typing import Iterator, Type, TypeAlias, Callable, Any
+from typing import Iterator, Type, TypeAlias, Callable, Any, Self
 from .. import settings
 from ..types import cdt, ut, cst
 from ..relation_to_OBIS import get_name
@@ -29,6 +29,9 @@ class Classifier(IntEnum):
     NOT_SPECIFIC = 0
     STATIC = 1
     DYNAMIC = 2
+
+    def __str__(self):
+        return self.name
 
 
 SelectiveAccessDescriptor: TypeAlias = ut.SelectiveAccessDescriptor  # TODO: make with subclass
@@ -115,6 +118,21 @@ class COSEMInterfaceClasses(ABC):
         super().__init_subclass__(**kwargs)
         cls.hash_ = next(_n_class)
 
+    def copy(self, source: Self, association_id: int = 3):
+        """copy object according by association"""
+        for i, a in source.get_index_with_attributes():
+            if i == 1 or a is None or self.get_attr_element(i).classifier == Classifier.DYNAMIC:
+                continue
+            else:
+                if source.collection is not None and self.get_attr_element(i).classifier == Classifier.STATIC and not source.collection.is_writable(ln=self.logical_name,
+                                                                                                                                                    index=i,
+                                                                                                                                                    association_id=association_id):
+                    self.__attributes[i-1] = a
+                else:
+                    if isinstance(arr := self.__attributes[i-1], cdt.Array):
+                        arr.set_type(a.TYPE)
+                    self.set_attr(i, a.encoding)
+
     @classmethod
     def get_attr_element(cls, i: int) -> ICAElement:
         """return element by order index. Override in each new class"""
@@ -197,7 +215,7 @@ class COSEMInterfaceClasses(ABC):
     def set_record_time(self, index: int, value: str | bytes | cdt.DateTime):
         self.__record_time[index-2] = cdt.DateTime(value)
 
-    def get_index_with_attributes(self, in_init_order: bool = False) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
+    def get_index_with_attributes(self) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
         """ if by initiation order is True then need override method for concrete class"""
         return iter(zip(range(1, self.get_attr_length()+1), self.__attributes))
 

@@ -1,5 +1,8 @@
 # DLMS configuration
 
+[DLMS.collection]
+path = "./Types/"
+
 [DLMS.type_name]
 SimpleDataType = "Простой тип данных"
 NullData = "Отсутствие данных"

@@ -183,6 +183,9 @@ class CommonDataType(ABC):
             cls.SIZE = size
             cls.NAME += F"[{size}]"
 
+    def __hash__(self):
+        return int.from_bytes(self.encoding, "big")
+
 
 def get_type_name(value: CommonDataType | Type[CommonDataType]) -> str:
     """type name from type or instance of CDT with length and constant value"""

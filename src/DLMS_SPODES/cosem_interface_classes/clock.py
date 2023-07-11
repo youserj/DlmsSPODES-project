@@ -58,9 +58,9 @@ class Clock(ic.COSEMInterfaceClasses):
     NAME = cn.CLOCK
     CLASS_ID = ClassID.CLOCK
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.TIME, cst.OctetStringDateTime),
+    A_ELEMENTS = (ic.ICAElement(an.TIME, cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.TIME_ZONE, cdt.Long, -720, 840),
-                  ic.ICAElement(an.STATUS, ClockStatus),
+                  ic.ICAElement(an.STATUS, ClockStatus, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement(an.DAYLIGHT_SAVINGS_BEGIN, cst.OctetStringDateTime),
                   ic.ICAElement(an.DAYLIGHT_SAVINGS_END, cst.OctetStringDateTime),
                   ic.ICAElement(an.DAYLIGHT_SAVINGS_DEVIATION, DaylightSavingsDeviation, -120, 120),
