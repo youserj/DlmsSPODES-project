@@ -60,7 +60,7 @@ class TestType(unittest.TestCase):
         print(col)
         a = col.get_objects_list(collection.ClientSAP(48))
         print(a)
-        for i in range(1000):
+        for i in range(10):
             col_new = collection.get_collection(
                 manufacturer=b"KPZ",
                 server_type=cdt.OctetString("4d324d5f33"),

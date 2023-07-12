@@ -4,6 +4,10 @@ from .version import AppVersion
 from . import pdu_enums as pdu
 
 
+class TomlKeyError(Exception):
+    """for handle exceptions of toml"""
+
+
 class ITException(Exception):
     """ Common InterTechElectric exceptions class """
     error: Transmit | Application = Transmit.UNKNOWN

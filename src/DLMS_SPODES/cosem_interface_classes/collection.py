@@ -1445,11 +1445,17 @@ class Collection:
         return names, data_type
 
 
+try:
+    __collection_path = config['DLMS']['collection']['path']
+except KeyError as e:
+    raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
+
+
 @lru_cache(maxsize=100)
 def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion):
     context: str = F"{m.decode('utf-8')}/{t.to_str()}/{ver}"
     logger.info(F"start search in Type library: {context}")
-    path: str = F"{config['DLMS']['collection']['path']}{m.decode('utf-8')}/{t.encoding.hex()}/"
+    path: str = F"{__collection_path}{m.decode('utf-8')}/{t.encoding.hex()}/"
     if not os.path.isfile(file_name := F"{path}{ver}.typ"):
         logging.info(F"For {t.decode()}: version {ver} not type in Types")
         if searched_version := ver.select_nearest([AppVersion.from_str(f_n.removesuffix(".typ")) for f_n in os.listdir(path)]):
