@@ -42,4 +42,4 @@ try:
         config = tomllib.load(f)
 except FileNotFoundError as e:
     logger.warning(e)
-    config = dict()
+    config = None

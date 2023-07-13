@@ -96,7 +96,7 @@ class AssociationLN(ver0.AssociationLN):
                   ic.ICAElement(an.APPLICATION_CONTEXT_NAME, ContextNameType),
                   ver0.AssociationLN.get_attr_element(5),
                   ic.ICAElement(an.AUTHENTICATION_MECHANISM_NAME, MechanismNameType),
-                  ver0.AssociationLN.get_attr_element(7),
+                  ver0.AssociationLN.get_attr_element(7),  # TODO: make new class Secret(LLC_Secret)
                   ver0.AssociationLN.get_attr_element(8),
                   ic.ICAElement(an.SECURITY_SETUP_REFERENCE, cst.LogicalName))
     M_ELEMENTS = (ver0.AssociationLN.get_meth_element(1),

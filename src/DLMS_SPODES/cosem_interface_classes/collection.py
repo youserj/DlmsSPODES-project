@@ -1145,9 +1145,13 @@ class Collection:
     def current_association(self) -> AssociationLN:
         return self.__get_object(o.CURRENT_ASSOCIATION)
 
-    lru_cache(4)
+    @lru_cache(4)
     def getASSOCIATION(self, instance: int) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, instance, 255)))
+
+    @lru_cache(4)
+    def getAssociationBySAP(self, SAP: ClientSAP) -> AssociationLN:
+        return self.__get_object(bytes((0, 0, 40, 0, self.get_association_id(SAP), 255)))
 
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
@@ -1329,6 +1333,7 @@ class Collection:
         else:
             raise ValueError(F"object with {ln} is not {ScriptTable.NAME}")
 
+    @lru_cache(4)
     def get_association_id(self, client_sap: ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
         for ass in self.get_objects_by_class_id(AssociationLNVer0.CLASS_ID):
@@ -1445,10 +1450,11 @@ class Collection:
         return names, data_type
 
 
-try:
-    __collection_path = config['DLMS']['collection']['path']
-except KeyError as e:
-    raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
+if config is not None:
+    try:
+        __collection_path = config['DLMS']['collection']['path']
+    except KeyError as e:
+        raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
 
 
 @lru_cache(maxsize=100)
