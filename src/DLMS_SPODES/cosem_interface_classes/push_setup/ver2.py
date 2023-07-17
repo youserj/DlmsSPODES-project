@@ -1,12 +1,12 @@
 from ..__class_init__ import *
-from ...types.implementations import structs, emuns, integers
+from ...types.implementations import structs, enums, integers
 from itertools import chain
 from ...types import choices
 
 
 class RestrictionElement(choices.StructureMixin, cdt.Structure):
     """Override several methods of cdt.Structure. It limited Structure."""
-    restriction_type: emuns.RestrictionType
+    restriction_type: enums.RestrictionType
     restriction_value: choices.restriction_value
 
 
@@ -65,7 +65,7 @@ class ConfirmationParameters(cdt.Structure):
 
 class KeyInfoElement(choices.StructureMixin, cdt.Structure):
     """Override several methods of cdt.Structure. It limited Structure."""
-    key_info_type: emuns.KeyInfoType
+    key_info_type: enums.KeyInfoType
     key_info_options: choices.KeyInfoOptions
 
 
@@ -78,7 +78,7 @@ class ProtectionOptions(cdt.Structure):
 
 
 class ProtectionParametersElement(cdt.Structure):
-    protection_type: emuns.ProtectionType
+    protection_type: enums.ProtectionType
     protection_options: ProtectionOptions
 
 

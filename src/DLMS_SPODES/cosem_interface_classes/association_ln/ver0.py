@@ -1,10 +1,9 @@
-from typing import Callable
 from enum import IntFlag, auto
 from ... import ITE_exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations.long_unsigneds import ClassId
-from ...types.implementations import arrays
+from ...types.implementations import arrays, enums
 from ...pdu_enums import AttributeAccess, MethodAccess
 from ...enums import MechanismId
 
@@ -107,11 +106,6 @@ class ObjectListType(arrays.SelectionAccess):
             raise ValueError(F"not find in {ln} attribute index: {index}")
 
 
-class ClientSAP(cdt.Enum, elements=(0, 1, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60)):  # TODO: REWRITE elements here
-    """ IEC 62056-46 2002 6.4.2.3 Reserved special HDLC addresses p.40. IS15952ver2 """
-    TAG = b'\x0f'
-
-
 class ServerSAP(cdt.LongUnsigned):
 
     def validate(self):
@@ -123,7 +117,7 @@ class AssociatedPartnersType(cdt.Structure):
     """ Contains the identifiers of the COSEM client and the COSEM server (logical device) application processes within the physical devices
     hosting these processes, which belong to the application association modelled by the “Association LN” object. """
     DEFAULT = (0x10, 1)
-    client_SAP: ClientSAP
+    client_SAP: enums.ClientSAP
     server_SAP: ServerSAP
 
 
@@ -397,7 +391,6 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     NAME = cn.ASSOCIATION_LN
     CLASS_ID = ClassID.ASSOCIATION_LN_CLASS
     VERSION = Version.V0
-    __cb_get_attr_descriptor: Callable[[int], ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection]
     A_ELEMENTS = (ic.ICAElement(an.OBJECT_LIST, ObjectListType, selective_access=SelectiveAccessDescriptor),
                   ic.ICAElement(an.ASSOCIATED_PARTNERS_ID, AssociatedPartnersType),
                   ic.ICAElement(an.APPLICATION_CONTEXT_NAME, ApplicationContextName),
@@ -498,7 +491,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         except AttributeError as e:
             raise exc.NoObject('Objects list is empty')
 
-    def client_objects_list(self, value: ClientSAP) -> list[ic.COSEMInterfaceClasses]:
+    def client_objects_list(self, value: enums.ClientSAP) -> list[ic.COSEMInterfaceClasses]:
         """rudiment. use collection.get_object_list. TODO: remove in future"""
         for association in self.collection.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
@@ -519,7 +512,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         else:
             raise ValueError(F'Not found association with client SAP: {value}')
 
-    def __handle_preset_current_client_SAP(self, value: ClientSAP):
+    def __handle_preset_current_client_SAP(self, value: enums.ClientSAP):
         """ Only for current association. Replacement attributes except logical_name and Client_SAP on attributes of association switching """
         for association in self.collection.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association is not self:
@@ -543,37 +536,10 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         """ source address from client_SAP. ISO/IEC 13239:2002(E), Annex H, H.4 Frame format type 3 (page 128). """
         return (int(self.associated_partners_id.client_SAP) << 1 | 1).to_bytes(1, 'big')
 
-    def get_attr_descriptor(self, value: int) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
+    def get_attr_descriptor(self, value: int, SAP: enums.ClientSAP = enums.configurator_client) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
         """ with selection for object_list. TODO: Copypast ProfileGeneric"""
-        descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(value)
-        if value == 2 and bool(self.collection.current_association.xDLMS_context_info.conformance.decode()[21]):
+        descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(value, SAP)
+        if value == 2 and bool(self.collection.getAssociationBySAP(SAP).xDLMS_context_info.conformance.decode()[21]):
             return CosemAttributeDescriptorWithSelection((descriptor, self.object_list.selective_access))
         else:
             return descriptor
-
-
-if __name__ == '__main__':
-    as1 = AssociationLN('0.0.40.0.1.255')
-    # sela = SelectiveAccessDescriptor()
-    # sela.set_selector(3, [(1,2,'1.2.3.4.5.6',None), (4,5,'1.2.3.4.5.4',None),])
-    attr_des_with = CosemAttributeDescriptorWithSelection(((15, '0.0.40.0.0.255', 2), (2, [15])))
-    a2 = CosemAttributeDescriptorWithSelection(((15, '0.0.40.0.0.255', 2), (4, (15, '0.0.40.0.1.255'))))
-    attr_des_with.access_selection.set_selector(2)
-    # a = max(map(lambda val: val[Language.RUSSIAN], ClientSAP.elements.values()), key=lambda value: len(value))
-    a = Conformance('101010110010101011110101')
-    a.set(b'\xb8\x18\x00')
-    c = a[1]
-    c = a.get_values()
-    a = XDLMSContextType()
-    a = LLCSecret('11 00 33 34')
-    # a = AssociationLN(1)
-    a.representation = Representation.ASCII | Representation.HIDDEN
-    a1 = LLCSecret('11 55 55')
-    print(str(a))
-    a = MechanismIdElement(en.HIGH)
-    d = MechanismIdElement(en.LOW)
-    c = a > d
-    a = SelectiveAccessDescriptor()
-    b = bytes.fromhex('01 01 02 04 12 00 08 11 00 09 06 00 00 01 00 00 FF 02 02 01 09 02 03 0F 01 16 01 00 02 03 0F 02 16 03 00 02 03 0F 03 16 03 00 02 03 0F 04 16 03 00 02 03 0F 05 16 03 00 02 03 0F 06 16 03 00 02 03 0F 07 16 03 00 02 03 0F 08 16 03 00 02 03 0F 09 16 03 00 01 06 02 02 0F 01 16 01 02 02 0F 02 16 01 02 02 0F 03 16 01 02 02 0F 04 16 01 02 02 0F 05 16 01 02 02 0F 06 16 01')
-    a = ObjectListType(b)
-    print(a)

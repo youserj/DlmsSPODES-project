@@ -1,7 +1,6 @@
 from ..profile_generic import ver1
-from ...types.implementations import structs
+from ...types.implementations import structs, enums
 from ...types import ut, cdt
-from ... import ITE_exceptions as exc
 
 
 class SPODES3CurrentProfile(ver1.ProfileGeneric):
@@ -62,6 +61,6 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
 
         self.buffer.set_type(Entry)
 
-    def get_attr_descriptor(self, value: int) -> ut.CosemAttributeDescriptor:
+    def get_attr_descriptor(self, value: int, SAP: enums.ClientSAP = enums.configurator_client) -> ut.CosemAttributeDescriptor:
         """ with selection for object_list. return only without selection"""
-        return super(ver1.ProfileGeneric, self).get_attr_descriptor(value)
+        return super(ver1.ProfileGeneric, self).get_attr_descriptor(value, SAP)

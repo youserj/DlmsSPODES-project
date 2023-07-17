@@ -14,12 +14,12 @@ from typing import TypeAlias, Iterator, Type, Callable, Self
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
-from ..types.implementations import structs
+from ..types.implementations import structs, enums
 from . import cosem_interface_class as ic
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
-from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ClientSAP
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver0 import PushSetup as PushSetupVer0
@@ -827,9 +827,6 @@ class Collection:
             if obj.CLASS_ID not in classes:
                 ET.SubElement(object_node, 'version').text = str(obj.VERSION)
             classes.add(obj.CLASS_ID)
-            if root_tag == TagsName.DEVICE_ROOT.value and obj is self.current_association:
-                ET.SubElement(object_node, 'attribute', attrib={'index': '3'}).text = obj.associated_partners_id.encoding.hex()
-                continue
             for index, attr in obj.get_index_with_attributes():
                 if index == 1:  # don't keep ln
                     continue
@@ -1043,7 +1040,7 @@ class Collection:
             case _:                                                          raise exc.NoObject(F"Can't find DLMS Object from collection with {value=}")
 
     @lru_cache(4)
-    def get_objects_list(self, value: ClientSAP) -> list[ic.COSEMInterfaceClasses]:
+    def get_objects_list(self, value: enums.ClientSAP) -> list[ic.COSEMInterfaceClasses]:
         for association in self.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
                 if association.object_list is None:
@@ -1150,7 +1147,7 @@ class Collection:
         return self.__get_object(bytes((0, 0, 40, 0, instance, 255)))
 
     @lru_cache(4)
-    def getAssociationBySAP(self, SAP: ClientSAP) -> AssociationLN:
+    def getAssociationBySAP(self, SAP: enums.ClientSAP) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, self.get_association_id(SAP), 255)))
 
     @cached_property
@@ -1228,15 +1225,6 @@ class Collection:
     def serial_number(self) -> Data:
         """ Ex.: 0101000434322 """
         return self.__get_object(bytes((0, 0, 96, 1, 0, 255)))
-
-    def SECURITY_SETUP(self) -> SecuritySetup:
-        """SecuritySetup by order of CurrentAssociation"""
-        return self.__get_object(bytes(self.current_association.security_setup_reference))
-
-    @property
-    def IC(self) -> Data:
-        """ invocation counter """
-        return self.__get_object(bytes((0, int(self.client_setup.channel_communication), 43, 1, self.current_association.security_setup_reference.e, 255)))
 
     @property
     def RU_MAGNETIC_EFFECT(self) -> Data:
@@ -1334,7 +1322,7 @@ class Collection:
             raise ValueError(F"object with {ln} is not {ScriptTable.NAME}")
 
     @lru_cache(4)
-    def get_association_id(self, client_sap: ClientSAP) -> int:
+    def get_association_id(self, client_sap: enums.ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
         for ass in self.get_objects_by_class_id(AssociationLNVer0.CLASS_ID):
             if ass.associated_partners_id.client_SAP == client_sap and ass.logical_name.e != 0:

@@ -46,3 +46,11 @@ class KeyInfoType(cdt.Enum, elements=(0, 1, 2)):
 
 class ProtectionType(cdt.Enum, elements=(0, 1, 2, 3)):
     """"""
+
+
+class ClientSAP(cdt.Enum, elements=(0, 1, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60)):  # TODO: REWRITE elements here
+    """ IEC 62056-46 2002 6.4.2.3 Reserved special HDLC addresses p.40. IS15952ver2 """
+    TAG = b'\x0f'
+
+
+configurator_client = ClientSAP(0x30)

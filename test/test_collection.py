@@ -58,7 +58,7 @@ class TestType(unittest.TestCase):
             server_type=cdt.OctetString("4d324d5f33"),
             server_ver=AppVersion.from_str("1.4.15"))
         print(col)
-        a = col.get_objects_list(collection.ClientSAP(48))
+        a = col.get_objects_list(collection.enums.ClientSAP(48))
         print(a)
         for i in range(10):
             col_new = collection.get_collection(

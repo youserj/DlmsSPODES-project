@@ -10,6 +10,7 @@ from enum import IntEnum
 from datetime import datetime, timedelta, timezone
 from itertools import count
 from . import collection as col
+from ..types.implementations import enums
 
 match settings.get_current_language():
     case settings.Language.ENGLISH: from ..Values.EN import attr_names as an
@@ -282,7 +283,7 @@ class COSEMInterfaceClasses(ABC):
         """ try set default to value """
         self.set_attr(index, self.get_attr_element(index).default)
 
-    def get_attr_descriptor(self, value: int) -> ut.CosemAttributeDescriptor:
+    def get_attr_descriptor(self, value: int, SAP: enums.ClientSAP = enums.configurator_client) -> ut.CosemAttributeDescriptor:
         """ TODO """
         return ut.CosemAttributeDescriptor((self.CLASS_ID,
                                             ut.CosemObjectInstanceId(self.logical_name.contents),
