@@ -2,8 +2,7 @@ from enum import IntFlag, auto
 from ... import ITE_exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
-from ...types.implementations.long_unsigneds import ClassId
-from ...types.implementations import arrays, enums
+from ...types.implementations import arrays, enums, bitstrings, long_unsigneds
 from ...pdu_enums import AttributeAccess, MethodAccess
 from ...enums import MechanismId
 
@@ -106,19 +105,12 @@ class ObjectListType(arrays.SelectionAccess):
             raise ValueError(F"not find in {ln} attribute index: {index}")
 
 
-class ServerSAP(cdt.LongUnsigned):
-
-    def validate(self):
-        if int.from_bytes(self.contents, 'big') > 0x3FFF:
-            raise ValueError(F'The range for the server_SAP is 0x000…0x3FFF, but got {self.contents.hex()}')
-
-
 class AssociatedPartnersType(cdt.Structure):
     """ Contains the identifiers of the COSEM client and the COSEM server (logical device) application processes within the physical devices
     hosting these processes, which belong to the application association modelled by the “Association LN” object. """
     DEFAULT = (0x10, 1)
     client_SAP: enums.ClientSAP
-    server_SAP: ServerSAP
+    server_SAP: long_unsigneds.ServerSAP
 
 
 class ApplicationContextName(cdt.Structure):
@@ -134,95 +126,10 @@ class ApplicationContextName(cdt.Structure):
     context_id_element: cdt.Unsigned
 
 
-# TODO: join with cdt.FlagMixin
-class Conformance(cdt.BitString):
-    ELEMENTS = ({Language.ENGLISH: F'reserved-zero', Language.RUSSIAN: F'Зарезервированый-0'},
-                {Language.ENGLISH: F'general-protection', Language.RUSSIAN: F'Основной защита'},
-                {Language.ENGLISH: F'general-block-transfer', Language.RUSSIAN: F'Основная передача блока'},
-                {Language.ENGLISH: F'read', Language.RUSSIAN: F'Чтение'},
-                {Language.ENGLISH: F'write', Language.RUSSIAN: F'Запись'},
-                {Language.ENGLISH: F'unconfirmed-write', Language.RUSSIAN: F'Неподтвержденная запись'},
-                {Language.ENGLISH: F'reserved-six', Language.RUSSIAN: F'Зарезервированый-6'},
-                {Language.ENGLISH: F'reserved-seven', Language.RUSSIAN: F'Зарезервированый-7'},
-                {Language.ENGLISH: F'attribute0-supported-with-SET', Language.RUSSIAN: F'Поддерживается установка 0 атрибута'},
-                {Language.ENGLISH: F'priority-mgmt-supported', Language.RUSSIAN: F'Поддерживается приоритет MGMT'},
-                {Language.ENGLISH: F'attribute0-supported-with-GET', Language.RUSSIAN: F'Поддерживается чтение 0 атрибута'},
-                {Language.ENGLISH: F'block-transfer-with-get-or-read', Language.RUSSIAN: F'Запрос или чтение через передачу блоков'},
-                {Language.ENGLISH: F'block-transfer-with-set-or-write', Language.RUSSIAN: F'Установка или запись через передачу блоков'},
-                {Language.ENGLISH: F'block-transfer-with-action', Language.RUSSIAN: F'Активация через передачу блоков'},
-                {Language.ENGLISH: F'multiple-references', Language.RUSSIAN: F'Несколько ссылок'},
-                {Language.ENGLISH: F'information-report', Language.RUSSIAN: F'Информационный отчет'},
-                {Language.ENGLISH: F'data-notification', Language.RUSSIAN: F'Данные-уведомление'},
-                {Language.ENGLISH: F'access', Language.RUSSIAN: F'Доступ'},
-                {Language.ENGLISH: F'parameterized-access', Language.RUSSIAN: F'Параметризованный доступ'},
-                {Language.ENGLISH: F'get', Language.RUSSIAN: F'Извлечение'},
-                {Language.ENGLISH: F'set', Language.RUSSIAN: F'Установка'},
-                {Language.ENGLISH: F'selective-access', Language.RUSSIAN: F'Выборочный доступ'},
-                {Language.ENGLISH: F'event-notification', Language.RUSSIAN: F'Событие-уведомление'},
-                {Language.ENGLISH: F'action', Language.RUSSIAN: F'Активация'})
-    default = '011000001111111111111011'  # for LN only
-
-    def __init__(self, value: bytes | bytearray | str | int | cdt.BitString = None):
-        super(Conformance, self).__init__(value)
-        if self.ELEMENTS is not None and len(self) != len(self.ELEMENTS):
-            raise ValueError(F'For {self.__class__.__name__} get {len(self)} bits, expected {len(self.ELEMENTS)}')
-
-    def __len__(self):
-        return len(self.ELEMENTS)
-
-    def from_bytes(self, value: bytes) -> bytes:
-        length, pdu = cdt.get_length_and_pdu(value[1:])
-        if length != len(self):
-            raise ValueError(F'Got {length=}, expected {len(self)}')
-        match value[:1]:
-            case self.TAG if len(self) <= len(pdu) * 8: return pdu[:3]
-            case self.TAG:                              raise ValueError(F'Got pdu length:{len(pdu)}, expected at least {len(self) >> 3}')
-            case _ as error:                            raise TypeError(F'Expected {self.NAME} type, got {cdt.get_common_data_type_from(error).NAME}')
-
-    def from_str(self, value: str) -> bytes:
-        value = value + '0' * ((8 - len(self)) % 8)
-        list_ = [value[count:(count + 8)] for count in range(0, len(self), 8)]
-        value = b''
-        for byte in list_:
-            value += int(byte, base=2).to_bytes(1, byteorder='little')
-        return value
-
-    def from_int(self, value: int) -> bytes:
-        if value < 0:
-            raise ValueError
-        res = 0
-        start_bit = 2 ** (len(self) - 1)
-        for i in range(len(self)):
-            if value & (1 << i):
-                res += start_bit >> i
-        return res.to_bytes(len(self) // 8, byteorder='big')
-
-    def from_bytearray(self, value: bytearray) -> bytes:
-        return bytes(value)
-
-    @classmethod
-    def get_values(cls) -> list[str]:
-        """ TODO: """
-        return [values_dict[get_current_language()] for values_dict in cls.ELEMENTS]
-
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position. TODO: copypast FlagMixin """
-        type(self)(value=value.zfill(len(self)))
-        return value, cursor_position
-
-    @property
-    def general_protection(self) -> int:
-        return self.decode()[1]
-
-    @property
-    def general_block_transfer(self) -> int:
-        return self.decode()[2]
-
-
 class XDLMSContextType(cdt.Structure):
     """ Contains all the necessary information on the xDLMS context for the given association. """
     DEFAULT = (None, 1024, 1024, 6, 0, b'\x09\x07\x60\x85\x74\x05\x08\x02\x00')
-    conformance: Conformance
+    conformance: bitstrings.Conformance
     max_receive_pdu_size: cdt.LongUnsigned
     max_send_pdu_size: cdt.LongUnsigned
     dlms_version_number: cdt.Unsigned
@@ -267,12 +174,12 @@ class AssociationStatus(cdt.Enum, elements=(0, 1, 2)):
 class ClassList(cdt.Array):
     """ Access by class. In this case, only those object_list_elements of the object_list shall be included in the response, which have a class_id
     equal to one of the class_id-s of the class-list. No access_right information is included """
-    TYPE = ClassId
+    TYPE = long_unsigneds.ClassId
 
 
 class ObjectId(cdt.Structure):
     DEFAULT = b'\x02\x02\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff'
-    class_id: ClassId
+    class_id: long_unsigneds.ClassId
     logical_name: cst.LogicalName
 
 

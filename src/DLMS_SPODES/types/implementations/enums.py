@@ -44,6 +44,7 @@ class KeyInfoType(cdt.Enum, elements=(0, 1, 2)):
     """"""
 
 
+
 class ProtectionType(cdt.Enum, elements=(0, 1, 2, 3)):
     """"""
 

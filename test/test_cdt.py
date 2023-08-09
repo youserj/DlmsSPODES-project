@@ -99,6 +99,16 @@ class TestType(unittest.TestCase):
         context = XDLMSContextType()
         print(context)
 
+    def test_Conformance2(self):
+        from src.DLMS_SPODES.enums import Conformance
+        c = Conformance(431)
+        print(c.content, c.name, list(c))
+
+    def test_Conformance3(self):
+        from src.DLMS_SPODES.types.implementations.bitstrings import Conformance
+        c = Conformance()
+        print(c)
+
     def test_ImageTransfer(self):
         col = Collection()
         col.create(class_id=ut.CosemClassId(18), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.44.0.0.255'))

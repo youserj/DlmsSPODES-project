@@ -137,9 +137,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         descriptor: ut.CosemAttributeDescriptor = super(ProfileGeneric, self).get_attr_descriptor(value, SAP)
         if value == BUFFER and bool(self.collection.getAssociationBySAP(SAP).xDLMS_context_info.conformance.decode()[21]):
             if self.attr_descriptor_with_selection is None:
-                raise ValueError(F"{self}: get attribute descriptor, not set attribute descriptor with selection. Need initiate capture_objects before")
-            else:
-                return self.attr_descriptor_with_selection((descriptor, self.buffer.selective_access))
+                self.__create_selective_access_descriptor()
+            return self.attr_descriptor_with_selection((descriptor, self.buffer.selective_access))
         else:
             return descriptor
 

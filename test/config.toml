@@ -3,6 +3,32 @@
 [DLMS.collection]
 path = "./Types/"
 
+[DLMS.Conformance]
+    reserved-zero = "Зарезервированый-0"
+    general-protection = "Основной защита"
+    general-block-transfer = "Основная передача блока"
+    read = "Чтение"
+    write = "Запись"
+    unconfirmed-write = "Неподтвержденная запись"
+    reserved-six = "Зарезервированый-6"
+    reserved-seven = "Зарезервированый-7"
+    attribute0-supported-with-set = "Поддерживается установка 0 атрибута"
+    priority-mgmt-supported = "Поддерживается приоритет MGMT"
+    attribute0-supported-with-get = "Поддерживается чтение 0 атрибута"
+    block-transfer-with-get-or-read = "Запрос или чтение через передачу блоков"
+    block-transfer-with-set-or-write = "Установка или запись через передачу блоков"
+    block-transfer-with-action = "Активация через передачу блоков"
+    multiple-references = "Несколько ссылок"
+    information-report = "Информационный отчет"
+    data-notification = "Данные-уведомление"
+    access = "Доступ"
+    parameterized-access = "Параметризованный доступ"
+    get = "Извлечение"
+    set = "Установка"
+    selective-access = "Выборочный доступ"
+    event-notification = "Событие-уведомление"
+    action = "Активация"
+
 [DLMS.type_name]
 SimpleDataType = "Простой тип данных"
 NullData = "Отсутствие данных"

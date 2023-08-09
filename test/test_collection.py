@@ -1,8 +1,9 @@
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
+from src.DLMS_SPODES import cosem_interface_classes
 from src.DLMS_SPODES.version import AppVersion
-from src.DLMS_SPODES.ITE_exceptions import NeedUpdate
+from src.DLMS_SPODES.ITE_exceptions import NeedUpdate, NoObject
 
 
 class TestType(unittest.TestCase):
@@ -66,6 +67,37 @@ class TestType(unittest.TestCase):
                 server_type=cdt.OctetString("4d324d5f33"),
                 server_ver=AppVersion.from_str("1.4.16"))
             print(col_new)
+
+    def test_to_xml3(self):
+        """for template"""
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.15"))
+        clock_obj = col.get_object("0.0.1.0.0.255")
+        clock_obj.set_attr(3, 120)
+        act_cal = col.get_object("0.0.13.0.0.255")
+        act_cal.day_profile_table_passive.append((1, [("11:00", "1.1.1.1.1.1", 1)]))
+        used = {
+            clock_obj.logical_name: {2, 3},
+            act_cal.logical_name: {9}
+        }
+        col.to_xml3("test_to_xml3.xml",
+                    used=used,
+                    decode=True)
+
+    def test_collection_from_xml(self):
+        col, used = collection.Collection.from_xml3("test_to_xml3.xml")
+        print(col, used)
+
+    def test_save_change(self):
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f3354"),
+            server_ver=AppVersion.from_str("1.4.15"))
+        clock = col.get_object("0.0.1.0.0.255")
+        clock.set_attr(3, 100)
+        col.to_xml2("test_to_xml2.xml")
 
     def test_AssociationLN(self):
         col = collection.Collection()

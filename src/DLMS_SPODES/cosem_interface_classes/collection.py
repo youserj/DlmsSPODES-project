@@ -80,6 +80,9 @@ InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister 
                             GPRSModemSetup | GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN
 
 
+UsedAttributes: TypeAlias = dict[cst.LogicalName, set[int]]
+
+
 class ClassMap(dict):
     def __hash__(self):
         return hash(tuple(it.hash_ for it in self.values()))
@@ -702,6 +705,71 @@ class Collection:
                                 logical_name=obj.logical_name)
 
     @classmethod
+    def from_xml3(cls, filename: str) -> tuple[Self, UsedAttributes]:
+        """ create collection from xml for template and UsedAttributes """
+        used: UsedAttributes = dict()
+        tree = ET.parse(filename)
+        objects = tree.getroot()
+        decode: bool = bool(int(objects.attrib.get("decode", "0")))
+        if objects.tag != TagsName.TEMPLATE_ROOT.value:
+            raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.TEMPLATE_ROOT.value}")
+        root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
+        logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
+        new = get_collection(
+            manufacturer=objects.findtext("manufacturer").encode("utf-8"),
+            server_type=cdt.get_instance_and_pdu_from_value(bytes.fromhex(objects.findtext("server_type")))[0],
+            server_ver=AppVersion.from_str(objects.findtext("server_ver")))
+        match root_version:
+            case AppVersion(4, 0):
+                for obj in objects.findall('object'):
+                    ln: str = obj.attrib.get("ln", 'is absence')
+                    logical_name: cst.LogicalName = cst.LogicalName(ln)
+                    if not new.is_in_collection(logical_name):
+                        raise ValueError(F"got object with {ln=} not find in collection. Abort attribute setting")
+                    else:
+                        new_object = new.get_object(logical_name)
+                        used[logical_name] = set()
+                    for attr in obj.findall("attr"):
+                        index: int = int(attr.attrib.get("index"))
+                        used[logical_name].add(index)
+                        try:
+                            if decode:
+                                match attr.attrib.get("type", "simple"):
+                                    case "simple":
+                                        new_object.set_attr(index, attr.text)
+                                    case "array" | "struct":
+                                        stack = [(list(), iter(attr))]
+                                        while stack:
+                                            v1, v2 = stack[-1]
+                                            v = next(v2, None)
+                                            if v is None:
+                                                stack.pop()
+                                            elif v.tag == "simple":
+                                                v1.append(v.text)
+                                            else:
+                                                v1.append(list())
+                                                stack.append((v1[-1], iter(v)))
+                                        new_object.set_attr(index, v1)
+                            else:
+                                new_object.set_attr(index, bytes.fromhex(attr.text))
+                        except exc.NoObject as e:
+                            logger.error(F"Can't fill {new_object} attr: {index}. Skip. {e}.")
+                            break
+                        except exc.ITEApplication as e:
+                            logger.error(F"Can't fill {new_object} attr: {index}. {e}")
+                        except IndexError:
+                            logger.error(F'Object "{new_object}" not has attr: {index}')
+                        except TypeError as e:
+                            logger.error(F'Object {new_object} attr:{index} do not write, encoding wrong : {e}')
+                        except ValueError as e:
+                            logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+                        except AttributeError as e:
+                            logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+            case _ as error:
+                raise exc.VersionError(error, additional='Xml')
+        return new, used
+
+    @classmethod
     def from_xml(cls, filename: str, use: dict[cst.LogicalName, set[int]] = None) -> Self:
         """ append objects from xml file """
         tree = ET.parse(filename)
@@ -800,8 +868,66 @@ class Collection:
                 raise exc.VersionError(error, additional='Xml')
         return new
 
+    def from_xml2(self, filename: str) -> Self:
+        """ set attribute values from xml. validation ID's """
+        tree = ET.parse(filename)
+        objects = tree.getroot()
+        if objects.tag != TagsName.DEVICE_ROOT.value:
+            raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT.value}")
+        root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
+        if (dlms_ver := objects.findtext("dlms_ver")) is not None:
+            self.set_dlms_ver(int(dlms_ver))
+        if (country := objects.findtext("country")) is not None:
+            self.set_country(CountrySpecificIdentifiers(int(country)))
+        if (country_ver := objects.findtext("country_ver")) is not None:
+            self.set_country_ver(AppVersion.from_str(country_ver))
+        if (manufacturer := objects.findtext("manufacturer")) is not None:
+            self.set_manufacturer(manufacturer.encode("utf-8"))
+        if (server_type := objects.findtext("server_type")) is not None:
+            tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type))
+            self.set_server_type(tmp)
+        for server_ver in objects.findall("server_ver"):
+            self.set_server_ver(instance=int(server_ver.attrib.get("instance", "0")),
+                                value=AppVersion.from_str(server_ver.text))
+        logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
+        match root_version:
+            case AppVersion(3, 1 | 2):
+                for obj in objects.findall('object'):
+                    ln: str = obj.attrib.get('ln', 'is absence')
+                    logical_name: cst.LogicalName = cst.LogicalName(ln)
+                    if not self.is_in_collection(logical_name):
+                        logger.error(F"got object with {ln=} not find in collection. Skip it attribute values")
+                        continue
+                    else:
+                        new_object = self.get_object(logical_name)
+                    indexes: list[int] = list()
+                    """ got attributes indexes for current object """
+                    for attr in obj.findall('attribute'):
+                        index: str = attr.attrib.get('index')
+                        if index.isdigit():
+                            indexes.append(int(index))
+                        else:
+                            raise ValueError(F'ERROR: for obj with {ln=} got index {index} and it is not digital')
+                        try:
+                            new_object.set_attr(indexes[-1], bytes.fromhex(attr.text))
+                        except exc.NoObject as e:
+                            logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. Skip. {e}.")
+                            break
+                        except exc.ITEApplication as e:
+                            logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. {e}")
+                        except IndexError:
+                            logger.error(F'Object "{new_object}" not has attr: {index}')
+                        except TypeError as e:
+                            logger.error(F'Object {new_object} attr:{index} do not write, encoding wrong : {e}')
+                        except ValueError as e:
+                            logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+                        except AttributeError as e:
+                            logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+            case _ as error:
+                raise exc.VersionError(error, additional='Xml')
+
     def __get_base_xml_element(self, root_tag: str = TagsName.DEVICE_ROOT.value) -> ET.Element:
-        objects = ET.Element(root_tag, attrib={'version': '3.1.0'})
+        objects = ET.Element(root_tag, attrib={'version': '4.0.0'})
         ET.SubElement(objects, 'dlms_ver').text = str(self.dlms_ver)
         ET.SubElement(objects, 'country').text = str(self.country.value)
         if self.country_ver:
@@ -830,24 +956,25 @@ class Collection:
             for index, attr in obj.get_index_with_attributes():
                 if index == 1:  # don't keep ln
                     continue
-                el = obj.get_attr_element(index)
-                match attr, el.DATA_TYPE:
-                    case None, ut.CHOICE:
-                        logger.warning(F'PASS choice {obj} {index}')
-                    case None, cdt.CommonDataType():
-                        if with_comment:
-                            object_node.append(ET.Comment(F'{el.NAME}. Type: {el.DATA_TYPE}'))
-                        ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = str(el.DATA_TYPE.TAG[0])
-                    case cdt.CommonDataType(), _:
-                        record_time = obj.get_record_time(index)
-                        el_attrib: dict = {'index': str(index)}
-                        if record_time is not None:
-                            el_attrib.update({'rec_time': record_time.encoding.hex()})
-                        if with_comment:
-                            object_node.append(ET.Comment(F'{el.NAME}: {attr}'))
-                        ET.SubElement(object_node, 'attribute', attrib=el_attrib).text = attr.encoding.hex()
-                    case _:
-                        logger.warning('PASS')
+                else:
+                    el = obj.get_attr_element(index)
+                    match attr, el.DATA_TYPE:
+                        case None, ut.CHOICE:
+                            logger.warning(F'PASS choice {obj} {index}')
+                        case None, cdt.CommonDataType():
+                            if with_comment:
+                                object_node.append(ET.Comment(F'{el.NAME}. Type: {el.DATA_TYPE}'))
+                            ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = str(el.DATA_TYPE.TAG[0])
+                        case cdt.CommonDataType(), _:
+                            record_time = obj.get_record_time(index)
+                            el_attrib: dict = {'index': str(index)}
+                            if record_time is not None:
+                                el_attrib.update({'rec_time': record_time.encoding.hex()})
+                            if with_comment:
+                                object_node.append(ET.Comment(F'{el.NAME}: {attr}'))
+                            ET.SubElement(object_node, 'attribute', attrib=el_attrib).text = attr.encoding.hex()
+                        case _:
+                            logger.warning('PASS')
 
         # TODO: '<!DOCTYPE ITE_util_tree SYSTEM "setting.dtd"> or xsd
         xml_string = ET.tostring(objects, encoding='cp1251', method='xml')
@@ -855,6 +982,113 @@ class Collection:
         str_ = dom_xml.toprettyxml(indent="  ", encoding='cp1251')
         with open(file_name, "wb") as f:
             f.write(str_)
+
+    def to_xml2(self, file_name: str,
+                root_tag: str = TagsName.DEVICE_ROOT.value) -> bool:
+        """Save attributes WRITABLE and STATIC of client"""
+        objects = self.__get_base_xml_element(root_tag)
+        col = get(
+            m=self.manufacturer,
+            t=self.server_type,
+            ver=self.server_ver[0])
+        is_empty: bool = True
+        for desc in col.getASSOCIATION(3).object_list:
+            obj = self.get_object(desc)
+            object_node = None
+            for i, attr in obj.get_index_with_attributes():
+                if i == 1:
+                    """skip ln"""
+                elif obj.get_attr_element(i).classifier == ic.Classifier.DYNAMIC:
+                    """skip DYNAMIC attributes"""
+                elif not col.is_writable(obj.logical_name, i, 3):
+                    """skip not writable"""
+                elif col.get_object(obj.logical_name).get_attr(i) == attr:
+                    """skip not changed attr value"""
+                else:
+                    is_empty = False
+                    if not object_node:
+                        object_node = ET.SubElement(objects, 'object', attrib={'ln': str(obj.logical_name)})
+                    ET.SubElement(object_node, 'attribute', attrib={'index': str(i)}).text = attr.encoding.hex()
+        if not is_empty:
+            # TODO: '<!DOCTYPE ITE_util_tree SYSTEM "setting.dtd"> or xsd
+            xml_string = ET.tostring(objects, encoding='cp1251', method='xml')
+            dom_xml = minidom.parseString(xml_string)
+            str_ = dom_xml.toprettyxml(indent="  ", encoding='cp1251')
+            with open(file_name, "wb") as f:
+                f.write(str_)
+        else:
+            logger.warning("nothing save. all attributes according with origin collection")
+        return not is_empty
+
+    def to_xml3(self, file_name: str,
+                used: dict[cst.LogicalName, set[int]],
+                decode: bool = False):
+        """For template only"""
+        objects = self.__get_base_xml_element(TagsName.TEMPLATE_ROOT.value)
+        objects.attrib["decode"] = str(int(decode))
+        for obj in self.values():
+            if not used.get(obj.logical_name):
+                continue
+            object_node = ET.SubElement(
+                objects,
+                "object",
+                attrib={
+                    "ln": str(obj.logical_name),
+                    "name": obj.NAME
+                })
+            for i, attr in obj.get_index_with_attributes():
+                if i == 1:  # don't keep ln
+                    continue
+                elif i not in used[obj.logical_name]:
+                    """skip not used attribute"""
+                else:
+                    if isinstance(attr, cdt.CommonDataType):
+                        if decode:
+                            attr_el = ET.SubElement(
+                                object_node,
+                                "attr",
+                                {
+                                    "name": obj.get_attr_element(i).NAME,
+                                    "index": str(i)})
+                            if isinstance(attr, cdt.SimpleDataType):
+                                attr_el.text = attr.to_str()
+                            else:
+                                attr_el.attrib["type"] = "array" if attr.TAG == b'\x01' else "struct"  # todo: make better
+                                stack: list = [(attr_el, "attr_el_name", iter(attr))]
+                                while stack:
+                                    node, name, value_it = stack[-1]
+                                    value = next(value_it, None)
+                                    if value:
+                                        if not isinstance(name, str):
+                                            name = next(name).NAME
+                                        if isinstance(value, cdt.Array):
+                                            stack.append((ET.SubElement(node,
+                                                                        "array",
+                                                                        attrib={"name": name}), "ar_name", iter(value)))
+                                        elif isinstance(value, cdt.Structure):
+                                            stack.append((ET.SubElement(node, "struct"), iter(value.ELEMENTS), iter(value)))
+                                        else:
+                                            ET.SubElement(node,
+                                                          "simple",
+                                                          attrib={"name": name}).text = value.to_str()
+                                    else:
+                                        stack.pop()
+                        else:
+                            ET.SubElement(
+                                object_node,
+                                "attr",
+                                {"index": str(i)}
+                            ).text = attr.encoding.hex()
+                    else:
+                        logger.error(F"skip record {obj}:attr={i} with value={attr}")
+        with open(
+                file_name,
+                mode="wb") as f:
+            f.write(ET.tostring(
+                element=objects,
+                encoding="utf-8",
+                method="xml",
+                xml_declaration=True))
 
     def save_type(self, file_name: str, root_tag: str = TagsName.DEVICE_ROOT.value):
         """ For concrete device save all attributes. For types only STATIC save """

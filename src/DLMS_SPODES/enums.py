@@ -1,5 +1,6 @@
-from enum import Enum, IntEnum, auto
+from enum import Enum, IntEnum, auto, IntFlag
 from typing import Self
+from functools import cached_property
 
 
 class ITEEnum(Enum):
@@ -152,6 +153,42 @@ class ContextId(IntEnum):
     @classmethod
     def from_str(cls, value: str) -> Self:
         return next(filter(lambda i: i.name == value, cls))
+
+
+class Conformance(IntFlag):
+    """ DLMS UA 1000-1 Ed 14 5.4.5 AssociationLN xDLMS_context_info.conformance"""
+    NONE = 0
+    RESERVED_ZERO = 0b1
+    GENERAL_PROTECTION = 0b10
+    GENERAL_BLOCK_TRANSFER = 0b100
+    READ = 0b1000
+    WRITE = 0b1_0000
+    UN_CONFIRMED_WRITE = 0b10_0000
+    RESERVED_SIX = 0b100_0000
+    RESERVED_SEVEN = 0b1000_0000
+    ATTRIBUTE_0_SUPPORTED_WITH_SET = 0b1_0000_0000
+    PRIORITY_MGMT_SUPPORTED = 0b10_0000_0000
+    ATTRIBUTE_0_SUPPORTED_WITH_GET = 0b100_0000_0000
+    BLOCK_TRANSFER_WITH_GET_OR_READ = 0b1000_0000_0000
+    BLOCK_TRANSFER_WITH_SET_OR_WRITE = 0b1_0000_0000_0000
+    BLOCK_TRANSFER_WITH_ACTION = 0b10_0000_0000_0000
+    MULTIPLE_REFERENCES = 0b100_0000_0000_0000
+    INFORMATION_REPORT = 0b1000_0000_0000_0000
+    DATA_NOTIFICATION = 0b1_0000_0000_0000_0000
+    ACCESS = 0b10_0000_0000_0000_0000
+    PARAMETERIZED_ACCESS = 0b100_0000_0000_0000_0000
+    GET = 0b1000_0000_0000_0000_0000
+    SET = 0b1_0000_0000_0000_0000_0000
+    SELECTIVE_ACCESS = 0b10_0000_0000_0000_0000
+    EVENT_NOTIFICATION = 0b100_0000_0000_0000_0000
+    ACTION = 0b1000_0000_0000_0000_0000
+
+    @cached_property
+    def content(self) -> bytes:
+        return self.value.to_bytes(3, "big")
+
+    def __bytes__(self):
+        return self.content
 
 
 class Unit(IntEnum):
