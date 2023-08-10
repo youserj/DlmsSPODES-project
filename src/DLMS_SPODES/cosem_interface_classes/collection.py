@@ -1318,8 +1318,7 @@ class Collection:
                     if attr_access.access_mode.is_writable():
                         if ret.get(list_type.logical_name, None) is None:
                             ret[list_type.logical_name] = set()
-                        else:
-                            ret[list_type.logical_name].add(int(attr_access.attribute_id))
+                        ret[list_type.logical_name].add(int(attr_access.attribute_id))
         return ret
 
     def clear(self):
