@@ -210,6 +210,9 @@ recipient_system_title = "Название системы получателя"
 other_information = "Дополнительная информация"
 protection_type = "Тип защиты"
 protection_options = "Опции защиты"
+IP_Option_Type = "тип IP опции"
+IP_Option_Length = "длина IP опции"
+IP_Option_Data = "данные IP опции"
 
 [DLMS]
 scaler_prefix = [

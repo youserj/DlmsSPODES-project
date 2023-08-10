@@ -30,6 +30,20 @@ class IPAddress(cdt.DoubleLongUnsigned):
         return F'{self.contents[0]}.{self.contents[1]}.{self.contents[2]}.{self.contents[3]}'
 
 
+class MulticastIPAddress(cdt.Array):
+    TYPE = IPAddress
+
+
+class IPOptionsElement(cdt.Structure):
+    IP_Option_Type: cdt.Unsigned
+    IP_Option_Length: cdt.Unsigned
+    IP_Option_Data: cdt.OctetString
+
+
+class IPOptions(cdt.Array):
+    TYPE = IPOptionsElement
+
+
 class IPv4Setup(ic.COSEMInterfaceClasses):
     """ This IC allows modelling the setup of teh IPv4 layer, handling all information related to the IP Address settings associated to a given device adn to a lower layer
     connection on which these settings are used. There shall be and instance of this IC in a device for each different network interface implemented. For example, if a device has
@@ -40,7 +54,14 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     # TODO: more 7 attr and 3 methods
     A_ELEMENTS = (ic.ICAElement(an.DL_REFERENCE, cdt.OctetString),
                   ic.ICAElement(an.IP_ADDRESS, IPAddress),
-                  # TODO: more 7 attr and 3 methods
+                  ic.ICAElement(an.MULTICAST_IP_ADDRESS, MulticastIPAddress),
+                  ic.ICAElement(an.IP_OPTIONS, IPOptions),
+                  ic.ICAElement(an.SUBNET_MASK, IPAddress),
+                  ic.ICAElement(an.GATEWAY_IP_ADDRESS, IPAddress),
+                  ic.ICAElement(an.USE_DHCP_FLAG, cdt.Boolean),
+                  ic.ICAElement(an.PRIMARY_DNS_ADDRESS, IPAddress),
+                  ic.ICAElement(an.SECONDARY_DNS_ADDRESS, IPAddress),
+                  # TODO: more 3 methods
                   )
 
     def characteristics_init(self):
@@ -53,3 +74,31 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     @property
     def IP_address(self) -> IPAddress:
         return self.get_attr(3)
+
+    @property
+    def multicast_IP_address(self) -> MulticastIPAddress:
+        return self.get_attr(4)
+
+    @property
+    def IP_options(self) -> IPOptions:
+        return self.get_attr(5)
+
+    @property
+    def subnet_mask(self) -> IPAddress:
+        return self.get_attr(6)
+
+    @property
+    def gateway_IP_address(self) -> IPAddress:
+        return self.get_attr(7)
+
+    @property
+    def use_DHCP_flag(self) -> cdt.Boolean:
+        return self.get_attr(8)
+
+    @property
+    def primary_DNS_address(self) -> IPAddress:
+        return self.get_attr(9)
+
+    @property
+    def secondary_DNS_address(self) -> IPAddress:
+        return self.get_attr(10)
