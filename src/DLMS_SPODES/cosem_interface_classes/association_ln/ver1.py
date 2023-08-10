@@ -6,6 +6,8 @@ from ..__class_init__ import *
 
 class AccessMode(cdt.Enum, elements=tuple(range(7))):
     """Version 0 extension"""
+    def is_writable(self) -> bool:
+        return True if int(self) in (2, 3, 5, 6) else False
 
 
 class AccessModeMeth(cdt.Enum, elements=(0, 1, 2)):

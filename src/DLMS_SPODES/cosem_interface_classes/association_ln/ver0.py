@@ -9,6 +9,8 @@ from ...enums import MechanismId
 
 class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
     """ TODO: """
+    def is_writable(self) -> bool:
+        return True if int(self) >= 2 else False
 
 
 class AttributeAccessItem(cdt.Structure):

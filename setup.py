@@ -1,5 +1,4 @@
 import setuptools
-
 import src.DLMS_SPODES.settings
 
 

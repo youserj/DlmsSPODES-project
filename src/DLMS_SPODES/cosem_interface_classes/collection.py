@@ -1309,6 +1309,19 @@ class Collection:
         """ return container of objects for get device clone """
         return list(map(lambda obj: (obj.logical_name, obj.CLASS_ID, obj.VERSION), self.__container))
 
+    def get_writable_attr(self) -> dict[cst.LogicalName, set[int]]:
+        """return all writable {obj.ln: {attribute_index}}"""
+        ret = dict()
+        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN_CLASS)):
+            for list_type in ass.object_list:
+                for attr_access in list_type.access_rights.attribute_access:
+                    if attr_access.access_mode.is_writable():
+                        if ret.get(list_type.logical_name, None) is None:
+                            ret[list_type.logical_name] = set()
+                        else:
+                            ret[list_type.logical_name].add(int(attr_access.attribute_id))
+        return ret
+
     def clear(self):
         """ clear to default objects amount """
         for obj in self.__container.copy():

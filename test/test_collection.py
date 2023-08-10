@@ -90,6 +90,15 @@ class TestType(unittest.TestCase):
         col, used = collection.Collection.from_xml3("test_to_xml3.xml")
         print(col, used)
 
+    def test_get_writable_dict(self):
+        """use in template"""
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.15"))
+        ret = col.get_writable_attr()
+        print(ret)
+
     def test_save_change(self):
         col = collection.get_collection(
             manufacturer=b"KPZ",

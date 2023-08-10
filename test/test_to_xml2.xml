@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="cp1251"?>
+<Objects version="4.0.0">
+  <dlms_ver>6</dlms_ver>
+  <country>7</country>
+  <country_ver>3.0</country_ver>
+  <manufacturer>KPZ</manufacturer>
+  <server_type>09064d324d5f3354</server_type>
+  <server_ver instance="0">1.4.15</server_ver>
+  <object ln="0.0.1.0.0.255">
+    <attribute index="3">100064</attribute>
+  </object>
+</Objects>
