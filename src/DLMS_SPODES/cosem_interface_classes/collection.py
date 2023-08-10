@@ -1051,7 +1051,7 @@ class Collection:
                                     "name": obj.get_attr_element(i).NAME,
                                     "index": str(i)})
                             if isinstance(attr, cdt.SimpleDataType):
-                                attr_el.text = attr.to_str()
+                                attr_el.text = str(attr)
                             else:
                                 attr_el.attrib["type"] = "array" if attr.TAG == b'\x01' else "struct"  # todo: make better
                                 stack: list = [(attr_el, "attr_el_name", iter(attr))]
@@ -1070,7 +1070,7 @@ class Collection:
                                         else:
                                             ET.SubElement(node,
                                                           "simple",
-                                                          attrib={"name": name}).text = value.to_str()
+                                                          attrib={"name": name}).text = str(value)
                                     else:
                                         stack.pop()
                         else:
@@ -1309,9 +1309,9 @@ class Collection:
         """ return container of objects for get device clone """
         return list(map(lambda obj: (obj.logical_name, obj.CLASS_ID, obj.VERSION), self.__container))
 
-    def get_writable_attr(self) -> dict[cst.LogicalName, set[int]]:
+    def get_writable_attr(self) -> UsedAttributes:
         """return all writable {obj.ln: {attribute_index}}"""
-        ret = dict()
+        ret: UsedAttributes = dict()
         for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN_CLASS)):
             for list_type in ass.object_list:
                 for attr_access in list_type.access_rights.attribute_access:
