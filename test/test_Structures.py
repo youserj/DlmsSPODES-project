@@ -13,3 +13,5 @@ class TestType(unittest.TestCase):
         value = WeekProfile(("00", 1, 1, 1, 1, 1, 1, 1))
         self.assertEqual(value.decode(), (b'\x00', 1, 1, 1, 1, 1, 1, 1), "check decoding")
         print(value.decode()[1:])
+        a = value[0]
+        print(a)

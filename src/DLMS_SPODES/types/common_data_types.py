@@ -270,8 +270,8 @@ class __Array(ABC):
         if isinstance(element, self.TYPE):
             self.values.remove(element)
 
-    def pop(self, index: int | None = None):
-        self.values.pop(index)
+    def pop(self, index: int | None = None) -> CommonDataType:
+        return self.values.pop(index)
 
     def __len__(self):
         return len(self.values)

@@ -134,8 +134,17 @@ class TestType(unittest.TestCase):
     def test_Array(self):
         obj = collection.Data("1.1.1.1.1.1")
         obj.set_attr(2, b'\x01\x00')
+        value: cdt.Array = obj.get_attr(2)
+        self.assertEqual(value.encoding, b'\x01\x00', "check setting")
+        value.set_type(cdt.Unsigned)
+        value.append(1)
+        value.append(2)
+        self.assertEqual(value.encoding, b'\x01\x02\x11\x01\x11\x02', "check append")
+        pop_item = value.pop(0)
+        self.assertEqual((pop_item, value.encoding), (cdt.Unsigned(1), b'\x01\x01\x11\x02'), "check pop")
         # check Type setting in empty Array
-        obj.set_attr(2, b'\x01\x01\x11\x02')
+        obj.set_attr(2, [4, 5, 6])
+        self.assertEqual(value.encoding, b'\x01\x03\x11\x04\x11\x05\x11\x06', "check set build-in")
         a = obj.value.get_copy([1, 3])
         print(a)
 
