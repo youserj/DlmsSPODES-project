@@ -122,7 +122,7 @@ class TestType(unittest.TestCase):
         ret = col.get_writable_attr()
         print(ret)
 
-    def test_save_change(self):
+    def test_save_and_load(self):
         col = collection.get_collection(
             manufacturer=b"KPZ",
             server_type=cdt.OctetString("4d324d5f3354"),
@@ -130,6 +130,11 @@ class TestType(unittest.TestCase):
         clock = col.get_object("0.0.1.0.0.255")
         clock.set_attr(3, 100)
         col.to_xml2("test_to_xml2.xml")
+        col2 = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f3354"),
+            server_ver=AppVersion.from_str("1.4.15"))
+        col2.from_xml2("test_to_xml2.xml")
 
     def test_AssociationLN(self):
         col = collection.Collection()

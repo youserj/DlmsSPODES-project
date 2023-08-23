@@ -929,6 +929,31 @@ class Collection:
                             logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
                         except AttributeError as e:
                             logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+            case AppVersion(4, 0):
+                for obj in objects.findall('object'):
+                    ln: str = obj.attrib.get("ln", 'is absence')
+                    logical_name: cst.LogicalName = cst.LogicalName(ln)
+                    if not self.is_in_collection(logical_name):
+                        raise ValueError(F"got object with {ln=} not find in collection. Abort attribute setting")
+                    else:
+                        new_object = self.get_object(logical_name)
+                        for attr in obj.findall("attr"):
+                            index: int = int(attr.attrib.get("index"))
+                            try:
+                                new_object.set_attr(index, bytes.fromhex(attr.text))
+                            except exc.NoObject as e:
+                                logger.error(F"Can't fill {new_object} attr: {index}. Skip. {e}.")
+                                break
+                            except exc.ITEApplication as e:
+                                logger.error(F"Can't fill {new_object} attr: {index}. {e}")
+                            except IndexError:
+                                logger.error(F'Object "{new_object}" not has attr: {index}')
+                            except TypeError as e:
+                                logger.error(F'Object {new_object} attr:{index} do not write, encoding wrong : {e}')
+                            except ValueError as e:
+                                logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+                            except AttributeError as e:
+                                logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
             case _ as error:
                 raise exc.VersionError(error, additional='Xml')
 
