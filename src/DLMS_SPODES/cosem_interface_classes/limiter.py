@@ -118,7 +118,7 @@ class Limiter(ic.COSEMInterfaceClasses):
                     s_v: cdt.CommonDataTypes = self.get_attr(index)
                     """set value"""
                     s_v.clear()
-                    if self.monitored_value.class_id == long_unsigneds.ClassIDCDT.REGISTER or long_unsigneds.ClassIDCDT.EXT_REGISTER:
+                    if self.monitored_value.class_id in (long_unsigneds.ClassIDCDT.REGISTER, long_unsigneds.ClassIDCDT.EXT_REGISTER):
                         s_v.SCALER_UNIT = m_o.scaler_unit
             else:
                 raise exc.EmptyObj(F"monitored_value: {m_o} hasn't value")

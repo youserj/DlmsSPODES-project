@@ -128,7 +128,14 @@ class COSEMInterfaceClasses(ABC):
                 if source.collection is not None and self.get_attr_element(i).classifier == Classifier.STATIC and not source.collection.is_writable(ln=self.logical_name,
                                                                                                                                                     index=i,
                                                                                                                                                     association_id=association_id):
+                    # Todo: may be callbacks inits remove?
+                    if cb_func := self._cbs_attr_before_init.get(i, None):
+                        cb_func(a)                    # Todo: 'a' as 'new_value' in set_attr are can use?
+                        self._cbs_attr_before_init.pop(i)
                     self.__attributes[i-1] = a
+                    if cb_func := self._cbs_attr_post_init.get(i, None):
+                        cb_func()
+                        self._cbs_attr_post_init.pop(i)
                 else:
                     if isinstance(arr := self.__attributes[i-1], cdt.Array):
                         arr.set_type(a.TYPE)

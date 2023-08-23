@@ -20,7 +20,7 @@ class SeasonProfile(cdt.Array):
     cb_get_week_profile_names: Callable[[], tuple[cdt.OctetString, ...]]
 
     def new_element(self) -> Season:
-        names: list[bytes] = [el.season_profile_name.decode() for el in self.values]
+        names: list[bytes] = [bytes(el.season_profile_name) for el in self.values]
         for new_name in (i.to_bytes(1, 'big') for i in range(256)):
             if new_name not in names:
                 return Season((bytearray(new_name), None, self.cb_get_week_profile_names()[0]))
@@ -138,7 +138,7 @@ class DayProfileTable(cdt.Array):
 
     def new_element(self) -> DayProfile:
         """return default DayProfile with vacant Day ID"""
-        day_ids: list[int] = [el.day_id.decode() for el in self.values]
+        day_ids: list[int] = [int(el.day_id) for el in self.values]
         for i in range(0xff):
             if i not in day_ids:
                 return DayProfile((i, None))
@@ -240,26 +240,6 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
     @property
     def activate_passive_calendar(self) -> integers.Only0:
         return self.get_meth(1)
-
-    def __register_cb_check_day_id(self, attr_index: int):
-        try:
-            match attr_index:
-                case ai.WEEK_PROFILE_TABLE_ACTIVE: self.week_profile_table_active.cb_check_day_id = self.day_profile_table_active.check_day_id
-                case ai.WEEK_PROFILE_TABLE_PASSIVE: self.week_profile_table_passive.cb_check_day_id = self.day_profile_table_passive.check_day_id
-        except AttributeError:
-            raise AttributeError(F'для attr: {attr_index} не хватает таблицы активных суточных профилей')
-        except KeyError:
-            raise AttributeError(F'для attr: {attr_index} не хватает таблицы активных суточных профилей')
-
-    def __register_cb_check_week_profile_name(self, attr_index: int):
-        try:
-            match attr_index:
-                case ai.SEASON_PROFILE_ACTIVE: self.season_profile_active.cb_check_week_profile_name = self.week_profile_table_active.check_week_profile_name
-                case ai.SEASON_PROFILE_PASSIVE: self.season_profile_passive.cb_check_week_profile_name = self.week_profile_table_passive.check_week_profile_name
-        except AttributeError:
-            raise AttributeError(F'для attr: {attr_index} не хватает таблицы активных недельных профилей')
-        except KeyError:
-            raise AttributeError(F'для attr: {attr_index} не хватает таблицы активных недельных профилей')
 
     def get_current_season(self, server_time: datetime.datetime = None) -> Season:
         """ current server season by current time """

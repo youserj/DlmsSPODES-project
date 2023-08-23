@@ -4,6 +4,7 @@ usage of those definitions in the COSEM environment. All codes, which are not ex
 reserved for future use."""
 from __future__ import annotations
 import os
+import copy
 from struct import pack
 import datetime
 import dataclasses
@@ -65,6 +66,9 @@ from .. import pdu_enums as pdu
 from ..configure import get_saved_parameters
 from ..config_parser import config
 
+
+LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
+                          | ut.CosemMethodDescriptor
 
 AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
@@ -569,11 +573,13 @@ class Collection:
         for inst, ver in self.__server_ver.items():
             new_collection.set_server_ver(inst, ver)
         new_collection.set_spec()
+        # for obj in self.getASSOCIATION(association_id).get_objects():
         for obj in self.__container:
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
             new_collection.__container.append(new_obj)
             new_obj.collection = new_collection
-            new_obj.copy(obj, association_id)
+        for obj in self.getASSOCIATION(association_id).get_objects():
+            new_collection.get_object(obj.logical_name).copy(obj, association_id)
         return new_collection
 
     def init_ids(self, country):
@@ -1261,8 +1267,7 @@ class Collection:
             case _ as error:        raise TypeError(F'Unknown type {error}')
         return obis in (obj.logical_name.contents for obj in self.__container)
 
-    def get_object(self, value: bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor
-                   | ut.CosemAttributeDescriptorWithSelection | ut.CosemMethodDescriptor) -> InterfaceClass:
+    def get_object(self, value: LNContaining) -> InterfaceClass:
         """ return object from obis<string> or raise exception if it absence """
         match value:
             case bytes():                                                    return self.__get_object(value)
@@ -1684,6 +1689,163 @@ class Collection:
         return names, data_type
 
 
+def get_base_template_xml_element(collections: list[Collection], root_tag: str = TagsName.DEVICE_ROOT.value) -> ET.Element:
+    objects = ET.Element(root_tag, attrib={'version': '4.1.0'})
+    ET.SubElement(objects, 'dlms_ver').text = str(collections[0].dlms_ver)
+    ET.SubElement(objects, 'country').text = str(collections[0].country.value)
+    ET.SubElement(objects, 'country_ver').text = str(collections[0].country_ver)
+    manufacture_node = ET.SubElement(objects, 'manufacturer')
+    manufacture_node.text = collections[0].manufacturer.decode("utf-8")
+    for col in collections:
+        server_type_node = ET.SubElement(manufacture_node, 'server_type')
+        server_type_node.text = col.server_type.encoding.hex()
+        for ver in col.server_ver:
+            server_ver_node = ET.SubElement(server_type_node, 'server_ver', attrib={"instance": str(ver)})
+            server_ver_node.text = str(col.server_ver[ver])
+    return objects
+
+
+def to_xml4(collections: list[Collection],
+            file_name: str,
+            used: UsedAttributes):
+    """For template only"""
+    objects = get_base_template_xml_element(
+        collections=collections,
+        root_tag=TagsName.TEMPLATE_ROOT.value)
+    objects.attrib["decode"] = "1"
+    for col in collections:
+        for ln, indexes in copy.copy(used).items():
+            try:
+                obj = col.get_object(ln)
+                object_node = ET.SubElement(
+                    objects,
+                    "object",
+                    attrib={
+                        "ln": str(obj.logical_name),
+                        "name": obj.NAME
+                    })
+                for i in tuple(indexes):
+                    attr = obj.get_attr(i)
+                    if isinstance(attr, cdt.CommonDataType):
+                        attr_el = ET.SubElement(
+                            object_node,
+                            "attr",
+                            {"name": obj.get_attr_element(i).NAME,
+                             "index": str(i)})
+                        if isinstance(attr, cdt.SimpleDataType):
+                            attr_el.text = str(attr)
+                        elif isinstance(attr, cdt.ComplexDataType):
+                            attr_el.attrib["type"] = "array" if attr.TAG == b'\x01' else "struct"  # todo: make better
+                            stack: list = [(attr_el, "attr_el_name", iter(attr))]
+                            while stack:
+                                node, name, value_it = stack[-1]
+                                value = next(value_it, None)
+                                if value:
+                                    if not isinstance(name, str):
+                                        name = next(name).NAME
+                                    if isinstance(value, cdt.Array):
+                                        stack.append((ET.SubElement(node,
+                                                                    "array",
+                                                                    attrib={"name": name}), "ar_name", iter(value)))
+                                    elif isinstance(value, cdt.Structure):
+                                        stack.append((ET.SubElement(node, "struct"), iter(value.ELEMENTS), iter(value)))
+                                    else:
+                                        ET.SubElement(node,
+                                                      "simple",
+                                                      attrib={"name": name}).text = str(value)
+                                else:
+                                    stack.pop()
+                        indexes.remove(i)
+                    else:
+                        logger.error(F"skip record {obj}:attr={i} with value={attr}")
+                if len(used[ln]) == 0:
+                    used.pop(ln)
+            except exc.NoObject as e:
+                logger.warning(F"skip obj with {ln=} in {collections.index(col)} collection: {e}")
+                continue
+        if len(used) == 0:
+            logger.info(F"success decoding: used {collections.index(col)+1} from {len(collections)} collections")
+            break
+    if len(used) != 0:
+        raise ValueError(F"failed decoding: {used}")
+    with open(
+            file_name,
+            mode="wb") as f:
+        f.write(ET.tostring(
+            element=objects,
+            encoding="utf-8",
+            method="xml",
+            xml_declaration=True))
+
+
+def from_xml4(filename: str) -> tuple[list[Collection], UsedAttributes]:
+    """ create collection from xml for template and UsedAttributes """
+    used: UsedAttributes = dict()
+    cols = list()
+    tree = ET.parse(filename)
+    objects = tree.getroot()
+    if objects.tag != TagsName.TEMPLATE_ROOT.value:
+        raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.TEMPLATE_ROOT.value}")
+    root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
+    logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
+    manufacturer_node = objects.find("manufacturer")
+    manufacturer = manufacturer_node.text.encode("utf-8")
+    for server_type_node in manufacturer_node.findall("server_type"):
+        server_type = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type_node.text))[0]
+        for server_ver_node in server_type_node.findall("server_ver"):
+            cols.append(get_collection(
+                manufacturer=manufacturer,
+                server_type=server_type,
+                server_ver=AppVersion.from_str(server_ver_node.text)))
+    match root_version:
+        case AppVersion(4, 0):
+            for obj in objects.findall('object'):
+                ln: str = obj.attrib.get("ln", 'is absence')
+                logical_name: cst.LogicalName = cst.LogicalName(ln)
+                objs: list[ic.COSEMInterfaceClasses] = list()
+                for col in cols:
+                    if not col.is_in_collection(logical_name):
+                        logger.warning(F"got object with {ln=} not find in collection: {col}")
+                    else:
+                        objs.append(col.get_object(logical_name))
+                used[logical_name] = set()
+                for attr in obj.findall("attr"):
+                    index: int = int(attr.attrib.get("index"))
+                    used[logical_name].add(index)
+                    try:
+                        match attr.attrib.get("type", "simple"):
+                            case "simple":
+                                for new_object in objs:
+                                    new_object.set_attr(index, attr.text)
+                            case "array" | "struct":
+                                stack = [(list(), iter(attr))]
+                                while stack:
+                                    v1, v2 = stack[-1]
+                                    v = next(v2, None)
+                                    if v is None:
+                                        stack.pop()
+                                    elif v.tag == "simple":
+                                        v1.append(v.text)
+                                    else:
+                                        v1.append(list())
+                                        stack.append((v1[-1], iter(v)))
+                                for new_object in objs:
+                                    new_object.set_attr(index, v1)
+                    except exc.ITEApplication as e:
+                        logger.error(F"Can't fill {new_object} attr: {index}. {e}")
+                    except IndexError:
+                        logger.error(F'Object "{new_object}" not has attr: {index}')
+                    except TypeError as e:
+                        logger.error(F'Object {new_object} attr:{index} do not write, encoding wrong : {e}')
+                    except ValueError as e:
+                        logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+                    except AttributeError as e:
+                        logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+        case _ as error:
+            raise exc.VersionError(error, additional='Xml')
+    return cols, used
+
+
 if config is not None:
     try:
         __collection_path = config['DLMS']['collection']['path']
@@ -1692,7 +1854,7 @@ if config is not None:
 
 
 @lru_cache(maxsize=100)
-def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion):
+def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
     context: str = F"{m.decode('utf-8')}/{t.to_str()}/{ver}"
     logger.info(F"start search in Type library: {context}")
     path: str = F"{__collection_path}{m.decode('utf-8')}/{t.encoding.hex()}/"
