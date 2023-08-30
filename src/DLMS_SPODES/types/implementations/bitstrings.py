@@ -32,7 +32,7 @@ class Conformance(cdt.BitString):
                 "action")
     if base is not None:
         ELEMENTS = tuple(base[el] for el in ELEMENTS)
-    default = '011000001111111111111011'  # for LN only
+    default = '011111111111111111111111'  # zero only 1 bit
 
     def __init__(self, value: bytes | bytearray | str | int | cdt.BitString = None):
         super(Conformance, self).__init__(value)

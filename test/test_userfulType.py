@@ -22,7 +22,7 @@ class TestType(unittest.TestCase):
     def test_CosemAttributeDescriptor(self):
         value = ut.CosemAttributeDescriptor((8, "0.1.1.0.0.255", 2))
         value2 = ut.CosemAttributeDescriptor((8, (0, 0, 1, 0, 0, 255), b'\x02'))
-        print(value, value2, F"{value=}")
+        print(value, value2, F"{value=}", value.contents)
         print(id(value.attribute_id), id(value2.attribute_id))
 
     def test_CosemObjectInstanceId(self):

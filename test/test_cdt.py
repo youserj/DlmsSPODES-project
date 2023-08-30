@@ -91,8 +91,10 @@ class TestType(unittest.TestCase):
         print(ass)
 
     def test_Conformance(self):
-        from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver0 import Conformance, XDLMSContextType
+        from src.DLMS_SPODES.types.implementations.bitstrings import Conformance
+        from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver0 import XDLMSContextType
         c = Conformance()
+        print(c)
         a = int('1011011101111', 2)
         c.set(a)
         self.assertEqual(c.decode(), [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])

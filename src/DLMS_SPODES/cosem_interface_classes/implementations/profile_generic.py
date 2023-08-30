@@ -3,6 +3,16 @@ from ...types.implementations import structs, enums
 from ...types import ut, cdt
 
 
+class SPODES3ScalesProfile(ver1.ProfileGeneric):
+    """Cosem3 Для профилей масштаба"""
+    A_ELEMENTS = (
+        ver1.ic.ICAElement(
+            NAME=ver1.ProfileGeneric.A_ELEMENTS[0].NAME,
+            DATA_TYPE=ver1.ProfileGeneric.A_ELEMENTS[0].DATA_TYPE),
+        *ver1.ProfileGeneric.A_ELEMENTS[1:])
+    """override buffer with STATIC classifier"""
+
+
 class SPODES3CurrentProfile(ver1.ProfileGeneric):
     """Cosem3 Б.1 Текущие значения"""
     scaler_profile_key = bytes((1, 0, 94, 7, 3, 255))

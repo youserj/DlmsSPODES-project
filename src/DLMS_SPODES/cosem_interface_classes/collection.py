@@ -493,7 +493,7 @@ __func_map_for_create.update({
     (1, 0, 147, 133, 0): RegisterMap,
     (1, 0, 148, 136, 0): RegisterMap,
     (1, 94, 7, 0): ClassMap({1: impl.profile_generic.SPODES3CurrentProfile}),
-    (1, 94, 7, (1, 2, 3, 4, 5, 6)): ProfileGenericMap,  # Todo: RU. Scaler-profile With 1 entry and more
+    (1, 94, 7, (1, 2, 3, 4, 5, 6)): ClassMap({1: impl.profile_generic.SPODES3ScalesProfile}),  # Todo: RU. Scaler-profile With 1 entry and more
     # KPZ
     (128, 0, tuple(range(20)), 0, 0): RegisterMap
 })
@@ -1035,6 +1035,8 @@ class Collection:
                     """skip not writable"""
                 elif col.get_object(obj.logical_name).get_attr(i) == attr:
                     """skip not changed attr value"""
+                elif isinstance(attr, cdt.Array) and len(attr) == 0:
+                    """skip empty arrays"""
                 else:
                     is_empty = False
                     if not object_node:
