@@ -573,13 +573,23 @@ class Collection:
         for inst, ver in self.__server_ver.items():
             new_collection.set_server_ver(inst, ver)
         new_collection.set_spec()
-        # for obj in self.getASSOCIATION(association_id).get_objects():
         for obj in self.__container:
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
             new_collection.__container.append(new_obj)
             new_obj.collection = new_collection
-        for obj in self.getASSOCIATION(association_id).get_objects():
-            new_collection.get_object(obj.logical_name).copy(obj, association_id)
+        obj_for_set = self.getASSOCIATION(association_id).get_objects()
+        last_length = len(obj_for_set)
+        while len(obj_for_set) != 0:
+            obj = obj_for_set.pop(0)
+            try:
+                new_collection.get_object(obj.logical_name).copy(obj, association_id)
+            except Exception as e:
+                if last_length == len(obj_for_set):
+                    raise e
+                else:
+                    last_length = len(obj_for_set)
+                    logger.warning(F"can't set value. {e}. leftover {len(obj_for_set)} objects")
+                    obj_for_set.append(obj)
         return new_collection
 
     def init_ids(self, country):
@@ -1721,9 +1731,9 @@ def get_base_template_xml_element(collections: list[Collection], root_tag: str =
     ET.SubElement(objects, 'dlms_ver').text = str(collections[0].dlms_ver)
     ET.SubElement(objects, 'country').text = str(collections[0].country.value)
     ET.SubElement(objects, 'country_ver').text = str(collections[0].country_ver)
-    manufacture_node = ET.SubElement(objects, 'manufacturer')
-    manufacture_node.text = collections[0].manufacturer.decode("utf-8")
     for col in collections:
+        manufacture_node = ET.SubElement(objects, 'manufacturer')
+        manufacture_node.text = col.manufacturer.decode("utf-8")
         server_type_node = ET.SubElement(manufacture_node, 'server_type')
         server_type_node.text = col.server_type.encoding.hex()
         for ver in col.server_ver:
@@ -1815,17 +1825,15 @@ def from_xml4(filename: str) -> tuple[list[Collection], UsedAttributes]:
         raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.TEMPLATE_ROOT.value}")
     root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
     logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
-    manufacturer_node = objects.find("manufacturer")
-    manufacturer = manufacturer_node.text.encode("utf-8")
-    for server_type_node in manufacturer_node.findall("server_type"):
-        server_type = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type_node.text))[0]
-        for server_ver_node in server_type_node.findall("server_ver"):
-            cols.append(get_collection(
-                manufacturer=manufacturer,
-                server_type=server_type,
-                server_ver=AppVersion.from_str(server_ver_node.text)))
+    for manufacturer_node in objects.findall("manufacturer"):
+        for server_type_node in manufacturer_node.findall("server_type"):
+            for server_ver_node in server_type_node.findall("server_ver"):
+                cols.append(get_collection(
+                    manufacturer=manufacturer_node.text.encode("utf-8"),
+                    server_type=cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type_node.text))[0],
+                    server_ver=AppVersion.from_str(server_ver_node.text)))
     match root_version:
-        case AppVersion(4, 0):
+        case AppVersion(4, 0 | 1):
             for obj in objects.findall('object'):
                 ln: str = obj.attrib.get("ln", 'is absence')
                 logical_name: cst.LogicalName = cst.LogicalName(ln)

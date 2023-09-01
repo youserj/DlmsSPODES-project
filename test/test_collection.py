@@ -90,12 +90,23 @@ class TestType(unittest.TestCase):
         col, used = collection.Collection.from_xml3("test_to_xml3.xml")
         print(col, used)
 
+    def test_get_collection(self):
+        """for template"""
+        col = collection.get_collection(
+            manufacturer=b"102",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.3.25"))
+
     def test_to_xml4(self):
         """for template"""
         col = collection.get_collection(
             manufacturer=b"KPZ",
             server_type=cdt.OctetString("4d324d5f33"),
             server_ver=AppVersion.from_str("1.4.15"))
+        col2 = collection.get_collection(
+            manufacturer=b"102",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.3.30"))
         clock_obj = col.get_object("0.0.1.0.0.255")
         clock_obj.set_attr(3, 120)
         act_cal = col.get_object("0.0.13.0.0.255")
@@ -105,7 +116,7 @@ class TestType(unittest.TestCase):
             act_cal.logical_name: {9}
         }
         collection.to_xml4(
-            collections=[col],
+            collections=[col, col2],
             file_name="test_to_xml4.xml",
             used=used)
 
