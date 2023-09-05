@@ -45,7 +45,7 @@ class AccessRight(cdt.Structure):
 
 class ObjectListElement(cdt.Structure):
     """ Visible COSEM objects with their class_id, version, logical name and the access rights to their attributes and methods within the given application association"""
-    class_id: cdt.LongUnsigned
+    class_id: long_unsigneds.ClassId
     version: cdt.Unsigned
     logical_name: cst.LogicalName
     access_rights: AccessRight
@@ -313,16 +313,18 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                   ic.ICMElement(mn.REMOVE_OBJECT, ObjectListElement))
 
     def characteristics_init(self):
-        self.set_attr(2, None)
-        self.object_list.selective_access = SelectiveAccessDescriptor()
+        # self.set_attr(2, None)
+        # self.object_list.selective_access = SelectiveAccessDescriptor()
         self.set_attr(3, (0x10*self.logical_name.e, 1) if self.logical_name.e <= 4 else None)
         self.set_attr(4, None)
         self.set_attr(5, None)
         self.set_attr(8, None)
         # init secret after set authentication_mechanism_name(6)
-        self._cbs_attr_post_init.update({5: self.__check_dlms_version_with_collection,
-                                         6: self.__init_secret,
-                                         7: self.__check_mechanism_id_existing})
+        self._cbs_attr_post_init.update({
+            2: self.__set_to_collection,
+            5: self.__check_dlms_version_with_collection,
+            6: self.__init_secret,
+            7: self.__check_mechanism_id_existing})
         # set cb change client SAP
         match self.logical_name.e:
             case 0: self.associated_partners_id.client_SAP.register_cb_preset(self.__handle_preset_current_client_SAP)
@@ -371,6 +373,17 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     @property
     def remove_object(self) -> ObjectListElement:
         return self.get_meth(4)
+
+    def __set_to_collection(self):
+        """add object to collection if it absense"""
+        self.object_list.selective_access = SelectiveAccessDescriptor()
+        for obj_list_el in self.object_list:
+            obj_list_el: ObjectListElement
+            self.collection.add_if_missing(
+                class_id=ut.CosemClassId(int(obj_list_el.class_id)),
+                version=obj_list_el.version,
+                logical_name=obj_list_el.logical_name
+            )
 
     def __check_mechanism_id_existing(self):
         """check for existing mechanism ID else ERASE setting"""

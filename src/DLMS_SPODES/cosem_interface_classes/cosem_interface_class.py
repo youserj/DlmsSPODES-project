@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from itertools import count
 from . import collection as col
 from ..types.implementations import enums
+from .. import ITE_exceptions as exc
 
 match settings.get_current_language():
     case settings.Language.ENGLISH: from ..Values.EN import attr_names as an
@@ -139,7 +140,10 @@ class COSEMInterfaceClasses(ABC):
                 else:
                     if isinstance(arr := self.__attributes[i-1], cdt.Array):
                         arr.set_type(a.TYPE)
-                    self.set_attr(i, a.encoding)
+                    try:
+                        self.set_attr(i, a.encoding)
+                    except exc.EmptyObj as e:
+                        logger.warning(F"can't copy {self} attr={i}, skipped. {e}")
 
     @classmethod
     def get_attr_element(cls, i: int) -> ICAElement:

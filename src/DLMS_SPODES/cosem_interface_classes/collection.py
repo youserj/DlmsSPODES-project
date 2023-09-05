@@ -564,7 +564,7 @@ class Collection:
         """ container for major(constant) DLMS objects LN. They don't deletable """
         self.init_ids(country)
 
-    def copy(self, association_id: int = 3) -> Self:
+    def copy(self) -> Self:
         new_collection = Collection(self.__country)
         new_collection.set_dlms_ver(self.__dlms_ver)
         new_collection.set_manufacturer(self.__manufacturer)
@@ -577,15 +577,27 @@ class Collection:
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
             new_collection.__container.append(new_obj)
             new_obj.collection = new_collection
+        association_id = max(filter(
+            lambda obj: obj.CLASS_ID == ClassID.ASSOCIATION_LN_CLASS, self),
+            key=lambda obj: len(obj.object_list) if obj.object_list else 0
+        ).logical_name.e
+        """more full association"""
         obj_for_set = self.getASSOCIATION(association_id).get_objects()
         last_length = len(obj_for_set)
+        raise_count = None
         while len(obj_for_set) != 0:
             obj = obj_for_set.pop(0)
             try:
                 new_collection.get_object(obj.logical_name).copy(obj, association_id)
+                raise_count = None
             except Exception as e:
                 if last_length == len(obj_for_set):
-                    raise e
+                    if not raise_count:
+                        raise_count = count(last_length, -1)
+                        continue
+                    else:
+                        next(raise_count)
+                        raise e
                 else:
                     last_length = len(obj_for_set)
                     logger.warning(F"can't set value. {e}. leftover {len(obj_for_set)} objects")

@@ -41,7 +41,7 @@ class CellInfoType(cdt.Structure):
 
 class AdjacentCellInfo(cdt.Structure):
     cell_ID: cdt.LongUnsigned
-    signal_quality: cdt.Unsigned
+    signal_quality: SignalQuality
 
 
 class AdjacentCells(cdt.Array):

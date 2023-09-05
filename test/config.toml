@@ -94,6 +94,9 @@ cell_ID = "Идентификатор звонка"
 signal_quality = "Качество сигнала"
 location_ID = "Идентификатор местоположения"
 ber = "Ошибка битов"
+mcc = "МСС"
+mnc = "ММС"
+channel_number = "Номер канала"
 image_block_number = "Номер блока"
 image_block_value = "Данные блока"
 image_to_activate_size = "Размер данных"
@@ -635,6 +638,8 @@ PSStatus = [
     {e=2, v="EDGE"},
     {e=3, v="UMTS"},
     {e=4, v="HSDPA"},
+    {e=5, v="LTE"},
+    {e=6, v="CDMA"},
 ]
 ImageTransferStatus = [
     {e=0, v="Передача данных не инициированна"},

@@ -46,7 +46,7 @@ class AccessRight(cdt.Structure):
 
 
 class ObjectListElement(cdt.Structure):
-    class_id: cdt.LongUnsigned
+    class_id: ver0.long_unsigneds.ClassId
     version: cdt.Unsigned
     logical_name: cst.LogicalName
     access_rights: AccessRight
