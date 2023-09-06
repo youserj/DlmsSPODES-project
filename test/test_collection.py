@@ -93,10 +93,11 @@ class TestType(unittest.TestCase):
     def test_get_collection(self):
         """for template"""
         for ver_txt in ("0.0.52", "1.1.9", "1.2.11", "1.3.25"):
-            col = collection.get_collection(
-                manufacturer=b"101",
-                server_type=cdt.OctetString("4d324d5f31"),
-                server_ver=AppVersion.from_str(ver_txt))
+            for manufacturer, type_ in ((b"101", "4d324d5f31"), (b"102", "4d324d5f33"), (b"103", "4d324d5f3153"), (b"104", "4d324d5f3353")):
+                col = collection.get_collection(
+                    manufacturer=manufacturer,
+                    server_type=cdt.OctetString(type_),
+                    server_ver=AppVersion.from_str(ver_txt))
             print(col)
 
     def test_to_xml4(self):
