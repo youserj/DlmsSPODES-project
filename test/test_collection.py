@@ -98,7 +98,7 @@ class TestType(unittest.TestCase):
                     manufacturer=manufacturer,
                     server_type=cdt.OctetString(type_),
                     server_ver=AppVersion.from_str(ver_txt))
-            print(col)
+                print(col)
 
     def test_to_xml4(self):
         """for template"""

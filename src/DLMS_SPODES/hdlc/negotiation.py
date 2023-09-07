@@ -45,7 +45,11 @@ class Negotiation(Info):
                 raise ValueError(F"got window_size {ret}, expected {MIN_WINDOW_SIZE}..{MAX_WINDOW_SIZE}")
 
         try:
-            if content[0] != FORMAT_IDENTIFIER:
+            i_rx = i_tx = MAX_INFO_DEFAULT
+            w_rx = w_tx = WINDOW_DEFAULT
+            if len(content) == 0:
+                """skip setting"""
+            elif content[0] != FORMAT_IDENTIFIER:
                 raise ValueError(F"got {content[0]=}, expected {FORMAT_IDENTIFIER}")
             else:
                 if content[1] != GROUP_IDENTIFIER:
@@ -58,18 +62,20 @@ class Negotiation(Info):
                         while data:
                             match data[0]:
                                 case self.MAXIMUM_INFORMATION_FIELD_LENGTH_TRANSMIT:
-                                    self.max_info_receive, data = get_max_information_field(data[1:])
+                                    i_rx, data = get_max_information_field(data[1:])
                                 case self.MAXIMUM_INFORMATION_FIELD_LENGTH_RECEIVE:
-                                    self.max_info_transmit, data = get_max_information_field(data[1:])
+                                    i_tx, data = get_max_information_field(data[1:])
                                 case self.WINDOW_SIZE_TRANSMIT:
-                                    self.window_receive, data = get_window_size(data[1:])
+                                    w_rx, data = get_window_size(data[1:])
                                 case self.WINDOW_SIZE_RECEIVE:
-                                    self.window_transmit, data = get_window_size(data[1:])
+                                    w_tx, data = get_window_size(data[1:])
                                 case wrong_tag:
                                     raise ValueError(F"got {wrong_tag=}, expected ")
-            del self.SNRM
+            self.max_info_receive, self.max_info_transmit, self.window_receive, self.window_transmit = i_rx, i_tx, w_rx, w_tx
+            if hasattr(self, "SNRM"):
+                del self.SNRM
         except IndexError as e:
-            raise ValueError(F"got wrong SNRM {content.hex(' ')}")
+            raise ValueError(F"got wrong UA {content.hex(' ')}")
 
     @cached_property
     def SNRM(self) -> memoryview:

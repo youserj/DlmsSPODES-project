@@ -554,14 +554,15 @@ class Collection:
     __server_type: cdt.CommonDataType | None
     __server_ver: dict[int, AppVersion]
     __container: deque[InterfaceClass]
-    __const_objs: list[ic.COSEMInterfaceClasses]
+    __const_objs: int
     __spec: str
 
     def __init__(self, country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA):
-        self.__container = deque()
+        self.__container = deque((
+            impl.data.LDN(cst.LogicalName("0.0.42.0.0.255")),))
         """ all DLMS objects container with obis key """
-        self.__const_objs = list()
-        """ container for major(constant) DLMS objects LN. They don't deletable """
+        self.__const_objs = len(self.__container)
+        """ counter for major(constant) DLMS objects LN. They don't deletable """
         self.init_ids(country)
 
     def copy(self) -> Self:
@@ -1180,9 +1181,6 @@ class Collection:
         with open(file_name, "wb") as f:
             f.write(str_)
 
-    def add_major(self, obj: InterfaceClass):
-        self.__const_objs.append(obj)
-
     def set_spec(self):
         """set functional map to specification by identification fields"""
         match self.dlms_ver:
@@ -1239,19 +1237,14 @@ class Collection:
 
     def create(self, class_id: ut.CosemClassId,
                version: cdt.Unsigned | None,
-               logical_name: cst.LogicalName,
-               is_major: bool = False) -> InterfaceClass:
+               logical_name: cst.LogicalName) -> InterfaceClass:
         """ append new DLMS object in collection. <is_major>=True is not erased object """
         if self.is_in_collection(logical_name):
             raise exc.ITEApplication(F'ERROR created DLMS object with {logical_name=}. Already exist')
         new_object = self.get_instance(class_id, version, logical_name)
         new_object.collection = self
         self.__container.append(new_object)
-        if is_major:
-            self.__const_objs.append(new_object)
-            logger.info(F'Create Major {new_object}')
-        else:
-            logger.info(F'Create {new_object}')
+        logger.info(F"create {new_object}")
         return new_object
 
     def add(self, class_id: ut.CosemClassId,
@@ -1278,7 +1271,7 @@ class Collection:
         match self.get(logical_name.contents), indexes:
             case None, _:
                 return False
-            case ic.COSEMInterfaceClasses() as obj, None if obj not in self.__const_objs:
+            case ic.COSEMInterfaceClasses() as obj, None if (self.__container.index(obj) >= self.__const_objs):
                 self.__container.remove(obj)
                 return True
             case ic.COSEMInterfaceClasses() as obj, list():
@@ -1377,9 +1370,11 @@ class Collection:
 
     def clear(self):
         """ clear to default objects amount """
-        for obj in self.__container.copy():
-            if obj not in self.__const_objs and obj.CLASS_ID != ClassID.ASSOCIATION_LN_CLASS:  # keep all AssociationLN for keep it secret
-                self.__container.remove(obj)
+        # for obj in self.__container.copy():
+        #     if obj not in self.__const_objs and obj.CLASS_ID != ClassID.ASSOCIATION_LN_CLASS:  # keep all AssociationLN for keep it secret
+        #         self.__container.remove(obj)
+        while len(self.__container) != self.__const_objs:
+            self.__container.pop()
         # clear cached parameters
         self.__get_object.cache_clear()
         self.get_objects_list.cache_clear()
