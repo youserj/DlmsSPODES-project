@@ -562,7 +562,10 @@ class Collection:
                  ldn: octet_string.LDN = None):
         self.__container = deque()
         """ all DLMS objects container with obis key """
-        ldn_obj = impl.data.LDN(cst.LogicalName("0.0.42.0.0.255"))
+        ldn_obj = self.add(
+            class_id=ClassID.DATA,
+            version=Version.V0,
+            logical_name=cst.LogicalName("0.0.42.0.0.255"))
         if ldn:
             ldn_obj.value.set(ldn)
         self.__container.append(ldn_obj)
