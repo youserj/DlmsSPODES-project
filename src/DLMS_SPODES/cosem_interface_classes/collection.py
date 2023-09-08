@@ -11,11 +11,11 @@ import dataclasses
 from itertools import count, chain
 from collections import deque
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Callable, Self
+from typing import TypeAlias, Iterator, Type, Self
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
-from ..types.implementations import structs, enums
+from ..types.implementations import structs, enums, octet_string
 from . import cosem_interface_class as ic
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
@@ -557,16 +557,21 @@ class Collection:
     __const_objs: int
     __spec: str
 
-    def __init__(self, country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA):
-        self.__container = deque((
-            impl.data.LDN(cst.LogicalName("0.0.42.0.0.255")),))
+    def __init__(self,
+                 country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA,
+                 ldn: octet_string.LDN = None):
+        self.__container = deque()
         """ all DLMS objects container with obis key """
+        ldn_obj = impl.data.LDN(cst.LogicalName("0.0.42.0.0.255"))
+        if ldn:
+            ldn_obj.value.set(ldn)
+        self.__container.append(ldn_obj)
         self.__const_objs = len(self.__container)
         """ counter for major(constant) DLMS objects LN. They don't deletable """
         self.init_ids(country)
 
-    def copy(self) -> Self:
-        new_collection = Collection(self.__country)
+    def copy(self, ldn: octet_string.LDN = None) -> Self:
+        new_collection = Collection(self.__country, ldn=ldn)
         new_collection.set_dlms_ver(self.__dlms_ver)
         new_collection.set_manufacturer(self.__manufacturer)
         new_collection.set_country_ver(self.__country_ver)
@@ -1909,6 +1914,21 @@ def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
     return Collection.from_xml(file_name)
 
 
-def get_collection(manufacturer: bytes, server_type: cdt.CommonDataType, server_ver: AppVersion) -> Collection:
+def get_collection(
+        manufacturer: bytes,
+        server_type: cdt.CommonDataType,
+        server_ver: AppVersion) -> Collection:
     """get copy of collection with caching"""
     return get(manufacturer, server_type, server_ver).copy()
+
+
+def get_collection2(
+        ldn: octet_string.LDN,
+        server_type: cdt.CommonDataType,
+        server_ver: AppVersion) -> Collection:
+    """get copy of collection with caching throw LDN"""
+    return get(
+        m=ldn.manufacturer(),
+        t=server_type,
+        ver=server_ver
+    ).copy(ldn=ldn)

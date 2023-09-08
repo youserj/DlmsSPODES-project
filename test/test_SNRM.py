@@ -15,6 +15,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(bytes(value.SNRM), b'\x81\x80\x03\x05\x01\xc9', "change SNRM")
         # set from empty UA
         value = Negotiation(max_info_transmit=256)
+        print(value, bytes(value.SNRM).hex(' '))
         value.set_from_UA(b'')
         self.assertEqual(value.max_info_transmit, 128, "check set default tx")
         #
