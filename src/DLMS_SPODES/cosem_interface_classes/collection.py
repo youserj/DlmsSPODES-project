@@ -560,6 +560,7 @@ class Collection:
     def __init__(self,
                  country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA,
                  ldn: octet_string.LDN = None):
+        self.init_ids(country)
         self.__container = deque()
         """ all DLMS objects container with obis key """
         ldn_obj = self.add(
@@ -571,7 +572,6 @@ class Collection:
         self.__container.append(ldn_obj)
         self.__const_objs = len(self.__container)
         """ counter for major(constant) DLMS objects LN. They don't deletable """
-        self.init_ids(country)
 
     def copy(self, ldn: octet_string.LDN = None) -> Self:
         new_collection = Collection(self.__country, ldn=ldn)
