@@ -568,7 +568,7 @@ class Collection:
             version=Version.V0,
             logical_name=cst.LogicalName("0.0.42.0.0.255"))
         if ldn:
-            ldn_obj.value.set(ldn)
+            ldn_obj.set_attr(2, ldn)
         self.__container.append(ldn_obj)
         self.__const_objs = len(self.__container)
         """ counter for major(constant) DLMS objects LN. They don't deletable """
