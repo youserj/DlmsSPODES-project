@@ -8,7 +8,7 @@ import copy
 from struct import pack
 import datetime
 import dataclasses
-from itertools import count, chain
+from itertools import count, chain, islice
 from collections import deque
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self
@@ -569,7 +569,6 @@ class Collection:
             logical_name=cst.LogicalName("0.0.42.0.0.255"))
         if ldn:
             ldn_obj.set_attr(2, ldn)
-        self.__container.append(ldn_obj)
         self.__const_objs = len(self.__container)
         """ counter for major(constant) DLMS objects LN. They don't deletable """
 
@@ -582,7 +581,7 @@ class Collection:
         for inst, ver in self.__server_ver.items():
             new_collection.set_server_ver(inst, ver)
         new_collection.set_spec()
-        for obj in self.__container:
+        for obj in islice(self.__container, self.__const_objs, len(self.__container)):
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
             new_collection.__container.append(new_obj)
             new_obj.collection = new_collection
@@ -1911,7 +1910,12 @@ def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
     if not os.path.isfile(file_name := F"{path}{ver}.typ"):
         logging.info(F"For {t.decode()}: version {ver} not type in Types")
         if searched_version := ver.select_nearest([AppVersion.from_str(f_n.removesuffix(".typ")) for f_n in os.listdir(path)]):
-            return get(m, t, searched_version)
+            new_collection = get(m, t, searched_version)
+            new_collection.set_server_ver(
+                instance=0,
+                value=ver,
+                force=True)
+            return new_collection
         else:
             raise exc.NoConfig(F"no support {context}")
     return Collection.from_xml(file_name)
