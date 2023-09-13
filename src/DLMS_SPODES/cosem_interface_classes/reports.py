@@ -5,10 +5,14 @@ from ..cosem_interface_classes import collection
 
 def get_obj_report(
         obj: ic.COSEMInterfaceClasses,
-        attr_index_par: dict[int, Any]) -> str:
+        attr_index_par: tuple[int | Any, ...]) -> str:
     ret = str()
     ret += F"[{collection.get_name(obj.logical_name)}]\n"
-    for i, par in attr_index_par.items():
+    for i in attr_index_par:
+        if isinstance(i, int):
+            pass
+        else:
+            i, par = i[0], i[1:]
         value = obj.get_attr(i)
         if isinstance(value, cdt.SimpleDataType):
             match obj, i:
