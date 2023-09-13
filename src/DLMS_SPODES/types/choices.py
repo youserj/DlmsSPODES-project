@@ -134,3 +134,9 @@ class StructureMixin:
         self.values.append(el_value)
 
 
+class DeviceIDobject(CommonDataTypeChoiceBase,
+                     types=(cdt.DoubleLongUnsigned, cdt.OctetString, cdt.VisibleString, cdt.Utf8String, cdt.Unsigned, cdt.LongUnsigned)):
+    """DLMS UA 1000-1 Ed. 14 6.2.42 Device ID objects """
+
+
+device_id_object = DeviceIDobject()

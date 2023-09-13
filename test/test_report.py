@@ -23,3 +23,20 @@ class TestType(unittest.TestCase):
             attr_index_par={2: None,
                             3: None})
         print(rep)
+        obj = col.get_object("0.0.96.1.0.255")
+        obj.set_attr(2, "30313233")
+        rep = reports.get_obj_report(
+            obj=obj,
+            attr_index_par={2: None})
+        print(rep)
+        obj = col.get_object("0.0.13.0.0.255")
+        obj.set_attr(5, [
+            [0, [("10:00", "1.1.1.1.1.1", 1)]], [1, [("12:00", "1.1.1.1.1.1", 2), ("14:00", "1.1.1.1.1.1", 3)]]])
+        rep = reports.get_obj_report(
+            obj=obj,
+            attr_index_par={
+                3: None,
+                4: None,
+                5: None
+            })
+        print(rep)

@@ -401,7 +401,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     #
     (0, 0, 44, 0, tuple(range(256))): ImageTransferMap,
     #
-    (0, 96, 1, tuple(range(0, 11))): DataMap,
+    (0, 96, 1, tuple(range(0, 11))): ClassMap({0: impl.data.DLMSDeviceIDObject}),
     (0, 96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
     (0, 96, 2): DataMap,
     (0, 96, 3, tuple(range(0, 4))): DataMap,  # todo: add StatusMapping

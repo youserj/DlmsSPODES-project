@@ -1,4 +1,4 @@
-from ..data import Data, ic, an, cdt, cst, choices
+from ..data import Data, ic, an, cdt, cst, choices, ut
 from ... import enums as enu
 from .. import events as ev
 from ...types import implementations as impl
@@ -342,3 +342,8 @@ class SPODES3SPODESVersionValue(cdt.OctetString):
 class SPODES3SPODESVersion(Data):
     """СТО_34.01-5.1-006-2019v3 Г.1 Примечание 2"""
     A_ELEMENTS = ic.ICAElement(an.VALUE, SPODES3SPODESVersionValue, classifier=ic.Classifier.STATIC),
+
+
+class DLMSDeviceIDObject(Data):
+    """DLMS UA 1000-1 Ed. 14. 6.2.42 Device ID objects"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.device_id_object, classifier=ic.Classifier.STATIC),
