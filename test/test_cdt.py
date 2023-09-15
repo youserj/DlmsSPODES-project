@@ -99,6 +99,8 @@ class TestType(unittest.TestCase):
         c.set(a)
         self.assertEqual(c.decode(), [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         context = XDLMSContextType()
+        c2 = Conformance()
+        self.assertEqual(c, c2, "equal")
         print(context)
 
     def test_Conformance2(self):

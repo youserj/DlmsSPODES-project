@@ -89,3 +89,7 @@ class Conformance(cdt.BitString):
     @property
     def general_block_transfer(self) -> int:
         return self.decode()[2]
+
+    @property
+    def selective_access(self) -> int:
+        return self.decode()[21]
