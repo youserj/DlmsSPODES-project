@@ -77,10 +77,10 @@ class TestType(unittest.TestCase):
         b = col.get_object(a)
         b1 = col.get_object(structs.CaptureObjectDefinition((3, '1.0.1.29.0.255', None, None)))
         # b2 = col.get_object(EntryDescriptor())
-        desc1 = profile.get_attr_descriptor(2)
+        desc1 = profile.get_attr_descriptor(2, with_selection=True)
         self.assertEqual(desc1.contents, b'\x00\x07\x01\x00^\x07\x04\xff\x02\x01\x02\x02\x04\x06\x00\x00\x00\x01\x06\x00\x00\x00\x00\x12\x00\x01\x12\x00\x00')
         profile.get_attr(2).selective_access.access_selector.set_contents_from(1)
-        desc2 = profile.get_attr_descriptor(2)
+        desc2 = profile.get_attr_descriptor(2, with_selection=True)
         self.assertEqual(desc2.contents, b'\x00\x07\x01\x00^\x07\x04\xff\x02\x01\x01\x02\x04\x02\x04\x12\x00\x01\t\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\t\x0c\x07\xe4'
                                          b'\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff\t\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00')
         # e = EntryDescriptor()

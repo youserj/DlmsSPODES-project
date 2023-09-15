@@ -1,6 +1,6 @@
 from .types import cst
 from .cosem_interface_classes import cosem_interface_class as ic, collection
-from . import ITE_exceptions as exc
+from . import exceptions as exc
 from .cosem_interface_classes.overview import ClassID
 
 

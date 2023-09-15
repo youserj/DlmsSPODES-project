@@ -1,6 +1,6 @@
 from . import ver0
 from ...types import choices
-from ... import ITE_exceptions as exc
+from ... import exceptions as exc
 from ..__class_init__ import *
 
 

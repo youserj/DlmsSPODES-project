@@ -1,5 +1,5 @@
 from .. import cosem_interface_classes
-from .. import ITE_exceptions as exc
+from .. import exceptions as exc
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import structs, long_unsigneds, double_long_usingneds

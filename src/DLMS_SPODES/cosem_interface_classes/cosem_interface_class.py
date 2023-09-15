@@ -10,8 +10,7 @@ from enum import IntEnum
 from datetime import datetime, timedelta, timezone
 from itertools import count
 from . import collection as col
-from ..types.implementations import enums
-from .. import ITE_exceptions as exc
+from .. import exceptions as exc
 
 match settings.get_current_language():
     case settings.Language.ENGLISH: from ..Values.EN import attr_names as an
@@ -175,7 +174,16 @@ class COSEMInterfaceClasses(ABC):
         else:
             raise IndexError(F'not support {index=} as attribute')
 
-    def set_attr(self, index: int, value, with_time: bool | datetime = False) -> timedelta:
+    def set_attr_force(self,
+                       index: int,
+                       value: cdt.CommonDataType):
+        self.__attributes[index-1] = value
+        """use for change official types to custom(not valid)"""
+
+    def set_attr(self,
+                 index: int,
+                 value,
+                 with_time: bool | datetime = False) -> timedelta:
         if self.__attributes[index-1] is None:
             new_value = self.get_attr_element(index).DATA_TYPE(value if value is not None else self.get_attr_element(index).default)
             if cb_func := self._cbs_attr_before_init.get(index, None):
@@ -302,11 +310,14 @@ class COSEMInterfaceClasses(ABC):
         """ try set default to value """
         self.set_attr(index, self.get_attr_element(index).default)
 
-    def get_attr_descriptor(self, value: int, SAP: enums.ClientSAP = enums.configurator_client) -> ut.CosemAttributeDescriptor:
-        """ TODO """
-        return ut.CosemAttributeDescriptor((self.CLASS_ID,
-                                            ut.CosemObjectInstanceId(self.logical_name.contents),
-                                            ut.CosemObjectAttributeId(value)))
+    def get_attr_descriptor(self,
+                            value: int,
+                            with_selection: bool = False) -> ut.CosemAttributeDescriptor:
+        """ return AttributeDescriptor without selection """
+        return ut.CosemAttributeDescriptor((
+            self.CLASS_ID,
+            ut.CosemObjectInstanceId(self.logical_name.contents),
+            ut.CosemObjectAttributeId(value)))
 
     def get_meth_descriptor(self, value: str | int) -> ut.CosemMethodDescriptor:
         """ TODO """

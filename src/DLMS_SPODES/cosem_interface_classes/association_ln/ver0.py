@@ -1,5 +1,5 @@
 from enum import IntFlag, auto
-from ... import ITE_exceptions as exc
+from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds
@@ -325,10 +325,6 @@ class AssociationLN(ic.COSEMInterfaceClasses):
             5: self.__check_dlms_version_with_collection,
             6: self.__init_secret,
             7: self.__check_mechanism_id_existing})
-        # set cb change client SAP
-        match self.logical_name.e:
-            case 0: self.associated_partners_id.client_SAP.register_cb_preset(self.__handle_preset_current_client_SAP)
-            case _: self.associated_partners_id.client_SAP.register_cb_preset(self.__handle_preset_client_SAP)
 
     @property
     def object_list(self) -> ObjectListType:
@@ -434,34 +430,17 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         else:
             raise ValueError(F'Not found association with client SAP: {value}')
 
-    def __handle_preset_current_client_SAP(self, value: enums.ClientSAP):
-        """ Only for current association. Replacement attributes except logical_name and Client_SAP on attributes of association switching """
-        for association in self.collection.get_objects_by_class_id(ut.CosemClassId(15)):
-            if association.associated_partners_id.client_SAP == value and association is not self:
-                # print('switch to: ', association)  # TODO: for debug
-                for index, attr in association.get_index_with_attributes():
-                    match index:
-                        case 1: continue
-                        case 3: self.associated_partners_id.server_SAP.set(attr.server_SAP)
-                        case _: self.set_attr_link(index, attr)
-                break
-        else:
-            raise exc.NoObject(F'Not found association with client SAP: {value}')
-
-    def __handle_preset_client_SAP(self, value: cdt.LongUnsigned):
-        """ ban change for all associations without current """
-        if value != self.associated_partners_id.client_SAP:
-            raise ValueError("Don't support change client SAP")
-
     @property
     def source_address(self) -> bytes:
         """ source address from client_SAP. ISO/IEC 13239:2002(E), Annex H, H.4 Frame format type 3 (page 128). """
         return (int(self.associated_partners_id.client_SAP) << 1 | 1).to_bytes(1, 'big')
 
-    def get_attr_descriptor(self, value: int, SAP: enums.ClientSAP = enums.configurator_client) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
+    def get_attr_descriptor(self,
+                            value: int,
+                            with_selection: bool = False) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
         """ with selection for object_list. TODO: Copypast ProfileGeneric"""
-        descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(value, SAP)
-        if value == 2 and bool(self.collection.getAssociationBySAP(SAP).xDLMS_context_info.conformance.decode()[21]):
+        descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(value)
+        if value == 2 and with_selection:
             return CosemAttributeDescriptorWithSelection((descriptor, self.object_list.selective_access))
         else:
             return descriptor

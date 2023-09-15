@@ -33,3 +33,8 @@ class TestType(unittest.TestCase):
         print(obj.value, obj.value.report)
         self.assertEqual(obj.value.report, "Магнитное поле - окончание(2)", "report match")
         print(col)
+
+    def test_DeviceIdObjects(self):
+        obj = impl.data.DLMSDeviceIDObject("0.0.96.1.4.255")
+        datatime = cdt.DateTime("01.01.20 11:00")
+        obj.set_attr(2, datatime.encoding)

@@ -3,7 +3,7 @@ from ... import cosem_interface_classes
 from ..register import Register
 from ..clock import Clock
 from ...relation_to_OBIS import get_name
-from ... import ITE_exceptions as exc
+from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types.implementations import integers, arrays, structs, enums
 
@@ -132,10 +132,12 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     def capture(self) -> integers.Only0:
         return self.get_meth(2)
 
-    def get_attr_descriptor(self, value: int, SAP: enums.ClientSAP = enums.configurator_client) -> ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection:
+    def get_attr_descriptor(self,
+                            value: int,
+                            with_selection: bool = False) -> ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection:
         """ with selection for object_list. TODO: Copypast AssociationLN"""
-        descriptor: ut.CosemAttributeDescriptor = super(ProfileGeneric, self).get_attr_descriptor(value, SAP)
-        if value == BUFFER and bool(self.collection.getAssociationBySAP(SAP).xDLMS_context_info.conformance.decode()[21]):
+        descriptor: ut.CosemAttributeDescriptor = super(ProfileGeneric, self).get_attr_descriptor(value)
+        if value == BUFFER and with_selection:
             if self.attr_descriptor_with_selection is None:
                 self.__create_selective_access_descriptor()
             return self.attr_descriptor_with_selection((descriptor, self.buffer.selective_access))

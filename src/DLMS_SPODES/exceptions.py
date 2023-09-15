@@ -8,12 +8,12 @@ class TomlKeyError(Exception):
     """for handle exceptions of toml"""
 
 
-class ITException(Exception):
+class DLMSException(Exception):
     """ Common InterTechElectric exceptions class """
     error: Transmit | Application = Transmit.UNKNOWN
 
 
-class AssociationResultError(ITException):
+class AssociationResultError(DLMSException):
     """ Result of the proposed AA establishment and eventually the reason of the rejection of the association establishment request, as it is specified in ISO/IEC 8650-1.
         When no diagnostics are included, a null value is assigned to the result-source-diagnostics field. IEC62056-53 2004 7.3.3 The AARQ and AARE APDUs """
     error = Transmit.NO_ACCESS
@@ -25,22 +25,22 @@ class AssociationResultError(ITException):
         self.result_source_diagnostics = result_source_diagnostics
 
 
-class Timeout(ITException):
+class Timeout(DLMSException):
     """ timeout during connection or exchange """
     error = Transmit.TIMEOUT
 
 
-class NoPort(ITException):
+class NoPort(DLMSException):
     """ not found port """
     error = Transmit.NO_PORT
 
 
-class Abort(ITException):
+class Abort(DLMSException):
     """ manual interrupt """
     error = Transmit.ABORT
 
 
-class ITEConnection(ITException):
+class ITEConnection(DLMSException):
     """"""
     error = Transmit.UNKNOWN
 
@@ -50,7 +50,7 @@ class NoTransport(ITEConnection):
     error = Transmit.NO_TRANSPORT
 
 
-class ITEApplication(ITException):
+class ITEApplication(DLMSException):
     """"""
 
 
@@ -97,7 +97,7 @@ class ResultError(ITEApplication):
         self.result = error
 
 
-class UnknownError(ITException):
+class UnknownError(DLMSException):
     """ for unknown errors """
     error = Transmit.UNKNOWN
 

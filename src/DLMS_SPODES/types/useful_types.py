@@ -4,6 +4,11 @@ from abc import ABC, abstractmethod
 from typing import Type, Any, Callable
 from dataclasses import dataclass
 from ..types import common_data_types as cdt
+from ..exceptions import DLMSException
+
+
+class UserfulTypesException(DLMSException):
+    """override DLMSException"""
 
 
 class _String(ABC):
@@ -107,7 +112,9 @@ class CHOICE(ABC):
     def is_key(self, value: int) -> bool:
         return value in self.ELEMENTS.keys()
 
-    def __call__(self, value: bytes | int = None) -> cdt.CommonDataType:
+    def __call__(self,
+                 value: bytes | int = None,
+                 force: bool = False) -> cdt.CommonDataType:
         """ get instance from encoding or tag(with default value). For CommonDataType only """
         try:
             match value:
@@ -120,11 +127,12 @@ class CHOICE(ABC):
                             else:
                                 raise ValueError(F"got type with tag: {encoding[0]} and length: {encoding[1]}, expected length {tuple(ch.keys())}")
                         case err:                     raise ValueError(F"got {err.__name__}, expected {SequenceElement.__name__} or {dict.__name__}")
+                case int() if force:                  return cdt.get_common_data_type_from(value.to_bytes(1, "big"))()
                 case int() as tag:                    return self.ELEMENTS[tag].TYPE()
                 case None:                            return tuple(self.ELEMENTS.values())[0].TYPE()
                 case error:                           raise ValueError(F'Unknown value type {error}')
         except KeyError as e:
-            raise ValueError(F'For {self.__class__.__name__} got key: {e.args[0]}, expected {tuple(self.ELEMENTS.keys())}')
+            raise UserfulTypesException(F"for {self.__class__.__name__} got {cdt.CommonDataType.__name__}: {cdt.get_common_data_type_from(e.args[0].to_bytes(1)).NAME}; expected: {', '.join(map(lambda el: el.NAME, self.ELEMENTS.values()))}")
 
     def __get_elements(self) -> list[SequenceElement]:
         """all elements with nested values"""

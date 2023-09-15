@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .types import cdt, cst
 from . import pdu_enums as pdu
 from .cosem_interface_classes import collection
-from . import ITE_exceptions as exc
+from . import exceptions as exc
 
 
 @dataclass

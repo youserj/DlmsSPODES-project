@@ -54,7 +54,7 @@ from .script_table import ScriptTable
 from .single_action_schedule import SingleActionSchedule
 from .special_days_table import SpecialDaysTable
 from .tcp_udp_setup import TCPUDPSetup
-from .. import ITE_exceptions as exc
+from .. import exceptions as exc
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from ..relation_to_OBIS import get_name
@@ -884,6 +884,10 @@ class Collection:
                                         if use is not None:
                                             use[new_object.logical_name].add(indexes[-1])
                                 obj.remove(attr)
+                            except ut.UserfulTypesException as e:
+                                if attr.attrib.get("forced", None):
+                                    new_object.set_attr_force(indexes[-1], cdt.get_common_data_type_from(int(attr.text).to_bytes(1, "big"))())
+                                logger.warning(F"set to {new_object} attr: {indexes[-1]} forced value after. {e}.")
                             except exc.NoObject as e:
                                 logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. Skip. {e}.")
                                 break
@@ -1045,7 +1049,8 @@ class Collection:
             f.write(str_)
 
     def to_xml2(self, file_name: str,
-                root_tag: str = TagsName.DEVICE_ROOT.value) -> bool:
+                root_tag: str = TagsName.DEVICE_ROOT.value,
+                association_id: int = 3) -> bool:
         """Save attributes WRITABLE and STATIC of client"""
         objects = self.__get_base_xml_element(root_tag)
         col = get(
@@ -1053,7 +1058,7 @@ class Collection:
             t=self.server_type,
             ver=self.server_ver[0])
         is_empty: bool = True
-        for desc in col.getASSOCIATION(3).object_list:
+        for desc in col.getASSOCIATION(association_id).object_list:
             obj = self.get_object(desc)
             object_node = None
             for i, attr in obj.get_index_with_attributes():

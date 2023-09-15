@@ -3,7 +3,7 @@ from ... import enums as enu
 from .. import events as ev
 from ...types import implementations as impl
 from ...version import AppVersion
-from ... import ITE_exceptions as exc
+from ... import exceptions as exc
 
 
 class LDN(Data):
