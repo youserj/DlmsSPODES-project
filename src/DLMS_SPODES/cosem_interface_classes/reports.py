@@ -1,11 +1,13 @@
 from typing import Any
 from .collection import ic, cdt
 from ..cosem_interface_classes import collection
+from ..config_parser import config, get_values
 
 
 def get_obj_report(
         obj: ic.COSEMInterfaceClasses,
         attr_index_par: tuple[int | Any, ...]) -> str:
+    struct_report: dict | None = get_values("DLMS", "report", "struct")
     ret = str()
     ret += F"[{collection.get_name(obj.logical_name)}]\n"
     for i in attr_index_par:
@@ -37,11 +39,32 @@ def get_obj_report(
                         ret += F"{indent}[{name}]\n"
                         stack.append(("*", iter(value)))
                     elif isinstance(value, cdt.Structure):
-                        if name == "":
-                            ret += "\n"
+                        if struct_report and (pattern := struct_report.get(value.__class__.__name__)):
+                            val = list(pattern)
+                            val.reverse()
+                            result = str()
+                            while val:
+                                i = val.pop()
+                                match i:
+                                    case "%":
+                                        par = val.pop()
+                                        index = int(val.pop() + val.pop())
+                                        match par:
+                                            case "n":
+                                                result += value.ELEMENTS[index].NAME
+                                            case "v":
+                                                result += str(value[index])
+                                            case err:
+                                                raise ValueError(F"unknown macros &{err}{index}")
+                                    case symbol:
+                                        result += symbol
+                            ret += F"{indent}{result}\n"
                         else:
-                            ret += F"{indent}[{name}]\n"
-                        stack.append((iter(value.ELEMENTS), iter(value)))
+                            if name == "":
+                                ret += "\n"
+                            else:
+                                ret += F"{indent}[{name}]\n"
+                            stack.append((iter(value.ELEMENTS), iter(value)))
                     else:
                         ret += F"{indent}{name}: {value}\n"
                 else:

@@ -9,7 +9,6 @@ from src.DLMS_SPODES import relation_to_OBIS, enums
 from src.DLMS_SPODES.cosem_interface_classes.collection import Collection
 
 
-
 class TestType(unittest.TestCase):
     def test_encode_length(self):
         self.assertEqual(encode_length(1), b'\x01')

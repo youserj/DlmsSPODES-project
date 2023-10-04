@@ -57,6 +57,11 @@ Array = "Массив"
 Structure = "Структура"
 CompactArray = "Массив упакованных данных"
 
+[DLMS.report.struct]
+# Patterns. Use for function get_obj_report. Only for struct. Generate custom struct report instead standart. Where %nxx: n - name of struct element, xx - index of struct element; %vxx: v - value of struct element, xx - index of struct element
+DayProfileAction = "%n00: %v00 - Тариф: %v02"
+
+
 [DLMS.struct_name]
 scaler = "Масштаб"
 unit = "Ед. измерения"
