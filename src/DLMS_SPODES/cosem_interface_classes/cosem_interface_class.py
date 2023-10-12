@@ -55,6 +55,18 @@ class ICAElement(ICElement):
     def __str__(self):
         return F'{self.NAME} ({self.classifier.name.lower()}) {self.DATA_TYPE.NAME}'
 
+    def get_change(self,
+                   data_type: Type[cdt.CommonDataType] | ut.CHOICE = None,
+                   classifier: Classifier = None) -> Self:
+        return ICAElement(
+            NAME=self.NAME,
+            DATA_TYPE=self.DATA_TYPE if data_type is None else data_type,
+            min=self.min,
+            max=self.max,
+            default=self.default,
+            classifier=self.classifier if classifier is None else classifier,
+            selective_access=self.selective_access)
+
 
 def get_type_name(value: cdt.CommonDataType | Type[cdt.CommonDataType]) -> str:
     """type name from type or instance of CDT with length and constant value"""
@@ -129,8 +141,9 @@ class COSEMInterfaceClasses(ABC):
 
     def copy(self, source: Self, association_id: int = 3):
         """copy object according by association"""
-        for i, a in source.get_index_with_attributes():
-            if i == 1 or a is None or self.get_attr_element(i).classifier == Classifier.DYNAMIC:
+        for i, value in source.get_index_with_attributes():
+            el = self.get_attr_element(i)
+            if i == 1 or value is None or (not isinstance(el.DATA_TYPE, ut.CHOICE) and el.classifier == Classifier.DYNAMIC):
                 continue
             else:
                 if source.collection is not None and self.get_attr_element(i).classifier == Classifier.STATIC and not source.collection.is_writable(ln=self.logical_name,
@@ -138,17 +151,20 @@ class COSEMInterfaceClasses(ABC):
                                                                                                                                                     association_id=association_id):
                     # Todo: may be callbacks inits remove?
                     if cb_func := self._cbs_attr_before_init.get(i, None):
-                        cb_func(a)                    # Todo: 'a' as 'new_value' in set_attr are can use?
+                        cb_func(value)                    # Todo: 'a' as 'new_value' in set_attr are can use?
                         self._cbs_attr_before_init.pop(i)
-                    self.__attributes[i-1] = a
+                    self.__attributes[i-1] = value
                     if cb_func := self._cbs_attr_post_init.get(i, None):
                         cb_func()
                         self._cbs_attr_post_init.pop(i)
                 else:
                     if isinstance(arr := self.__attributes[i-1], cdt.Array):
-                        arr.set_type(a.TYPE)
+                        arr.set_type(value.TYPE)
                     try:
-                        self.set_attr(i, a.encoding)
+                        self.set_attr(
+                            index=i,
+                            value=value.encoding,
+                            data_type=source.get_attr(i).__class__)
                     except exc.EmptyObj as e:
                         logger.warning(F"can't copy {self} attr={i}, skipped. {e}")
 
@@ -182,10 +198,12 @@ class COSEMInterfaceClasses(ABC):
 
     def set_attr(self,
                  index: int,
-                 value,
-                 with_time: bool | datetime = False) -> timedelta:
+                 value=None,
+                 data_type: cdt.CommonDataType = None):
+        value = self.get_attr_element(index).default if value is None else value
+        data_type = self.get_attr_element(index).DATA_TYPE if data_type is None else data_type
         if self.__attributes[index-1] is None:
-            new_value = self.get_attr_element(index).DATA_TYPE(value if value is not None else self.get_attr_element(index).default)
+            new_value = data_type(value)
             if cb_func := self._cbs_attr_before_init.get(index, None):
                 cb_func(new_value)
                 self._cbs_attr_before_init.pop(index)
@@ -197,17 +215,6 @@ class COSEMInterfaceClasses(ABC):
                 """without callback post init"""
         else:
             self.__attributes[index-1].set(value)
-        # todo: make better all below
-        TZ = timezone(datetime.now() - datetime.utcnow())
-        """ os time zone """
-        time_now = datetime.now(TZ)
-        if isinstance(with_time, bool) and with_time:
-            self.set_record_time(index, cdt.DateTime(time_now))
-            return timedelta()
-        elif isinstance(with_time, datetime):
-            delta = (time_now-with_time)/2
-            self.set_record_time(index, cdt.DateTime(time_now - delta))
-            return delta
 
     def set_attr_link(self, index: int, link: cdt.CommonDataType):
         # self.__attributes[index - 1] = link  # TODO: without validate now for pass load_objects

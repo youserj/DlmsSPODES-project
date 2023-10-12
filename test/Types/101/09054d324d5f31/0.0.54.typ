@@ -126,6 +126,7 @@
   </object>
   <object name="Дата выпуска ПУ" ln="0.0.96.1.4.255">
     <class_id>1</class_id>
+    <attribute index="2" forced="1">26</attribute>
   </object>
   <object name="Коэффициент трансформации по току" ln="1.0.0.4.2.255">
     <class_id>1</class_id>

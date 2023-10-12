@@ -43,3 +43,27 @@ try:
 except FileNotFoundError as e:
     logger.warning(e)
     config = None
+
+
+_messages = get_values("DLMS", "messages")
+
+
+def get_message(value: str) -> str:
+    """translate %... from config.toml"""
+    value: bytearray = bytearray(value, "utf-8")
+    ret: bytearray = bytearray()
+    while value:
+        if value.startswith(b"$$"):
+            value.pop(0)
+            ret.append(value.pop(0))
+        elif value.startswith(b"$"):
+            key, sep, value = value[1:].partition(b"$")
+            if key:
+                if _messages and (translate := _messages.get(key.decode("utf-8"))):
+                    val = bytes(translate, "utf-8")
+                else:
+                    val = key
+                ret.extend(val)
+        else:
+            ret.append(value.pop(0))
+    return ret.decode("utf-8", errors="strict")

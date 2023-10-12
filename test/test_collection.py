@@ -100,6 +100,14 @@ class TestType(unittest.TestCase):
                     server_ver=AppVersion.from_str(ver_txt))
                 print(col)
 
+    def test_save_type(self):
+        """for template"""
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.15"))
+        col.save_type("test_save_type.typ")
+
     def test_to_xml4(self):
         """for template"""
         col = collection.get_collection(
@@ -155,7 +163,7 @@ class TestType(unittest.TestCase):
         col.set_manufacturer(b"KPZ")
         col.set_server_ver(0, AppVersion(1, 4, 0))
         col.set_spec()
-        ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN_CLASS,
+        ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN,
                           version=overview.Version.V1,
                           logical_name=cst.LogicalName("0.0.40.0.3.255"))
         ver_obj = col.add(class_id=overview.ClassID.DATA,

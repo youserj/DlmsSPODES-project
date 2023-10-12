@@ -9,6 +9,9 @@ class AccessMode(cdt.Enum, elements=tuple(range(7))):
     def is_writable(self) -> bool:
         return True if int(self) in (2, 3, 5, 6) else False
 
+    def is_readable(self) -> bool:
+        return True if int(self) in (1, 3, 4, 6) else False
+
 
 class AccessModeMeth(cdt.Enum, elements=(0, 1, 2)):
     """ Enum of access mode for methods """

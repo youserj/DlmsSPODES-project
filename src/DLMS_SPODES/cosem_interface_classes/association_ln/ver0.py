@@ -12,6 +12,9 @@ class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
     def is_writable(self) -> bool:
         return True if int(self) >= 2 else False
 
+    def is_readable(self) -> bool:
+        return True if int(self) in (1, 3) else False
+
 
 class AttributeAccessItem(cdt.Structure):
     """ Implemented attribute and it access . Use in Association LN """
@@ -298,15 +301,15 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     through instances of the “Association LN” class. A COSEM logical device has one instance of this IC for each association
     the device is able to support"""
     NAME = cn.ASSOCIATION_LN
-    CLASS_ID = ClassID.ASSOCIATION_LN_CLASS
+    CLASS_ID = ClassID.ASSOCIATION_LN
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.OBJECT_LIST, ObjectListType, selective_access=SelectiveAccessDescriptor),
                   ic.ICAElement(an.ASSOCIATED_PARTNERS_ID, AssociatedPartnersType),
                   ic.ICAElement(an.APPLICATION_CONTEXT_NAME, ApplicationContextName),
                   ic.ICAElement(an.XDLMS_CONTEXT_INFO, XDLMSContextType),
                   ic.ICAElement(an.AUTHENTICATION_MECHANISM_NAME, AuthenticationMechanismName),
-                  ic.ICAElement(an.LLS_SECRET, LLCSecret),
-                  ic.ICAElement(an.ASSOCIATION_STATUS, AssociationStatus))
+                  ic.ICAElement(an.LLS_SECRET, LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
+                  ic.ICAElement(an.ASSOCIATION_STATUS, AssociationStatus, classifier=ic.Classifier.DYNAMIC))
     M_ELEMENTS = (ic.ICMElement(mn.REPLY_TO_HLS_AUTHENTICATION, cdt.OctetString),
                   ic.ICMElement(mn.CHANGE_HLS_SECRET, LLCSecret),
                   ic.ICMElement(mn.ADD_OBJECT, ObjectListElement),

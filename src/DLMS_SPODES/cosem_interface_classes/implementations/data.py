@@ -6,9 +6,21 @@ from ...version import AppVersion
 from ... import exceptions as exc
 
 
-class LDN(Data):
+class DataStatic(Data):
+    A_ELEMENTS = Data.get_attr_element(2).get_change(classifier=ic.Classifier.STATIC),
+
+
+class DataDynamic(Data):
+    A_ELEMENTS = Data.get_attr_element(2).get_change(classifier=ic.Classifier.DYNAMIC),
+
+
+class DataNotSpecific(Data):
+    A_ELEMENTS = Data.get_attr_element(2).get_change(classifier=ic.Classifier.NOT_SPECIFIC),
+
+
+class LDN(DataStatic):
     """for ldn"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, impl.octet_string.LDN, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = Data.get_attr_element(2).get_change(data_type=impl.octet_string.LDN),
 
     def characteristics_init(self):
         self._cbs_attr_post_init.update(
@@ -124,9 +136,9 @@ class CommunicationPortParameter(Data):
         return self.get_attr(2)
 
 
-class AnyDateTime(Data):
+class AnyDateTime(DataDynamic):
     """for a-anotation DLMS UA 1000-1 Ed. 14 Table 60"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.any_date_time, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=choices.any_date_time),
 
 
 class VoltageEventValues(cdt.LongUnsigned):
@@ -134,9 +146,9 @@ class VoltageEventValues(cdt.LongUnsigned):
         return ev.voltage_events.get_report(int(self))
 
 
-class SPODES3VoltageEvent(Data):
+class SPODES3VoltageEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, VoltageEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=VoltageEventValues),
 
 
 class CurrentEventValues(cdt.LongUnsigned):
@@ -144,9 +156,9 @@ class CurrentEventValues(cdt.LongUnsigned):
         return ev.current_events.get_report(int(self))
 
 
-class SPODES3CurrentEvent(Data):
+class SPODES3CurrentEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, CurrentEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=CurrentEventValues),
 
 
 class CommutationEventValues(cdt.LongUnsigned):
@@ -154,9 +166,9 @@ class CommutationEventValues(cdt.LongUnsigned):
         return ev.commutation_events.get_report(int(self))
 
 
-class SPODES3CommutationEvent(Data):
+class SPODES3CommutationEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, CommutationEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=CommutationEventValues),
 
 
 class ProgrammingEventValues(cdt.LongUnsigned):
@@ -164,9 +176,9 @@ class ProgrammingEventValues(cdt.LongUnsigned):
         return ev.programming_events.get_report(int(self))
 
 
-class SPODES3ProgrammingEvent(Data):
+class SPODES3ProgrammingEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, ProgrammingEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ProgrammingEventValues),
 
 
 class ExternalEventValues(cdt.LongUnsigned):
@@ -174,9 +186,9 @@ class ExternalEventValues(cdt.LongUnsigned):
         return ev.external_impact_events.get_report(int(self))
 
 
-class SPODES3ExternalEvent(Data):
+class SPODES3ExternalEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, ExternalEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExternalEventValues),
 
 
 class CommunicationEventValues(cdt.LongUnsigned):
@@ -184,9 +196,9 @@ class CommunicationEventValues(cdt.LongUnsigned):
         return ev.communication_events.get_report(int(self))
 
 
-class SPODES3CommunicationEvent(Data):
+class SPODES3CommunicationEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, CommunicationEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=CommunicationEventValues),
 
 
 class AccessEventValues(cdt.LongUnsigned):
@@ -194,9 +206,9 @@ class AccessEventValues(cdt.LongUnsigned):
         return ev.access_events.get_report(int(self))
 
 
-class SPODES3AccessEvent(Data):
+class SPODES3AccessEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, AccessEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=AccessEventValues),
 
 
 class SelfDiagnosticEventValues(cdt.LongUnsigned):
@@ -204,9 +216,9 @@ class SelfDiagnosticEventValues(cdt.LongUnsigned):
         return ev.self_diagnostics_events.get_report(int(self))
 
 
-class SPODES3SelfDiagnosticEvent(Data):
+class SPODES3SelfDiagnosticEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, SelfDiagnosticEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SelfDiagnosticEventValues),
 
 
 class ReactivePowerEventValues(cdt.LongUnsigned):
@@ -214,9 +226,9 @@ class ReactivePowerEventValues(cdt.LongUnsigned):
         return ev.reactive_power_events.get_report(int(self))
 
 
-class SPODES3ReactivePowerEvent(Data):
+class SPODES3ReactivePowerEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ReactivePowerEventValues),
 
 
 class PowerQuality2EventValues(cdt.LongUnsigned):
@@ -224,9 +236,9 @@ class PowerQuality2EventValues(cdt.LongUnsigned):
         return ev.power_quality_status_2.get_report(int(self))
 
 
-class SPODES3PowerQuality2Event(Data):
+class SPODES3PowerQuality2Event(DataNotSpecific):
     """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, PowerQuality2EventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=PowerQuality2EventValues),
 
 
 class PowerQuality1EventValues(cdt.LongUnsigned):
@@ -234,9 +246,9 @@ class PowerQuality1EventValues(cdt.LongUnsigned):
         return ev.power_quality_status_1.get_report(int(self))
 
 
-class SPODES3PowerQuality1Event(Data):
+class SPODES3PowerQuality1Event(DataNotSpecific):
     """СТО_34.01-5.1-006-2019v3 E.2 Статус качества сети (профиль суточных показаний)"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, PowerQuality1EventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=PowerQuality1EventValues),
 
 
 # KPZ implements
@@ -330,6 +342,24 @@ class KPZ1SPODES3ReactivePowerEvent(Data):
     A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
 
 
+class SPODES3MeasurementPeriodValue(cdt.Unsigned):
+    def validate(self):
+        super(SPODES3MeasurementPeriodValue, self).validate()
+        values: tuple[int, ...] = (1, 2, 3, 5, 10, 15, 20, 30, 60)
+        if int(self) not in values:
+            raise ValueError(F"for {self} got value: {int(self)}, expected: {values}")
+
+
+class SPODES3MeasurementPeriod(DataStatic):
+    """СТО_34.01-5.1-006-2019v3 Г.2 Программируемые параметры и функции. Пункт 14"""
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=SPODES3MeasurementPeriodValue),
+
+
+class DLMSDeviceIDObject(Data):
+    """DLMS UA 1000-1 Ed. 14. 6.2.42 Device ID objects"""
+    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.device_id_object, classifier=ic.Classifier.STATIC),
+
+
 class SPODES3SPODESVersionValue(cdt.OctetString):
     def __init__(self, value="332e30"):
         super(SPODES3SPODESVersionValue, self).__init__(value)
@@ -339,11 +369,11 @@ class SPODES3SPODESVersionValue(cdt.OctetString):
             case _: raise ValueError(F"got invalid SPODES VERSION VALUE with: {self}")
 
 
-class SPODES3SPODESVersion(Data):
+class SPODES3SPODESVersion(DLMSDeviceIDObject):
     """СТО_34.01-5.1-006-2019v3 Г.1 Примечание 2"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, SPODES3SPODESVersionValue, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DLMSDeviceIDObject.get_attr_element(2).get_change(data_type=SPODES3SPODESVersionValue),
 
 
-class DLMSDeviceIDObject(Data):
-    """DLMS UA 1000-1 Ed. 14. 6.2.42 Device ID objects"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.device_id_object, classifier=ic.Classifier.STATIC),
+class SPODES3IDNotSpecific(DLMSDeviceIDObject):
+    """СТО_34.01-5.1-006-2019v3 13.1. Чтение расширенных паспортных данных ПУ. Для специфических идентификаторов"""
+    A_ELEMENTS = DLMSDeviceIDObject.get_attr_element(2).get_change(classifier=ic.Classifier.NOT_SPECIFIC),

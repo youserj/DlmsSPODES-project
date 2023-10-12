@@ -20,7 +20,7 @@ from . import cosem_interface_class as ic
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
-from .association_ln.ver0 import AssociationLN as AssociationLNVer0
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ObjectListElement
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver0 import PushSetup as PushSetupVer0
@@ -63,7 +63,6 @@ from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecific
 from ..enums import TagsName, MechanismId
 from . import obis as o
 from .. import pdu_enums as pdu
-from ..configure import get_saved_parameters
 from ..config_parser import config
 
 
@@ -94,6 +93,10 @@ class ClassMap(dict):
 
 DataMap = ClassMap({
     0: Data})
+DataStaticMap = ClassMap({
+    0: impl.data.DataStatic})
+DataDynamicMap = ClassMap({
+    0: impl.data.DataDynamic})
 RegisterMap = ClassMap({
     0: Register})
 ExtendedRegisterMap = ClassMap({
@@ -403,7 +406,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     #
     (0, 96, 1, tuple(range(0, 11))): ClassMap({0: impl.data.DLMSDeviceIDObject}),
     (0, 96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
-    (0, 96, 2): DataMap,
+    (0, 96, 2): DataDynamicMap,
     (0, 96, 3, tuple(range(0, 4))): DataMap,  # todo: add StatusMapping
     (0, 96, 3, 10): DisconnectControlMap,
     (0, 96, 3, tuple(range(20, 29))): ArbitratorMap,
@@ -414,7 +417,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     (0, 96, 8, tuple(range(0, 64))): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 9, (0, 1, 2)): (RegisterMap,  ExtendedRegisterMap),
     (0, 96, 10, tuple(range(1, 10))): DataMap,  # todo: add StatusMapping
-    (0, 96, 11, tuple(range(100))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    (0, 96, 11, tuple(range(100))): (DataDynamicMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 12, (0, 1, 2, 3, 5, 6)): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 12, 4): ClassMap({0: impl.data.CommunicationPortParameter}),
     (0, 96, 13, (0, 1)): (DataMap, RegisterMap,  ExtendedRegisterMap),
@@ -432,8 +435,8 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     (1, 0, 0, tuple(range(10))): DataMap,
     (1, 0, 0, 255): ProfileGenericMap,  # todo: add RegisterTable
     (1, 0, 1): DataMap,
-    (1, 0, 2): DataMap,
-    (1, 0, (3, 4, 7, 8, 9)): (DataMap, RegisterMap, ExtendedRegisterMap),
+    (1, 0, 2): DataStaticMap,
+    (1, 0, (3, 4, 7, 8, 9)): (DataStaticMap, RegisterMap, ExtendedRegisterMap),
     (1, 0, (6, 10)): (RegisterMap, ExtendedRegisterMap),
     (1, 0, 11, tuple(range(1, 8))): DataMap,
     (1, 96, 1, tuple(range(10))): DataMap,
@@ -464,6 +467,7 @@ __func_map_for_create.update({
 # SPODES3 Update
 __func_map_for_create.update({
     (0, 21, 0): ClassMap({1: impl.profile_generic.SPODES3DisplayReadout}),
+    (0, 96, 1, 0 | 2 | 4 | 5 | 8 | 9 | 10): ClassMap({0: impl.data.SPODES3IDNotSpecific}),
     (0, 96, 1, 6): ClassMap({0: impl.data.SPODES3SPODESVersion}),
     (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
     (0, 96, 3, 20): ClassMap({0: impl.arbitrator.SPODES3Arbitrator}),
@@ -484,7 +488,7 @@ __func_map_for_create.update({
     (0, 0, 96, 51, (1, 3, 4, 6, 7)): UnsignedDataMap,
     (0, 0, 96, 51, (8, 9)): ClassMap({0: impl.data.OctetStringDateTime}),
     # electricity
-    (1, 0, 8, (4, 5)): UnsignedDataMap,
+    (1, 0, 8, (4, 5)): ClassMap({0: impl.data.SPODES3MeasurementPeriod}),
     (1, 98, 1): ClassMap({1: impl.profile_generic.SPODES3MonthProfile}),
     (1, 98, 2): ClassMap({1: impl.profile_generic.SPODES3DailyProfile}),
     (1, 99, (1, 2)): ClassMap({1: impl.profile_generic.SPODES3LoadProfile}),
@@ -586,7 +590,7 @@ class Collection:
             new_collection.__container.append(new_obj)
             new_obj.collection = new_collection
         association_id = max(filter(
-            lambda obj: obj.CLASS_ID == ClassID.ASSOCIATION_LN_CLASS, self),
+            lambda obj: obj.CLASS_ID == ClassID.ASSOCIATION_LN, self),
             key=lambda obj: len(obj.object_list) if obj.object_list else 0
         ).logical_name.e
         """more full association"""
@@ -730,7 +734,7 @@ class Collection:
         """ get instance with objects from descriptions """
         new_instance = cls()
         if isinstance(descriptions, list):
-            deque(map(lambda description: new_instance.create(description[1], description[2], description[0]), descriptions))
+            deque(map(lambda description: new_instance.add(description[1], description[2], description[0]), descriptions))
         return new_instance
 
     def create_objects_from_collection(self, container: Collection):
@@ -806,12 +810,12 @@ class Collection:
         return new, used
 
     @classmethod
-    def from_xml(cls, filename: str, use: dict[cst.LogicalName, set[int]] = None) -> Self:
+    def from_xml(cls, filename: str) -> Self:
         """ append objects from xml file """
         tree = ET.parse(filename)
         objects = tree.getroot()
         new = cls()
-        if use is None and objects.tag != TagsName.DEVICE_ROOT.value:
+        if objects.tag != TagsName.DEVICE_ROOT.value:
             raise ValueError(F"ERROR: Root tag got {objects.tag}, expected {TagsName.DEVICE_ROOT.value}")
         root_version: AppVersion = AppVersion.from_str(objects.attrib.get('version', '1.0.0'))
         if (dlms_ver := objects.findtext("dlms_ver")) is not None:
@@ -848,9 +852,7 @@ class Collection:
                             if not new.is_in_collection(logical_name):
                                 new_object = new.add(class_id=ut.CosemClassId(class_id),
                                                      version=None if version is None else cdt.Unsigned(version),
-                                                     logical_name=cst.LogicalName(ln))
-                                if use is not None:
-                                    use[new_object.logical_name] = set()
+                                                     logical_name=logical_name)
                             else:
                                 new_object = new.__get_object(logical_name.contents)
                         except TypeError as e:
@@ -881,8 +883,6 @@ class Collection:
                                         if record_time is not None:
                                             new_object.set_record_time(indexes[-1], bytes.fromhex(record_time))
                                         new_object.set_attr(indexes[-1], bytes.fromhex(attr.text))
-                                        if use is not None:
-                                            use[new_object.logical_name].add(indexes[-1])
                                 obj.remove(attr)
                             except ut.UserfulTypesException as e:
                                 if attr.attrib.get("forced", None):
@@ -902,6 +902,74 @@ class Collection:
                             except AttributeError as e:
                                 logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
                         if len(obj.findall('attribute')) == 0:
+                            objects.remove(obj)
+                    logger.info(F'Not parsed DLMS objects: {len(objects)}')
+            case AppVersion(4, 0):
+                attempts: iter = count(3, -1)
+                """ attempts counter """
+                while len(objects) != 0 and next(attempts):
+                    logger.info(F'{attempts=}')
+                    for obj in objects.findall("obj"):
+                        ln: str = obj.attrib.get('ln', 'is absence')
+                        version: str | None = obj.findtext("ver")
+                        try:
+                            logical_name: cst.LogicalName = cst.LogicalName(ln)
+                            if version:  # only for AssociationLN
+                                new_object: AssociationLN = new.add_if_missing(
+                                    class_id=ClassID.ASSOCIATION_LN,
+                                    version=cdt.Unsigned(version),
+                                    logical_name=logical_name)
+                                new.add_if_missing(  # current association with know version
+                                    class_id=ClassID.ASSOCIATION_LN,
+                                    version=cdt.Unsigned(version),
+                                    logical_name=cst.LogicalName("0.0.40.0.0.255"))
+                            else:
+                                new_object = new.__get_object(logical_name.contents)
+                        except TypeError as e:
+                            logger.error(F'Object {obj.attrib["name"]} not created : {e}')
+                            continue
+                        except ValueError as e:
+                            logger.error(F'Object {obj.attrib["name"]} not created. {version=} {ln=}: {e}')
+                            continue
+                        for attr in obj.findall("attr"):
+                            i: int = int(attr.attrib.get("i"))
+                            try:
+                                if len(attr.text) <= 2:  # set only type with default value
+                                    data_type = new_object.get_attr_element(i).DATA_TYPE
+                                    if isinstance(data_type, ut.CHOICE):
+                                        new_object.set_attr(i, int(attr.text))
+                                    elif data_type == int(attr.text):
+                                        """ ordering by old"""
+                                    else:
+                                        raise ValueError(F'Got {attr.text} attribute Tag, expected {data_type}')
+                                else:  # set common value
+                                    new_object.set_attr(i, bytes.fromhex(attr.text))
+                                    if new_object.CLASS_ID == ClassID.ASSOCIATION_LN and i == 2:  # setup new objects from AssociationLN.object_list
+                                        for obj_el in new_object.object_list:
+                                            obj_el: ObjectListElement
+                                            new.add_if_missing(
+                                                class_id=obj_el.class_id,
+                                                version=obj_el.version,
+                                                logical_name=obj_el.logical_name)
+                                obj.remove(attr)
+                            except ut.UserfulTypesException as e:
+                                if attr.attrib.get("forced", None):
+                                    new_object.set_attr_force(i, cdt.get_common_data_type_from(int(attr.text).to_bytes(1, "big"))())
+                                logger.warning(F"set to {new_object} attr: {i} forced value after. {e}.")
+                            except exc.NoObject as e:
+                                logger.error(F"Can't fill {new_object} attr: {i}. Skip. {e}.")
+                                break
+                            except exc.ITEApplication as e:
+                                logger.error(F"Can't fill {new_object} attr: {i}. {e}")
+                            except IndexError:
+                                logger.error(F'Object "{new_object}" not has attr: {i}')
+                            except TypeError as e:
+                                logger.error(F'Object {new_object} attr:{i} do not write, encoding wrong : {e}')
+                            except ValueError as e:
+                                logger.error(F'Object {new_object} attr:{i} do not fill: {e}')
+                            except AttributeError as e:
+                                logger.error(F'Object {new_object} attr:{i} do not fill: {e}')
+                        if len(obj.findall("attr")) == 0:
                             objects.remove(obj)
                     logger.info(F'Not parsed DLMS objects: {len(objects)}')
             case _ as error:
@@ -1158,40 +1226,60 @@ class Collection:
                 method="xml",
                 xml_declaration=True))
 
-    def save_type(self, file_name: str, root_tag: str = TagsName.DEVICE_ROOT.value):
+    def save_type(self,
+                  file_name: str,
+                  root_tag: str = TagsName.DEVICE_ROOT.value):
         """ For concrete device save all attributes. For types only STATIC save """
         objects = self.__get_base_xml_element(root_tag)
-        classes: set[ut.CosemClassId] = set()
-        for obj in self.values():
-            object_node = ET.SubElement(objects, 'object', attrib={'name': F'{get_name(obj.logical_name)}', 'ln': str(obj.logical_name)})
-            ET.SubElement(object_node, 'class_id').text = str(obj.CLASS_ID)
-            if obj.CLASS_ID not in classes:
-                ET.SubElement(object_node, 'version').text = str(obj.VERSION)
-            classes.add(obj.CLASS_ID)
-            for index, method in get_saved_parameters(obj).items():
-                attr = obj.get_attr(index)
-                match method, attr:
-                    case 1, None if isinstance(obj.get_attr_element(index).DATA_TYPE, ut.CHOICE):
-                        logger.warning(F'For {obj} {attr} not selected type from: {obj.get_attr_element(index).DATA_TYPE}')
-                    case 1, None:
-                        logger.warning(F'REMOVE {obj} {attr} for saving in type')
-                    case 1, _:
-                        object_node.append(ET.Comment(F'{obj.get_attr_element(index).NAME}. Type: {attr.NAME}'))
-                        ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = str(attr.TAG[0])
-                    case 0, cdt.CommonDataType():
-                        object_node.append(ET.Comment(F'{obj.get_attr_element(index).NAME}: {attr}'))
-                        ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = attr.encoding.hex()
-                    case 0, None:
-                        logger.warning(F'For {obj} attr: {index} value not set')
-                    case _ as unknown:
-                        logger.warning(F'Unknown pattern for select keep attribute: {unknown}')
-
+        objs = dict()
+        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN)):
+            for obj_el in ass.object_list:
+                if str(obj_el.logical_name) in ("0.0.40.0.0.255", "0.0.42.0.0.255"):
+                    """skip LDN and current_association"""
+                    continue
+                elif obj_el.logical_name in objs:
+                    """"""
+                else:
+                    objs[obj_el.logical_name] = set()
+                for access in obj_el.access_rights.attribute_access[1:]:  # without ln
+                    if not access.access_mode.is_writable() and access.access_mode.is_readable():
+                        objs[obj_el.logical_name].add(int(access.attribute_id))
+        o2 = list()
+        for ln in objs.keys():
+            obj = self.get_object(ln)
+            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+                o2.insert(0, obj)
+            else:
+                o2.insert(-1, obj)
+        for obj in o2:
+            object_node = ET.SubElement(objects, "obj", attrib={'ln': str(obj.logical_name)})
+            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+                ET.SubElement(object_node, "ver").text = str(obj.VERSION)
+            v = objs[obj.logical_name]
+            for i, attr in filter(lambda it: it[0] != 1, obj.get_index_with_attributes()):
+                el: ic.ICAElement = obj.get_attr_element(i)
+                if el.classifier == ic.Classifier.STATIC and (i in v):
+                    if attr is None:
+                        logger.error(F"for {obj} attr: {i} not set, value is absense")
+                    else:
+                        # object_node.append(ET.Comment(F'{obj.get_attr_element(i).NAME}: {attr}'))
+                        ET.SubElement(object_node, "attr", attrib={"i": str(i)}).text = attr.encoding.hex()
+                elif isinstance(el.DATA_TYPE, ut.CHOICE) and el.classifier in (ic.Classifier.DYNAMIC, ic.Classifier.NOT_SPECIFIC):
+                    if attr is None:
+                        logger.error(F"for {obj} attr: {i} type not set, value is absense")
+                    else:
+                        # object_node.append(ET.Comment(F'{obj.get_attr_element(index).NAME}. Type: {attr.NAME}'))
+                        ET.SubElement(object_node, "attr", attrib={"i": str(i)}).text = str(attr.TAG[0])
+                else:
+                    logger.info(F"for {obj} attr: {i} value not need. skipped")
+            if len(object_node) == 0:
+                objects.remove(object_node)
         # TODO: '<!DOCTYPE ITE_util_tree SYSTEM "setting.dtd"> or xsd
         xml_string = ET.tostring(objects, encoding='cp1251', method='xml')
         dom_xml = minidom.parseString(xml_string)
         str_ = dom_xml.toprettyxml(indent="  ", encoding='cp1251')
         with open(file_name, "wb") as f:
-            f.write(str_)
+            f.write(xml_string)
 
     def set_spec(self):
         """set functional map to specification by identification fields"""
@@ -1220,20 +1308,16 @@ class Collection:
             return get_type(class_id, version, ln, func_maps[self.__spec])(ln)
         except ValueError as e:
             raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {ln=}: {e}")
-        # ret: Type[InterfaceClass] = _func_map_A.get(ln.a, None)
-        # if ret:
-        #     return ret(class_id, version, ln)(ln)
-        # else:
-        #     raise ValueError(F"unknown {ln.a} in {ln} with: {class_id=}, {version=}")
 
     def add_if_missing(self, class_id: ut.CosemClassId,
                        version: cdt.Unsigned | None,
                        logical_name: cst.LogicalName) -> InterfaceClass:
         """ like as add method with check for missing """
         if not self.is_in_collection(logical_name):
-            return self.create(class_id=class_id,
-                               version=version,
-                               logical_name=logical_name)
+            return self.add(
+                class_id=class_id,
+                version=version,
+                logical_name=logical_name)
         else:
             return self.__get_object(logical_name.contents)
 
@@ -1247,22 +1331,10 @@ class Collection:
     def __len__(self):
         return len(self.__container)
 
-    def create(self, class_id: ut.CosemClassId,
-               version: cdt.Unsigned | None,
-               logical_name: cst.LogicalName) -> InterfaceClass:
-        """ append new DLMS object in collection. <is_major>=True is not erased object """
-        if self.is_in_collection(logical_name):
-            raise exc.ITEApplication(F'ERROR created DLMS object with {logical_name=}. Already exist')
-        new_object = self.get_instance(class_id, version, logical_name)
-        new_object.collection = self
-        self.__container.append(new_object)
-        logger.info(F"create {new_object}")
-        return new_object
-
     def add(self, class_id: ut.CosemClassId,
             version: cdt.Unsigned | None,
             logical_name: cst.LogicalName) -> InterfaceClass:
-        """ Use only in template. TODO: move to template """
+        """ append new DLMS object to collection with return it"""
         new_object = self.get_instance(class_id, version, logical_name)
         new_object.collection = self
         self.__container.append(new_object)
@@ -1371,7 +1443,7 @@ class Collection:
     def get_writable_attr(self) -> UsedAttributes:
         """return all writable {obj.ln: {attribute_index}}"""
         ret: UsedAttributes = dict()
-        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN_CLASS)):
+        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN)):
             for list_type in ass.object_list:
                 for attr_access in list_type.access_rights.attribute_access:
                     if attr_access.access_mode.is_writable():

@@ -1,4 +1,5 @@
 from ..__class_init__ import *
+from ...config_parser import get_message
 
 
 class Status(cdt.Enum, elements=tuple(range(6))):
@@ -18,15 +19,15 @@ class SignalQuality(cdt.Unsigned):
     def get_report(self, with_unit: bool = True) -> str:
         value = int(self)
         if value == 0:
-            return F"–113 dBm {en.OR_LESS}(0)"
+            return get_message("–113 dBm $or$ $less$(0)")
         elif value == 1:
             return F"–111 dBm(1)"
         elif value < 31:
             return F"{-109+(value-2)*2} dBm({value})"
         elif value == 31:
-            return F"–51 dBm {en.OR_GREATER}(31)"
+            return get_message("–51 dBm $or$ $greater$(31)")
         elif value == 99:
-            return F"{en.NOT_KNOWN_OR_NOT_DETECTABLE}"
+            return get_message("$not_known_or_not_detectable$")
         else:
             return F"wrong {value=}"
 

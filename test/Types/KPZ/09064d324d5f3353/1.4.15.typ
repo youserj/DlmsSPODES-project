@@ -153,7 +153,7 @@
   <object name="Дата выпуска ПУ" ln="0.0.96.1.4.255">
     <class_id>1</class_id>
     <!--Значение. Type: Date-->
-    <attribute index="2">26</attribute>
+    <attribute index="2" forced="1">26</attribute>
   </object>
   <object name="Версия спецификации СПОДЭС" ln="0.0.96.1.6.255">
     <class_id>1</class_id>

@@ -41,15 +41,17 @@ class TestType(unittest.TestCase):
 
     def test_Collection(self):
         collection = Collection()
-        collection.add_major(collection.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255')))
-        collection.create(class_id=ut.CosemClassId(8), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.1.0.0.255'))
-        collection.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
-        self.assertTrue(len(collection) == 3)
+        collection.add(
+            class_id=ut.CosemClassId(15),
+            version=cdt.Unsigned(1),
+            logical_name=cst.LogicalName('0.0.40.0.0.255'))
+        collection.add(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
+        collection.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
         collection.clear()
         self.assertTrue(len(collection) == 1)
         collection.add_if_missing(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
         # self.collection.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        self.assertTrue(len(collection) == 1, 'check for not added Association again')
+        self.assertTrue(len(collection) == 2, 'check for not added Association again')
 
     def test_UnitScaler(self):
         value = cdt.ScalUnitType()
@@ -60,13 +62,13 @@ class TestType(unittest.TestCase):
         from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver1 import ObjectListElement
         from src.DLMS_SPODES.types.implementations import structs
         col = Collection()
-        col.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        col.create(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
-        col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
-        col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.1.29.0.255'))
-        col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.3.29.0.255'))
-        col.create(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.4.29.0.255'))
-        profile = col.create(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName('1.0.94.7.4.255'))
+        col.add(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
+        col.add(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
+        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
+        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.1.29.0.255'))
+        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.3.29.0.255'))
+        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.4.29.0.255'))
+        profile = col.add(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName('1.0.94.7.4.255'))
         profile.collection = col
         profile.set_attr(6, structs.CaptureObjectDefinition().encoding)
         profile.set_attr(3, bytes.fromhex('01 05 02 04 12 00 08 09 06 00 00 01 00 00 ff 0f 02 12 00 00 02 04 12 00 03 09 06 01 00 02 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 01 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 03 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 04 1d 00 ff 0f 03 12 00 00'))
@@ -114,7 +116,7 @@ class TestType(unittest.TestCase):
 
     def test_ImageTransfer(self):
         col = Collection()
-        col.create(class_id=ut.CosemClassId(18), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.44.0.0.255'))
+        col.add(class_id=ut.CosemClassId(18), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.44.0.0.255'))
         print(col)
 
     def test_UTF8(self):

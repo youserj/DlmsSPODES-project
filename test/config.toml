@@ -222,6 +222,13 @@ IP_Option_Type = "тип IP опции"
 IP_Option_Length = "длина IP опции"
 IP_Option_Data = "данные IP опции"
 
+[DLMS.messages]
+# use for config_parser.get_message
+or = "или"
+less = "меньше"
+greater = "больше"
+not_known_or_not_detectable = "не известно или не сдетектированно"
+
 [DLMS]
 scaler_prefix = [
     {name = "к", value = 3}
