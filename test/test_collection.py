@@ -175,3 +175,13 @@ class TestType(unittest.TestCase):
                           bytes.fromhex("0905312e352e30"))
         ass_obj.set_attr(6, bytes.fromhex("090760857405080202"))
         print(ass_obj)
+
+    def test_get_descriptor(self):
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.15"))
+        p = col.get_object("1.0.94.7.4.255")
+        desc = p.get_attr_descriptor(2, True)
+        print(col)
+

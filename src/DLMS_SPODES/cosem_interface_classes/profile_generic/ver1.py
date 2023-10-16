@@ -140,7 +140,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
         if value == BUFFER and with_selection:
             if self.attr_descriptor_with_selection is None:
                 self.__create_selective_access_descriptor()
-            return self.attr_descriptor_with_selection((descriptor, self.buffer.selective_access))
+            return self.attr_descriptor_with_selection((descriptor.contents, self.buffer.selective_access.contents))
         else:
             return descriptor
 
