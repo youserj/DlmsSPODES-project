@@ -88,7 +88,11 @@ class AppVersion:
             return True
 
     def __str__(self):
-        return F'{self.__major}.{self.__minor}{F".{self.__patch}" if self.__patch is not None else ""}{F" <{self.__additional}>" if len(self.__additional) != 0 else ""}'
+        return F'{self.__major}.{self.__minor}{F".{self.__patch}" if self.__patch is not None else ""}'
+
+    def report(self) -> str:
+        """str with additional values"""
+        return F'{self}{F" <{self.__additional}>" if len(self.__additional) != 0 else ""}'
 
     def __repr__(self):
         return F"{self.__class__.__name__}({self.__major}, {self.__minor}{F', {self.__patch}' if self.__patch is not None else ''}{', additional='+repr(self.additional) if self.additional else ''})"
