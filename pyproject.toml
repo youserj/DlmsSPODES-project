@@ -9,7 +9,7 @@ requires = [
 
 [project]
 name = "DLMS_SPODES"
-version = "0.44.4"
+version = "0.45.0"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
