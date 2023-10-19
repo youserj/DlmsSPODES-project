@@ -228,6 +228,13 @@ or = "или"
 less = "меньше"
 greater = "больше"
 not_known_or_not_detectable = "не известно или не сдетектированно"
+undefined = "не определено"
+contentions = "oбжата"
+breaked_open = "взломана"
+subsequent_autopsy = "последующие вскрытия"
+electronic_seals = "Электронные пломбы"
+for_cover = "корпуса"
+for_terminals_cover = "крышки клеммников"
 
 [DLMS]
 scaler_prefix = [

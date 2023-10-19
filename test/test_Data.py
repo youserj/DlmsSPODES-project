@@ -21,8 +21,8 @@ class TestType(unittest.TestCase):
 
     def test_ExternalEventData(self):
         col = collection.Collection()
-        col.manufacturer = b'KPZ'
-        col.country_ver = AppVersion.from_str("3.0")
+        col.set_manufacturer(b'KPZ')
+        col.set_country("3.0")
         col.server_ver = AppVersion(1, 3, 0)
         col.server_type = cdt.OctetString("4d324d5f33")
         col.set_spec()
@@ -38,3 +38,10 @@ class TestType(unittest.TestCase):
         obj = impl.data.DLMSDeviceIDObject("0.0.96.1.4.255")
         datatime = cdt.DateTime("01.01.20 11:00")
         obj.set_attr(2, datatime.encoding)
+
+    def test_SealStatus(self):
+        obj = impl.data.SealStatus("0.0.96.51.5.255")
+        obj.set_attr(2, 0)
+        for i in range(255):
+            obj.value.set(i)
+            print(i, obj.value.get_report())

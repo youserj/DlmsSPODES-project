@@ -3,6 +3,7 @@ from ... import enums as enu
 from .. import events as ev
 from ...types import implementations as impl
 from ...version import AppVersion
+from ...config_parser import get_message
 from ... import exceptions as exc
 
 
@@ -74,16 +75,16 @@ class SealUnsigned(cdt.Unsigned):
         def get_name(value: int):
             """ СПОДЭСv.3 Е.12.5"""
             match value & 0b11:
-                case 0: return "Не определено"
-                case 1: return "Обжата"
-                case 2: return "Взломана"
-                case 3: return "Последущие вскрытия"
-        return F"Электронные пломбы: корпуса - {get_name(int(self) & 0b11)}, крышки клеммников - {get_name((int(self) >> 2) & 0b11)}"
+                case 0: return "$undefined$"
+                case 1: return "$contentions$"
+                case 2: return "$breaked_open$"
+                case 3: return "$subsequent_autopsy$"
+        return get_message(F"$electronic_seals$: $for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}")
 
 
-class SealStatus(Data):
+class SealStatus(DataDynamic):
     """ RU. 0.0.96.51.5.255. СТО_34.01-5.1-006-2019v3. E 12.1 """
-    A_ELEMENTS = ic.ICAElement(an.VALUE, SealUnsigned, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = DataDynamic.A_ELEMENTS[0].get_change(data_type=SealUnsigned),
 
 
 class TerminalsCoverOpeningState(Data):
