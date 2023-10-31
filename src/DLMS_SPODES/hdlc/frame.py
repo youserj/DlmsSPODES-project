@@ -70,17 +70,44 @@ class Format:
         return F'Type 3: length-{self.length} {"segmentation" if self.is_segmentation else ""}'
 
 
+class AddressLength(int):
+    AUTO = -1
+    __VALID_VALUES = (AUTO, 1, 2, 4)
+
+    def __new__(cls, *args, **kwargs):
+        if args[0] not in cls.__VALID_VALUES:
+            raise ValueError(F"got {cls.__name__}={args[0]}, expected {cls.__VALID_VALUES}")
+        return super().__new__(cls, *args)
+
+    @classmethod
+    def from_str(cls, value: str):
+        if value == "AUTO":
+            value = -1
+        return cls(int(value))
+
+    def __str__(self):
+        if self == -1:
+            return "AUTO"
+        else:
+            return super().__str__()
+
+    @classmethod
+    def get_values(cls):
+        return tuple(str(cls(it)) for it in cls.__VALID_VALUES)
+
+
 class Address:
     """content: if not None then init from content
     upper_address, lower_address: set address according
     length: forcedly installing length
     """
     __content: bytes
+    __MASK: int = 0x3f80
 
     def __init__(self, content: bytes = None,
                  upper_address: int = None,
                  lower_address: int = None,
-                 length: int = None):
+                 length: AddressLength = AddressLength.AUTO):
         if content is not None:
             if len(content) not in (1, 2, 4):
                 raise ValueError(F"got length Frame from content {len(content)}, expected 1, 2 or 4")
@@ -88,36 +115,39 @@ class Address:
                 self.__content = content
         else:
             # calculate length
-            if lower_address is None:
-                lower_address = 0
-                if upper_address <= 0x7f:
+            if not lower_address:
+                if (upper_address & self.__MASK) == 0:
                     length2 = 1
-                elif upper_address > 0x7f and lower_address is None:
-                    length2 = 4
                 else:
-                    raise ValueError(F"got {upper_address=}, expected 0..13383")
+                    lower_address = 0
+                    length2 = 4
             else:
-                if upper_address <= 0x7f and lower_address <= 0x7f:
+                if ((upper_address | lower_address) & self.__MASK) == 0:
                     length2 = 2
                 else:
                     length2 = 4
-            length = length2 if length is None else max(length, length2)
-            match length:
-                case 1:
-                    self.__content = pack('B',
-                                          upper_address << 1 | 1)
-                case 2:
+            if length == AddressLength.AUTO:
+                length = length2
+            elif length >= length2:
+                """setting more or equally is OK"""
+            else:
+                raise ValueError(F"got {length=}, but with {lower_address=}, {upper_address=} it's not possible")
+            if length == 1:
+                self.__content = pack('B',
+                                      upper_address << 1 | 1)
+            elif lower_address is not None:
+                if length == 2:
                     self.__content = pack("BB",
                                           upper_address << 1,
                                           lower_address << 1 | 1)
-                case 4:
+                if length == 4:
                     self.__content = pack("BBBB",
                                           upper_address >> 6 & 0b11111110,
                                           upper_address << 1 & 0b11111110,
                                           lower_address >> 6 & 0b11111110,
                                           lower_address << 1 & 0b11111110 | 1)
-                case err:
-                    raise ValueError(F"got length Frame {err}, expected 1, 2 or 4")
+            else:
+                raise ValueError(F"got {length=}, but lower address is absense, expected (0..16383)")
 
     @classmethod
     def from_frame(cls, value: bytearray) -> Address:

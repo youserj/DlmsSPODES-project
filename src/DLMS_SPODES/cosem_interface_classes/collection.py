@@ -1385,24 +1385,21 @@ class Collection:
         else:
             raise ValueError(F'Not find version for {class_id=}')
 
-    def is_in_collection(self, value: str | bytes | cst.LogicalName) -> bool:
-        match value:
-            case bytes():           obis = value
-            case str():             obis = cst.LogicalName(value).contents
-            case cst.LogicalName(): obis = value.contents
-            case _ as error:        raise TypeError(F'Unknown type {error}')
+    def is_in_collection(self, value: LNContaining) -> bool:
+        obis: bytes = get_ln_contents(value)
         return obis in (obj.logical_name.contents for obj in self.__container)
 
     def get_object(self, value: LNContaining) -> InterfaceClass:
         """ return object from obis<string> or raise exception if it absence """
-        match value:
-            case bytes():                                                    return self.__get_object(value)
-            case cst.LogicalName() | ut.CosemObjectInstanceId():             return self.__get_object(value.contents)
-            case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return self.__get_object(value.instance_id.contents)
-            case ut.CosemAttributeDescriptorWithSelection():                 return self.__get_object(value.cosem_attribute_descriptor.instance_id.contents)
-            case str():                                                      return self.__get_object(cst.LogicalName(value).contents)
-            case cdt.Structure(logical_name=value.logical_name):             return self.__get_object(value.logical_name.contents)
-            case _:                                                          raise exc.NoObject(F"Can't find DLMS Object from collection with {value=}")
+        return self.__get_object(get_ln_contents(value))
+
+    def get_object2(self, value: LNContaining) -> InterfaceClass | None:
+        """ return object from obis<string> or None"""
+        # todo: refactoring with one get_ln_contents
+        if self.is_in_collection(value):
+            return self.__get_object(get_ln_contents(value))
+        else:
+            return None
 
     @lru_cache(4)
     def get_objects_list(self, value: enums.ClientSAP) -> list[ic.COSEMInterfaceClasses]:
@@ -2016,3 +2013,14 @@ def get_collection2(
         t=server_type,
         ver=server_ver
     ).copy(ldn=ldn)
+
+
+def get_ln_contents(value: LNContaining) -> bytes:
+    """return LN as bytes[6] for use in any searching"""
+    match value:
+        case bytes():                                                    return value
+        case cst.LogicalName() | ut.CosemObjectInstanceId():             return value.contents
+        case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return value.instance_id.contents
+        case ut.CosemAttributeDescriptorWithSelection():                 return value.cosem_attribute_descriptor.instance_id.contents
+        case str():                                                      return cst.LogicalName(value).contents
+        case _:                                                          raise exc.NoObject(F"can't convert {value=} to Logical Name contents")
