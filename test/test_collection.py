@@ -185,3 +185,11 @@ class TestType(unittest.TestCase):
         desc = p.get_attr_descriptor(2, True)
         print(col)
 
+    def test_get_ln_contents(self):
+        from src.DLMS_SPODES.types.implementations import structs
+        s = structs.ValueDefinition((1, "1.2.3.4.5.6", 1))
+        self.assertEqual(collection.get_ln_contents(s), b'\x01\x02\x03\x04\x05\x06')
+        s = structs.ActionItem(("1.2.3.4.5.6", 1))
+        self.assertEqual(collection.get_ln_contents(s), b'\x01\x02\x03\x04\x05\x06')
+        s = structs.WindowElement(("01.01.200", "02.01.2000"))
+        self.assertRaises(ValueError, collection.get_ln_contents, s)

@@ -2022,5 +2022,12 @@ def get_ln_contents(value: LNContaining) -> bytes:
         case cst.LogicalName() | ut.CosemObjectInstanceId():             return value.contents
         case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return value.instance_id.contents
         case ut.CosemAttributeDescriptorWithSelection():                 return value.cosem_attribute_descriptor.instance_id.contents
+        case cdt.Structure(logical_name=value.logical_name):             return value.logical_name.contents
+        case cdt.Structure() as s:
+            s: cdt.Structure
+            for it in s:
+                if isinstance(it, cst.LogicalName):
+                    return it.contents
+            raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
         case str():                                                      return cst.LogicalName(value).contents
-        case _:                                                          raise exc.NoObject(F"can't convert {value=} to Logical Name contents")
+        case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
