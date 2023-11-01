@@ -14,8 +14,8 @@ class Season(cdt.Structure):
 
 class SeasonProfile(cdt.Array):
     """ Contains a list of seasons defined by their starting date and a specific week_profile to be executed. The list is sorted according to season_start.  """
-    get_week_names: Callable
     TYPE = Season
+    get_week_names: Callable
     values: list[Season]
     cb_get_week_profile_names: Callable[[], tuple[cdt.OctetString, ...]]
 
@@ -23,26 +23,15 @@ class SeasonProfile(cdt.Array):
         names: list[bytes] = [bytes(el.season_profile_name) for el in self.values]
         for new_name in (i.to_bytes(1, 'big') for i in range(256)):
             if new_name not in names:
-                return Season((bytearray(new_name), None, self.cb_get_week_profile_names()[0]))
+                if len(week_names := self.cb_get_week_profile_names()) == 0:
+                    raise ValueError(F"{WeekProfile.__class__.__name__} container is absense")
+                return Season((bytearray(new_name), None, week_names[0]))
         raise ValueError(F'in {self} all season names is busy')
 
     def append_validate(self, element: Season):
-        self.__check_season_profile_name(element.season_profile_name)
-        self.__check_week_profile_name(element.week_name)
-        element.season_profile_name.register_cb_preset(self.__check_season_profile_name)
-        element.week_name.register_cb_preset(self.__check_week_profile_name)
-
-    def __check_season_profile_name(self, value):
         """validate season_profile_name from array"""
-        if cdt.OctetString(value) in (val.season_profile_name for val in self.values):
-            raise ValueError(F'{cdt.OctetString(value)} already exist in {self}')
-        else:
-            """validate OK"""
-
-    def __check_week_profile_name(self, value=None):
-        """validate week_name from array"""
-        if cdt.OctetString(value) not in self.cb_get_week_profile_names():
-            raise ValueError(F'{cdt.OctetString(value)} is absence in week_profile_name')
+        if cdt.OctetString(element.season_profile_name) in (val.season_profile_name for val in self.values):
+            raise ValueError(F'{element.values} already exist in {self}')
         else:
             """validate OK"""
 
@@ -71,38 +60,15 @@ class WeekProfileTable(cdt.Array):
         names: list[bytes] = [el.week_profile_name.decode() for el in self.values]
         for new_name in (i.to_bytes(1, 'big') for i in range(256)):
             if new_name not in names:
-                return WeekProfile((bytearray(new_name), *[self.cb_get_day_ids()[0]]*7))
+                if len(days_id := self.cb_get_day_ids()) == 0:
+                    raise ValueError("days_id container is absense")
+                return WeekProfile((bytearray(new_name), *[days_id[0]]*7))
         raise ValueError(F'in {self} all week names is busy')
 
     def append_validate(self, element: WeekProfile):
-        self.__check_week_profile_name(element.week_profile_name)
-        self.__check_day_id(element.monday)
-        self.__check_day_id(element.tuesday)
-        self.__check_day_id(element.wednesday)
-        self.__check_day_id(element.thursday)
-        self.__check_day_id(element.friday)
-        self.__check_day_id(element.saturday)
-        self.__check_day_id(element.sunday)
-        element.week_profile_name.register_cb_preset(self.__check_week_profile_name)
-        element.monday.register_cb_preset(self.__check_day_id)
-        element.tuesday.register_cb_preset(self.__check_day_id)
-        element.wednesday.register_cb_preset(self.__check_day_id)
-        element.thursday.register_cb_preset(self.__check_day_id)
-        element.friday.register_cb_preset(self.__check_day_id)
-        element.saturday.register_cb_preset(self.__check_day_id)
-        element.sunday.register_cb_preset(self.__check_day_id)
-
-    def __check_day_id(self, value):
-        """validate day_id from DayProfile"""
-        if cdt.Unsigned(value) not in self.cb_get_day_ids():
-            raise ValueError(F'{cdt.Unsigned(value)} is absent in day_profile_table')
-        else:
-            """validate OK"""
-
-    def __check_week_profile_name(self, value=None):
-        """validate week_name from array"""
-        if cdt.OctetString(value) in (val.week_profile_name for val in self.values):
-            raise ValueError(F'{cdt.OctetString(value)} already exist in {self}')
+        """"""
+        if (err := cdt.OctetString(element.week_profile_name)) in (val.week_profile_name for val in self.values):
+            raise ValueError(F"can't append in {self}, {err} already exist")
         else:
             """validate OK"""
 
@@ -146,32 +112,17 @@ class DayProfileTable(cdt.Array):
 
     def append_validate(self, element: DayProfile):
         """validate and insert callback for validate change DayID"""
-        self.__check_day_id(element.day_id)
-        element.day_id.register_cb_preset(self.__check_day_id)
+        if (err := cdt.Unsigned(element.day_id)) in (day_profile.day_id for day_profile in self.values):
+            raise ValueError(F"can't append in {self}, {err} already exist")
+        else:
+            """validate OK"""
 
     def get_day_ids(self) -> tuple[cdt.Unsigned, ...]:
         return tuple((day_profile.day_id for day_profile in self.values))
 
-    def __check_day_id(self, value):
-        """validate day_id from DayProfile"""
-        if cdt.Unsigned(value) in (day_profile.day_id for day_profile in self.values):
-            raise ValueError(F'{cdt.Unsigned(value)} already exist in {self}')
-        else:
-            """validate OK"""
-
 
 class ActivityCalendar(ic.COSEMInterfaceClasses):
-    """ An instance of the “Activity calendar” class is typically used to handle different tariff structures. It is a definition of scheduled actions
-    inside the meter, which follow the classical way of calendar based schedules by defining seasons, weeks… It can coexist with the more general
-    object “Schedule” and can even overlap with it. If actions are scheduled for the same activation time in an object “Schedule” and in the
-    object “Activity calendar”, the actions triggered by the “Schedule” object are executed first.
-    After a power failure, only the “last action” missed from the object “Activity calendar” is executed (delayed). This is to ensure proper
-    tariffication after power up. If a “Schedule” object is present, then the missed “last action” of the “Activity calendar” must be executed at the
-    correct time within the sequence of actions requested by the “Schedule” object.
-    The “Activity calendar” defines the activation of certain scripts, which can perform different activities inside the logical device. The interface
-    to the object “Script table” is the same as for the object “Schedule”. If an instance of the interface class “Special days table” is available,
-    relevant entries there take precedence over the “Activity calendar” object driven selection of a day profile. The day profile referenced in the
-    “Special days table” activates the day_schedule of the day_profile_table in the “Activity calendar” object by referencing through the day_id. """
+    """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
     NAME = cn.ACTIVITY_CALENDAR
     CLASS_ID = ClassID.ACTIVITY_CALENDAR
     VERSION = Version.V0
@@ -318,3 +269,50 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
         else:
             return super(ActivityCalendar, self).get_index_with_attributes()
 
+    def validate(self):
+        def validate_seasons(index: int):
+            def handle_duplicates(name: str):
+                nonlocal index, duplicates
+                if len(duplicates) != 0:
+                    raise ic.ObjectValidationError(
+                        ln=self.logical_name,
+                        i=index,
+                        message=F"find duplicate {name}: {', '.join(map(str, duplicates))} in {self.get_attr_element(index)}")
+                index -= 1
+
+            days: list[DayProfile.day_id] = list()
+            duplicates: set[DayProfile.day_id] | set[WeekProfile.week_profile_name] | set[Season.season_profile_name] = set()
+            for it in self.get_attr(index):
+                if it.day_id not in days:
+                    days.append(it.day_id)
+                else:
+                    duplicates.add(it.day_id)
+            handle_duplicates("day_id")
+            weeks: list[WeekProfile.week_profile_name] = list()
+            for week_profile in self.get_attr(index):
+                if week_profile.week_profile_name not in weeks:
+                    weeks.append(week_profile.week_profile_name)
+                else:
+                    duplicates.add(week_profile.week_profile_name)
+                for i in range(1, 7):
+                    if week_profile[i] not in days:
+                        raise ic.ObjectValidationError(
+                            ln=self.logical_name,
+                            i=index,
+                            message=F"in {self.get_attr_element(index)} got {week_profile} with day_id: {week_profile[i]}; expected: {', '.join(map(str, days))}")
+            handle_duplicates("week_profile_name")
+            seasons: list[Season.season_profile_name] = list()
+            for season in self.get_attr(index):
+                if season.season_profile_name not in seasons:
+                    seasons.append(season.season_profile_name)
+                else:
+                    duplicates.add(season.season_profile_name)
+                if season.week_name not in weeks:
+                    raise ic.ObjectValidationError(
+                        ln=self.logical_name,
+                        i=index,
+                        message=F"in {self.get_attr_element(index)} got {season} with: {season.week_name}, expected: {', '.join(map(str, weeks))}")
+            handle_duplicates("season_profile_name")
+
+        validate_seasons(5)
+        validate_seasons(9)

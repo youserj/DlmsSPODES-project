@@ -7,7 +7,6 @@ from ..types import cdt, ut, cst
 from ..relation_to_OBIS import get_name
 import logging
 from enum import IntEnum
-from datetime import datetime, timedelta, timezone
 from itertools import count
 from . import collection as col
 from .. import exceptions as exc
@@ -86,6 +85,17 @@ class ICMElement(ICElement):
 
 _LN_ELEMENT = ICAElement(an.LOGICAL_NAME, cst.LogicalName)
 """" first element for each COSEM Interface Class"""
+
+
+class ObjectValidationError(exc.DLMSException):
+    """use in validation method of COSEMInterfaceClasses"""
+    def __init__(self,
+                 ln: cst.LogicalName,
+                 i: int,
+                 message: str):
+        Exception.__init__(self, F"for {ln}: {i}. {message}")
+        self.ln = ln
+        self.i = i
 
 
 class COSEMInterfaceClasses(ABC):
@@ -336,3 +346,6 @@ class COSEMInterfaceClasses(ABC):
 
     def __hash__(self):
         return hash(self.logical_name)
+
+    def validate(self):
+        """procedure for validate class values"""

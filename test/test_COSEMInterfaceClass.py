@@ -32,3 +32,6 @@ class TestType(unittest.TestCase):
             classifier=ic.Classifier.STATIC)
         print(el)
         print(el2)
+
+    def test_Exceptions(self):
+        raise ic.ObjectValidationError(ln=cst.LogicalName("1.1.1.1.1.1"), i=2, message="some error")
