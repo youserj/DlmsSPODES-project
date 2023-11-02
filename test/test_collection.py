@@ -132,8 +132,8 @@ class TestType(unittest.TestCase):
             used=used)
 
     def test_collection_from_xml4(self):
-        cols, used = collection.from_xml4("test_to_xml4.xml")
-        print(cols, used)
+        cols, used, verif = collection.from_xml4("test_to_xml4.xml")
+        print(cols, used, verif)
 
     def test_get_writable_dict(self):
         """use in template"""

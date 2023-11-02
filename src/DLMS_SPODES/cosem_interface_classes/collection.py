@@ -1906,7 +1906,7 @@ def to_xml4(collections: list[Collection],
             xml_declaration=True))
 
 
-def from_xml4(filename: str) -> tuple[list[Collection], UsedAttributes]:
+def from_xml4(filename: str) -> tuple[list[Collection], UsedAttributes, bool]:
     """ create collection from xml for template and UsedAttributes """
     used: UsedAttributes = dict()
     cols = list()
@@ -1969,7 +1969,7 @@ def from_xml4(filename: str) -> tuple[list[Collection], UsedAttributes]:
                         logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
         case _ as error:
             raise exc.VersionError(error, additional='Xml')
-    return cols, used
+    return cols, used, bool(int(objects.findtext("verified", default="0")))
 
 
 if config is not None:
