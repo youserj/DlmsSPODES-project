@@ -1832,12 +1832,15 @@ def get_base_template_xml_element(collections: list[Collection], root_tag: str =
 
 def to_xml4(collections: list[Collection],
             file_name: str,
-            used: UsedAttributes):
+            used: UsedAttributes,
+            verified: bool = False):
     """For template only"""
     objects = get_base_template_xml_element(
         collections=collections,
         root_tag=TagsName.TEMPLATE_ROOT.value)
     objects.attrib["decode"] = "1"
+    if verified:
+        objects.attrib["verified"] = "1"
     for col in collections:
         for ln, indexes in copy.copy(used).items():
             try:
