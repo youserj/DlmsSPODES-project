@@ -1,3 +1,4 @@
+import os
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
@@ -193,3 +194,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(collection.get_ln_contents(s), b'\x01\x02\x03\x04\x05\x06')
         s = structs.WindowElement(("01.01.200", "02.01.2000"))
         self.assertRaises(ValueError, collection.get_ln_contents, s)
+
+    def test_path(self):
+        a = collection.get_manufactures_container()
+        print(a)

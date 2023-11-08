@@ -810,7 +810,7 @@ class Collection:
         return new, used
 
     @classmethod
-    def from_xml(cls, filename: str) -> Self:
+    def from_xml(cls, filename: os.DirEntry | str) -> Self:
         """ append objects from xml file """
         tree = ET.parse(filename)
         objects = tree.getroot()
@@ -833,7 +833,7 @@ class Collection:
             new.set_server_ver(instance=int(server_ver.attrib.get("instance", "0")),
                                value=AppVersion.from_str(server_ver.text))
         new.set_spec()
-        logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
+        logger.info(F'Версия: {root_version}, file: {filename}')
         match root_version:
             case AppVersion(3, 0 | 1 | 2):
                 attempts: iter = count(3, -1)
@@ -1979,23 +1979,51 @@ if config is not None:
         raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
 
 
+@lru_cache(1)
+def get_manufactures_container() -> dict[bytes, dict[bytes, dict[AppVersion, os.DirEntry]]]:
+    ret: dict[bytes, dict[bytes, dict[AppVersion, os.DirEntry]]] = dict()
+    with os.scandir(__collection_path) as ms:
+        for m in ms:
+            if len(m.name) == 3 and m.is_dir():
+                ret[man := m.name.encode("ascii")] = dict()
+                with os.scandir(m) as ts:
+                    for t in ts:
+                        if t.is_dir():
+                            ret[man][server_type := bytes.fromhex(t.name)] = dict()
+                            with os.scandir(t) as vs:
+                                for ver in vs:
+                                    if ver.is_file() and (v := ver.name.partition(".typ"))[1] == ".typ":
+                                        ret[man][server_type][AppVersion.from_str(v[0])] = ver
+    return ret
+
+
+@lru_cache(maxsize=100)
+def get_dir_entry(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> tuple[os.DirEntry, bool]:
+    """one recursion collection get way. ret: file, is_searched"""
+    if (man := get_manufactures_container().get(m)) is None:
+        raise exc.NoConfig(F"no support manufacturer: {m.decode('utf-8', errors='strict')}")
+    elif (type_ := man.get(t.encoding)) is None:
+        raise exc.NoConfig(F"no support type {t.to_str()}, with manufacturer: {m.decode('utf-8', errors='strict')}")
+    elif (f := type_.get(ver)) is None:
+        if searched_version := ver.select_nearest(type_.keys()):
+            return type_.get(searched_version), True
+        else:
+            raise exc.NoConfig(F"no support version {ver} with manufacturer: {m.decode('utf-8', errors='strict')}, type: {t.to_str()}")
+    logger.info(F"got collection from library by path: {f.path}")
+    return f, False
+
+
 @lru_cache(maxsize=100)
 def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
-    context: str = F"{m.decode('utf-8')}/{t.to_str()}/{ver}"
-    logger.info(F"start search in Type library: {context}")
-    path: str = F"{__collection_path}{m.decode('utf-8')}/{t.encoding.hex()}/"
-    if not os.path.isfile(file_name := F"{path}{ver}.typ"):
-        logging.info(F"For {t.decode()}: version {ver} not type in Types")
-        if searched_version := ver.select_nearest([AppVersion.from_str(f_n.removesuffix(".typ")) for f_n in os.listdir(path)]):
-            new_collection = get(m, t, searched_version)
-            new_collection.set_server_ver(
-                instance=0,
-                value=ver,
-                force=True)
-            return new_collection
-        else:
-            raise exc.NoConfig(F"no support {context}")
-    return Collection.from_xml(file_name)
+    """one recursion collection get way"""
+    de, is_searched = get_dir_entry(m, t, ver)
+    new_collection = Collection.from_xml(de)
+    if is_searched:
+        new_collection.set_server_ver(  # todo: for actual version set, not from file
+            instance=0,
+            value=ver,
+            force=True)
+    return new_collection
 
 
 def get_collection(
