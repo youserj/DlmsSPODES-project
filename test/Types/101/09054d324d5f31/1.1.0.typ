@@ -4,6 +4,7 @@
   <country>7</country>
   <country_ver>3.0</country_ver>
   <manufacturer>101</manufacturer>
+  <server_ver>1.1.0</server_ver>
   <object name="Соединение типа &quot;Конфигуратор&quot;" ln="0.0.40.0.3.255">
     <class_id>15</class_id>
     <!--Список объектов: Структура[16]-->

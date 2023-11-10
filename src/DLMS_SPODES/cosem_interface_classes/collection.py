@@ -560,6 +560,7 @@ class Collection:
     __container: deque[InterfaceClass]
     __const_objs: int
     __spec: str
+    __collection_ver: AppVersion | None
 
     def __init__(self,
                  country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA,
@@ -576,14 +577,19 @@ class Collection:
         self.__const_objs = len(self.__container)
         """ counter for major(constant) DLMS objects LN. They don't deletable """
 
+    def __eq__(self, other: Self):
+        return hash(self) == hash(other)
+
+    def __hash__(self):
+        return hash((self.__manufacturer, self.__server_type, self.__collection_ver))
+
     def copy(self, ldn: octet_string.LDN = None) -> Self:
         new_collection = Collection(self.__country, ldn=ldn)
         new_collection.set_dlms_ver(self.__dlms_ver)
         new_collection.set_manufacturer(self.__manufacturer)
-        new_collection.set_country_ver(self.__country_ver)
         new_collection.set_server_type(self.__server_type)
-        for inst, ver in self.__server_ver.items():
-            new_collection.set_server_ver(inst, ver)
+        new_collection.set_country_ver(self.__country_ver)
+        new_collection.set_collection_ver(self.__collection_ver)
         new_collection.set_spec()
         for obj in islice(self.__container, self.__const_objs, len(self.__container)):
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
@@ -593,7 +599,7 @@ class Collection:
             lambda obj: obj.CLASS_ID == ClassID.ASSOCIATION_LN, self),
             key=lambda obj: len(obj.object_list) if obj.object_list else 0
         ).logical_name.e
-        """more full association"""
+        """more full association"""  # todo: move to collection(from_xml)
         obj_for_set = self.getASSOCIATION(association_id).get_objects()
         last_length = len(obj_for_set)
         raise_count = None
@@ -618,6 +624,7 @@ class Collection:
 
     def init_ids(self, country):
         """initiate of identificators"""
+        self.__collection_ver = None
         self.__dlms_ver = 6
         self.__manufacturer = None
         self.__country = country
@@ -705,7 +712,7 @@ class Collection:
         return ret
 
     @property
-    def server_ver(self):
+    def server_ver(self) -> dict[int, AppVersion]:
         return self.__server_ver
 
     def clear_server_ver(self):
@@ -722,9 +729,20 @@ class Collection:
             else:
                 raise ValueError(F"got more hi patch: {value} expected before {self.__server_ver[instance].patch}")
 
+    @property
+    def collection_ver(self) -> AppVersion:
+        return self.__collection_ver
+
+    def set_collection_ver(self, value: AppVersion):
+        """once setting collection version from file"""
+        if not self.__collection_ver:
+            self.__collection_ver = value
+        else:
+            raise ValueError(F"set collection version: {value} failure, already exist")
+
     def __str__(self):
         return F"[{len(self.__container)}] DLMS version: {self.__dlms_ver}, country: {self.__country.name}, country specific version: {self.__country_ver}, " \
-               F"manufacturer: {self.__manufacturer}, server type: {repr(self.__server_type)}, server version: {self.__server_ver}, uses specification: {self.__spec}"
+               F"manufacturer: {self.__manufacturer}, server type: {repr(self.__server_type)}, collection version: {self.__collection_ver}, uses specification: {self.__spec}"
 
     def __iter__(self) -> Iterator[ic.COSEMInterfaceClasses]:
         return iter(self.__container)
@@ -830,8 +848,8 @@ class Collection:
             tmp, _ = cdt.get_instance_and_pdu_from_value(bytes.fromhex(server_type))
             new.set_server_type(tmp)
         for server_ver in objects.findall("server_ver"):
-            new.set_server_ver(instance=int(server_ver.attrib.get("instance", "0")),
-                               value=AppVersion.from_str(server_ver.text))
+            new.set_collection_ver(value=AppVersion.from_str(server_ver.text))
+            break
         new.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename}')
         match root_version:
@@ -1155,76 +1173,6 @@ class Collection:
         else:
             logger.warning("nothing save. all attributes according with origin collection")
         return not is_empty
-
-    def to_xml3(self, file_name: str,
-                used: dict[cst.LogicalName, set[int]],
-                decode: bool = False):
-        """For template only"""
-        objects = self.__get_base_xml_element(TagsName.TEMPLATE_ROOT.value)
-        objects.attrib["decode"] = str(int(decode))
-        for obj in self.values():
-            if not used.get(obj.logical_name):
-                continue
-            object_node = ET.SubElement(
-                objects,
-                "object",
-                attrib={
-                    "ln": str(obj.logical_name),
-                    "name": obj.NAME
-                })
-            for i, attr in obj.get_index_with_attributes():
-                if i == 1:  # don't keep ln
-                    continue
-                elif i not in used[obj.logical_name]:
-                    """skip not used attribute"""
-                else:
-                    if isinstance(attr, cdt.CommonDataType):
-                        if decode:
-                            attr_el = ET.SubElement(
-                                object_node,
-                                "attr",
-                                {
-                                    "name": obj.get_attr_element(i).NAME,
-                                    "index": str(i)})
-                            if isinstance(attr, cdt.SimpleDataType):
-                                attr_el.text = str(attr)
-                            else:
-                                attr_el.attrib["type"] = "array" if attr.TAG == b'\x01' else "struct"  # todo: make better
-                                stack: list = [(attr_el, "attr_el_name", iter(attr))]
-                                while stack:
-                                    node, name, value_it = stack[-1]
-                                    value = next(value_it, None)
-                                    if value:
-                                        if not isinstance(name, str):
-                                            name = next(name).NAME
-                                        if isinstance(value, cdt.Array):
-                                            stack.append((ET.SubElement(node,
-                                                                        "array",
-                                                                        attrib={"name": name}), "ar_name", iter(value)))
-                                        elif isinstance(value, cdt.Structure):
-                                            stack.append((ET.SubElement(node, "struct"), iter(value.ELEMENTS), iter(value)))
-                                        else:
-                                            ET.SubElement(node,
-                                                          "simple",
-                                                          attrib={"name": name}).text = str(value)
-                                    else:
-                                        stack.pop()
-                        else:
-                            ET.SubElement(
-                                object_node,
-                                "attr",
-                                {"index": str(i)}
-                            ).text = attr.encoding.hex()
-                    else:
-                        logger.error(F"skip record {obj}:attr={i} with value={attr}")
-        with open(
-                file_name,
-                mode="wb") as f:
-            f.write(ET.tostring(
-                element=objects,
-                encoding="utf-8",
-                method="xml",
-                xml_declaration=True))
 
     def save_type(self,
                   file_name: str,
@@ -1998,7 +1946,7 @@ def get_manufactures_container() -> dict[bytes, dict[bytes, dict[AppVersion, os.
 
 
 @lru_cache(maxsize=100)
-def get_dir_entry(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> tuple[os.DirEntry, bool]:
+def get_dir_entry(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> os.DirEntry:
     """one recursion collection get way. ret: file, is_searched"""
     if (man := get_manufactures_container().get(m)) is None:
         raise exc.NoConfig(F"no support manufacturer: {m.decode('utf-8', errors='strict')}")
@@ -2006,23 +1954,21 @@ def get_dir_entry(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> tuple[os.
         raise exc.NoConfig(F"no support type {t.to_str()}, with manufacturer: {m.decode('utf-8', errors='strict')}")
     elif (f := type_.get(ver)) is None:
         if searched_version := ver.select_nearest(type_.keys()):
-            return type_.get(searched_version), True
+            return type_.get(searched_version)
         else:
             raise exc.NoConfig(F"no support version {ver} with manufacturer: {m.decode('utf-8', errors='strict')}, type: {t.to_str()}")
     logger.info(F"got collection from library by path: {f.path}")
-    return f, False
+    return f
 
 
 @lru_cache(maxsize=100)
 def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
     """one recursion collection get way"""
-    de, is_searched = get_dir_entry(m, t, ver)
-    new_collection = Collection.from_xml(de)
-    if is_searched:
-        new_collection.set_server_ver(  # todo: for actual version set, not from file
-            instance=0,
-            value=ver,
-            force=True)
+    new_collection = Collection.from_xml(get_dir_entry(m, t, ver))
+    new_collection.set_server_ver(  # todo: for actual version set, not from file
+        instance=0,
+        value=ver,
+        force=True)
     return new_collection
 
 

@@ -4,7 +4,7 @@
   <country>7</country>
   <country_ver>3.0</country_ver>
   <manufacturer>101</manufacturer>
-  <server_type>09064d324d5f31</server_type>
+  <server_type>09054d324d5f31</server_type>
   <server_ver>0.0.53</server_ver>
   <object name="Соединение типа &quot;Публичный клиент&quot;" ln="0.0.40.0.1.255">
     <class_id>15</class_id>

@@ -4,7 +4,7 @@
   <country>7</country>
   <country_ver>3.0</country_ver>
   <manufacturer>103</manufacturer>
-  <server_type>09064d324d5f31533</server_type>
+  <server_type>09064d324d5f3153</server_type>
   <server_ver>0.0.16</server_ver>
   <object name="Òèï ÏÓ" ln="0.0.96.1.1.255">
     <class_id>1</class_id>

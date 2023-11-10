@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
@@ -198,3 +199,36 @@ class TestType(unittest.TestCase):
     def test_path(self):
         a = collection.get_manufactures_container()
         print(a)
+
+    def test_hash(self):
+        col1 = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.13"))
+        col2 = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.12"))
+        c = [col1]
+        print(hash(col1), hash(col2), col1 == col2, col2 in c)
+
+    def test_get_all_collection(self):
+        """try get all collection"""
+        for i in collection.get_manufactures_container().values():
+            for j in i.values():
+                for k in j.values():
+                    print(k.path)
+                    col = collection.Collection.from_xml(k)
+                    print(col)
+
+    def test_copy_benchmark(self):
+        """0.1568sec best"""
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.13"))
+        n = 100
+        s = time.perf_counter()
+        for i in range(n):
+            col.copy()
+        print((time.perf_counter()-s)/n)
