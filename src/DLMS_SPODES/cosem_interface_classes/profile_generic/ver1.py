@@ -156,7 +156,7 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
             obj = self.collection.add_if_missing(class_id=ut.CosemClassId(el_value.class_id.contents),
                                                  version=None,
                                                  logical_name=el_value.logical_name)
-            self.collection.raise_before(obj, self)
+            # self.collection.raise_before(obj, self)
             el_value.set_name(self.collection.get_name_and_type(el_value)[0][-1])
         match self.buffer.selective_access:
             case ut.SelectiveAccessDescriptor() as desc:

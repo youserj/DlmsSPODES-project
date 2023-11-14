@@ -39,20 +39,6 @@ class TestType(unittest.TestCase):
         pattern = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
         self.assertEqual(cdt.DateTime(pattern).decode(), pattern, 'init from datetime and decoding')
 
-    def test_Collection(self):
-        collection = Collection()
-        collection.add(
-            class_id=ut.CosemClassId(15),
-            version=cdt.Unsigned(1),
-            logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        collection.add(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
-        collection.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
-        collection.clear()
-        self.assertTrue(len(collection) == 1)
-        collection.add_if_missing(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        # self.collection.create(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        self.assertTrue(len(collection) == 2, 'check for not added Association again')
-
     def test_UnitScaler(self):
         value = cdt.ScalUnitType()
         value.set((10, 10))

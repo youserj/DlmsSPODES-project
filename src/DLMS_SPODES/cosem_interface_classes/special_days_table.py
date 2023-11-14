@@ -78,7 +78,6 @@ class SpecialDaysTable(ic.COSEMInterfaceClasses):
         try:
             self.delete.register_cb_preset(self.entries.validate_exist_index)
             self.insert.index.register_cb_preset(self.entries.validate_exist_index)
-            print('set delete')
         except KeyError:  # At init time
             print('set delete NO:')
 

@@ -52,7 +52,7 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
             obj = self.collection.add_if_missing(class_id=ut.CosemClassId(el_value.class_id.contents),
                                                  version=None,
                                                  logical_name=el_value.logical_name)
-            self.collection.raise_before(obj, self)
+            # self.collection.raise_before(obj, self)
             el_value.set_name(self.collection.get_name_and_type(el_value)[0][-1])
         self.buffer_capture_objects = self.capture_objects
         buffer_elements: list[cdt.StructElement] = list()

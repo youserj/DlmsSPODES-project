@@ -20,7 +20,7 @@ class TestType(unittest.TestCase):
         v1 = value(ln)
         print(value, v1)
 
-    def test_get_instance(self):
+    def test_add(self):
         col = collection.Collection()
         col.set_manufacturer(b"KPZ")
         col.set_server_ver(0, AppVersion(1, 4, 0))
@@ -29,16 +29,6 @@ class TestType(unittest.TestCase):
                           version=cdt.Unsigned(0),
                           logical_name=cst.LogicalName("0.0.96.1.6.255"))
         ver_obj.set_attr(2, "33 2e 30")
-        inst = col.get_instance(class_id=ut.CosemClassId(3),
-                                version=cdt.Unsigned(0),
-                                ln=cst.LogicalName("1.0.131.35.0.255"))
-        self.assertRaises(ValueError, col.get_instance, class_id=ut.CosemClassId(1),
-                          version=cdt.Unsigned(0),
-                          ln=cst.LogicalName("1.0.1.7.0.255"))
-        inst = col.get_instance(class_id=ut.CosemClassId(1),
-                                version=cdt.Unsigned(0),
-                                ln=cst.LogicalName("0.128.96.13.1.255"))
-        print(inst)
 
     def test_ClassMap(self):
         print(hash(collection.DataMap))
@@ -222,7 +212,11 @@ class TestType(unittest.TestCase):
                     print(col)
 
     def test_copy_benchmark(self):
-        """0.1568sec best"""
+        """best:
+        0.50.2: 0.1568sec
+        0.50.3: 0.0356
+        0.50.4: 0.0354
+        """
         col = collection.get_collection(
             manufacturer=b"KPZ",
             server_type=cdt.OctetString("4d324d5f33"),

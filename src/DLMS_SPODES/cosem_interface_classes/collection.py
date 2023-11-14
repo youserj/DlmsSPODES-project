@@ -9,7 +9,6 @@ from struct import pack
 import datetime
 import dataclasses
 from itertools import count, chain, islice
-from collections import deque
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self
 import logging
@@ -557,7 +556,7 @@ class Collection:
     __country_ver: AppVersion | None
     __server_type: cdt.CommonDataType | None
     __server_ver: dict[int, AppVersion]
-    __container: deque[InterfaceClass]
+    __container: dict[bytes, InterfaceClass]
     __const_objs: int
     __spec: str
     __collection_ver: AppVersion | None
@@ -565,8 +564,17 @@ class Collection:
     def __init__(self,
                  country: CountrySpecificIdentifiers = CountrySpecificIdentifiers.RUSSIA,
                  ldn: octet_string.LDN = None):
-        self.init_ids(country)
-        self.__container = deque()
+        self.__collection_ver = None
+        self.__dlms_ver = 6
+        self.__manufacturer = None
+        self.__country = country
+        self.__country_ver = None
+        """country version specification"""
+        self.__server_type = None
+        self.__server_ver = dict()
+        """key: instance of 0.b.2.0.1.255, value AppVersion"""
+        self.__spec = "DLMS_6"
+        self.__container = dict()
         """ all DLMS objects container with obis key """
         ldn_obj = self.add(
             class_id=ClassID.DATA,
@@ -574,8 +582,6 @@ class Collection:
             logical_name=cst.LogicalName("0.0.42.0.0.255"))
         if ldn:
             ldn_obj.set_attr(2, ldn)
-        self.__const_objs = len(self.__container)
-        """ counter for major(constant) DLMS objects LN. They don't deletable """
 
     def __eq__(self, other: Self):
         return hash(self) == hash(other)
@@ -591,22 +597,23 @@ class Collection:
         new_collection.set_country_ver(self.__country_ver)
         new_collection.set_collection_ver(self.__collection_ver)
         new_collection.set_spec()
-        for obj in islice(self.__container, self.__const_objs, len(self.__container)):
-            new_obj: InterfaceClass = obj.__class__(obj.logical_name)
-            new_collection.__container.append(new_obj)
-            new_obj.collection = new_collection
-        association_id = max(filter(
-            lambda obj: obj.CLASS_ID == ClassID.ASSOCIATION_LN, self),
-            key=lambda obj: len(obj.object_list) if obj.object_list else 0
-        ).logical_name.e
+        max_ass: AssociationLN | None = None
         """more full association"""  # todo: move to collection(from_xml)
-        obj_for_set = self.getASSOCIATION(association_id).get_objects()
+        for obj in self.__container.values():
+            new_obj: InterfaceClass = obj.__class__(obj.logical_name)
+            new_collection.__container[obj.logical_name.contents] = new_obj
+            new_obj.collection = new_collection
+            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+                if max_ass is None or (obj.object_list and len(max_ass.object_list) < len(obj.object_list)):
+                    max_ass = obj
+        obj_for_set = max_ass.get_objects()
+        ass_id: int = max_ass.logical_name.e
         last_length = len(obj_for_set)
         raise_count = None
         while len(obj_for_set) != 0:
             obj = obj_for_set.pop(0)
             try:
-                new_collection.get_object(obj.logical_name).copy(obj, association_id)
+                new_collection.__container.get(obj.logical_name.contents).copy(obj, ass_id)
                 raise_count = None
             except Exception as e:
                 if last_length == len(obj_for_set):
@@ -621,19 +628,6 @@ class Collection:
                     logger.warning(F"can't set value. {e}. leftover {len(obj_for_set)} objects")
                     obj_for_set.append(obj)
         return new_collection
-
-    def init_ids(self, country):
-        """initiate of identificators"""
-        self.__collection_ver = None
-        self.__dlms_ver = 6
-        self.__manufacturer = None
-        self.__country = country
-        self.__country_ver = None
-        """country version specification"""
-        self.__server_type = None
-        self.__server_ver = dict()
-        """key: instance of 0.b.2.0.1.255, value AppVersion"""
-        self.__spec = "DLMS_6"
 
     @property
     def dlms_ver(self):
@@ -701,16 +695,6 @@ class Collection:
             else:
                 """success validation"""
 
-    def pop(self, class_id: ClassID) -> list[InterfaceClass]:
-        """pop from collection by Class_ID"""
-        ret: list[InterfaceClass] = list()
-        for obj in self.__container:
-            if obj.CLASS_ID == class_id:
-                ret.append(obj)
-        for obj in ret:
-            self.__container.remove(obj)
-        return ret
-
     @property
     def server_ver(self) -> dict[int, AppVersion]:
         return self.__server_ver
@@ -742,25 +726,11 @@ class Collection:
 
     def __str__(self):
         return F"[{len(self.__container)}] DLMS version: {self.__dlms_ver}, country: {self.__country.name}, country specific version: {self.__country_ver}, " \
-               F"manufacturer: {self.__manufacturer}, server type: {repr(self.__server_type)}, collection version: {self.__collection_ver}, uses specification: {self.__spec}"
+               F"manufacturer: {self.__manufacturer}, server type: {repr(self.__server_type)}, collection/server version: {self.__server_ver}/{self.__collection_ver}, " \
+               F"uses specification: {self.__spec}"
 
     def __iter__(self) -> Iterator[ic.COSEMInterfaceClasses]:
-        return iter(self.__container)
-
-    @classmethod
-    def from_description(cls, descriptions: list[tuple[cst.LogicalName, cdt.LongUnsigned, cdt.Unsigned]] = None):
-        """ get instance with objects from descriptions """
-        new_instance = cls()
-        if isinstance(descriptions, list):
-            deque(map(lambda description: new_instance.add(description[1], description[2], description[0]), descriptions))
-        return new_instance
-
-    def create_objects_from_collection(self, container: Collection):
-        """ create objects from other collection """
-        for obj in container:
-            self.add_if_missing(class_id=obj.CLASS_ID,
-                                version=obj.VERSION,
-                                logical_name=obj.logical_name)
+        return iter(self.__container.values())
 
     @classmethod
     def from_xml3(cls, filename: str) -> tuple[Self, UsedAttributes]:
@@ -1246,22 +1216,11 @@ class Collection:
         else:
             """not support other country"""
 
-    def get_instance(self, class_id: ut.CosemClassId,
-                     version: cdt.Unsigned | None,
-                     ln: cst.LogicalName) -> InterfaceClass:
-        """ TODO: naming"""
-        if version is None:
-            version = self.set_version(class_id, version)
-        try:
-            return get_type(class_id, version, ln, func_maps[self.__spec])(ln)
-        except ValueError as e:
-            raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {ln=}: {e}")
-
     def add_if_missing(self, class_id: ut.CosemClassId,
                        version: cdt.Unsigned | None,
                        logical_name: cst.LogicalName) -> InterfaceClass:
         """ like as add method with check for missing """
-        if not self.is_in_collection(logical_name):
+        if not self.__container.get(logical_name.contents):
             return self.add(
                 class_id=class_id,
                 version=version,
@@ -1271,10 +1230,10 @@ class Collection:
 
     def get(self, obis: bytes) -> InterfaceClass | None:
         """ get object, return None if it absence """
-        return next(filter(lambda obj: obj.logical_name.contents == obis, self.__container), None)
+        return self.__container.get(obis, None)
 
     def values(self) -> tuple[InterfaceClass]:
-        return tuple(self.__container)
+        return tuple(self.__container.values())
 
     def __len__(self):
         return len(self.__container)
@@ -1283,51 +1242,43 @@ class Collection:
             version: cdt.Unsigned | None,
             logical_name: cst.LogicalName) -> InterfaceClass:
         """ append new DLMS object to collection with return it"""
-        new_object = self.get_instance(class_id, version, logical_name)
-        new_object.collection = self
-        self.__container.append(new_object)
-        logger.info(F'Create {new_object}')
-        return new_object
+        if version is None:
+            version = self.set_version(class_id, version)
+        try:
+            new_object = get_type(
+                class_id=class_id,
+                version=version,
+                ln=logical_name,
+                func_map=func_maps[self.__spec])(logical_name)
+            new_object.collection = self
+            self.__container[logical_name.contents] = new_object
+            logger.info(F'Create {new_object}')
+            return new_object
+        except ValueError as e:
+            raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
 
-    def raise_before(self, obj: InterfaceClass, other: InterfaceClass):
-        """ Insert <obj> above <other> """
-        other_index: int = self.__container.index(other)
-        a = self.__container.index(obj)
-        if other_index < self.__container.index(obj):
-            self.__container.remove(obj)
-            self.__container.insert(other_index, obj)
-
-    def try_remove(self, logical_name: cst.LogicalName, indexes: list[int] = None) -> bool:
+    def try_remove(self, logical_name: cst.LogicalName) -> bool:
         """ If indexes is None when remove object else:
         Use in template. Remove attributes by indexes and remove object from collection if it has only logic attribute """
-        match self.get(logical_name.contents), indexes:
-            case None, _:
+        match self.get(logical_name.contents):
+            case None:
                 return False
-            case ic.COSEMInterfaceClasses() as obj, None if (self.__container.index(obj) >= self.__const_objs):
-                self.__container.remove(obj)
-                return True
-            case ic.COSEMInterfaceClasses() as obj, list():
-                obj: InterfaceClass
-                for i in indexes:
-                    obj.clear_attr(i)
-                for i in range(2, obj.get_attr_length()):
-                    if obj.get_attr(i) is not None:
-                        break
-                else:
-                    self.__container.remove(obj)  # TODO: Rewrite with new list attr API
+            case ic.COSEMInterfaceClasses() if logical_name != cst.LogicalName("0.0.42.0.0.255"):
+                self.__container.pop(logical_name.contents)
                 return True
             case _:
-                logger.warning(F'Dont remove with: {logical_name}: {indexes=}')
+                logger.warning(F'Dont remove with: {logical_name}')
                 return False
 
     @lru_cache(maxsize=100)  # amount of all ClassID
     def set_version(self, class_id: ut.CosemClassId, version: cdt.Unsigned | None = None) -> cdt.Unsigned:
         """ Set DLMS Class version for all Class ID. Return Class Version according by Class ID """
-        for obj in filter(lambda it: it.CLASS_ID == class_id, self.__container):
-            if version is None or version == obj.VERSION:
-                return obj.VERSION
+        for obj in filter(lambda it: it.CLASS_ID == class_id, self.__container.values()):
+            ver = obj.VERSION
+            if version is None or version == ver:
+                return ver
             else:
-                raise ValueError(F'Not match Class Version. Expected: {obj.VERSION}, got {version}')
+                raise ValueError(F'Not match Class Version. Expected: {ver}, got {version}')
         if version is not None:
             return version
         else:
@@ -1335,7 +1286,7 @@ class Collection:
 
     def is_in_collection(self, value: LNContaining) -> bool:
         obis: bytes = get_ln_contents(value)
-        return obis in (obj.logical_name.contents for obj in self.__container)
+        return False if self.__container.get(obis) is None else True
 
     def get_object(self, value: LNContaining) -> InterfaceClass:
         """ return object from obis<string> or raise exception if it absence """
@@ -1379,11 +1330,11 @@ class Collection:
 
     def get_objects_by_class_id(self, value: int | ut.CosemClassId) -> list[InterfaceClass]:
         class_id = ut.CosemClassId(value)
-        return list(filter(lambda obj: obj.CLASS_ID == class_id, self.__container))
+        return list(filter(lambda obj: obj.CLASS_ID == class_id, self.__container.values()))
 
     def get_objects_descriptions(self) -> list[tuple[cst.LogicalName, cdt.LongUnsigned, cdt.Unsigned]]:
         """ return container of objects for get device clone """
-        return list(map(lambda obj: (obj.logical_name, obj.CLASS_ID, obj.VERSION), self.__container))
+        return list(map(lambda obj: (obj.logical_name, obj.CLASS_ID, obj.VERSION), self.__container.values()))
 
     def get_writable_attr(self) -> UsedAttributes:
         """return all writable {obj.ln: {attribute_index}}"""
@@ -1396,23 +1347,6 @@ class Collection:
                             ret[list_type.logical_name] = set()
                         ret[list_type.logical_name].add(int(attr_access.attribute_id))
         return ret
-
-    def clear(self):
-        """ clear to default objects amount """
-        # for obj in self.__container.copy():
-        #     if obj not in self.__const_objs and obj.CLASS_ID != ClassID.ASSOCIATION_LN_CLASS:  # keep all AssociationLN for keep it secret
-        #         self.__container.remove(obj)
-        while len(self.__container) != self.__const_objs:
-            self.__container.pop()
-        # clear cached parameters
-        self.__get_object.cache_clear()
-        self.get_objects_list.cache_clear()
-        self.is_writable.cache_clear()
-        self.is_readable.cache_clear()
-        self.is_accessable.cache_clear()
-        self.get_name_and_type.cache_clear()
-        # end clear cached
-        self.init_ids(CountrySpecificIdentifiers.RUSSIA)
 
     def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:
         """ copy all attributes value from other and return bool result """
@@ -1444,15 +1378,14 @@ class Collection:
         del self.current_association
         logger.warning(F'Attention. ALL Association attributes will to default')
         for ass in self.get_objects_by_class_id(ut.CosemClassId(15)):
-            self.__container.remove(ass)
-            self.__container.append(self.get_instance(class_id=ut.CosemClassId(15),
-                                                      version=version,
-                                                      ln=ass.logical_name))
+            self.__container.pop(ass.logical_name.contents)
+            self.add(
+                class_id=ut.CosemClassId(15),
+                version=version,
+                logical_name=ass.logical_name)
 
-    @lru_cache(maxsize=256)
     def __get_object(self, obis: bytes) -> InterfaceClass:
-        obj: InterfaceClass = next(filter(lambda it: it.logical_name.contents == obis, self.__container), None)
-        if obj is None:
+        if (obj := self.__container.get(obis)) is None:
             logical_name = cst.LogicalName(bytearray(obis))
             raise exc.NoObject(F"{get_name(logical_name)}:{logical_name} is absence")
         else:
@@ -1963,13 +1896,8 @@ def get_dir_entry(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> os.DirEnt
 
 @lru_cache(maxsize=100)
 def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
-    """one recursion collection get way"""
-    new_collection = Collection.from_xml(get_dir_entry(m, t, ver))
-    new_collection.set_server_ver(  # todo: for actual version set, not from file
-        instance=0,
-        value=ver,
-        force=True)
-    return new_collection
+    """caching collection"""
+    return Collection.from_xml(get_dir_entry(m, t, ver))
 
 
 def get_collection(
@@ -1977,19 +1905,12 @@ def get_collection(
         server_type: cdt.CommonDataType,
         server_ver: AppVersion) -> Collection:
     """get copy of collection with caching"""
-    return get(manufacturer, server_type, server_ver).copy()
-
-
-def get_collection2(
-        ldn: octet_string.LDN,
-        server_type: cdt.CommonDataType,
-        server_ver: AppVersion) -> Collection:
-    """get copy of collection with caching throw LDN"""
-    return get(
-        m=ldn.manufacturer(),
-        t=server_type,
-        ver=server_ver
-    ).copy(ldn=ldn)
+    ret = get(manufacturer, server_type, server_ver).copy()
+    ret.set_server_ver(  # todo: for actual version set, not from file
+        instance=0,
+        value=server_ver,
+        force=True)
+    return ret
 
 
 def get_ln_contents(value: LNContaining) -> bytes:
