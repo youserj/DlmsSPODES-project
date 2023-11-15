@@ -1300,7 +1300,6 @@ class Collection:
         else:
             return None
 
-    @lru_cache(4)
     def get_objects_list(self, value: enums.ClientSAP) -> list[ic.COSEMInterfaceClasses]:
         for association in self.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
@@ -1399,11 +1398,9 @@ class Collection:
     def current_association(self) -> AssociationLN:
         return self.__get_object(o.CURRENT_ASSOCIATION)
 
-    @lru_cache(4)
     def getASSOCIATION(self, instance: int) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, instance, 255)))
 
-    @lru_cache(4)
     def getAssociationBySAP(self, SAP: enums.ClientSAP) -> AssociationLN:
         return self.__get_object(bytes((0, 0, 40, 0, self.get_association_id(SAP), 255)))
 

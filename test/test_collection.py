@@ -226,3 +226,18 @@ class TestType(unittest.TestCase):
         for i in range(n):
             col.copy()
         print((time.perf_counter()-s)/n)
+
+    def test_copy(self):
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.13"))
+        print(id(col.getAssociationBySAP(collection.enums.ClientSAP(0x30))), id(col.get_object("0.0.40.0.3.255")))
+        # print(col.getAssociationBySAP.cache_info())
+        # col.getAssociationBySAP.cache_clear()
+        col1 = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f33"),
+            server_ver=AppVersion.from_str("1.4.13"))
+        print(id(col1.getAssociationBySAP(collection.enums.ClientSAP(0x30))), id(col1.get_object("0.0.40.0.3.255")))
+        # print(col1.getAssociationBySAP.cache_info())
