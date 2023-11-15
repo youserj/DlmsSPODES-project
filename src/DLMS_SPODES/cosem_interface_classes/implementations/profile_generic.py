@@ -33,8 +33,20 @@ class SPODES3LoadProfile(ver1.ProfileGeneric):
     scaler_profile_key = bytes((1, 0, 94, 7, 4, 255))
 
 
+class CaptureObjectsDisplayReadout(ver1.CaptureObjects):
+    """for DisplayReadout special"""
+
+
 class SPODES3DisplayReadout(ver1.ProfileGeneric):
     """СПОДЭС3 13.12. Настройка индикации"""
+    A_ELEMENTS = (ver1.ProfileGeneric.A_ELEMENTS[0],
+                  ver1.ProfileGeneric.A_ELEMENTS[1].get_change(data_type=CaptureObjectsDisplayReadout),
+                  ver1.ProfileGeneric.A_ELEMENTS[2],
+                  ver1.ProfileGeneric.A_ELEMENTS[3],
+                  ver1.ProfileGeneric.A_ELEMENTS[4],
+                  ver1.ProfileGeneric.A_ELEMENTS[5],
+                  ver1.ProfileGeneric.A_ELEMENTS[6])
+
     def characteristics_init(self):
         self.set_attr(ver1.BUFFER, None)
         self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type

@@ -1149,7 +1149,8 @@ class Collection:
                   root_tag: str = TagsName.DEVICE_ROOT.value):
         """ For concrete device save all attributes. For types only STATIC save """
         objects = self.__get_base_xml_element(root_tag)
-        objs = dict()
+        objs: dict[ln, set[int]] = dict()
+        """key: LN, value: not writable and readable container"""
         for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN)):
             for obj_el in ass.object_list:
                 if str(obj_el.logical_name) in ("0.0.40.0.0.255", "0.0.42.0.0.255"):
@@ -1176,7 +1177,7 @@ class Collection:
             v = objs[obj.logical_name]
             for i, attr in filter(lambda it: it[0] != 1, obj.get_index_with_attributes()):
                 el: ic.ICAElement = obj.get_attr_element(i)
-                if el.classifier == ic.Classifier.STATIC and (i in v):
+                if el.classifier == ic.Classifier.STATIC and ((i in v) or (isinstance(el, impl.profile_generic.CaptureObjectsDisplayReadout))):
                     if attr is None:
                         logger.error(F"for {obj} attr: {i} not set, value is absense")
                     else:
