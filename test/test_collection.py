@@ -34,9 +34,10 @@ class TestType(unittest.TestCase):
         print(hash(collection.DataMap))
 
     def test_xmlCodingDecoding(self):
-        col = collection.Collection()
-        col.set_server_ver(0, AppVersion(1, 5, 1))
-        col.from_xml("09054d324d5f33_0906312e342e3130.typ")
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f31"),
+            server_ver=AppVersion.from_str("1.5.3"))
         print(col)
         col.to_xml("test.xml")
         col.save_type("test.typ")

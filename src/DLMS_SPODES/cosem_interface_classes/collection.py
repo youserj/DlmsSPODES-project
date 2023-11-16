@@ -1177,7 +1177,7 @@ class Collection:
             v = objs[obj.logical_name]
             for i, attr in filter(lambda it: it[0] != 1, obj.get_index_with_attributes()):
                 el: ic.ICAElement = obj.get_attr_element(i)
-                if el.classifier == ic.Classifier.STATIC and ((i in v) or (isinstance(el, impl.profile_generic.CaptureObjectsDisplayReadout))):
+                if el.classifier == ic.Classifier.STATIC and ((i in v) or el.DATA_TYPE == impl.profile_generic.CaptureObjectsDisplayReadout):
                     if attr is None:
                         logger.error(F"for {obj} attr: {i} not set, value is absense")
                     else:
