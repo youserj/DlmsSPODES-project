@@ -242,3 +242,15 @@ class TestType(unittest.TestCase):
             server_ver=AppVersion.from_str("1.4.13"))
         print(id(col1.getAssociationBySAP(collection.enums.ClientSAP(0x30))), id(col1.get_object("0.0.40.0.3.255")))
         # print(col1.getAssociationBySAP.cache_info())
+
+    def test_set_date_for_calibrator(self):
+        import datetime
+
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f31"),
+            server_ver=AppVersion.from_str("1.5.15"))
+        print(col)
+        manufacture_date_obj = col.get_object('0.0.96.1.4.255')
+        manufacture_date_obj.set_attr(2, datetime.date.today().strftime("%d.%m.%y"))
+        print(manufacture_date_obj.value)

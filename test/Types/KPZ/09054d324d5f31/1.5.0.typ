@@ -4,7 +4,7 @@
   <country>7</country>
   <country_ver>3.0</country_ver>
   <manufacturer>KPZ</manufacturer>
-  <server_ver>1.4.0</server_ver>
+  <server_ver>1.5.0</server_ver>
   <object name="Соединение типа &quot;Конфигуратор&quot;" ln="0.0.40.0.3.255">
     <version>1</version>
     <class_id>15</class_id>
