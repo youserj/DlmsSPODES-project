@@ -706,6 +706,75 @@ class Collection:
         self.set_spec()
         logger.info(F'Версия: {root_version}, file: {filename.split("/")[-1]}')
         match root_version:
+            case AppVersion(2, 0 | 1 | 2):
+                attempts: iter = count(3, -1)
+                """ attempts counter """
+                while len(objects) != 0 and next(attempts):
+                    logger.info(F'{attempts=}')
+                    for obj in objects.findall('object'):
+                        ln: str = obj.attrib.get('ln', 'is absence')
+                        class_id: str = obj.findtext('class_id')
+                        if not class_id:
+                            logger.warning(F"skip create DLMS {ln} from Xml. Class ID is absence")
+                            continue
+                        version: str | None = obj.findtext('version')
+                        try:
+                            logical_name: cst.LogicalName = cst.LogicalName(ln)
+                            if not self.is_in_collection(logical_name):
+                                new_object = self.add(class_id=ut.CosemClassId(class_id),
+                                                      version=None if version is None else cdt.Unsigned(version),
+                                                      logical_name=cst.LogicalName(ln))
+                                if use is not None:
+                                    use[new_object.logical_name] = set()
+                            else:
+                                new_object = self.__get_object(logical_name.contents)
+                        except TypeError as e:
+                            logger.error(F'Object {obj.attrib["name"]} not created : {e}')
+                            continue
+                        except ValueError as e:
+                            logger.error(F'Object {obj.attrib["name"]} not created. {class_id=} {version=} {ln=}: {e}')
+                            continue
+                        indexes: list[int] = list()
+                        """ got attributes indexes for current object """
+                        for attr in obj.findall('attribute'):
+                            index: str = attr.attrib.get('index')
+                            if index.isdigit():
+                                indexes.append(int(index))
+                            else:
+                                raise ValueError(F'ERROR: for {new_object.logical_name if new_object is not None else ""} got index {index} and it is not digital')
+                            try:
+                                match len(attr.text), new_object.get_attr_element(indexes[-1]).DATA_TYPE:
+                                    case 1 | 2, ut.CHOICE():
+                                        if new_object.get_attr(indexes[-1]) is None:
+                                            new_object.set_attr(indexes[-1], int(attr.text))
+                                        else:
+                                            """not need set"""
+                                    case 1 | 2, data_type if data_type.TAG[0] == int(attr.text): """ ordering by old"""
+                                    case 1 | 2, data_type:                                       raise ValueError(F'Got {attr.text} attribute Tag, expected {data_type}')
+                                    case _:
+                                        record_time: str = attr.attrib.get('record_time')
+                                        if record_time is not None:
+                                            new_object.set_record_time(indexes[-1], bytes.fromhex(record_time))
+                                        new_object.set_attr(indexes[-1], bytes.fromhex(attr.text))
+                                        if use is not None:
+                                            use[new_object.logical_name].add(indexes[-1])
+                                obj.remove(attr)
+                            except exc.NoObject as e:
+                                logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. Skip. {e}.")
+                                break
+                            except exc.ITEApplication as e:
+                                logger.error(F"Can't fill {new_object} attr: {indexes[-1]}. {e}")
+                            except IndexError:
+                                logger.error(F'Object "{new_object}" not has attr: {index}')
+                            except TypeError as e:
+                                logger.error(F'Object {new_object} attr:{index} do not write, encoding wrong : {e}')
+                            except ValueError as e:
+                                logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+                            except AttributeError as e:
+                                logger.error(F'Object {new_object} attr:{index} do not fill: {e}')
+                        if len(obj.findall('attribute')) == 0:
+                            objects.remove(obj)
+                    logger.info(F'Not parsed DLMS objects: {len(objects)}')
             case AppVersion(3, 0 | 1 | 2):
                 attempts: iter = count(3, -1)
                 """ attempts counter """
