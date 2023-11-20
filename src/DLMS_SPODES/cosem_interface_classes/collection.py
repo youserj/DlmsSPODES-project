@@ -682,6 +682,29 @@ class Collection:
                                 version=obj.VERSION,
                                 logical_name=obj.logical_name)
 
+    def is_init_type(self) -> bool:
+        """try initiation from collection data"""
+        if not all((
+                type_obj := self.get_object("0.0.96.1.1.255"),
+                (ver_obj := self.get_object("0.0.0.2.1.255") or (ver_obj := self.get_object("0.0.96.1.2.255"))),
+                (sn_obj := self.get_object("0.0.96.1.0.255") or (ldn_obj := self.get_object("0.0.42.0.0.255")))
+        )):
+            return False
+        elif (type_value := type_obj.value) is None:
+            return False
+        elif (ver := ver_obj.value) is None:
+            return False
+        elif ldn_obj and (ldn := ldn_obj.value) and len(ldn) == 12:
+            man = bytes(ldn)[:3]
+        elif sn_obj and (sn := sn_obj.value) and len(ldn) != 0:
+            man = bytes(sn)[:3]
+        else:
+            return False
+        self.set_server_type(type_value)
+        self.set_server_ver(0, AppVersion.from_str(ver.to_str()))
+        self.set_manufacturer(man)
+        return True
+
     def from_xml(self, filename: str, use: dict[cst.LogicalName, set[int]] = None):
         """ append objects from xml file """
         tree = ET.parse(filename)
