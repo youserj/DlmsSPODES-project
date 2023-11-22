@@ -1441,7 +1441,6 @@ class Collection:
 
     def change_association_version(self, version: cdt.Unsigned):
         """ change Association version with clear attributes """
-        del self.current_association
         logger.warning(F'Attention. ALL Association attributes will to default')
         for ass in self.get_objects_by_class_id(ut.CosemClassId(15)):
             self.__container.pop(ass.logical_name.contents)
