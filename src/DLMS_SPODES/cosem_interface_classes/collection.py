@@ -1260,12 +1260,13 @@ class Collection:
                     if not access.access_mode.is_writable() and access.access_mode.is_readable():
                         objs[obj_el.logical_name].add(int(access.attribute_id))
         o2 = list()
+        """container sort by AssociationLN first"""
         for ln in objs.keys():
             obj = self.get_object(ln)
             if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
                 o2.insert(0, obj)
             else:
-                o2.insert(-1, obj)
+                o2.append(obj)
         for obj in o2:
             object_node = ET.SubElement(objects, "obj", attrib={'ln': str(obj.logical_name)})
             if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
