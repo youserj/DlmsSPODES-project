@@ -1132,15 +1132,15 @@ class Collection:
 
     def to_xml(self, file_name: str,
                root_tag: str = TagsName.DEVICE_ROOT.value,
-               with_comment: bool = False):
+               with_comment: bool = False,
+               is_decode: bool = False):
         """Save attributes of client. For types only STATIC save """
         classes: set[ut.CosemClassId] = set()
         objects = self.__get_base_xml_element(root_tag)
         for obj in self.values():
             object_node = ET.SubElement(objects, 'object', attrib={'name': F'{get_name(obj.logical_name)}', 'ln': str(obj.logical_name)})
-            ET.SubElement(object_node, 'class_id').text = str(obj.CLASS_ID)
-            if obj.CLASS_ID not in classes:
-                ET.SubElement(object_node, 'version').text = str(obj.VERSION)
+            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+                ET.SubElement(object_node, "ver").text = str(obj.VERSION)
             classes.add(obj.CLASS_ID)
             for index, attr in obj.get_index_with_attributes():
                 if index == 1:  # don't keep ln
@@ -1155,15 +1155,43 @@ class Collection:
                                 object_node.append(ET.Comment(F'{el.NAME}. Type: {el.DATA_TYPE}'))
                             ET.SubElement(object_node, 'attribute', attrib={'index': str(index)}).text = str(el.DATA_TYPE.TAG[0])
                         case cdt.CommonDataType(), _:
-                            record_time = obj.get_record_time(index)
-                            el_attrib: dict = {'index': str(index)}
-                            if record_time is not None:
-                                el_attrib.update({'rec_time': record_time.encoding.hex()})
-                            if with_comment:
-                                object_node.append(ET.Comment(F'{el.NAME}: {attr}'))
-                            ET.SubElement(object_node, 'attribute', attrib=el_attrib).text = attr.encoding.hex()
+                            if is_decode:
+                                attr_el = ET.SubElement(
+                                    object_node,
+                                    "attr",
+                                    {"name": obj.get_attr_element(index).NAME,
+                                     "index": str(index)})
+                                if isinstance(attr, cdt.SimpleDataType):
+                                    attr_el.text = str(attr)
+                                elif isinstance(attr, cdt.ComplexDataType):
+                                    attr_el.attrib["type"] = "array" if attr.TAG == b'\x01' else "struct"  # todo: make better
+                                    stack: list = [(attr_el, "attr_el_name", iter(attr))]
+                                    while stack:
+                                        node, name, value_it = stack[-1]
+                                        value = next(value_it, None)
+                                        if value:
+                                            if not isinstance(name, str):
+                                                name = next(name).NAME
+                                            if isinstance(value, cdt.Array):
+                                                stack.append((ET.SubElement(node,
+                                                                            "array",
+                                                                            attrib={"name": name}), "ar_name", iter(value)))
+                                            elif isinstance(value, cdt.Structure):
+                                                stack.append((ET.SubElement(node, "struct"), iter(value.ELEMENTS), iter(value)))
+                                            else:
+                                                ET.SubElement(node,
+                                                              "simple",
+                                                              attrib={"name": name}).text = str(value)
+                                        else:
+                                            stack.pop()
+                            else:
+                                el_attrib: dict = {'index': str(index)}
+                                if with_comment:
+                                    object_node.append(ET.Comment(F'{el.NAME}: {attr}'))
+                                ET.SubElement(object_node, 'attribute', attrib=el_attrib).text = attr.encoding.hex()
                         case _:
                             logger.warning('PASS')
+            print("child =", len(object_node))
 
         # TODO: '<!DOCTYPE ITE_util_tree SYSTEM "setting.dtd"> or xsd
         xml_string = ET.tostring(objects, encoding='cp1251', method='xml')
@@ -1683,10 +1711,10 @@ class Collection:
     @lru_cache(maxsize=1000)
     def is_readable(self, ln: cst.LogicalName,
                     index: int,
-                    association_id: int,
+                    association: AssociationLN,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
-        match self.getASSOCIATION(association_id).object_list.get_attr_access(ln, index):
+        match association.object_list.get_attr_access(ln, index):
             case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
                 return False
             case pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
@@ -1756,6 +1784,67 @@ class Collection:
         else:
             pass
         return names, data_type
+
+    # def decode(self, file_name: str,
+    #            root_tag: str = TagsName.DEVICE_ROOT.value):
+    #     objects = self.__get_base_xml_element(root_tag)
+    #     objects.attrib["decode"] = "1"
+    #     for obj in self:
+    #         try:
+    #             object_node = ET.SubElement(
+    #                 objects,
+    #                 "object",
+    #                 attrib={
+    #                     "ln": str(obj.logical_name),
+    #                     "name": obj.NAME
+    #                 })
+    #             for i in tuple(indexes):
+    #                 attr = obj.get_attr(i)
+    #                 if isinstance(attr, cdt.CommonDataType):
+    #                     attr_el = ET.SubElement(
+    #                         object_node,
+    #                         "attr",
+    #                         {"name": obj.get_attr_element(i).NAME,
+    #                          "index": str(i)})
+    #                     if isinstance(attr, cdt.SimpleDataType):
+    #                         attr_el.text = str(attr)
+    #                     elif isinstance(attr, cdt.ComplexDataType):
+    #                         attr_el.attrib["type"] = "array" if attr.TAG == b'\x01' else "struct"  # todo: make better
+    #                         stack: list = [(attr_el, "attr_el_name", iter(attr))]
+    #                         while stack:
+    #                             node, name, value_it = stack[-1]
+    #                             value = next(value_it, None)
+    #                             if value:
+    #                                 if not isinstance(name, str):
+    #                                     name = next(name).NAME
+    #                                 if isinstance(value, cdt.Array):
+    #                                     stack.append((ET.SubElement(node,
+    #                                                                 "array",
+    #                                                                 attrib={"name": name}), "ar_name", iter(value)))
+    #                                 elif isinstance(value, cdt.Structure):
+    #                                     stack.append((ET.SubElement(node, "struct"), iter(value.ELEMENTS), iter(value)))
+    #                                 else:
+    #                                     ET.SubElement(node,
+    #                                                   "simple",
+    #                                                   attrib={"name": name}).text = str(value)
+    #                             else:
+    #                                 stack.pop()
+    #                     indexes.remove(i)
+    #                 else:
+    #                     logger.error(F"skip record {obj}:attr={i} with value={attr}")
+    #             if len(used[ln]) == 0:
+    #                 used.pop(ln)
+    #         except exc.NoObject as e:
+    #             logger.warning(F"skip obj with {ln=} in {collections.index(col)} collection: {e}")
+    #             continue
+    #     with open(
+    #             file_name,
+    #             mode="wb") as f:
+    #         f.write(ET.tostring(
+    #             element=objects,
+    #             encoding="utf-8",
+    #             method="xml",
+    #             xml_declaration=True))
 
 
 def get_base_template_xml_element(collections: list[Collection], root_tag: str = TagsName.DEVICE_ROOT.value) -> ET.Element:

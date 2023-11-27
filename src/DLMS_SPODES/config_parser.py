@@ -38,6 +38,7 @@ def get_values2(*args: str) -> tuple[str, int]:
 
 
 try:
+    print(F"path={os.path.abspath(__file__)}")
     with open("./config.toml", "rb") as f:
         config = tomllib.load(f)
 except FileNotFoundError as e:

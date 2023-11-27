@@ -270,6 +270,10 @@ class __Array(ABC):
         if isinstance(element, self.TYPE):
             self.values.remove(element)
 
+    def insert(self, index: int, element: CommonDataType):
+        if isinstance(element, self.TYPE):
+            self.values.insert(index, element)
+
     def pop(self, index: int | None = None) -> CommonDataType:
         return self.values.pop(index)
 
