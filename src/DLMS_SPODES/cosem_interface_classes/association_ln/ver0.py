@@ -3,7 +3,7 @@ from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds
-from ...pdu_enums import AttributeAccess, MethodAccess
+from ... import pdu_enums as pdu
 from ...enums import MechanismId
 
 
@@ -87,23 +87,23 @@ class ObjectListType(arrays.SelectionAccess):
         else:
             return el.access_rights
 
-    def get_attr_access(self, ln: cst.LogicalName, index: int) -> AttributeAccess:
+    def get_attr_access(self, ln: cst.LogicalName, index: int) -> pdu.AttributeAccess:
         """ index - DLMS object attribute index """
         for item in self.__get_access_right(ln).attribute_access:  # item: AttributeAccessItem
             item: AttributeAccessItem
             if int(item.attribute_id) == index:
-                return AttributeAccess(int(item.access_mode))
+                return pdu.AttributeAccess(int(item.access_mode))
             else:
                 continue
         else:
             raise ValueError(F"not find in {ln} attribute index: {index}")
 
-    def get_meth_access(self, ln: cst.LogicalName | ut.CosemObjectInstanceId, index: int) -> MethodAccess:
+    def get_meth_access(self, ln: cst.LogicalName | ut.CosemObjectInstanceId, index: int) -> pdu.MethodAccess:
         """ index - DLMS object method index """
         for item in self.__get_access_right(ln).method_access:  # item: MethodAccessItem
             item: MethodAccessItem
             if int(item.method_id) == index:
-                return MethodAccess(int(item.access_mode))
+                return pdu.MethodAccess(int(item.access_mode))
             else:
                 continue
         else:
@@ -453,3 +453,77 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         for el in self.object_list:
             ret.append(self.collection.get_object(el.logical_name))
         return ret
+
+    def is_readable(self,
+                    ln: cst.LogicalName,
+                    index: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        match self.object_list.get_attr_access(ln, index):
+            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
+                return False
+            case pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
+                return True
+            case pdu.AttributeAccess.AUTHENTICATED_READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
+                if isinstance(security_policy, pdu.SecurityPolicyVer0):
+                    match security_policy:
+                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
+                            return True
+                        case _:
+                            return False
+                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
+                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
+                        return True
+                    else:
+                        return False
+                else:
+                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")
+
+    def is_writable(self,
+                    ln: cst.LogicalName,
+                    index: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        match self.object_list.get_attr_access(ln, index):
+            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_ONLY:
+                return False
+            case pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
+                return True
+            case pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
+                if isinstance(security_policy, pdu.SecurityPolicyVer0):
+                    match security_policy:
+                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
+                            return True
+                        case _:
+                            return False
+                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
+                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
+                        return True
+                    else:
+                        return False
+                else:
+                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")
+
+    def is_accessible(self, ln: cst.LogicalName,
+                      index: int,
+                      mechanism_id: MechanismId = None
+                      ) -> bool:
+        """for ver 0 and 1 only"""
+        match self.object_list.get_meth_access(ln, index):
+            case pdu.MethodAccess.NO_ACCESS:
+                return False
+            case pdu.MethodAccess.ACCESS:
+                return True
+            case pdu.MethodAccess.AUTHENTICATED_ACCESS:
+                if not mechanism_id:
+                    mechanism_id = int(self.authentication_mechanism_name.mechanism_id_element)
+                if mechanism_id >= MechanismId.LOW:
+                    return True
+                else:
+                    return False
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")

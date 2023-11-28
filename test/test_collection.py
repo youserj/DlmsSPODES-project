@@ -296,3 +296,22 @@ class TestType(unittest.TestCase):
             server_type=cdt.OctetString("4d324d5f31"),
             server_ver=AppVersion.from_str("0.0.39"))
         print(col)
+
+    def test_transpose_objects(self):
+        type_ = "4d324d5f31"
+        ver = "0.0.39"
+        man = b"101"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        for obj in col:
+            match obj.CLASS_ID:
+                case collection.ClassID.PROFILE_GENERIC:
+                    obj: collection.ProfileGeneric
+                    if not obj.sort_object:
+                        obj.set_attr(6, (8, "0.0.1.0.0.255", 2, 0))
+                        print(F"set {obj.sort_object=}")
+                case collection.ClassID.ASSOCIATION_LN:
+                    obj.set_attr(6, bytes.fromhex("09 07 60 85 74 05 08 02 01"))
+        col.save_type(F"{man}_{type_}_{ver}.typ")

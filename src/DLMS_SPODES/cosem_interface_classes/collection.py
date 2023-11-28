@@ -1682,83 +1682,42 @@ class Collection:
             raise ValueError(F"absent association with {client_sap}")
 
     @lru_cache(maxsize=1000)
+    def is_readable(self, ln: cst.LogicalName,
+                    index: int,
+                    association_id: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        return self.getASSOCIATION(association_id).is_readable(
+            ln=ln,
+            index=index,
+            security_policy=security_policy
+        )
+
+    @lru_cache(maxsize=1000)
     def is_writable(self, ln: cst.LogicalName,
                     index: int,
                     association_id: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
-        match self.getASSOCIATION(association_id).object_list.get_attr_access(ln, index):
-            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_ONLY:
-                return False
-            case pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
-                return True
-            case pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
-                if isinstance(security_policy, pdu.SecurityPolicyVer0):
-                    match security_policy:
-                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
-                            return True
-                        case _:
-                            return False
-                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
-                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
-                        return True
-                    else:
-                        return False
-                else:
-                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
-            case err:
-                raise exc.ITEApplication(F"unsupport access: {err}")
+        return self.getASSOCIATION(association_id).is_writable(
+            ln=ln,
+            index=index,
+            security_policy=security_policy
+        )
 
     @lru_cache(maxsize=1000)
-    def is_readable(self, ln: cst.LogicalName,
-                    index: int,
-                    association: AssociationLN,
-                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
-                    ) -> bool:
-        match association.object_list.get_attr_access(ln, index):
-            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
-                return False
-            case pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
-                return True
-            case pdu.AttributeAccess.AUTHENTICATED_READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
-                if isinstance(security_policy, pdu.SecurityPolicyVer0):
-                    match security_policy:
-                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
-                            return True
-                        case _:
-                            return False
-                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
-                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
-                        return True
-                    else:
-                        return False
-                else:
-                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
-            case err:
-                raise exc.ITEApplication(F"unsupport access: {err}")
-
-    @lru_cache(maxsize=1000)
-    def is_accessable(self, ln: cst.LogicalName,
+    def is_accessible(self, ln: cst.LogicalName,
                       index: int,
                       association_id: int,
                       mechanism_id: MechanismId = None
                       ) -> bool:
         """for ver 0 and 1 only"""
-        ass: AssociationLN = self.getASSOCIATION(association_id)
-        match ass.object_list.get_meth_access(ln, index):
-            case pdu.MethodAccess.NO_ACCESS:
-                return False
-            case pdu.MethodAccess.ACCESS:
-                return True
-            case pdu.MethodAccess.AUTHENTICATED_ACCESS:
-                if not mechanism_id:
-                    mechanism_id = int(ass.authentication_mechanism_name.mechanism_id_element)
-                if mechanism_id >= MechanismId.LOW:
-                    return True
-                else:
-                    return False
-            case err:
-                raise exc.ITEApplication(F"unsupport access: {err}")
+
+        return self.getASSOCIATION(association_id).is_accessible(
+            ln=ln,
+            index=index,
+            mechanism_id=mechanism_id
+        )
 
     @lru_cache(maxsize=100)
     def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], Type[cdt.CommonDataType]]:
