@@ -466,7 +466,7 @@ __func_map_for_create.update({
 # SPODES3 Update
 __func_map_for_create.update({
     (0, 21, 0): ClassMap({1: impl.profile_generic.SPODES3DisplayReadout}),
-    (0, 96, 1, 0 | 2 | 4 | 5 | 8 | 9 | 10): ClassMap({0: impl.data.SPODES3IDNotSpecific}),
+    (0, 96, 1, (0, 2, 4, 5, 8, 9, 10)): ClassMap({0: impl.data.SPODES3IDNotSpecific}),
     (0, 96, 1, 6): ClassMap({0: impl.data.SPODES3SPODESVersion}),
     (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
     (0, 96, 3, 20): ClassMap({0: impl.arbitrator.SPODES3Arbitrator}),

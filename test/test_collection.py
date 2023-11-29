@@ -294,12 +294,19 @@ class TestType(unittest.TestCase):
         col = collection.get_collection(
             manufacturer=b"101",
             server_type=cdt.OctetString("4d324d5f31"),
-            server_ver=AppVersion.from_str("0.0.39"))
+            server_ver=AppVersion.from_str("0.0.49"))
+        print(col)
+
+    def test_one_Type2(self):
+        col = collection.get_collection(
+            manufacturer=b"KPZ",
+            server_type=cdt.OctetString("4d324d5f31"),
+            server_ver=AppVersion.from_str("1.5.5"))
         print(col)
 
     def test_transpose_objects(self):
         type_ = "4d324d5f31"
-        ver = "0.0.39"
+        ver = "0.0.48"
         man = b"101"
         col = collection.get(
             m=man,
@@ -314,4 +321,16 @@ class TestType(unittest.TestCase):
                         print(F"set {obj.sort_object=}")
                 case collection.ClassID.ASSOCIATION_LN:
                     obj.set_attr(6, bytes.fromhex("09 07 60 85 74 05 08 02 01"))
+        col.set_server_ver(0, col.collection_ver)  # server as well as collection
+        col.save_type(F"{man}_{type_}_{ver}.typ")
+
+    def test_transpose_fix(self):
+        type_ = "4d324d5f3354"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        col.set_server_ver(0, col.collection_ver)  # server as well as collection
         col.save_type(F"{man}_{type_}_{ver}.typ")
