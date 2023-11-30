@@ -593,7 +593,6 @@ class Collection:
         new_collection = Collection(self.__country, ldn=ldn)
         new_collection.set_dlms_ver(self.__dlms_ver)
         new_collection.set_manufacturer(self.__manufacturer)
-        new_collection.set_server_type(self.__server_type)
         new_collection.set_country_ver(self.__country_ver)
         new_collection.set_collection_ver(self.__collection_ver)
         new_collection.set_spec()
@@ -2018,6 +2017,7 @@ def get_collection(
         server_ver: AppVersion) -> Collection:
     """get copy of collection with caching"""
     ret = get(manufacturer, server_type, server_ver).copy()
+    ret.set_server_type(server_type)  # if xml file not contains the type
     ret.set_server_ver(  # todo: for actual version set, not from file
         instance=0,
         value=server_ver,

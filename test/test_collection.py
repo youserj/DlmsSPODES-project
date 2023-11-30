@@ -301,12 +301,12 @@ class TestType(unittest.TestCase):
         col = collection.get_collection(
             manufacturer=b"KPZ",
             server_type=cdt.OctetString("4d324d5f31"),
-            server_ver=AppVersion.from_str("1.5.5"))
+            server_ver=AppVersion.from_str("1.5.1"))
         print(col)
 
     def test_transpose_objects(self):
         type_ = "4d324d5f31"
-        ver = "0.0.48"
+        ver = "0.0.49"
         man = b"101"
         col = collection.get(
             m=man,
@@ -319,6 +319,9 @@ class TestType(unittest.TestCase):
                     if not obj.sort_object:
                         obj.set_attr(6, (8, "0.0.1.0.0.255", 2, 0))
                         print(F"set {obj.sort_object=}")
+                    elif int(obj.sort_object.attribute_index) != 2:
+                        obj.sort_object.attribute_index.set(2)
+                        print(F"set {obj.sort_object.attribute_index=}")
                 case collection.ClassID.ASSOCIATION_LN:
                     obj.set_attr(6, bytes.fromhex("09 07 60 85 74 05 08 02 01"))
         col.set_server_ver(0, col.collection_ver)  # server as well as collection
