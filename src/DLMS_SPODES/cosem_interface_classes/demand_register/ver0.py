@@ -5,7 +5,6 @@ from ...types.implementations import integers
 
 class DemandRegister(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed 14 4.3.4.Demand register"""
-    NAME = cn.DEMAND_REGISTER
     CLASS_ID = ClassID.DEMAND_REGISTER
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.CURRENT_AVERAGE_VALUE, choices.register, classifier=ic.Classifier.DYNAMIC),

@@ -25,7 +25,7 @@ class ClassID:
     REGISTER_MONITOR = ut.CosemClassId(21)
     SINGLE_ACTION_SCHEDULE = ut.CosemClassId(22)
     IEC_HDLC_SETUP = ut.CosemClassId(23)
-    IEC_TWISTED_PAIR__1__SETUP = ut.CosemClassId(24)
+    IEC_TWISTED_PAIR_1_SETUP = ut.CosemClassId(24)
     M_BUS_SLAVE_PORT_SETUP = ut.CosemClassId(25)
     UTILITY_TABLES = ut.CosemClassId(26)
     MODEM_CONFIGURATION = ut.CosemClassId(27)

@@ -55,7 +55,6 @@ class Clock(ic.COSEMInterfaceClasses):
     generalized time reference.
     It also handles the daylight saving function in that way; i.e. it modifies the deviation of local time to GMT depending on the attributes.
     The start and end point of that function is normally set once. An internal algorithm calculates the real switch point depending on these settings. """
-    NAME = cn.CLOCK
     CLASS_ID = ClassID.CLOCK
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.TIME, cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),

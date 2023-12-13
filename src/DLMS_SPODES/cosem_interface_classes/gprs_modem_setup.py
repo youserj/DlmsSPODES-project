@@ -20,7 +20,6 @@ class QualityOfService(cdt.Structure):
 
 class GPRSModemSetup(ic.COSEMInterfaceClasses):
     """ This IC allow setting up GPRS modems, by handling all data necessary data for modem management. """
-    NAME = cn.GPRS_MODEM_SETUP
     CLASS_ID = ClassID.GPRS_MODEM_SETUP
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.APN, cdt.OctetString),

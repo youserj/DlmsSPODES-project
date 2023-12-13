@@ -11,6 +11,7 @@ from itertools import count
 from . import collection as col
 from .. import exceptions as exc
 
+
 match settings.get_current_language():
     case settings.Language.ENGLISH: from ..Values.EN import attr_names as an
     case settings.Language.RUSSIAN: from ..Values.RU import attr_names as an
@@ -148,6 +149,7 @@ class COSEMInterfaceClasses(ABC):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.hash_ = next(_n_class)
+        # print(cls.__name__)
 
     def copy(self, source: Self, association_id: int = 3):
         """copy object according by association"""
@@ -271,11 +273,6 @@ class COSEMInterfaceClasses(ABC):
     @property
     def it_index_with_meth(self) -> Iterator[tuple[int, cdt.CommonDataType]]:
         return iter(zip(range(1, 20), self.__specific_methods))
-
-    @property
-    @abstractmethod
-    def NAME(self) -> str:
-        """ class name according to current language """
 
     @property
     def logical_name(self) -> cst.LogicalName:

@@ -123,7 +123,6 @@ class DayProfileTable(cdt.Array):
 
 class ActivityCalendar(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
-    NAME = cn.ACTIVITY_CALENDAR
     CLASS_ID = ClassID.ACTIVITY_CALENDAR
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.CALENDAR_NAME_ACTIVE, cdt.OctetString),

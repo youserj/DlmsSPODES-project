@@ -68,7 +68,6 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
            the requested sorting method) will get lost.This maximum number of entries may be specified. Upon changing it, the buffer will be adjusted;
         c) the physical limit for the buffer. This limit typically depends on the objects to capture. The object will reject an attempt of setting
         the maximum number of entries that is larger than physically possible. """
-    NAME = cn.PROFILE_GENERIC
     CLASS_ID = ClassID.PROFILE_GENERIC
     VERSION = Version.V1
     scaler_profile_key: bytes | None = None

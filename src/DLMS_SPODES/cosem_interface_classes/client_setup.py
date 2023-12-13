@@ -13,7 +13,6 @@ class LocalPortNames(cdt.Structure):
 
 class ClientSetup(ic.COSEMInterfaceClasses):
     """ For client setting options """
-    NAME = cn.CLIENT_SETUP
     CLASS_ID = ClassID.CLIENT_SETUP
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.CHANNEL_COMMUNICATION, CommunicationChannel, default=0),

@@ -1667,7 +1667,7 @@ class Collection:
             else:
                 raise ValueError(F"not find {selector} in {obj}")
         else:
-            raise ValueError(F"object with {ln} is not {ScriptTable.NAME}")
+            raise ValueError(F"object with {ln} is not {ScriptTable.CLASS_ID}")
 
     @lru_cache(4)
     def get_association_id(self, client_sap: enums.ClientSAP) -> int:

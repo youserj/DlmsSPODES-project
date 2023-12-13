@@ -17,7 +17,8 @@ class TestType(unittest.TestCase):
 
     def test_Digital(self):
         value = ut.CosemClassId(1)
-        self.assertEqual(value, 1, "compare with build-in <int>")
+        self.assertEqual(int(value), 1, "compare with build-in <int>")
+        print(str(value))
 
     def test_CosemAttributeDescriptor(self):
         value = ut.CosemAttributeDescriptor((8, "0.1.1.0.0.255", 2))

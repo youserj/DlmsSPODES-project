@@ -1,6 +1,7 @@
 from .__class_init__ import *
 from ..types.implementations import integers
 from itertools import chain
+from ..config_parser import get_message
 
 
 class ControlState(cdt.Enum, elements=(0, 1, 2)):
@@ -34,12 +35,11 @@ class OutputState(cdt.Boolean):
     """ Shows the actual physical state of the disconnect unit, i.e. if an electricity breaker or a gas valve is open or closed. TRUE = connected, FALSE = disconnected.
     In electricity metering, the supply is connected when the disconnector device is closed. In gas and water metering, the supply is connected when the valve is open """
     def __str__(self):
-        return en.DISCONNECTED if self.contents == b'\x00' else en.CONNECTED
+        return get_message("$disconnected$") if self.contents == b'\x00' else get_message("$connected$")
 
 
 class DisconnectControl(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.8 Disconnect control"""
-    NAME = cn.DISCONNECT_CONTROL
     CLASS_ID = ClassID.DISCONNECT_CONTROL
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.OUTPUT_STATE, OutputState, classifier=ic.Classifier.DYNAMIC),

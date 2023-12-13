@@ -5,6 +5,7 @@ from typing import Type, Any, Callable
 from dataclasses import dataclass
 from ..types import common_data_types as cdt
 from ..exceptions import DLMSException
+from ..config_parser import get_values
 
 
 class UserfulTypesException(DLMSException):
@@ -389,6 +390,12 @@ class CosemClassId(Unsigned16):
         - class_id-s from 8 192 to 32 767 are reserved for manufacturer specific ICs.
         - class_id-s from 32 768 to 65 535 are reserved for user group specific ICs.
     The DLMS UA reserves the right to assign ranges to individual manufacturers or user groups. """
+
+    def __str__(self):
+        return _class_names.get(self)
+
+
+_class_names = {CosemClassId(k): v for k, v in get_values("DLMS", "class_name").items()}
 
 
 class CosemObjectInstanceId(OCTET_STRING, UsefulType):

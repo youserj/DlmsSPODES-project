@@ -1390,12 +1390,18 @@ class Boolean(SimpleDataType):
 
     def from_bytes(self, encoding: bytes) -> bytes:
         """ return 0x00 from 0x00, 0x01 from 0x01..0xFF """
-        tag, contents = encoding[:1], encoding[1:]
-        if tag != self.TAG:
-            raise TypeError(F'Expected {self.NAME} type, got {get_common_data_type_from(tag).NAME}')
-        return b'\x00' if contents[:1] == b'\x00' else b'\x01'
+        match len(encoding):
+            case 0:  raise ValueError(F"for create {self.NAME} got encoding without data")
+            case 1:  raise ValueError(F"for create {self.NAME} got encoding: {encoding.hex()} without contents")
+            case _:  """OK"""
+        if (tag := encoding[:1]) != self.TAG:
+            raise TypeError(F"expected {self.NAME} type, got {get_common_data_type_from(tag).NAME}")
+        return self.from_int(encoding[1])
 
-    def from_str(self, value) -> bytes:
+    def from_int(self, value: int):
+        return b'\x00' if value == 0 else b'\x01'
+
+    def from_str(self, value: str) -> bytes:
         if value == '0' or 'False'.startswith(value.title()) or 'Ложь'.startswith(value.title()) or \
                 'No'.startswith(value.title()) or 'Нет'.startswith(value.title()):
             return b'\x00'
@@ -1418,6 +1424,9 @@ class Boolean(SimpleDataType):
 
     def __int__(self):
         return 0 if self.contents == b'\x00' else 1
+
+    def __init_subclass__(cls, **kwargs):
+        print(F"boolean subclass init: {kwargs}, {cls.NAME}")
 
 
 class BitString(SimpleDataType):

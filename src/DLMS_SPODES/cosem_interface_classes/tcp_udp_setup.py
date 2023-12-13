@@ -9,7 +9,6 @@ class TCPUDPSetup(ic.COSEMInterfaceClasses):
      On the other hand, COSEM TCP  or UDP based transport layer may be capable to support more than one TCP or UDP connections, between a physical device and several peer physical
      devices hosting COSEM APs.
      When a COSEM physical device supports various data link layers - for example Ethernet and PPP - an instance of the TCP-UDP setup object is necessary for each of them. """
-    NAME = cn.TCP_UDP_SETUP
     CLASS_ID = ClassID.TCP_UDP_SETUP
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.TCP_UDP_PORT, cdt.LongUnsigned, default=4059),

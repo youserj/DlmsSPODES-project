@@ -300,7 +300,6 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     """ COSEM logical devices able to establish application associations within a COSEM context using logical name referencing, model the associations
     through instances of the “Association LN” class. A COSEM logical device has one instance of this IC for each association
     the device is able to support"""
-    NAME = cn.ASSOCIATION_LN
     CLASS_ID = ClassID.ASSOCIATION_LN
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.OBJECT_LIST, ObjectListType, selective_access=SelectiveAccessDescriptor),

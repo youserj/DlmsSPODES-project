@@ -5,7 +5,6 @@ from ...types.implementations.enums import CommSpeed
 
 class IECHDLCSetup(ic.COSEMInterfaceClasses):
     """ This IC allows modelling and configuring communication channels according to Clause 8 of DLMS UA 1000-2 Ed. 8.0:2014. Several communication cnannels can be configured. """
-    NAME = cn.IEC_HDLC_SETUP
     CLASS_ID = ClassID.IEC_HDLC_SETUP
     VERSION = Version.V1
     A_ELEMENTS = (ic.ICAElement(an.COMM_SPEED, CommSpeed, 0, 9, 5),

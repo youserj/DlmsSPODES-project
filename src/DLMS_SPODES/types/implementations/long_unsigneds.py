@@ -33,7 +33,7 @@ class ClassIDCDT:
     REGISTER_MONITOR = ClassId(int(overview.ClassID.REGISTER_MONITOR))
     SINGLE_ACTION_SCHEDULE = ClassId(int(overview.ClassID.SINGLE_ACTION_SCHEDULE))
     IEC_HDLC_SETUP = ClassId(int(overview.ClassID.IEC_HDLC_SETUP))
-    IEC_TWISTED_PAIR__1__SETUP = ClassId(int(overview.ClassID.IEC_TWISTED_PAIR__1__SETUP))
+    IEC_TWISTED_PAIR__1__SETUP = ClassId(int(overview.ClassID.IEC_TWISTED_PAIR_1_SETUP))
     M_BUS_SLAVE_PORT_SETUP = ClassId(int(overview.ClassID.M_BUS_SLAVE_PORT_SETUP))
     UTILITY_TABLES = ClassId(int(overview.ClassID.UTILITY_TABLES))
     MODEM_CONFIGURATION = ClassId(int(overview.ClassID.MODEM_CONFIGURATION))

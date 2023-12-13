@@ -337,3 +337,14 @@ class TestType(unittest.TestCase):
             ver=AppVersion.from_str(ver))
         col.set_server_ver(0, col.collection_ver)  # server as well as collection
         col.save_type(F"{man}_{type_}_{ver}.typ")
+
+    def test_get_class_names(self):
+        type_ = "4d324d5f3354"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        for obj in col:
+            print(str(obj.CLASS_ID))

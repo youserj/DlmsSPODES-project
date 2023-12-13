@@ -53,7 +53,6 @@ class GSMDiagnostic(ic.COSEMInterfaceClasses):
     """ The GSM/GPRS network is undergoing constant changes in terms of registration status, signal quality etc. It is necessary to monitor and log the relevant parameters in order
      to obtain diagnostic information that allows identifying communication problems in the network. An instance of the 'GSM diagnostic' class stores parameters of the GSM/GPRS
      network necessary for analysing the operation of the network."""
-    NAME = cn.GSM_DIAGNOSTIC
     CLASS_ID = ClassID.GSM_DIAGNOSTIC
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
