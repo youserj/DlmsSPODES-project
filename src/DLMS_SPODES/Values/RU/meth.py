@@ -34,3 +34,7 @@ REQUEST_ACTION = "Запрос действия"
 PUSH = "Протолнуть"
 # demand register
 NEXT_PERIOD = "Следующий период"
+# NTP setup
+SYNCHRONIZE = "Синхронизация"
+ADD_AUTHENTICATION_KEY = "Добавить ключ аутентификации"
+DELETE_AUTHENTICATION_KEY = "Удалить ключ аутентификации"

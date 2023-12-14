@@ -34,3 +34,7 @@ REQUEST_ACTION = "request_action"
 PUSH = "push"
 # demand register
 NEXT_PERIOD = "next_period"
+# NTP setup
+SYNCHRONIZE = "synchronize"
+ADD_AUTHENTICATION_KEY = "add_authentication_key"
+DELETE_AUTHENTICATION_KEY = "delete_authentication_key"

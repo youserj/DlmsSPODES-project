@@ -40,6 +40,7 @@ from .ipv4_setup import IPv4Setup
 from .modem_configuration.ver0 import PSTNModemConfiguration
 from .modem_configuration.ver1 import ModemConfigurationVer1
 from .limiter import Limiter
+from .ntp_setup.ver0 import NTPSetup
 from .profile_generic.ver0 import ProfileGeneric as ProfileGenericVer0
 from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
 from .register import Register
@@ -79,7 +80,8 @@ IECHDLCSetup: TypeAlias = IECHDLCSetupVer0 | IECHDLCSetupVer1
 GSMDiagnostic: TypeAlias = GSMDiagnosticVer0 | GSMDiagnosticVer1 | GSMDiagnosticVer2
 InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister | ProfileGeneric | Clock | ScriptTable | Schedule | SpecialDaysTable | ActivityCalendar | \
                             SingleActionSchedule | AssociationLN | IECHDLCSetup | DisconnectControl | Limiter | ModemConfiguration | PSTNModemConfiguration | ImageTransfer | \
-                            GPRSModemSetup | GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN
+                            GPRSModemSetup | GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN | \
+                            NTPSetup
 
 
 UsedAttributes: TypeAlias = dict[cst.LogicalName, set[int]]
@@ -174,6 +176,9 @@ DisconnectControlMap = ClassMap({
 LimiterMap = ClassMap({
     0: Limiter
 })
+NTPSetupMap = ClassMap({
+    0: NTPSetup
+})
 ClientSetupMap = ClassMap({
     0: ClientSetup
 })
@@ -186,7 +191,7 @@ UnsignedDataMap = ClassMap({
 CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | DemandRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | \
                            AssociationLNMap | ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | \
                            TCPUDPSetupMap | IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | \
-                           ClientSetupMap
+                           NTPSetupMap | ClientSetupMap
 
 
 LN_C: TypeAlias = int
@@ -218,6 +223,7 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
     68: ArbitratorMap,
     70: DisconnectControlMap,
     71: LimiterMap,
+    100: NTPSetupMap,
     32767: ClientSetupMap
 }
 
@@ -394,6 +400,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     (0, 25, 6, 0): GSMDiagnosticMap,
     #
     (0, 25, 9, 0): PushSetupMap,
+    (0, 25, 10, 0): NTPSetupMap,
     #
     (0, 0, 40, 0, tuple(range(8))): (AssociationSNMap, AssociationLNMap),  # todo: now limit by 8 association, solve it
     #

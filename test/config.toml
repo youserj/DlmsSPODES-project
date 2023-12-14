@@ -280,6 +280,7 @@ cyphering_info = "Информация о шифровании"
 key_id = "Идентификатор ключа"
 key_wrapped = "Обертка ключа"
 key_data = "Данные ключа"
+key = "Ключ"
 certificate_entity = "Объект сертификата"
 certificate_type = "Тип сертификата"
 serial_number = "Серийный номер"
@@ -619,6 +620,12 @@ ClientSAP = [
     {e=0x40, v="Инициативный"},
     {e=0x50, v="Обновление ПО"},
     {e=0x60, v="Домашний дисплей"},
+]
+
+AuthenticationMethod = [
+    {e=0, v="Нет безопасности"},
+    {e=1, v="Общие секреты"},
+    {e=2, v="Авто ключ IFF"}
 ]
 
 MechanismIdElement = [

@@ -1425,9 +1425,6 @@ class Boolean(SimpleDataType):
     def __int__(self):
         return 0 if self.contents == b'\x00' else 1
 
-    def __init_subclass__(cls, **kwargs):
-        print(F"boolean subclass init: {kwargs}, {cls.NAME}")
-
 
 class BitString(SimpleDataType):
     """ An ordered sequence of boolean values """

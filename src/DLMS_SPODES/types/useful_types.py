@@ -392,10 +392,16 @@ class CosemClassId(Unsigned16):
     The DLMS UA reserves the right to assign ranges to individual manufacturers or user groups. """
 
     def __str__(self):
-        return _class_names.get(self)
+        if _class_names:
+            return _class_names.get(self)
+        else:
+            return repr(self)
+
+    def __repr__(self):
+        return F"{self.__class__.__name__}({int(self)})"
 
 
-_class_names = {CosemClassId(k): v for k, v in get_values("DLMS", "class_name").items()}
+_class_names = {CosemClassId(k): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
 
 
 class CosemObjectInstanceId(OCTET_STRING, UsefulType):

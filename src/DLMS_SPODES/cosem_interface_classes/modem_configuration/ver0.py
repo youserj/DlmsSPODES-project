@@ -62,8 +62,3 @@ class PSTNModemConfiguration(ic.COSEMInterfaceClasses):
     @property
     def modem_profile(self) -> ModemProfile:
         return self.get_attr(4)
-
-
-if __name__ == '__main__':
-    b = ModemProfileElement.get_validate_values().index('RING')
-    a = ModemProfileElement(b'\x09\x04\x33\x45\x54\x33')
