@@ -213,6 +213,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 25, 4, 0:   return F"{overview.ClassID.GPRS_MODEM_SETUP}{handle_B(b)}"
         case  0, b, 25, 6, 0:   return F"{overview.ClassID.GSM_DIAGNOSTIC}{handle_B(b)}"
         case  0, b, 25, 9, 0:   return F"{overview.ClassID.PUSH_SETUP}{handle_B(b)}"
+        case  0, b, 25, 10, 0:  return F"{overview.ClassID.NTP_SETUP}{handle_B(b)}"
         case  0, 0, 40, 0, 0:   return rn.CURRENT_ASSOCIATION
         case  0, 0, 40, 0, 1:   return rn.RU_PUBLIC_CLIENT_ASSOCIATION
         case  0, 0, 40, 0, 2:   return rn.RU_METER_READER_ASSOCIATION
