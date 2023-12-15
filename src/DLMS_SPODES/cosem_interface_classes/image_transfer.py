@@ -149,8 +149,7 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
         """ set block transfer number. IndexError if index more when blocks size """
         if index > (len(self.__blocks_for_update) - 1):
             raise IndexError(F"got block {index=}, expected 0..{len(self.__blocks_for_update)-1}")
-        self.image_block_transfer.image_block_value.set(self.__blocks_for_update[index])
-        self.image_block_transfer.image_block_number.set(index)
+        self.image_block_transfer.set((index, self.__blocks_for_update[index]))
 
     @property
     def is_image_exist(self) -> bool:
@@ -160,15 +159,3 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
     def clear_image(self):
         """ clear image container """
         self.__blocks_for_update.clear()
-
-
-if __name__ == '__main__':
-    c = ImageToActivateInfo()
-    c.set([[1, '00', '11']])
-    a = ImageTransferInitiate(['00', 0])
-    a.set(['11', 1])
-    a = ImageTransferStatus()
-    print(a == ImageTransferStatus('Image transfer not initiated'))
-    match a:
-        case ImageTransferStatus('Image transfer not initiated'): print(a)
-    # print(a == 27)
