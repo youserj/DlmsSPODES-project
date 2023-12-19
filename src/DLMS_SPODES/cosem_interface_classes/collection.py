@@ -1156,7 +1156,7 @@ class Collection:
                                 attr_el = ET.SubElement(
                                     object_node,
                                     "attr",
-                                    {"name": obj.get_attr_element(index).NAME,
+                                    {"name": str(obj.get_attr_element(index)),
                                      "index": str(index)})
                                 if isinstance(attr, cdt.SimpleDataType):
                                     attr_el.text = str(attr)
@@ -1649,12 +1649,12 @@ class Collection:
                         match int(action.service_id):
                             case 1:  # for write
                                 if isinstance(action.parameter, cdt.NullData):
-                                    names.append(action_obj.get_attr_element(int(action.index)).NAME)
+                                    names.append(str(action_obj.get_attr_element(int(action.index))))
                                 else:
                                     raise TypeError(F"not support by framework")  # TODO: make it
                             case 2:  # for execute
                                 if isinstance(action.parameter, cdt.NullData):
-                                    names.append(action_obj.get_meth_element(int(action.index)).NAME)
+                                    names.append(str(action_obj.get_meth_element(int(action.index))))
                                 else:
                                     raise TypeError(F"not support by framework")  # TODO: make it
                     return ", ".join(names)
@@ -1721,7 +1721,7 @@ class Collection:
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
         data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
-        names.append(obj.get_attr_element(attr_index).NAME)
+        names.append(str(obj.get_attr_element(attr_index)))
         if data_index == 0:
             pass
         elif issubclass(data_type, cdt.Structure):

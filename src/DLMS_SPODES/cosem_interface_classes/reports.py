@@ -1,7 +1,7 @@
 from typing import Any
 from .collection import ic, cdt
 from ..cosem_interface_classes import collection
-from ..config_parser import config, get_values
+from ..config_parser import get_values
 
 
 def get_obj_report(
@@ -24,9 +24,9 @@ def get_obj_report(
                 pass
             if hasattr(value, "report"):
                 value = value.report
-            ret += F"  {obj.get_attr_element(i).NAME}: {value}\n"
+            ret += F"  {obj.get_attr_element(i)}: {value}\n"
         elif isinstance(value, cdt.ComplexDataType):
-            ret += F"  [{obj.get_attr_element(i).NAME}]\n"
+            ret += F"  [{obj.get_attr_element(i)}]\n"
             stack: list = [("", iter(value))]
             while stack:
                 name, value_it = stack[-1]

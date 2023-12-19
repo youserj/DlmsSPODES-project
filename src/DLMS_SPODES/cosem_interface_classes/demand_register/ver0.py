@@ -64,7 +64,7 @@ class DemandRegister(ic.COSEMInterfaceClasses):
         attr_value = self.get_attr(attr_index)
         if self.current_average_value is not None and self.last_average_value is not None and self.current_average_value.TAG != self.last_average_value.TAG:
             self.clear_attr(attr_index)
-            raise ValueError(F"got {self.get_attr_element(attr_index).NAME} with: {attr_value=}, expected "
+            raise ValueError(F"got {self.get_attr_element(attr_index)} with: {attr_value=}, expected "
                              F"{cdt.get_common_data_type_from(self.current_average_value.TAG if attr_index == 3 else self.last_average_value.TAG).NAME}")
         match attr_value:
             case cdt.Array() | cdt.CompactArray() | cdt.Structure(): self.set_attr(4, cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\xff'))

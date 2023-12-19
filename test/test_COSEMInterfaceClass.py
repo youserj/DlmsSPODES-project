@@ -45,5 +45,3 @@ class TestType(unittest.TestCase):
                     print(F"{i}")
             except AttributeError as e:
                 print(F"skip {c}: {e}")
-            except TypeError as e:
-                print()

@@ -155,7 +155,6 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
             obj = self.collection.add_if_missing(class_id=ut.CosemClassId(el_value.class_id.contents),
                                                  version=None,
                                                  logical_name=el_value.logical_name)
-            # self.collection.raise_before(obj, self)
             el_value.set_name(self.collection.get_name_and_type(el_value)[0][-1])
         match self.buffer.selective_access:
             case ut.SelectiveAccessDescriptor() as desc:
@@ -243,24 +242,6 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     def get_buffer_objects(self) -> list[cosem_interface_classes.cosem_interface_class.COSEMInterfaceClasses]:
         """ get objects of current buffer container """
         return [self.collection.get(obj_def.logical_name.contents) for obj_def in self.buffer_capture_objects]
-
-    # TODO: remove use names created in create_buffer_struct_type
-    def get_buffer_elements_names(self) -> list[str]:
-        """ get class name + attribute name + unit if possible """
-        ret: list[str] = list()
-        for capture_obj in self.buffer_capture_objects:
-            try:
-                capture_obj: structs.CaptureObjectDefinition
-                obj: ic.COSEMInterfaceClasses = self.collection.get_object(capture_obj)  # Attention New API!!! remove after test
-                match obj, capture_obj.attribute_index.decode():
-                    case Register(), 2: additional = F', {obj.scaler_unit.unit if obj.scaler_unit is not None else "?"}'
-                    case Register(), 3: additional = F'. {obj.get_attr_element(3).NAME}'
-                    case Clock(), 2:    additional = ''
-                    case _, index:      additional = F'. {obj.get_attr_element(index).NAME}'
-                ret.append(F'{get_name(obj.logical_name)}{additional}')
-            except KeyError:
-                ret.append('?')
-        return ret
 
     # TODO: Remove by set it in CaptureObjects.append
     def get_scaler_units_profile(self) -> list[cdt.ScalUnitType | None]:
