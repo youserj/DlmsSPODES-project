@@ -43,7 +43,7 @@ class ICElement:
     NAME: str
 
     def __str__(self):
-        if t := _am_names.get(self.NAME):
+        if _am_names and (t := _am_names.get(self.NAME)):
             return t
         else:
             return self.NAME
