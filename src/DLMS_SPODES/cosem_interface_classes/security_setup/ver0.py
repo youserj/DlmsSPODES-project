@@ -30,13 +30,13 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
      and certificates """
     CLASS_ID = ClassID.SECURITY_SETUP
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicy, 0, 3, 0),
-                  ic.ICAElement(an.SECURITY_SUITE, SecuritySuite, 0, 0, 0),
-                  ic.ICAElement(an.CLIENT_SYSTEM_TITLE, cdt.OctetString, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.SERVER_SYSTEM_TITLE, cdt.OctetString))
+    A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicy, 0, 3, 0),
+                  ic.ICAElement("security_suite", SecuritySuite, 0, 0, 0),
+                  ic.ICAElement("client_system_title", cdt.OctetString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("server_system_title", cdt.OctetString))
 
-    M_ELEMENTS = (ic.ICMElement(mn.SECURITY_ACTIVATE, SecurityPolicy),
-                  ic.ICMElement(mn.GLOBAL_KEY_TRANSFER, GlobalKeyTransfer))
+    M_ELEMENTS = (ic.ICMElement("security_activate", SecurityPolicy),
+                  ic.ICMElement("global_key_transfer", GlobalKeyTransfer))
 
     def characteristics_init(self):
         """nothing do it"""

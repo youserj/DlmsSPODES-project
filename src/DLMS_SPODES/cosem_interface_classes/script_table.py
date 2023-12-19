@@ -41,8 +41,8 @@ class ScriptTable(ic.COSEMInterfaceClasses):
     executed at the same time instance, then the one with the smaller index is executed first """
     CLASS_ID = ClassID.SCRIPT_TABLE
     VERSION = Version.V0
-    A_ELEMENTS = ic.ICAElement(an.SCRIPTS, Scripts),
-    M_ELEMENTS = ic.ICMElement(mn.EXECUTE, cdt.LongUnsigned),
+    A_ELEMENTS = ic.ICAElement("scripts", Scripts),
+    M_ELEMENTS = ic.ICMElement("execute", cdt.LongUnsigned),
 
     def characteristics_init(self):
         self.set_attr(2, None)

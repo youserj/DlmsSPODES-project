@@ -154,10 +154,10 @@ class Schedule(ic.COSEMInterfaceClasses):
      If the clock is put back, re-execution of the scripts, which fall into the backwarding interval is suppressed. """
     CLASS_ID = ClassID.SCHEDULE
     VERSION = Version.V0
-    A_ELEMENTS = ic.ICAElement(an.ENTRIES, Entries),
-    M_ELEMENTS = (ic.ICMElement(mn.ENABLE_DISABLE, DataED),
-                  ic.ICMElement(mn.INSERT, ScheduleTableEntry),
-                  ic.ICMElement(mn.DELETE, DataDelete))
+    A_ELEMENTS = ic.ICAElement("entries", Entries),
+    M_ELEMENTS = (ic.ICMElement("enable_disable", DataED),
+                  ic.ICMElement("insert", ScheduleTableEntry),
+                  ic.ICMElement("delete", DataDelete))
 
     def characteristics_init(self):
         self.set_attr(2, None)

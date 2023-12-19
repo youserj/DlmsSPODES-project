@@ -75,15 +75,15 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     buffer_capture_objects: CaptureObjects
     range_descriptor: Type[cdt.Structure] = None
     attr_descriptor_with_selection: Type[ut.CosemAttributeDescriptorWithSelection] = None
-    A_ELEMENTS = (ic.ICAElement(an.BUFFER, arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CAPTURE_OBJECTS, CaptureObjects),
-                  ic.ICAElement(an.CAPTURE_PERIOD, cdt.DoubleLongUnsigned),
-                  ic.ICAElement(an.SORT_METHOD, SortMethod),
-                  ic.ICAElement(an.SORT_OBJECT, structs.CaptureObjectDefinition),
-                  ic.ICAElement(an.ENTRIES_IN_USE, cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.PROFILE_ENTRIES, cdt.DoubleLongUnsigned, 1, default=1))
-    M_ELEMENTS = (ic.ICMElement(mn.RESET, integers.Only0),
-                  ic.ICMElement(mn.CAPTURE, integers.Only0))
+    A_ELEMENTS = (ic.ICAElement("buffer", arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("capture_objects", CaptureObjects),
+                  ic.ICAElement("capture_period", cdt.DoubleLongUnsigned),
+                  ic.ICAElement("sort_method", SortMethod),
+                  ic.ICAElement("sort_object", structs.CaptureObjectDefinition),
+                  ic.ICAElement("entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("profile_entries", cdt.DoubleLongUnsigned, 1, default=1))
+    M_ELEMENTS = (ic.ICMElement("reset", integers.Only0),
+                  ic.ICMElement("capture", integers.Only0))
 
     def characteristics_init(self):
         self.set_attr(BUFFER, None)

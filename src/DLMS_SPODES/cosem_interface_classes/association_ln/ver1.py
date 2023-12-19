@@ -96,18 +96,18 @@ class AssociationLN(ver0.AssociationLN):
     through instances of the “Association LN” class. A COSEM logical device has one instance of this IC for each association
     the device is able to support"""
     VERSION = Version.V1
-    A_ELEMENTS = (ic.ICAElement(an.OBJECT_LIST, ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
+    A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
                   ver0.AssociationLN.get_attr_element(3),
-                  ic.ICAElement(an.APPLICATION_CONTEXT_NAME, ContextNameType),
+                  ic.ICAElement("application_context_name", ContextNameType),
                   ver0.AssociationLN.get_attr_element(5),
-                  ic.ICAElement(an.AUTHENTICATION_MECHANISM_NAME, MechanismNameType),
+                  ic.ICAElement("authentication_mechanism_name", MechanismNameType),
                   ver0.AssociationLN.get_attr_element(7),  # TODO: make new class Secret(LLC_Secret)
                   ver0.AssociationLN.get_attr_element(8),
-                  ic.ICAElement(an.SECURITY_SETUP_REFERENCE, cst.LogicalName))
+                  ic.ICAElement("security_setup_reference", cst.LogicalName))
     M_ELEMENTS = (ver0.AssociationLN.get_meth_element(1),
                   ver0.AssociationLN.get_meth_element(2),
-                  ic.ICMElement(mn.ADD_OBJECT, ObjectListElement),
-                  ic.ICMElement(mn.REMOVE_OBJECT, ObjectListElement))
+                  ic.ICMElement("add_object", ObjectListElement),
+                  ic.ICMElement("remove_object", ObjectListElement))
     object_list: ObjectListType
     application_context_name: ContextNameType
     authentication_mechanism_name: MechanismNameType

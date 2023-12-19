@@ -26,16 +26,16 @@ class NTPSetup(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.NTP_SETUP
     VERSION = Version.V0
     A_ELEMENTS = (
-        ic.ICAElement(an.ACTIVATED, cdt.Boolean, default=False),
-        ic.ICAElement(an.SERVER_ADDRESS, ServerAddress),
-        ic.ICAElement(an.SERVER_PORT, cdt.LongUnsigned, default=123),
-        ic.ICAElement(an.AUTHENTICATION_METHOD, AuthenticationMethod),
-        ic.ICAElement(an.AUTHENTICATION_KEYS, AuthenticationKeys),
-        ic.ICAElement(an.CLIENT_KEY, cdt.OctetString))
+        ic.ICAElement("activated", cdt.Boolean, default=False),
+        ic.ICAElement("server_address", ServerAddress),
+        ic.ICAElement("server_port", cdt.LongUnsigned, default=123),
+        ic.ICAElement("authentication_method", AuthenticationMethod),
+        ic.ICAElement("authentication_keys", AuthenticationKeys),
+        ic.ICAElement("client_key", cdt.OctetString))
     M_ELEMENTS = (
-        ic.ICMElement(mn.SYNCHRONIZE, integers.Only0),
-        ic.ICMElement(mn.ADD_AUTHENTICATION_KEY, AuthenticationKey),
-        ic.ICMElement(mn.DELETE_AUTHENTICATION_KEY, cdt.DoubleLongUnsigned),
+        ic.ICMElement("synchronize", integers.Only0),
+        ic.ICMElement("add_authentication_key", AuthenticationKey),
+        ic.ICMElement("delete_authentication_key", cdt.DoubleLongUnsigned),
     )
 
     def characteristics_init(self):

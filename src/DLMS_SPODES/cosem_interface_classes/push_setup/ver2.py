@@ -90,20 +90,20 @@ class PushSetup(ic.COSEMInterfaceClasses):
     """ DLMS UA 1000-1 Ed. 14 4.4.8.2 Push setup"""
     CLASS_ID = ClassID.PUSH_SETUP
     VERSION = Version.V2
-    A_ELEMENTS = (ic.ICAElement(an.PUSH_OBJECT_LIST, PushObjectList),
-                  ic.ICAElement(an.SEND_DESTINATION_AND_METHOD, SendDestinationAndMethod),
-                  ic.ICAElement(an.COMMUNICATION_WINDOW, CommunicationWindow),
-                  ic.ICAElement(an.RANDOMISATION_START_INTERVAL, cdt.LongUnsigned),
-                  ic.ICAElement(an.NUMBER_OF_RETRIES, cdt.Unsigned),
-                  ic.ICAElement(an.REPETITION_DELAY, RepetitionDelay),
-                  ic.ICAElement(an.PORT_REFERENCE, cst.LogicalName),
-                  ic.ICAElement(an.PUSH_CLIENT_SAP, cdt.Integer),
-                  ic.ICAElement(an.PUSH_PROTECTION_PARAMETERS, PushProtectionParameters),
-                  ic.ICAElement(an.PUSH_OPERATION_METHOD, PushOperationMethod),
-                  ic.ICAElement(an.CONFIRMATION_PARAMETERS, ConfirmationParameters),
-                  ic.ICAElement(an.LAST_CONFIRMATION_DATE_TIME, cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
-    M_ELEMENTS = (ic.ICMElement(mn.PUSH, integers.Only0),
-                  ic.ICMElement(mn.RESET, integers.Only0))
+    A_ELEMENTS = (ic.ICAElement("push_object_list", PushObjectList),
+                  ic.ICAElement("send_destination_and_method", SendDestinationAndMethod),
+                  ic.ICAElement("communication_window", CommunicationWindow),
+                  ic.ICAElement("randomisation_start_interval", cdt.LongUnsigned),
+                  ic.ICAElement("number_of_retries", cdt.Unsigned),
+                  ic.ICAElement("repetition_delay", RepetitionDelay),
+                  ic.ICAElement("port_reference", cst.LogicalName),
+                  ic.ICAElement("push_client_sap", cdt.Integer),
+                  ic.ICAElement("push_protection_parameters", PushProtectionParameters),
+                  ic.ICAElement("push_operation_method", PushOperationMethod),
+                  ic.ICAElement("confirmation_parameters", ConfirmationParameters),
+                  ic.ICAElement("last_confirmation_date_time", cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
+    M_ELEMENTS = (ic.ICMElement("push", integers.Only0),
+                  ic.ICMElement("reset", integers.Only0))
 
     def characteristics_init(self):
         """nothing do it"""

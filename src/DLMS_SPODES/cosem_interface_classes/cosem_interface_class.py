@@ -2,7 +2,6 @@ from __future__ import annotations
 import dataclasses
 from abc import ABC, abstractmethod
 from typing import Iterator, Type, TypeAlias, Callable, Any, Self
-from .. import settings
 from ..types import cdt, ut, cst
 from ..relation_to_OBIS import get_name
 import logging
@@ -10,11 +9,12 @@ from enum import IntEnum
 from itertools import count
 from . import collection as col
 from .. import exceptions as exc
+from . import overview
+from ..config_parser import get_values
 
 
-match settings.get_current_language():
-    case settings.Language.ENGLISH: from ..Values.EN import attr_names as an
-    case settings.Language.RUSSIAN: from ..Values.RU import attr_names as an
+_am_names = get_values("DLMS", "am_names")
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -42,6 +42,12 @@ SelectiveAccessDescriptor: TypeAlias = ut.SelectiveAccessDescriptor  # TODO: mak
 class ICElement:
     NAME: str
 
+    def __str__(self):
+        if t := _am_names.get(self.NAME):
+            return t
+        else:
+            return self.NAME
+
 
 @dataclasses.dataclass(frozen=True)
 class ICAElement(ICElement):
@@ -51,9 +57,6 @@ class ICAElement(ICElement):
     default: int = None
     classifier: Classifier = Classifier.STATIC
     selective_access: Type[SelectiveAccessDescriptor] | None = None
-
-    def __str__(self):
-        return F'{self.NAME} ({self.classifier.name.lower()}) {self.DATA_TYPE.NAME}'
 
     def get_change(self,
                    data_type: Type[cdt.CommonDataType] | ut.CHOICE = None,
@@ -80,11 +83,10 @@ def get_type_name(value: cdt.CommonDataType | Type[cdt.CommonDataType]) -> str:
 class ICMElement(ICElement):
     DATA_TYPE: Type[cdt.CommonDataType]
 
-    def __str__(self):
-        return F'{self.NAME} {self.DATA_TYPE.NAME}'
 
-
-_LN_ELEMENT = ICAElement(an.LOGICAL_NAME, cst.LogicalName)
+_LN_ELEMENT = ICAElement(
+    NAME="logical_name",
+    DATA_TYPE=cst.LogicalName)
 """" first element for each COSEM Interface Class"""
 
 
@@ -100,12 +102,12 @@ class ObjectValidationError(exc.DLMSException):
 
 
 class COSEMInterfaceClasses(ABC):
-    CLASS_ID: ut.CosemClassId
-    VERSION: cdt.Unsigned | None = None
+    CLASS_ID: overview.ClassID
+    VERSION: overview.Version | None = None
     """ Identification code of the version of the class. The version of each object is retrieved together with the logical name and the class_id by reading the object_list 
     attribute of an “Association LN” / ”Association SN” object. Within one logical device, all instances of a certain class must be of the same version."""
     A_ELEMENTS: tuple[ICAElement, ...]
-    M_ELEMENTS: tuple[ICMElement, ...] = None
+    M_ELEMENTS: tuple[ICMElement, ...] = tuple()  # empty if class not has the methods
     cardinality: tuple[int, int | None]
     __attributes: list[cdt.CommonDataType | None]
     __specific_methods: tuple[cdt.CommonDataType, ...] = None

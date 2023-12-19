@@ -25,7 +25,6 @@ from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver0 import PushSetup as PushSetupVer0
 from .push_setup.ver1 import PushSetup as PushSetupVer1
 from .push_setup.ver2 import PushSetup as PushSetupVer2
-from .client_setup import ClientSetup
 from .clock import Clock
 from .data import Data
 from .disconnect_control import DisconnectControl
@@ -80,7 +79,7 @@ IECHDLCSetup: TypeAlias = IECHDLCSetupVer0 | IECHDLCSetupVer1
 GSMDiagnostic: TypeAlias = GSMDiagnosticVer0 | GSMDiagnosticVer1 | GSMDiagnosticVer2
 InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister | ProfileGeneric | Clock | ScriptTable | Schedule | SpecialDaysTable | ActivityCalendar | \
                             SingleActionSchedule | AssociationLN | IECHDLCSetup | DisconnectControl | Limiter | ModemConfiguration | PSTNModemConfiguration | ImageTransfer | \
-                            GPRSModemSetup | GSMDiagnostic | ClientSetup | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN | \
+                            GPRSModemSetup | GSMDiagnostic | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN | \
                             NTPSetup
 
 
@@ -179,9 +178,6 @@ LimiterMap = ClassMap({
 NTPSetupMap = ClassMap({
     0: NTPSetup
 })
-ClientSetupMap = ClassMap({
-    0: ClientSetup
-})
 
 # implementation ClassMap
 UnsignedDataMap = ClassMap({
@@ -191,7 +187,7 @@ UnsignedDataMap = ClassMap({
 CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | DemandRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | \
                            AssociationLNMap | ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | \
                            TCPUDPSetupMap | IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | \
-                           NTPSetupMap | ClientSetupMap
+                           NTPSetupMap
 
 
 LN_C: TypeAlias = int
@@ -224,7 +220,6 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
     70: DisconnectControlMap,
     71: LimiterMap,
     100: NTPSetupMap,
-    32767: ClientSetupMap
 }
 
 
@@ -465,10 +460,6 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
 
 func_maps["DLMS_6"] = get_func_map(__func_map_for_create)
 
-# Utility Update
-__func_map_for_create.update({
-    (0, 0, 199, 255, 255): ClientSetupMap,
-})
 
 # SPODES3 Update
 __func_map_for_create.update({
@@ -1512,10 +1503,6 @@ class Collection:
     @property
     def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
         return self.__get_object(bytes((0, 0, 96, 12, 4, 255)))
-
-    @cached_property
-    def client_setup(self) -> ClientSetup:
-        return self.__get_object(bytes((0, 0, 199, 255, 255, 255)))
 
     @property
     def clock(self) -> Clock:

@@ -3,6 +3,7 @@ from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ic
 from src.DLMS_SPODES.cosem_interface_classes import implementations as impl
 from src.DLMS_SPODES.version import AppVersion
+from itertools import chain
 
 
 class TestType(unittest.TestCase):
@@ -35,3 +36,14 @@ class TestType(unittest.TestCase):
 
     def test_Exceptions(self):
         raise ic.ObjectValidationError(ln=cst.LogicalName("1.1.1.1.1.1"), i=2, message="some error")
+
+    def test_am_names(self):
+        for c in ic.COSEMInterfaceClasses.__subclasses__():
+            print(c)
+            try:
+                for i in chain(c.A_ELEMENTS, c.M_ELEMENTS):
+                    print(F"{i}")
+            except AttributeError as e:
+                print(F"skip {c}: {e}")
+            except TypeError as e:
+                print()

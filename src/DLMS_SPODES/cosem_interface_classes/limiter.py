@@ -42,16 +42,16 @@ class Limiter(ic.COSEMInterfaceClasses):
     for a specific emergency group. """
     CLASS_ID = ClassID.LIMITER
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.MONITORED_VALUE, structs.ValueDefinition),
-                  ic.ICAElement(an.THRESHOLD_ACTIVE, choices.simple_dt, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.THRESHOLD_NORMAL, choices.simple_dt),
-                  ic.ICAElement(an.THRESHOLD_EMERGENCY, choices.simple_dt),
-                  ic.ICAElement(an.MIN_OVER_THRESHOLD_DURATION, double_long_usingneds.DoubleLongUnsignedSecond),
-                  ic.ICAElement(an.MIN_UNDER_THRESHOLD_DURATION, double_long_usingneds.DoubleLongUnsignedSecond),
-                  ic.ICAElement(an.EMERGENCY_PROFILE, EmergencyProfileType),
-                  ic.ICAElement(an.EMERGENCY_PROFILE_GROUP_ID_LIST, EmergencyProfileGroupIdList),
-                  ic.ICAElement(an.EMERGENCY_PROFILE_ACTIVE, cdt.Boolean, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.ACTIONS, ActionType))
+    A_ELEMENTS = (ic.ICAElement("monitored_value", structs.ValueDefinition),
+                  ic.ICAElement("threshold_active", choices.simple_dt, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("threshold_normal", choices.simple_dt),
+                  ic.ICAElement("threshold_emergency", choices.simple_dt),
+                  ic.ICAElement("min_over_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
+                  ic.ICAElement("min_under_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
+                  ic.ICAElement("emergency_profile", EmergencyProfileType),
+                  ic.ICAElement("emergency_profile_group_id_list", EmergencyProfileGroupIdList),
+                  ic.ICAElement("emergency_profile_active", cdt.Boolean, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("actions", ActionType))
 
     def characteristics_init(self):
         self.set_attr(6, None)

@@ -44,9 +44,9 @@ class PSTNModemConfiguration(ic.COSEMInterfaceClasses):
     can be configured."""
     CLASS_ID = ClassID.MODEM_CONFIGURATION
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.COMM_SPEED, CommSpeed, 0, 9, 5),
-                  ic.ICAElement(an.INITIALIZATION_STRING, InitializationString),
-                  ic.ICAElement(an.MODEM_PROFILE, ModemProfile))
+    A_ELEMENTS = (ic.ICAElement("comm_speed", CommSpeed, 0, 9, 5),
+                  ic.ICAElement("initialization_string", InitializationString),
+                  ic.ICAElement("modem_profile", ModemProfile))
 
     def characteristics_init(self):
         """nothing do it"""

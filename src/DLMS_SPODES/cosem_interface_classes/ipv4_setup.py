@@ -51,15 +51,15 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.IPV4_SETUP
     VERSION = Version.V0
     # TODO: more 7 attr and 3 methods
-    A_ELEMENTS = (ic.ICAElement(an.DL_REFERENCE, cdt.OctetString),
-                  ic.ICAElement(an.IP_ADDRESS, IPAddress),
-                  ic.ICAElement(an.MULTICAST_IP_ADDRESS, MulticastIPAddress),
-                  ic.ICAElement(an.IP_OPTIONS, IPOptions),
-                  ic.ICAElement(an.SUBNET_MASK, IPAddress),
-                  ic.ICAElement(an.GATEWAY_IP_ADDRESS, IPAddress),
-                  ic.ICAElement(an.USE_DHCP_FLAG, cdt.Boolean),
-                  ic.ICAElement(an.PRIMARY_DNS_ADDRESS, IPAddress),
-                  ic.ICAElement(an.SECONDARY_DNS_ADDRESS, IPAddress),
+    A_ELEMENTS = (ic.ICAElement("DL_reference", cdt.OctetString),
+                  ic.ICAElement("IP_address", IPAddress),
+                  ic.ICAElement("multicast_IP_address", MulticastIPAddress),
+                  ic.ICAElement("IP_options", IPOptions),
+                  ic.ICAElement("subnet_mask", IPAddress),
+                  ic.ICAElement("gateway_IP_address", IPAddress),
+                  ic.ICAElement("use_DHCP_flag", cdt.Boolean),
+                  ic.ICAElement("primary_DNS_address", IPAddress),
+                  ic.ICAElement("secondary_DNS_address", IPAddress),
                   # TODO: more 3 methods
                   )
 

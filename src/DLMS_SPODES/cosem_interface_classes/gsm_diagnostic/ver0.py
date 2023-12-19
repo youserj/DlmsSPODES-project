@@ -55,13 +55,13 @@ class GSMDiagnostic(ic.COSEMInterfaceClasses):
      network necessary for analysing the operation of the network."""
     CLASS_ID = ClassID.GSM_DIAGNOSTIC
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.OPERATOR, cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.STATUS, Status, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CS_ATTACHMENT, CSAttachment, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.PS_STATUS, PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CELL_INFO, CellInfoType, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.ADJACENT_CELL, AdjacentCells, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CAPTURE_TIME, cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
+    A_ELEMENTS = (ic.ICAElement("operator", cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("status", Status, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("cs_attachment", CSAttachment, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("ps_status", PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("cell_info", CellInfoType, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("adjacent_cell", AdjacentCells, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("capture_time", cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
 
     def characteristics_init(self):
         """nothing do it"""

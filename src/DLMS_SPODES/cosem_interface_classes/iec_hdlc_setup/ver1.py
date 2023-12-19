@@ -7,14 +7,14 @@ class IECHDLCSetup(ic.COSEMInterfaceClasses):
     """ This IC allows modelling and configuring communication channels according to Clause 8 of DLMS UA 1000-2 Ed. 8.0:2014. Several communication cnannels can be configured. """
     CLASS_ID = ClassID.IEC_HDLC_SETUP
     VERSION = Version.V1
-    A_ELEMENTS = (ic.ICAElement(an.COMM_SPEED, CommSpeed, 0, 9, 5),
-                  ic.ICAElement(an.WINDOWS_SIZE_TRANSMIT, cdt.Unsigned, 1, 7, 1),
-                  ic.ICAElement(an.WINDOWS_SIZE_RECEIVE, cdt.Unsigned, 1, 7, 1),
-                  ic.ICAElement(an.MAX_INFO_FIELD_LENGTH_TRANSMIT, cdt.LongUnsigned, 128, 32, 2030),
-                  ic.ICAElement(an.MAX_INFO_FIELD_LENGTH_RECEIVE, cdt.LongUnsigned, 128, 32, 2030),
-                  ic.ICAElement(an.INTER_OCTET_TIME_OUT, cdt.LongUnsigned, 20, 6000, 25),
-                  ic.ICAElement(an.INACTIVITY_TIME_OUT, cdt.LongUnsigned, 0, default=120),
-                  ic.ICAElement(an.DEVICE_ADDRESS, cdt.LongUnsigned, 0x0001, 0x3ffd, default=0x10))  # TODO: not according by BlueBook: need default, minimum is other
+    A_ELEMENTS = (ic.ICAElement("comm_speed", CommSpeed, 0, 9, 5),
+                  ic.ICAElement("windows_size_transmit", cdt.Unsigned, 1, 7, 1),
+                  ic.ICAElement("windows_size_receive", cdt.Unsigned, 1, 7, 1),
+                  ic.ICAElement("max_info_field_length_transmit", cdt.LongUnsigned, 128, 32, 2030),
+                  ic.ICAElement("max_info_field_length_receive", cdt.LongUnsigned, 128, 32, 2030),
+                  ic.ICAElement("inter_octet_time_out", cdt.LongUnsigned, 20, 6000, 25),
+                  ic.ICAElement("inactivity_time_out", cdt.LongUnsigned, 0, default=120),
+                  ic.ICAElement("device_address", cdt.LongUnsigned, 0x0001, 0x3ffd, default=0x10))  # TODO: not according by BlueBook: need default, minimum is other
 
     def characteristics_init(self):
         """nothing do it"""

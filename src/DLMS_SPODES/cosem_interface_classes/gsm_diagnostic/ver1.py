@@ -30,9 +30,9 @@ class GSMDiagnostic(ver0.GSMDiagnostic):
     A_ELEMENTS = (ver0.GSMDiagnostic.get_attr_element(2),
                   ver0.GSMDiagnostic.get_attr_element(3),
                   ver0.GSMDiagnostic.get_attr_element(4),
-                  ic.ICAElement(an.PS_STATUS, PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CELL_INFO, CellInfoType, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.ADJACENT_CELL, AdjacentCells, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("ps_status", PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("cell_info", CellInfoType, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("adjacent_cell", AdjacentCells, classifier=ic.Classifier.DYNAMIC),
                   ver0.GSMDiagnostic.get_attr_element(8))
 
     # def __new__(cls, *args, **kwargs):

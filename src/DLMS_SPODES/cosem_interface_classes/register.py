@@ -10,11 +10,11 @@ class Register(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.REGISTER
     VERSION = Version.V0
     scaler_unit_not_settable: bool
-    A_ELEMENTS = (ic.ICAElement(an.VALUE, choices.register, classifier=ic.Classifier.NOT_SPECIFIC),
-                  ic.ICAElement(an.SCALER_UNIT, cdt.ScalUnitType))
+    A_ELEMENTS = (ic.ICAElement("value", choices.register, classifier=ic.Classifier.NOT_SPECIFIC),
+                  ic.ICAElement("scaler_unit", cdt.ScalUnitType))
     M_ELEMENTS = (
-        ic.ICMElement(mn.RESET, integers.Only0),
-        ic.ICMElement(mn.NEXT_PERIOD, integers.Only0))
+        ic.ICMElement("reset", integers.Only0),
+        ic.ICMElement("next_period", integers.Only0))
 
     def characteristics_init(self):
         self._cbs_attr_post_init.update({2: self.__set_value_data_type,

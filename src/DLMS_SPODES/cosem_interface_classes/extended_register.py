@@ -11,8 +11,8 @@ class ExtendedRegister(register.Register, ic.COSEMInterfaceClasses):
     VERSION = Version.V0
     A_ELEMENTS = (register.Register.get_attr_element(2),
                   register.Register.get_attr_element(3),
-                  ic.ICAElement(an.STATUS, choices.extended_register, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CAPTURE_TIME, cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC))
+                  ic.ICAElement("status", choices.extended_register, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("capture_time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC))
     M_ELEMENTS = register.Register.get_meth_element(1),
 
     @property

@@ -50,16 +50,16 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.IMAGE_TRANSFER
     VERSION = Version.V0
     __blocks_for_update: list[bytearray]
-    A_ELEMENTS = (ic.ICAElement(an.IMAGE_BLOCK_SIZE, cdt.DoubleLongUnsigned),
-                  ic.ICAElement(an.IMAGE_TRANSFERRED_BLOCKS_STATUS, cdt.BitString, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.IMAGE_FIRST_NOT_TRANSFERRED_BLOCK_NUMBER, cdt.DoubleLongUnsigned, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.IMAGE_TRANSFER_ENABLED, cdt.Boolean),
-                  ic.ICAElement(an.IMAGE_TRANSFER_STATUS, ImageTransferStatus, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.IMAGE_TO_ACTIVATE_INFO, ImageToActivateInfo, classifier=ic.Classifier.DYNAMIC))
-    M_ELEMENTS = (ic.ICMElement(mn.IMAGE_TRANSFER_INITIATE, ImageTransferInitiate),
-                  ic.ICMElement(mn.IMAGE_BLOCK_TRANSFER, ImageBlockTransfer),
-                  ic.ICMElement(mn.IMAGE_VERIFY, integers.Only0),
-                  ic.ICMElement(mn.IMAGE_ACTIVATE, integers.Only0))
+    A_ELEMENTS = (ic.ICAElement("image_block_size", cdt.DoubleLongUnsigned),
+                  ic.ICAElement("image_transferred_blocks_status", cdt.BitString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("image_first_not_transferred_block_number", cdt.DoubleLongUnsigned, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("image_transfer_enabled", cdt.Boolean),
+                  ic.ICAElement("image_transfer_status", ImageTransferStatus, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("image_to_activate_info", ImageToActivateInfo, classifier=ic.Classifier.DYNAMIC))
+    M_ELEMENTS = (ic.ICMElement("image_transfer_initiate", ImageTransferInitiate),
+                  ic.ICMElement("image_block_transfer", ImageBlockTransfer),
+                  ic.ICMElement("image_verify", integers.Only0),
+                  ic.ICMElement("image_activate", integers.Only0))
 
     def characteristics_init(self):
         # TODO: compare image_block_size with ServerMaxReceive

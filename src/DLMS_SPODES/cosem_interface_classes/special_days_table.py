@@ -51,9 +51,9 @@ class SpecialDaysTable(ic.COSEMInterfaceClasses):
     conjunction with the class "Schedule" or "Activity calendar" and the linking data item is day_id """
     CLASS_ID = ClassID.SPECIAL_DAYS_TABLE
     VERSION = Version.V0
-    A_ELEMENTS = ic.ICAElement(an.ENTRIES, Entries),
-    M_ELEMENTS = (ic.ICMElement(mn.INSERT, SpecDayEntry),
-                  ic.ICMElement(mn.DELETE, cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)
+    A_ELEMENTS = ic.ICAElement("entries", Entries),
+    M_ELEMENTS = (ic.ICMElement("insert", SpecDayEntry),
+                  ic.ICMElement("delete", cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)
 
     def characteristics_init(self):
         self.cardinality = (0, 1)

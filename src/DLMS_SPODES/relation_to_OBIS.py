@@ -349,6 +349,8 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 99, 98, 27: return F"{rn.RU_VOLTAGE_INTERRUPTION_LOG}{handle_B(b)}"
         case  0, b, 99, 98, 28: return F"{rn.RU_ABNORMAL_NETWORK_SITUATION_LOG}{handle_B(b)}"
         case  0, b, 99, 98, e:  return F"{overview.ClassID.PROFILE_GENERIC}{handle_B(b)}{handle_E(e)}"
+        case  0, 0, 128, 99, 0:   return rn.KPZ_RELAY_TURN_COUNTER
+        case  0, 0, 128, 100, 0:   return rn.ITE_FIRMWARE_DESCRIPTOR
         case  0, 0, 128, 100, 0:   return rn.ITE_FIRMWARE_DESCRIPTOR
         case  0, 0, 128, 101, 0:   return rn.ITE_MAGNETIC_SENSOR_STATUS
         case  0, 0, 128, 102, 0:   return rn.ITE_DISCRETE_OUTPUTS
@@ -357,6 +359,8 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, 0, 128, 151, 0:   return rn.ITE_CORE_REGISTERS
         case  0, 0, 128, 152, 0:   return rn.ITE_BLE_ID
         case  0, 0, 128, 170, 0:   return rn.ITE_ICCID
+        case  0, 0, 128, 171, 0:   return rn.KPZ_IMSI
+        case  0, 128, 154, 0, 0:   return F"KPZPingTestSetup"
         case  1, b, 0, 0, e:    return F"{F'{rn.COMPLETE_COMBINED_ELECTRICITY_ID} {e+1}'}{handle_B(b)}"
         case  1, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
         case  1, b, 0, 2, 8:    return F"{rn.ACTIVE_FIRMWARE_SIGNATURE}{handle_B(b)}"

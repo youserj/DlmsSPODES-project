@@ -1,4 +1,4 @@
-from ..data import Data, ic, an, cdt, cst, choices, ut
+from ..data import Data, ic, cdt, cst, choices, ut
 from ... import enums as enu
 from .. import events as ev
 from ...types import implementations as impl
@@ -55,19 +55,19 @@ class ActiveFirmwareId(Data):
             """set without check"""
 
 
-class Unsigned(Data):
+class Unsigned(DataDynamic):
     """ with value type: Unsigned """
-    A_ELEMENTS = ic.ICAElement(an.VALUE, cdt.Unsigned, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cdt.Unsigned),
 
 
-class OctetStringDateTime(Data):
+class OctetStringDateTime(DataDynamic):
     """ with value type: Unsigned """
-    A_ELEMENTS = ic.ICAElement(an.VALUE, cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cst.OctetStringDateTime),
 
 
-class OpeningBody(Data):
+class OpeningBody(DataDynamic):
     """ RU. 0.0.96.51.0.255. СТО_34.01-5.1-006-2019v3. E 12.1 """
-    A_ELEMENTS = ic.ICAElement(an.VALUE, cdt.Unsigned, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cdt.Unsigned),
 
 
 class SealUnsigned(cdt.Unsigned):
@@ -87,9 +87,9 @@ class SealStatus(DataDynamic):
     A_ELEMENTS = DataDynamic.A_ELEMENTS[0].get_change(data_type=SealUnsigned),
 
 
-class TerminalsCoverOpeningState(Data):
+class TerminalsCoverOpeningState(DataDynamic):
     """ RU. 0.0.96.51.1.255. СТО_34.01-5.1-006-2019v3. E 12.2 """
-    A_ELEMENTS = ic.ICAElement(an.VALUE, cdt.Unsigned, classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cdt.Unsigned),
 
 
 class BitMapData(cdt.Structure):
@@ -98,9 +98,9 @@ class BitMapData(cdt.Structure):
     bitmap_data: cdt.OctetString
 
 
-class ITEBitMap(Data):
+class ITEBitMap(DataStatic):
     """ITE 0.128.96.13.1.255. Use for send struct lcd screen bitmap(BMP) with start/stop period to server"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, BitMapData, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = Data.get_attr_element(2).get_change(data_type=BitMapData),
 
 
 class ChannelNumberValue(cdt.Unsigned):
@@ -129,7 +129,7 @@ class ChannelNumberValue(cdt.Unsigned):
 
 class CommunicationPortParameter(Data):
     """ RU. 0.0.96.12.4.255. СТО_34.01-5.1-006-2019v3. 13.10. Определение номера порта по которому установлено соединение"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = ic.ICAElement("value", ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=ic.Classifier.DYNAMIC),
 
     @property
     def value(self) -> ChannelNumberValue:
@@ -258,9 +258,9 @@ class KPZ1VoltageEventValues(cdt.DoubleLongUnsigned):
         return ev.voltage_events.get_report(int(self))
 
 
-class KPZ1SPODES3VoltageEvent(Data):
+class KPZ1SPODES3VoltageEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением with bag in value type"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1VoltageEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1VoltageEventValues),
 
 
 class KPZ1CurrentEventValues(cdt.DoubleLongUnsigned):
@@ -268,9 +268,9 @@ class KPZ1CurrentEventValues(cdt.DoubleLongUnsigned):
         return ev.current_events.get_report(int(self))
 
 
-class KPZ1SPODES3CurrentEvent(Data):
+class KPZ1SPODES3CurrentEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1CurrentEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CurrentEventValues),
 
 
 class KPZ1CommutationEventValues(cdt.DoubleLongUnsigned):
@@ -278,9 +278,9 @@ class KPZ1CommutationEventValues(cdt.DoubleLongUnsigned):
         return ev.commutation_events.get_report(int(self))
 
 
-class KPZ1SPODES3CommutationEvent(Data):
+class KPZ1SPODES3CommutationEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1CommutationEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommutationEventValues),
 
 
 class KPZ1ProgrammingEventValues(cdt.DoubleLongUnsigned):
@@ -288,9 +288,9 @@ class KPZ1ProgrammingEventValues(cdt.DoubleLongUnsigned):
         return ev.programming_events.get_report(int(self))
 
 
-class KPZ1SPODES3ProgrammingEvent(Data):
+class KPZ1SPODES3ProgrammingEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ProgrammingEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ProgrammingEventValues),
 
 
 class KPZ1ExternalEventValues(cdt.DoubleLongUnsigned):
@@ -298,9 +298,9 @@ class KPZ1ExternalEventValues(cdt.DoubleLongUnsigned):
         return ev.external_impact_events.get_report(int(self))
 
 
-class KPZ1SPODES3ExternalEvent(Data):
+class KPZ1SPODES3ExternalEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ExternalEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ExternalEventValues),
 
 
 class KPZ1CommunicationEventValues(cdt.DoubleLongUnsigned):
@@ -308,9 +308,9 @@ class KPZ1CommunicationEventValues(cdt.DoubleLongUnsigned):
         return ev.communication_events.get_report(int(self))
 
 
-class KPZ1SPODES3CommunicationEvent(Data):
+class KPZ1SPODES3CommunicationEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1CommunicationEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommunicationEventValues),
 
 
 class KPZ1AccessEventValues(cdt.DoubleLongUnsigned):
@@ -318,9 +318,9 @@ class KPZ1AccessEventValues(cdt.DoubleLongUnsigned):
         return ev.access_events.get_report(int(self))
 
 
-class KPZ1SPODES3AccessEvent(Data):
+class KPZ1SPODES3AccessEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1AccessEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1AccessEventValues),
 
 
 class KPZ1SelfDiagnosticEventValues(cdt.DoubleLongUnsigned):
@@ -328,9 +328,9 @@ class KPZ1SelfDiagnosticEventValues(cdt.DoubleLongUnsigned):
         return ev.self_diagnostics_events.get_report(int(self))
 
 
-class KPZ1SPODES3SelfDiagnosticEvent(Data):
+class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1SelfDiagnosticEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1SelfDiagnosticEventValues),
 
 
 class KPZ1ReactivePowerEventValues(cdt.DoubleLongUnsigned):
@@ -338,9 +338,9 @@ class KPZ1ReactivePowerEventValues(cdt.DoubleLongUnsigned):
         return ev.reactive_power_events.get_report(int(self))
 
 
-class KPZ1SPODES3ReactivePowerEvent(Data):
+class KPZ1SPODES3ReactivePowerEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, KPZ1ReactivePowerEventValues, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ReactivePowerEventValues),
 
 
 class SPODES3MeasurementPeriodValue(cdt.Unsigned):
@@ -356,9 +356,9 @@ class SPODES3MeasurementPeriod(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=SPODES3MeasurementPeriodValue),
 
 
-class DLMSDeviceIDObject(Data):
+class DLMSDeviceIDObject(DataStatic):
     """DLMS UA 1000-1 Ed. 14. 6.2.42 Device ID objects"""
-    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.device_id_object, classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=choices.device_id_object),
 
 
 class SPODES3SPODESVersionValue(cdt.OctetString):

@@ -8,7 +8,7 @@ class Data(ic.COSEMInterfaceClasses):
     The data type of the value is CHOICE. “Data” is typically used to store configuration data and parameters """
     CLASS_ID = ClassID.DATA
     VERSION = Version.V0
-    A_ELEMENTS = ic.ICAElement(an.VALUE, choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
+    A_ELEMENTS = ic.ICAElement("value", choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
 
     def characteristics_init(self):
         """nothing do it"""

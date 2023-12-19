@@ -57,20 +57,20 @@ class Clock(ic.COSEMInterfaceClasses):
     The start and end point of that function is normally set once. An internal algorithm calculates the real switch point depending on these settings. """
     CLASS_ID = ClassID.CLOCK
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.TIME, cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.TIME_ZONE, cdt.Long, -720, 840),
-                  ic.ICAElement(an.STATUS, ClockStatus, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.DAYLIGHT_SAVINGS_BEGIN, cst.OctetStringDateTime),
-                  ic.ICAElement(an.DAYLIGHT_SAVINGS_END, cst.OctetStringDateTime),
-                  ic.ICAElement(an.DAYLIGHT_SAVINGS_DEVIATION, DaylightSavingsDeviation, -120, 120),
-                  ic.ICAElement(an.DAYLIGHT_SAVINGS_ENABLED, cdt.Boolean),
-                  ic.ICAElement(an.CLOCK_BASE, ClockBase))
-    M_ELEMENTS = (ic.ICMElement(mn.ADJUST_TO_QUARTER, integers.Only0),
-                  ic.ICMElement(mn.ADJUST_TO_MEASURING_PERIOD, integers.Only0),
-                  ic.ICMElement(mn.ADJUST_TO_MINUTE, integers.Only0),
-                  ic.ICMElement(mn.ADJUST_TO_PRESET_TIME, integers.Only0),
-                  ic.ICMElement(mn.PRESET_ADJUSTING_TIME, PresetAdjustingTime),
-                  ic.ICMElement(mn.SHIFT_TIME, ShiftTime))
+    A_ELEMENTS = (ic.ICAElement("time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("time_zone", cdt.Long, -720, 840),
+                  ic.ICAElement("status", ClockStatus, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("daylight_savings_begin", cst.OctetStringDateTime),
+                  ic.ICAElement("daylight_savings_end", cst.OctetStringDateTime),
+                  ic.ICAElement("daylight_savings_deviation", DaylightSavingsDeviation, -120, 120),
+                  ic.ICAElement("daylight_savings_enabled", cdt.Boolean),
+                  ic.ICAElement("clock_base", ClockBase))
+    M_ELEMENTS = (ic.ICMElement("adjust_to_quarter", integers.Only0),
+                  ic.ICMElement("adjust_to_measuring_period", integers.Only0),
+                  ic.ICMElement("adjust_to_minute", integers.Only0),
+                  ic.ICMElement("adjust_to_preset_time", integers.Only0),
+                  ic.ICMElement("preset_adjusting_time", PresetAdjustingTime),
+                  ic.ICMElement("shift_time", ShiftTime))
 
     def characteristics_init(self):
         self.cardinality = (0, 1)

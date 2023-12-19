@@ -22,7 +22,7 @@ class ModemConfigurationVer1(ic.COSEMInterfaceClasses):
     CLASS_ID = ut.CosemClassId(27)
     VERSION = Version.V1
     A_ELEMENTS = (ver0.PSTNModemConfiguration.get_attr_element(2),
-                  ic.ICAElement(an.INITIALIZATION_STRING, InitializationString),
+                  ic.ICAElement("initialization_string", InitializationString),
                   ver0.PSTNModemConfiguration.get_attr_element(4))
 
     def characteristics_init(self):

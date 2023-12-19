@@ -125,16 +125,16 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
     CLASS_ID = ClassID.ACTIVITY_CALENDAR
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.CALENDAR_NAME_ACTIVE, cdt.OctetString),
-                  ic.ICAElement(an.SEASON_PROFILE_ACTIVE, SeasonProfile),
-                  ic.ICAElement(an.WEEK_PROFILE_TABLE_ACTIVE, WeekProfileTable),
-                  ic.ICAElement(an.DAY_PROFILE_TABLE_ACTIVE, DayProfileTable),
-                  ic.ICAElement(an.CALENDAR_NAME_PASSIVE, cdt.OctetString),
-                  ic.ICAElement(an.SEASON_PROFILE_PASSIVE, SeasonProfile),
-                  ic.ICAElement(an.WEEK_PROFILE_TABLE_PASSIVE, WeekProfileTable),
-                  ic.ICAElement(an.DAY_PROFILE_TABLE_PASSIVE, DayProfileTable),
-                  ic.ICAElement(an.ACTIVATE_PASSIVE_CALENDAR_TIME, cst.OctetStringDateTime))
-    M_ELEMENTS = ic.ICMElement(mn.ACTIVATE_PASSIVE_CALENDAR, integers.Only0),
+    A_ELEMENTS = (ic.ICAElement("calendar_name_active", cdt.OctetString),
+                  ic.ICAElement("season_profile_active", SeasonProfile),
+                  ic.ICAElement("week_profile_table_active", WeekProfileTable),
+                  ic.ICAElement("day_profile_table_active", DayProfileTable),
+                  ic.ICAElement("calendar_name_passive", cdt.OctetString),
+                  ic.ICAElement("season_profile_passive", SeasonProfile),
+                  ic.ICAElement("week_profile_table_passive", WeekProfileTable),
+                  ic.ICAElement("day_profile_table_passive", DayProfileTable),
+                  ic.ICAElement("activate_passive_calendar_time", cst.OctetStringDateTime))
+    M_ELEMENTS = ic.ICMElement("activate_passive_calendar", integers.Only0),
 
     def characteristics_init(self):
         # Attributes called …_active are currently active, attributes called …_passive will be activated by the specific

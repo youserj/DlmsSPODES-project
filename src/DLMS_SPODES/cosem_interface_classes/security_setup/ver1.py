@@ -99,20 +99,20 @@ class CertificateIdentification(choices.StructureMixin, cdt.Structure):
 
 class SecuritySetup(ver0.SecuritySetup):
     VERSION = Version.V1
-    A_ELEMENTS = (ic.ICAElement(an.SECURITY_POLICY, SecurityPolicyVer1),
-                  ic.ICAElement(an.SECURITY_SUITE, SecuritySuite),
+    A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicyVer1),
+                  ic.ICAElement("security_suite", SecuritySuite),
                   ver0.SecuritySetup.get_attr_element(4),
                   ver0.SecuritySetup.get_attr_element(5),
-                  ic.ICAElement(an.CERTIFICATES, Certificates, classifier=ic.Classifier.DYNAMIC))
+                  ic.ICAElement("certificates", Certificates, classifier=ic.Classifier.DYNAMIC))
 
-    M_ELEMENTS = (ic.ICMElement(mn.SECURITY_ACTIVATE, SecurityPolicyVer1),
-                  ic.ICMElement(mn.KEY_TRANSFER, KeyTransfer),
-                  ic.ICMElement(mn.KEY_AGREEMENT, KeyAgreement),
-                  ic.ICMElement(mn.GENERATE_KEY_PAIR, KeyPair),
-                  ic.ICMElement(mn.GENERATE_CERTIFICATE_REQUEST, KeyPair),
-                  ic.ICMElement(mn.IMPORT_CERTIFICATE, cdt.OctetString),
-                  ic.ICMElement(mn.EXPORT_CERTIFICATE, CertificateIdentification),
-                  ic.ICMElement(mn.REMOVE_CERTIFICATE, CertificateIdentification))
+    M_ELEMENTS = (ic.ICMElement("security_activate", SecurityPolicyVer1),
+                  ic.ICMElement("key_transfer", KeyTransfer),
+                  ic.ICMElement("key_agreement", KeyAgreement),
+                  ic.ICMElement("generate_key_pair", KeyPair),
+                  ic.ICMElement("generate_certificate_request", KeyPair),
+                  ic.ICMElement("import_certificate", cdt.OctetString),
+                  ic.ICMElement("export_certificate", CertificateIdentification),
+                  ic.ICMElement("remove_certificate", CertificateIdentification))
 
     def characteristics_init(self):
         self.set_attr(2, None)

@@ -302,17 +302,17 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     the device is able to support"""
     CLASS_ID = ClassID.ASSOCIATION_LN
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.OBJECT_LIST, ObjectListType, selective_access=SelectiveAccessDescriptor),
-                  ic.ICAElement(an.ASSOCIATED_PARTNERS_ID, AssociatedPartnersType),
-                  ic.ICAElement(an.APPLICATION_CONTEXT_NAME, ApplicationContextName),
-                  ic.ICAElement(an.XDLMS_CONTEXT_INFO, XDLMSContextType),
-                  ic.ICAElement(an.AUTHENTICATION_MECHANISM_NAME, AuthenticationMechanismName),
-                  ic.ICAElement(an.LLS_SECRET, LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
-                  ic.ICAElement(an.ASSOCIATION_STATUS, AssociationStatus, classifier=ic.Classifier.DYNAMIC))
-    M_ELEMENTS = (ic.ICMElement(mn.REPLY_TO_HLS_AUTHENTICATION, cdt.OctetString),
-                  ic.ICMElement(mn.CHANGE_HLS_SECRET, LLCSecret),
-                  ic.ICMElement(mn.ADD_OBJECT, ObjectListElement),
-                  ic.ICMElement(mn.REMOVE_OBJECT, ObjectListElement))
+    A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
+                  ic.ICAElement("associated_partners_id", AssociatedPartnersType),
+                  ic.ICAElement("application_context_name", ApplicationContextName),
+                  ic.ICAElement("xDLMS_context_info", XDLMSContextType),
+                  ic.ICAElement("authentication_mechanism_name", AuthenticationMechanismName),
+                  ic.ICAElement("LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
+                  ic.ICAElement("association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
+    M_ELEMENTS = (ic.ICMElement("reply_to_HLS_authentication", cdt.OctetString),
+                  ic.ICMElement("change_HLS_secret", LLCSecret),
+                  ic.ICMElement("add_object", ObjectListElement),
+                  ic.ICMElement("remove_object", ObjectListElement))
 
     def characteristics_init(self):
         # self.set_attr(2, None)

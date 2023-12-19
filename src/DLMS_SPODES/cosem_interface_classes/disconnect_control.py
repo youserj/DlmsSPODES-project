@@ -42,11 +42,11 @@ class DisconnectControl(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.8 Disconnect control"""
     CLASS_ID = ClassID.DISCONNECT_CONTROL
     VERSION = Version.V0
-    A_ELEMENTS = (ic.ICAElement(an.OUTPUT_STATE, OutputState, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CONTROL_STATE, ControlState, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(an.CONTROL_MODE, ControlMode))
-    M_ELEMENTS = (ic.ICMElement(mn.REMOTE_DISCONNECT, integers.Only0),
-                  ic.ICMElement(mn.REMOTE_RECONNECT, integers.Only0))
+    A_ELEMENTS = (ic.ICAElement("output_state", OutputState, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("control_state", ControlState, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement("control_mode", ControlMode))
+    M_ELEMENTS = (ic.ICMElement("remote_disconnect", integers.Only0),
+                  ic.ICMElement("remote_reconnect", integers.Only0))
 
     def characteristics_init(self):
         """nothing do it"""
