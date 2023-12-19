@@ -53,9 +53,9 @@ class Register(ic.COSEMInterfaceClasses):
             case cdt.Digital() | cdt.Float():                                    raise ValueError(F'Got new scaler: {self.scaler_unit} not order with old {self.value.SCALER_UNIT}')
             case _:                                                              """set only for digital"""
 
-    def __str__(self):
+    def get_report(self):
         match self.value, self.scaler_unit:
             case None, None: rep = '? ?'
             case cdt.Digital(), _: rep = self.value.report
             case _: rep = F'{self.value} {self.scaler_unit}'
-        return F'{super(Register, self).__str__()} {rep}'
+        return F'{self} {rep}'
