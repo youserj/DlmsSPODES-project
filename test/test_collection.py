@@ -119,10 +119,12 @@ class TestType(unittest.TestCase):
             clock_obj.logical_name: {3},
             act_cal.logical_name: {9}
         }
+        print(used)
         collection.to_xml4(
             collections=[col, col2],
             file_name="test_to_xml4.xml",
             used=used)
+        print(used)
 
     def test_collection_from_xml4(self):
         cols, used, verif = collection.from_xml4("test_to_xml4.xml")

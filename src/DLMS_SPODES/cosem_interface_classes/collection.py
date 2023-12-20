@@ -1821,6 +1821,7 @@ def to_xml4(collections: list[Collection],
             used: UsedAttributes,
             verified: bool = False):
     """For template only"""
+    used_copy = copy.deepcopy(used)
     objects = get_base_template_xml_element(
         collections=collections,
         root_tag=TagsName.TEMPLATE_ROOT.value)
@@ -1828,7 +1829,7 @@ def to_xml4(collections: list[Collection],
     if verified:
         objects.attrib["verified"] = "1"
     for col in collections:
-        for ln, indexes in copy.copy(used).items():
+        for ln, indexes in copy.copy(used_copy).items():
             try:
                 obj = col.get_object(ln)
                 object_node = ET.SubElement(
@@ -1869,16 +1870,16 @@ def to_xml4(collections: list[Collection],
                         indexes.remove(i)
                     else:
                         logger.error(F"skip record {obj}:attr={i} with value={attr}")
-                if len(used[ln]) == 0:
-                    used.pop(ln)
+                if len(indexes) == 0:
+                    used_copy.pop(ln)
             except exc.NoObject as e:
                 logger.warning(F"skip obj with {ln=} in {collections.index(col)} collection: {e}")
                 continue
-        if len(used) == 0:
+        if len(used_copy) == 0:
             logger.info(F"success decoding: used {collections.index(col)+1} from {len(collections)} collections")
             break
-    if len(used) != 0:
-        raise ValueError(F"failed decoding: {used}")
+    if len(used_copy) != 0:
+        raise ValueError(F"failed decoding: {used_copy}")
     with open(
             file_name,
             mode="wb") as f:
