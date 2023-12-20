@@ -1834,10 +1834,7 @@ def to_xml4(collections: list[Collection],
                 object_node = ET.SubElement(
                     objects,
                     "object",
-                    attrib={
-                        "ln": str(obj.logical_name),
-                        "name": obj.NAME
-                    })
+                    attrib={"ln": str(obj.logical_name)})
                 for i in tuple(indexes):
                     attr = obj.get_attr(i)
                     if isinstance(attr, cdt.CommonDataType):
