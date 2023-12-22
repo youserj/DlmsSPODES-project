@@ -196,6 +196,8 @@ def get_type_name(value: CommonDataType | Type[CommonDataType]) -> str:
         ret += F"[{value.SIZE}]"
     elif issubclass(value, Digital) and value.VALUE is not None:
         ret += F"({value.VALUE})"
+    elif issubclass(value, Structure):
+        ret += F"[{len(value.ELEMENTS)}]"
     return ret
 
 
@@ -381,6 +383,7 @@ class Digital(ABC):
     MIN: int | None = None
     MAX: int | None = None
     VALUE: int | None = None
+    """integer if is it constant value"""
 
     def __init__(self, value: bytes | bytearray | str | int | float | Self = None, scaler_unit=None):
         if value is None:
@@ -1133,13 +1136,19 @@ class Array(__Array, ComplexDataType):
             self.cb_post_set()
 
 
+_struct_names = config["DLMS"]["struct_name"]
+
+
 @dataclass(frozen=True)
 class StructElement:
     NAME: str
     TYPE: Type[CommonDataType]
 
     def __str__(self):
-        return F'{self.NAME}: {self.TYPE.NAME}'
+        if _struct_names and (t := _struct_names.get(self.NAME)):
+            return t
+        else:
+            return self.NAME
 
 
 class Structure(ComplexDataType):
@@ -1204,7 +1213,8 @@ class Structure(ComplexDataType):
     def get_el9(self):
         return self.values[9]
 
-    def __init_subclass__(cls, **kwargs):  # TODO: add init from toml NAME structure
+    def __init_subclass__(cls, **kwargs):
+        """create ELEMENTS from annotations"""
         if hasattr(cls, "ELEMENTS"):
             """init manually, ex: Entry in ProfileGeneric"""
         else:
@@ -1212,15 +1222,11 @@ class Structure(ComplexDataType):
             for (name, type_), f in zip(cls.__annotations__.items(), (
                     Structure.get_el0, Structure.get_el1, Structure.get_el2, Structure.get_el3, Structure.get_el4, Structure.get_el5, Structure.get_el6, Structure.get_el7,
                     Structure.get_el8, Structure.get_el9)):
-                try:
-                    el_name = config["DLMS"]["struct_name"][name]
-                except KeyError as e:
-                    logger.warning(F"in set name {cls.__name__}.{name} not find {e}")
-                    el_name = name
-                elements.append((StructElement(el_name, type_)))
+                elements.append((StructElement(
+                    NAME=name,
+                    TYPE=type_)))
                 setattr(cls, name, f)
             cls.ELEMENTS = tuple(elements)
-            cls.SIZE = len(cls.ELEMENTS)
 
     def from_bytes(self, encoding: bytes):
         tag, length_and_contents = encoding[:1], encoding[1:]

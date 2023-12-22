@@ -794,7 +794,44 @@ max_number_transmissions_n4 = "Максимальное кол-во раз пе�
 acknowledgement_time_t1 = "Таймер подтверждения T1"
 receive_lifetime_var_t2 = "Время жизни таймеров приема T2"
 transmit_lifetime_var_t3 = "Время жизни  таймеров передачи T3"
-# todo: need continue from 4.12.3 61334-4-32 LLC SSCS setup
+# 61334-4-32 LLC SSCS setup
+service_node_address = "Адрес сервисного узла"
+base_node_address = "Адрес базового узла"
+# PRIME NB OFDM PLC Physical layer counters
+phy_stats_crc_incorrect_count = "Счетчик не корректных CRC"
+phy_stats_crc_fail_count = "Счетчик плохих данных с верной CRC"
+phy_stats_tx_drop_count = "Счетчик отброшенных данных передачи"
+phy_stats_rx_drop_count = "Счетчик отброшенных данных приема"
+# PRIME NB OFDM PLC MAC setup
+mac_min_switch_search_time = "Минимальное время поиска"
+mac_max_promotion_pdu = "Максимальное кол-во PNDDU за период"
+mac_promotion_pdu_tx_period = "Период для передачи PNDPU"
+mac_beacons_per_frame = "Кол-во сигнальных слотов"
+mac_scp_max_tx_attempts = "Кол-во попыток передачи"
+mac_ctl_re_tx_timer = "Таймер ожидания ответа"
+mac_max_ctl_re_tx = "Максимальное кол-во повторов неподтвержденных пакетов"
+# PRIME NB OFDM PLC MAC functional parameters
+mac_LNID = "MAC LNID"
+mac_LSID = "MAC LSID"
+mac_SID = "MAC SID"
+mac_SNA = "MAC SNA"
+mac_state = "MAC состояние"
+mac_scp_length = "MAC длина SCP"
+mac_node_hierarchy_level = "MAC уровень узла"
+mac_beacon_slot_count = "Счетчик сигнальных слотов MAC"
+mac_beacon_rx_slot = "Слот для передачи сигналов MAC"
+mac_beacon_tx_slot = "Слот для приема сигналов MAC"
+mac_beacon_rx_frequency = "Частота приема сигналов MAC"
+mac_beacon_tx_frequency = "Частота передачи сигналов MAC"
+mac_capabilities = "Возможности MAC"
+# PRIME NB OFDM PLC MAC counters
+mac_tx_data_pkt_count = "Счетчик переданых MSDU"
+mac_rx_data_pkt_count = "Счетчик принятых MSDU"
+mac_tx_ctrl_pkt_count = "Счетчик переданых MAC контролных пакетов"
+mac_rx_ctrl_pkt_count = "Счетчик принятых MAC контролных пакетов"
+mac_csma_fail_count = "Счетчик неудачных CSMA попыток передачи"
+mac_csma_ch_busy_count = "Счетчик занятаго канала SCP"
+# todo: next 4.12.9 PRIME NB OFDM PLC MAC network administration data
 
 [DLMS.messages]
 # use for config_parser.get_message
