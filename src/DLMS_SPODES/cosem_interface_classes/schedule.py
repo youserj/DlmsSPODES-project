@@ -71,7 +71,7 @@ class Entries(cdt.Array):
             if self.unique:
                 for i in self:
                     if i == element:
-                        raise ValueError(F'Element {element.NAME} already exist in {self.NAME}')
+                        raise ValueError(F"Element {element.__class__.__name__} already exist in {self.__class__.__name__}")
             self.append(element)
         else:
             raise ValueError(F'Types not equal. Must be {self.TYPE.NAME} got {type(element).__name__}')

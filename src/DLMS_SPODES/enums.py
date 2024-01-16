@@ -191,6 +191,16 @@ class Conformance(IntFlag):
         return self.content
 
 
+class ActionRequest(IntEnum):
+    """COSEMpdu_GB83.asn Action-Request"""
+    NORMAL = 1
+    NEXT_PBLOCK = 2
+    WITH_LIST = 3
+    WITH_FIRST_PBLOCK = 4
+    WITH_LIST_AND_FIRST_PBLOCK = 5
+    WITH_PBLOCK = 6
+
+
 class Unit(IntEnum):
     TIME_YEAR = 1
     TIME_MONTH = 2

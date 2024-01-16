@@ -133,7 +133,7 @@ class CHOICE(ABC):
                 case None:                            return tuple(self.ELEMENTS.values())[0].TYPE()
                 case error:                           raise ValueError(F'Unknown value type {error}')
         except KeyError as e:
-            raise UserfulTypesException(F"for {self.__class__.__name__} got {cdt.CommonDataType.__name__}: {cdt.get_common_data_type_from(e.args[0].to_bytes(1)).NAME}; expected: {', '.join(map(lambda el: el.NAME, self.ELEMENTS.values()))}")
+            raise UserfulTypesException(F"for {self.__class__.__name__} got {cdt.CommonDataType.__name__}: {cdt.TAG(e.args[0].to_bytes(1))}; expected: {', '.join(map(lambda el: el.NAME, self.ELEMENTS.values()))}")
 
     def __get_elements(self) -> list[SequenceElement]:
         """all elements with nested values"""

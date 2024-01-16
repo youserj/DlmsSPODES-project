@@ -17,9 +17,9 @@ class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
         cls.ELEMENTS = dict()
         for t in kwargs["types"]:
             if isinstance(t, dict):  # extended choice
-                cls.ELEMENTS[int.from_bytes(tuple(t.values())[0].TAG, "big")] = {k: ut.SequenceElement(v.NAME, v) for k, v in t.items()}
+                cls.ELEMENTS[int.from_bytes(tuple(t.values())[0].TAG, "big")] = {k: ut.SequenceElement(str(v.TAG), v) for k, v in t.items()}
             elif issubclass(t, cdt.CommonDataType):
-                cls.ELEMENTS[int.from_bytes(t.TAG, "big")] = ut.SequenceElement(t.NAME, t)
+                cls.ELEMENTS[int.from_bytes(t.TAG, "big")] = ut.SequenceElement(str(t.TAG), t)
             else:
                 raise TypeError(F"got {t.__class__} expected cdt or dict")
 

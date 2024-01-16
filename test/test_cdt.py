@@ -10,6 +10,10 @@ from src.DLMS_SPODES.cosem_interface_classes.collection import Collection
 
 
 class TestType(unittest.TestCase):
+    def test_TAG(self):
+        value = cdt.TAG(b'\x01')
+        print(value)
+
     def test_encode_length(self):
         self.assertEqual(encode_length(1), b'\x01')
         self.assertEqual(encode_length(0x7e), b'\x7e')
@@ -196,7 +200,7 @@ class TestType(unittest.TestCase):
         while len(c) != 0:
             t = c.pop()
             c.extend(t.__subclasses__())
-            print(next(count1), t, t.TAG, F"{cdt.get_type_name(t)} {t.NAME}" if (not inspect.isabstract(t) and t != cdt.Structure and t != cdt.Enum) else "abstract")
+            print(next(count1), t, t.TAG, F"{cdt.get_type_name(t)} {t.TAG}" if (not inspect.isabstract(t) and t != cdt.Structure and t != cdt.Enum) else "abstract")
 
     def test_Struct(self):
         # create nonename struct from AssociationLN.ObjectList data

@@ -1666,7 +1666,7 @@ class Collection:
     @lru_cache(4)
     def get_association_id(self, client_sap: enums.ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
-        for ass in self.get_objects_by_class_id(AssociationLNVer0.CLASS_ID):
+        for ass in self.get_objects_by_class_id(ClassID.ASSOCIATION_LN):
             if ass.associated_partners_id.client_SAP == client_sap and ass.logical_name.e != 0:
                 return ass.logical_name.e
             else:

@@ -86,13 +86,13 @@ class LogicalName(cdt.OctetString, size=6):
         return self.contents[5]
 
 
-class OctetStringDateTime(cdt.DateTime, tag=cdt.OctetString, size=12):
+class OctetStringDateTime(cdt.DateTime, tag=9, size=12):
     """ type Time in OctetString(SIZE(12)) """
 
     def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.date | datetime.time = b'\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff'):
         match value:  # TODO: common for all OctetDateTimes
             case bytes() if value[1] == len(self): super().__init__(self.TAG+value[2:])
-            case bytes():                          raise ValueError(F'In {self.NAME} got tag, size: {value[0]} {value[1]}, expected {self.TAG.hex(" ")} {len(self)}')
+            case bytes():                          raise ValueError(F'in create {self.__class__.__name__} got tag, size: {cdt.TAG(value[0])} {value[1]}, expected {self.TAG} {len(self)}')
             case _:                                super().__init__(value)
 
     @property
@@ -100,13 +100,13 @@ class OctetStringDateTime(cdt.DateTime, tag=cdt.OctetString, size=12):
         return b'\x09\x0c' + self.contents
 
 
-class OctetStringDate(cdt.Date, tag=cdt.OctetString, size=5):
+class OctetStringDate(cdt.Date, tag=9, size=5):
     """ type Time in OctetString(SIZE(5)) """
 
     def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.date = b'\x09\x05\x07\xe4\x01\x01\xff'):
         match value:  # TODO: replace priority case
             case bytes() if value[1] == len(self): super().__init__(self.TAG+value[2:])
-            case bytes():                          raise ValueError(F'In {self.NAME} got tag, size: {value[0]} {value[1]}, expected {self.TAG.hex(" ")} {len(self)}')
+            case bytes():                          raise ValueError(F'in create {self.__class__.__name__} got tag, size: {cdt.TAG(value[0])} {value[1]}, expected {self.TAG} {len(self)}')
             case _:                                super().__init__(value)
 
     @property
@@ -114,13 +114,13 @@ class OctetStringDate(cdt.Date, tag=cdt.OctetString, size=5):
         return b'\x09\x05' + self.contents
 
 
-class OctetStringTime(cdt.Time, tag=cdt.OctetString, size=4):
+class OctetStringTime(cdt.Time, tag=9, size=4):
     """ type Time in OctetString(SIZE(4)) """
 
     def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.time = b'\x09\x04\x00\x00\x00\x00'):
         match value:  # TODO: replace priority case
             case bytes() if value[1] == len(self): super().__init__(self.TAG+value[2:])
-            case bytes():                          raise ValueError(F'In {self.NAME} got tag, size: {value[0]} {value[1]}, expected {self.TAG.hex(" ")} {len(self)}')
+            case bytes():                          raise ValueError(F'in create {self.__class__.__name__} got tag, size: {cdt.TAG(value[0])} {value[1]}, expected {self.TAG} {len(self)}')
             case _:                                super().__init__(value)
 
     @property
