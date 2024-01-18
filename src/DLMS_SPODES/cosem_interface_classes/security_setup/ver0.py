@@ -7,6 +7,7 @@ class SecurityPolicy(cdt.Enum, elements=tuple(range(16))):
 
 class SecuritySuite(cdt.Enum, elements=tuple(range(16))):
     """Specifies authentication, encryption and key transport algorithm"""
+    AES_GCM_128_AUT_ENCR_AND_AES_128_KEY_WRAP = 0
 
 
 class KeyID(cdt.Enum, elements=(0, 1, 2)):

@@ -16,8 +16,10 @@ class CertificateType(cdt.Enum, elements=(0, 1, 2, 3)):
     """TODO:"""
 
 
-class SecuritySuite(cdt.Enum, elements=(0, 1, 2)):
+class SecuritySuite(ver0.SecuritySuite, elements=(0, 1, 2)):
     """Version 0 extension"""
+    AES_GCM_128_AUT_ENCR_ECDSA_P_256_DIG_SIGN_ECDH_P_256_KEY_AGR_SHA_256_HASH_V44_COMPR_AND_AES_128_KEY_WRAP = 1
+    AES_GCM_256_AUT_ENCR_ECDSA_P_384_DIG_SIGN_ECDH_P_384_KEY_AGR_SHA_384_HASH_V44_COMPR_AND_AES_256_KEY_WRAP = 2
 
 
 class CertificateInfo(cdt.Structure):

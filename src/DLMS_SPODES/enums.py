@@ -201,6 +201,36 @@ class ActionRequest(IntEnum):
     WITH_PBLOCK = 6
 
 
+class ReadResponse(IntEnum):
+    """COSEMpdu_GB83.asn ReadResponse"""
+    DATA = 0
+    DATA_ACCESS_ERROR = 1
+    DATA_BLOCK_RESULT = 2
+    BLOCK_NUMBER = 3
+
+
+class ServiceError(IntEnum):
+    """COSEMpdu_GB83.asn ServiceError"""
+    APPLICATION_REFERENCE = 0
+    HARDWARE_RESOURCE = 1
+    VDE_STATE_ERROR = 2
+    SERVICE = 3
+    DEFINITION = 4
+    ACCESS = 5
+    INITIATE = 6
+    LOAD_DATA_SET = 7
+    CHANGE_SCOPE = 8
+    TASK = 9
+    OTHER = 10
+
+
+class AssociationResult(IntEnum):
+    """COSEMpdu_GB83.asn Association-result"""
+    ACCEPTED = 0
+    REJECTED_PERMANENT = 1
+    REJECTED_TRANSIENT = 2
+
+
 class Unit(IntEnum):
     TIME_YEAR = 1
     TIME_MONTH = 2
