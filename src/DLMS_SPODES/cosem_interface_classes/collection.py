@@ -526,11 +526,11 @@ def get_type(class_id: ut.CosemClassId,
              version: cdt.Unsigned | None,
              ln: cst.LogicalName,
              func_map: FUNC_MAP) -> Type[InterfaceClass]:
-    c_m = None
-    if ln.b >= 128:
+    """use DLMS UA 1000-1 Ed. 14 Table 54"""
+    if (128 <= ln.b <= 199) or (128 <= ln.c <= 199) or ln.c == 240 or (128 <= ln.d <= 254) or (128 <= ln.e <= 254) or (128 <= ln.f <= 254):
         # try search in BCDE group for manufacture object before in CDE
-        c_m = func_map.get((ln.contents[:5]), None)
-    if not c_m:
+        c_m = func_map.get((ln.contents[:5]), common_interface_class_map)
+    else:
         # try search in CDE group
         c_m = func_map.get((ln.contents[:1]+ln.contents[2:5]), None)
         if not c_m:

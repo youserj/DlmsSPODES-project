@@ -350,3 +350,12 @@ class TestType(unittest.TestCase):
             ver=AppVersion.from_str(ver))
         for obj in col:
             print(str(obj.CLASS_ID))
+
+    def test_create_manufacture_obj(self):
+        col = collection.Collection()
+        obj = col.add(
+            class_id=overview.ClassID.DATA,
+            version=overview.Version.V0,
+            logical_name=cst.LogicalName("0.128.25.6.0.255")
+        )
+        print(obj)

@@ -1,9 +1,7 @@
 import setuptools
-import src.DLMS_SPODES.settings
 
 
 setuptools.setup(
-    version=src.DLMS_SPODES.settings.version(),
     long_description_content_type="text/markdown",
     url="https://github.com/youserj/DlmsSPODES",
     classifiers=[
