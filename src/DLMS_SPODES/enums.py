@@ -224,6 +224,38 @@ class ServiceError(IntEnum):
     OTHER = 10
 
 
+class ConfirmedServiceError(IntEnum):
+    """COSEMpdu_GB83.asn ConfirmedServiceError"""
+    INITIATE_ERROR = 1
+    GET_STATUS = 2
+    GET_NAME_LIST = 3
+    GET_VARIABLE_ATTRIBUTE = 4
+    READ = 5
+    WRITE = 6
+    GET_DATA_SET_ATTRIBUTE = 7
+    GET_TI_ATTRIBUTE = 8
+    CHANGE_SCOPE = 9
+    START = 10
+    STOP = 11
+    RESUME = 12
+    MAKE_USABLE = 13
+    INITIATE_LOAD = 14
+    LOAD_SEGMENT = 15
+    TERMINATE_LOAD = 16
+    INITIATE_UP_LOAD = 17
+    UP_LOAD_SEGMENT = 18
+    TERMINATE_UP_LOAD = 19
+
+
+class SetRequest(IntEnum):
+    """COSEMpdu_GB83.asn Set-Request"""
+    SET_REQUEST_NORMAL = 1
+    SET_REQUEST_FIRST_DATABLOCK = 2
+    SET_REQUEST_WITH_DATABLOCK = 3
+    SET_REQUEST_WITH_LIST = 4
+    SET_REQUEST_WITH_LIST_AND_WITH_FIRST_DATABLOCK = 5
+
+
 class AssociationResult(IntEnum):
     """COSEMpdu_GB83.asn Association-result"""
     ACCEPTED = 0

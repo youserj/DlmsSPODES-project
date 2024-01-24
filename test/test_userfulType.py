@@ -30,3 +30,9 @@ class TestType(unittest.TestCase):
         self.assertEqual(ut.CosemObjectInstanceId("0.1.1.0.0.255").contents, b'\x00\x01\x01\x00\x00\xff', "check from str")
         self.assertEqual(ut.CosemObjectInstanceId(b'\x00\x00\x01\x00\x00\xff').contents, b'\x00\x00\x01\x00\x00\xff', "check from bytes")
         self.assertEqual(ut.CosemObjectInstanceId((0, 1, 1, 0, 0, 0xff)).contents, b'\x00\x01\x01\x00\x00\xff', "check tuple")
+
+    def test_CosemClassId(self):
+        value = ut.CosemClassId(1)
+        self.assertEqual(1, int(value), "check decode")
+        for v in range(2**16):
+            str(ut.CosemClassId(v))

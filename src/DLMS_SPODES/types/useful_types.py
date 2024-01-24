@@ -393,7 +393,7 @@ class CosemClassId(Unsigned16):
 
     def __str__(self):
         if _class_names:
-            return _class_names.get(self)
+            return _class_names.get(self, repr(self))
         else:
             return repr(self)
 
