@@ -197,13 +197,6 @@ class Command(IntFlag):
     """ Response message from gateway to client. """
 
 
-class HDLCInfo(Enum):
-    MAX_INFO_TX = b'\x05'
-    MAX_INFO_RX = b'\x06'
-    WINDOW_SIZE_TX = b'\x07'
-    WINDOW_SIZE_RX = b'\x08'
-
-
 if __name__ == '__main__':
     a = Command.NONE
     b = Command.NONE
