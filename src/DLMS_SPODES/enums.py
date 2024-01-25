@@ -163,6 +163,26 @@ class ACSEAPDU(IntEnum):
     RLRE = 0x63
 
 
+class ReadResponse(IntEnum):
+    """COSEMpdu_GB83.asn ReadResponse"""
+    DATA = 0
+    DATA_ACCESS_ERROR = 1
+    DATA_BLOCK_RESULT = 2
+    BLOCK_NUMBER = 3
+
+
+class VariableAccessSpecification(IntEnum):
+    """COSEMpdu_GB83.asn Variable-Access-Specification"""
+    VARIABLE_NAME = 2
+    """Read data using SN"""
+    PARAMETERIZED_ACCESS = 4
+    """Get data using parameterized access"""
+    BLOCK_NUMBER_ACCESS = 5
+    """Get next block"""
+    READ_DATA_BLOCK_ACCESS = 6
+    WRITE_DATA_BLOCK_ACCESS = 7
+
+
 class XDLMSAPDU(IntFlag):
     """COSEMpdu_GB83.asn XDLMS-APDU"""
     INITIATE_REQUEST = 1
@@ -224,7 +244,7 @@ class XDLMSAPDU(IntFlag):
     GENERAL_BLOCK_TRANSFER = 224
     GATEWAY_REQUEST = 230
     GATEWAY_RESPONSE = 231
-    
+
 
 class Conformance(IntFlag):
     """ DLMS UA 1000-1 Ed 14 5.4.5 AssociationLN xDLMS_context_info.conformance"""
