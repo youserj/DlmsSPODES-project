@@ -360,7 +360,7 @@ class TestType(unittest.TestCase):
         )
         print(obj)
 
-    def test_get_phase_amount(self):
+    def test_get_phases_amount(self):
         type_ = "4d324d5f31"
         ver = "1.5.7"
         man = b"KPZ"
@@ -368,7 +368,7 @@ class TestType(unittest.TestCase):
             m=man,
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
-        self.assertEqual(col.get_phase_amount(), 1, "check amount")
+        self.assertEqual(col.get_n_phases(), 1, "check amount")
         type_ = "4d324d5f33"
         ver = "1.5.7"
         man = b"KPZ"
@@ -376,4 +376,4 @@ class TestType(unittest.TestCase):
             m=man,
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
-        self.assertEqual(col.get_phase_amount(), 3, "check amount 3")
+        self.assertEqual(col.get_n_phases(), 3, "check amount 3")

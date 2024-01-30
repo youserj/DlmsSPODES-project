@@ -1350,7 +1350,7 @@ class Collection:
         except ValueError as e:
             raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
 
-    def get_phase_amount(self) -> int:
+    def get_n_phases(self) -> int:
         """search objects with L2 phase"""
         ret: int | None = None
         for obj in filter(lambda obj: obj.logical_name.a == 1, self):
