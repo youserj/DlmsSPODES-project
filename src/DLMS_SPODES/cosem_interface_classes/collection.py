@@ -1350,6 +1350,18 @@ class Collection:
         except ValueError as e:
             raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
 
+    def get_phase_amount(self) -> int:
+        """search objects with L2 phase"""
+        ret: int | None = None
+        for obj in filter(lambda obj: obj.logical_name.a == 1, self):
+            if 41 <= obj.logical_name.c <= 60:
+                return 3
+            ret = 1
+        if ret is None:
+            raise exc.NoObject("no one electricity object was find")
+        else:
+            return ret
+
     def try_remove(self, logical_name: cst.LogicalName) -> bool:
         """ If indexes is None when remove object else:
         Use in template. Remove attributes by indexes and remove object from collection if it has only logic attribute """

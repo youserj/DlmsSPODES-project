@@ -359,3 +359,21 @@ class TestType(unittest.TestCase):
             logical_name=cst.LogicalName("0.128.25.6.0.255")
         )
         print(obj)
+
+    def test_get_phase_amount(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        self.assertEqual(col.get_phase_amount(), 1, "check amount")
+        type_ = "4d324d5f33"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        self.assertEqual(col.get_phase_amount(), 3, "check amount 3")
