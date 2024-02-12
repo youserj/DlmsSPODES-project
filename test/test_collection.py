@@ -377,3 +377,6 @@ class TestType(unittest.TestCase):
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
         self.assertEqual(col.get_n_phases(), 3, "check amount 3")
+        kpz_ip = col.get_object("0.128.154.0.0.255")
+        kpz_ip.set_attr(2, (1, ["0.0.0.0", "0.0.0.1"]))
+        print(kpz_ip)

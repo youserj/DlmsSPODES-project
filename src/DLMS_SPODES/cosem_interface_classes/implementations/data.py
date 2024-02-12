@@ -378,3 +378,14 @@ class SPODES3SPODESVersion(DLMSDeviceIDObject):
 class SPODES3IDNotSpecific(DLMSDeviceIDObject):
     """СТО_34.01-5.1-006-2019v3 13.1. Чтение расширенных паспортных данных ПУ. Для специфических идентификаторов"""
     A_ELEMENTS = DLMSDeviceIDObject.get_attr_element(2).get_change(classifier=ic.Classifier.NOT_SPECIFIC),
+
+
+class KPZGSMPingIPValue(cdt.Structure):
+    """Содержит настройки для проведения Ping теста"""
+    enable: cdt.Unsigned
+    multicast_IP_address: impl.arrays.MulticastIPAddress
+
+
+class KPZGSMPingIP(DataStatic):
+    """Проприетарный объект"""
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZGSMPingIPValue),

@@ -1,37 +1,5 @@
 from .__class_init__ import *
-
-
-class IPAddress(cdt.DoubleLongUnsigned):
-
-    def from_str(self, value: str) -> bytes:
-        """ create ip: integer from string type ddd.ddd.ddd.ddd, ex.: 127.0.0.1 """
-        raw_value = bytes()
-        for separator in '... ':
-            try:
-                element, value = value.split(separator, 1)
-            except ValueError:
-                element, value = value, ''
-            raw_value += self.__get_attr_element(element)
-        return raw_value
-
-    @staticmethod
-    def __get_attr_element(value: str) -> bytes:
-        if isinstance(value, str):
-            if value == '':
-                return b'\x00'
-            try:
-                return int(value).to_bytes(1, 'big')
-            except OverflowError:
-                raise ValueError(F'Int too big to convert {value}')
-        else:
-            raise TypeError(F'Unsupported type validation from string, got {value.__class__}')
-
-    def __str__(self):
-        return F'{self.contents[0]}.{self.contents[1]}.{self.contents[2]}.{self.contents[3]}'
-
-
-class MulticastIPAddress(cdt.Array):
-    TYPE = IPAddress
+from ..types.implementations import double_long_usingneds, arrays
 
 
 class IPOptionsElement(cdt.Structure):
@@ -52,14 +20,14 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     VERSION = Version.V0
     # TODO: more 7 attr and 3 methods
     A_ELEMENTS = (ic.ICAElement("DL_reference", cdt.OctetString),
-                  ic.ICAElement("IP_address", IPAddress),
-                  ic.ICAElement("multicast_IP_address", MulticastIPAddress),
+                  ic.ICAElement("IP_address", double_long_usingneds.IPAddress),
+                  ic.ICAElement("multicast_IP_address", arrays.MulticastIPAddress),
                   ic.ICAElement("IP_options", IPOptions),
-                  ic.ICAElement("subnet_mask", IPAddress),
-                  ic.ICAElement("gateway_IP_address", IPAddress),
+                  ic.ICAElement("subnet_mask", double_long_usingneds.IPAddress),
+                  ic.ICAElement("gateway_IP_address", double_long_usingneds.IPAddress),
                   ic.ICAElement("use_DHCP_flag", cdt.Boolean),
-                  ic.ICAElement("primary_DNS_address", IPAddress),
-                  ic.ICAElement("secondary_DNS_address", IPAddress),
+                  ic.ICAElement("primary_DNS_address", double_long_usingneds.IPAddress),
+                  ic.ICAElement("secondary_DNS_address", double_long_usingneds.IPAddress),
                   # TODO: more 3 methods
                   )
 
@@ -71,11 +39,11 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
         return self.get_attr(2)
 
     @property
-    def IP_address(self) -> IPAddress:
+    def IP_address(self) -> double_long_usingneds.IPAddress:
         return self.get_attr(3)
 
     @property
-    def multicast_IP_address(self) -> MulticastIPAddress:
+    def multicast_IP_address(self) -> arrays.MulticastIPAddress:
         return self.get_attr(4)
 
     @property
@@ -83,11 +51,11 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
         return self.get_attr(5)
 
     @property
-    def subnet_mask(self) -> IPAddress:
+    def subnet_mask(self) -> double_long_usingneds.IPAddress:
         return self.get_attr(6)
 
     @property
-    def gateway_IP_address(self) -> IPAddress:
+    def gateway_IP_address(self) -> double_long_usingneds.IPAddress:
         return self.get_attr(7)
 
     @property
@@ -95,9 +63,9 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
         return self.get_attr(8)
 
     @property
-    def primary_DNS_address(self) -> IPAddress:
+    def primary_DNS_address(self) -> double_long_usingneds.IPAddress:
         return self.get_attr(9)
 
     @property
-    def secondary_DNS_address(self) -> IPAddress:
+    def secondary_DNS_address(self) -> double_long_usingneds.IPAddress:
         return self.get_attr(10)

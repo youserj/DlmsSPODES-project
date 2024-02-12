@@ -1,5 +1,5 @@
 from typing import Any
-from ...types import common_data_types as cdt
+from ...types import common_data_types as cdt, implementations as impl
 
 
 class SelectionAccess(cdt.Array):
@@ -11,3 +11,7 @@ class SelectionAccess(cdt.Array):
     # def is_writable(self, ln: cst.LogicalName, indexes: set[int]) -> bool:
     #     """ index - DLMS object attribute index.
     #      True: DLMS object with ln and index has writable Access"""
+
+
+class MulticastIPAddress(cdt.Array):
+    TYPE = impl.double_long_usingneds.IPAddress

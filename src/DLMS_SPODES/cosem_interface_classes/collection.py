@@ -504,6 +504,7 @@ func_maps["SPODES_3"] = get_func_map(__func_map_for_create)
 # KPZ Update
 __func_map_for_create.update({
     (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
+    (0, 128, 154, 0, 0): ClassMap({0: impl.data.KPZGSMPingIP}),
     (0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
 })
 func_maps["KPZ"]: FUNC_MAP = get_func_map(__func_map_for_create)
