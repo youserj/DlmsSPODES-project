@@ -163,6 +163,7 @@ DayProfileAction = "%n00: %v00 - Тариф: %v02"
 
 
 [DLMS.struct_name]
+# todo: join wiht am_names ?
 scaler = "Масштаб"
 unit = "Ед. измерения"
 day_id = "Идентификатор дня"
@@ -322,6 +323,7 @@ protection_options = "Опции защиты"
 IP_Option_Type = "тип IP опции"
 IP_Option_Length = "длина IP опции"
 IP_Option_Data = "данные IP опции"
+multicast_IP_address = "Группа IP адресов" # todo: temporary copypast with am_names
 
 [DLMS.am_names]
 # all names for attribute and method of DLMS classes

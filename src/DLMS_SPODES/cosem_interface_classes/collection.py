@@ -2046,3 +2046,9 @@ def get_ln_contents(value: LNContaining) -> bytes:
             raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
         case str():                                                      return cst.LogicalName(value).contents
         case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
+
+
+@lru_cache(1)
+def get_object_list_desc() -> ut.CosemAttributeDescriptor:
+    """return cached 0.0.40.0.0.255:2 descriptor"""
+    return ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
