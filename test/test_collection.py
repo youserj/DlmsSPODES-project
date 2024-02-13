@@ -381,6 +381,7 @@ class TestType(unittest.TestCase):
         kpz_ip = col.get_object("0.128.154.0.0.255")
         kpz_ip.set_attr(2, (1, ["0.0.0.0", "0.0.0.1"]))
         print(kpz_ip)
+        print(overview.ClassID.get_all_id())
 
     def test_get_object_list_desc(self):
         self.assertEqual(collection.AttrDesc.OBJECT_LIST.contents, b'\x00\x0f\x00\x00(\x00\x00\xff\x02\x00', "check cached object_list")

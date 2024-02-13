@@ -323,6 +323,8 @@ protection_options = "Опции защиты"
 IP_Option_Type = "тип IP опции"
 IP_Option_Length = "длина IP опции"
 IP_Option_Data = "данные IP опции"
+mask_name = "имя маски"
+index_list = "индекс списка"
 multicast_IP_address = "Группа IP адресов" # todo: temporary copypast with am_names
 
 [DLMS.am_names]

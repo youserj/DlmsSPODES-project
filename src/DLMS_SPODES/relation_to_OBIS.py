@@ -186,6 +186,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 11, 0, e:   return F"{overview.ClassID.SPECIAL_DAYS_TABLE}{handle_B(b)}{handle_E(e)}"
         case  0, b, 12, 0, e:   return F"{overview.ClassID.SCHEDULE}{handle_B(b)}{handle_E(e)}"
         case  0, b, 13, 0, e:   return F"{overview.ClassID.ACTIVITY_CALENDAR}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 14, 0, e:   return F"{overview.ClassID.REGISTER_ACTIVATION}{handle_B(b)}{handle_E(e)}"
         case  0, b, 15, 0, 0:   return F"{rn.END_OF_BILLING_PERIOD_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
         case  0, b, 15, 0, 1:   return F"{rn.DISCONNECT_CONTROL_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
         case  0, b, 15, 0, 2:   return F"{rn.IMAGE_ACTIVATION_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"

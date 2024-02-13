@@ -1,4 +1,5 @@
 """DLMS UA 1000-1 Ed 14 4.2 Overview of the COSEM interface classes"""
+from functools import lru_cache
 from enum import IntEnum
 from dataclasses import dataclass
 from ..types import ut, cdt
@@ -107,6 +108,7 @@ class ClassID:
     CLIENT_SETUP = ut.CosemClassId(32767)  # TODO: remove in future
 
     @classmethod
+    @lru_cache(1)
     def get_all_id(cls) -> tuple[int]:
         """return all id container in build-in <int>"""
         return tuple(map(int, filter(lambda it: isinstance(it, ut.CosemClassId), cls.__dict__.values())))

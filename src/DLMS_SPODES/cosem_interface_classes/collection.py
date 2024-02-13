@@ -45,6 +45,7 @@ from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
 from .register import Register
 from .extended_register import ExtendedRegister
 from .demand_register.ver0 import DemandRegister as DemandRegisterVer0
+from .register_activation.ver0 import RegisterActivation
 from .register_monitor import RegisterMonitor
 from .schedule import Schedule
 from .security_setup.ver0 import SecuritySetup as SecuritySetupVer0
@@ -103,6 +104,8 @@ ExtendedRegisterMap = ClassMap({
     0: ExtendedRegister})
 DemandRegisterMap = ClassMap({
     0: DemandRegisterVer0})
+RegisterActivationMap = ClassMap({
+    0: RegisterActivation})
 ProfileGenericMap = ClassMap({
     0: ProfileGenericVer0,
     1: ProfileGenericVer1})
@@ -199,6 +202,7 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
     3: RegisterMap,
     4: ExtendedRegisterMap,
     5: DemandRegisterMap,
+    6: RegisterActivationMap,
     7: ProfileGenericMap,
     8: ClockMap,
     9: ScriptTableMap,
@@ -366,7 +370,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[CosemClas
     (0, 11, 0): SpecialDaysTableMap,
     (0, 12, 0): ScheduleMap,
     (0, 13, 0): ActivityCalendarMap,
-    #
+    (0, 14, 0): RegisterActivationMap,
     (0, 15, 0, tuple(range(0, 8))): SingleActionScheduleMap,
     (0, 16, 0): RegisterMonitorMap,
     (0, 16, 1, tuple(range(0, 10))): RegisterMonitorMap,
