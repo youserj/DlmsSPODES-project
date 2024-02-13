@@ -8,7 +8,7 @@ import copy
 from struct import pack
 import datetime
 import dataclasses
-from itertools import count, chain, islice
+from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self
 import logging
@@ -2048,7 +2048,6 @@ def get_ln_contents(value: LNContaining) -> bytes:
         case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
 
 
-@lru_cache(1)
-def get_object_list_desc() -> ut.CosemAttributeDescriptor:
-    """return cached 0.0.40.0.0.255:2 descriptor"""
-    return ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
+class AttrDesc:
+    """keep constant descriptors"""
+    OBJECT_LIST = ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
