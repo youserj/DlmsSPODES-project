@@ -2,7 +2,7 @@ from enum import IntFlag, auto
 from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
-from ...types.implementations import arrays, enums, bitstrings, long_unsigneds
+from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ... import pdu_enums as pdu
 from ...enums import MechanismId
 
@@ -46,12 +46,8 @@ class AccessRight(cdt.Structure):
     method_access: MethodAccessDescriptor
 
 
-class ObjectListElement(cdt.Structure):
+class ObjectListElement(structs.ObjectListElement, access_rights=AccessRight):
     """ Visible COSEM objects with their class_id, version, logical name and the access rights to their attributes and methods within the given application association"""
-    class_id: long_unsigneds.ClassId
-    version: cdt.Unsigned
-    logical_name: cst.LogicalName
-    access_rights: AccessRight
 
 
 class ObjectListType(arrays.SelectionAccess):

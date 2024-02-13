@@ -1336,11 +1336,9 @@ class Collection:
             version: cdt.Unsigned | None,
             logical_name: cst.LogicalName) -> InterfaceClass:
         """ append new DLMS object to collection with return it"""
-        if version is None:
-            version = self.set_version(class_id, version)
         try:
             new_object = get_type(
-                class_id=class_id,
+                class_id=self.find_version(class_id) if version is None else class_id,
                 version=version,
                 ln=logical_name,
                 func_map=func_maps[self.__spec])(logical_name)
@@ -1350,6 +1348,19 @@ class Collection:
             return new_object
         except ValueError as e:
             raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
+        except StopIteration as e:
+            raise ValueError(F"not find class version for {class_id=} {logical_name=}: {e}")
+
+    def get_class_version(self) -> dict[ut.CosemClassId, cdt.Unsigned]:
+        """use for check all class version by unique"""
+        ret: dict[ut.CosemClassId, cdt.Unsigned] = dict()
+        for obj in self.__container.values():
+            if ver := ret.get(obj.CLASS_ID):
+                if obj.VERSION != ver:
+                    raise ValueError(F"for {obj.CLASS_ID=} exist several versions: {obj.VERSION}, {ver} in one collection")
+            else:
+                ret[obj.CLASS_ID] = obj.VERSION
+        return ret
 
     def get_n_phases(self) -> int:
         """search objects with L2 phase"""
@@ -1377,18 +1388,9 @@ class Collection:
                 return False
 
     @lru_cache(maxsize=100)  # amount of all ClassID
-    def set_version(self, class_id: ut.CosemClassId, version: cdt.Unsigned | None = None) -> cdt.Unsigned:
-        """ Set DLMS Class version for all Class ID. Return Class Version according by Class ID """
-        for obj in filter(lambda it: it.CLASS_ID == class_id, self.__container.values()):
-            ver = obj.VERSION
-            if version is None or version == ver:
-                return ver
-            else:
-                raise ValueError(F'Not match Class Version. Expected: {ver}, got {version}')
-        if version is not None:
-            return version
-        else:
-            raise ValueError(F'Not find version for {class_id=}')
+    def find_version(self, class_id: ut.CosemClassId) -> cdt.Unsigned:
+        """use for add new object from profile_generic if absence in object list"""
+        return next(filter(lambda obj: obj.CLASS_ID == class_id, self.__container.values())).VERSION
 
     def is_in_collection(self, value: LNContaining) -> bool:
         obis: bytes = get_ln_contents(value)

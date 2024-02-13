@@ -2,6 +2,7 @@ from . import ver0
 from ...types import choices
 from ... import exceptions as exc
 from ..__class_init__ import *
+from ...types.implementations import structs
 
 
 class AccessMode(cdt.Enum, elements=tuple(range(7))):
@@ -48,11 +49,8 @@ class AccessRight(cdt.Structure):
     method_access: MethodAccessDescriptor
 
 
-class ObjectListElement(cdt.Structure):
-    class_id: ver0.long_unsigneds.ClassId
-    version: cdt.Unsigned
-    logical_name: cst.LogicalName
-    access_rights: AccessRight
+class ObjectListElement(structs.ObjectListElement, access_rights=AccessRight):
+    """"""
 
 
 class ObjectListType(ver0.ObjectListType):

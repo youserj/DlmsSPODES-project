@@ -1226,6 +1226,13 @@ class Structure(ComplexDataType):
         """create ELEMENTS from annotations"""
         if hasattr(cls, "ELEMENTS"):
             """init manually, ex: Entry in ProfileGeneric"""
+            if len(kwargs) != 0:  # reinit several struct elements
+                elements = list(cls.ELEMENTS)
+                for k in kwargs.keys():
+                    for i, el in enumerate(cls.ELEMENTS):
+                        if k == el.NAME:
+                            elements[i] = StructElement(el.NAME, kwargs[k])
+                cls.ELEMENTS = tuple(elements)
         else:
             elements = list()
             for (name, type_), f in zip(cls.__annotations__.items(), (
