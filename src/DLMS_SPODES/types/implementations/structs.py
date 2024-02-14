@@ -1,6 +1,6 @@
 """ COMMON Structs """
 from ...types import common_data_types as cdt, cosem_service_types as cst
-from ...types.implementations import long_unsigneds
+from . import long_unsigneds
 
 
 class ActionItem(cdt.Structure):
@@ -41,3 +41,17 @@ class CaptureObjectDefinition(cdt.Structure):
 class WindowElement(cdt.Structure):
     start_time: cst.OctetStringDateTime
     end_time: cst.OctetStringDateTime
+
+
+class AccessRight(cdt.Structure):
+    """ TODO: maybe more nested description"""
+    attribute_access: cdt.Array
+    method_access: cdt.Array
+
+
+class ObjectListElement(cdt.Structure):
+    """common for AssociationLN"""
+    class_id: long_unsigneds.ClassId
+    version: cdt.Unsigned
+    logical_name: cst.LogicalName
+    access_rights: AccessRight

@@ -1342,8 +1342,8 @@ class Collection:
         """ append new DLMS object to collection with return it"""
         try:
             new_object = get_type(
-                class_id=self.find_version(class_id) if version is None else class_id,
-                version=version,
+                class_id=class_id,
+                version=self.find_version(class_id) if version is None else version,
                 ln=logical_name,
                 func_map=func_maps[self.__spec])(logical_name)
             new_object.collection = self
@@ -2057,3 +2057,4 @@ def get_ln_contents(value: LNContaining) -> bytes:
 class AttrDesc:
     """keep constant descriptors"""
     OBJECT_LIST = ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
+    LDN_VALUE = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.42.0.0.255"), ut.CosemObjectAttributeId(2)))
