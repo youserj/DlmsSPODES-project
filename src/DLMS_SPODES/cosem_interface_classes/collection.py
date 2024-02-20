@@ -60,7 +60,7 @@ from xml.dom import minidom
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
-from ..enums import TagsName, MechanismId
+from ..enums import TagsName, MechanismId, RelationGroup, MediaId
 from . import obis as o
 from .. import pdu_enums as pdu
 from ..config_parser import config
@@ -1412,6 +1412,13 @@ class Collection:
         else:
             return None
 
+    def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
+        """return only association objects"""
+        ret = list()
+        for olt in self.getASSOCIATION(ass_id).object_list:
+            ret.append(self.__get_object(olt.logical_name.contents))
+        return ret
+
     def get_objects_list(self, value: enums.ClientSAP) -> list[ic.COSEMInterfaceClasses]:
         for association in self.get_objects_by_class_id(ut.CosemClassId(15)):
             if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
@@ -2058,3 +2065,357 @@ class AttrDesc:
     """keep constant descriptors"""
     OBJECT_LIST = ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
     LDN_VALUE = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.42.0.0.255"), ut.CosemObjectAttributeId(2)))
+
+
+__range10_and_255: tuple = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
+__range63: tuple = tuple(range(0, 64))
+__range120_and_124_127: tuple = tuple(chain(range(0, 121), range(124, 128)))
+__range100_and_255: tuple = tuple(chain(range(0, 100), (255,)))
+__range100_and_101_125_and_255: tuple = tuple(chain(__range100_and_255, range(101, 126)))
+__c1: tuple = tuple(chain(range(1, 10), (13, 14, 33, 34, 53, 54, 73, 74, 82), range(16, 31), range(36, 51), range(56, 70), range(76, 81), range(84, 90)))
+"""DLMS UA 1000-1 Ed 14. Table 45 c1"""
+__table44: tuple = (11, 12, 15, 31, 32, 35, 51, 52, 55, 71, 72, 75, 90, 91, 92)
+"""DLMS UA 1000-1 Ed 14. Table 44 for active power"""
+__c2: tuple = tuple(chain(__table44, range(100, 108)))
+"""DLMS UA 1000-1 Ed 14. Table 45 c2"""
+
+
+@lru_cache(maxsize=1000)
+def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
+    if ln.a == MediaId.ABSTRACT:
+        if ln.c == 0:
+            if ln.d == 1:
+                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES
+            elif ln.d in (2, 9):
+                return RelationGroup.OTHER_ABSTRACT_GENERAL_PURPOSE_OBIS_CODES
+        elif ln.c == 1:
+            if ln.d in (0, 1, 2, 3, 4, 5, 6):
+                return RelationGroup.CLOCK_OBJECTS
+        elif ln.c == 2:
+            if ln.d in (0, 1, 2):
+                return RelationGroup.MODEM_CONFIGURATION_AND_RELATED_OBJECTS
+        elif ln.c == 10 and ln.d == 0 and ln.e in (0, 1, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 125):
+            return RelationGroup.SCRIPT_TABLE_OBJECTS
+        elif ln.c == 11 and ln.d == 0:
+            return RelationGroup.SPECIAL_DAYS_TABLE_OBJECTS
+        elif ln.c == 12 and ln.d == 0:
+            return RelationGroup.SCHEDULE_OBJECTS
+        elif ln.c == 13 and ln.d == 0:
+            return RelationGroup.ACTIVITY_CALENDAR_OBJECTS
+        elif ln.c == 14 and ln.d == 0:
+            return RelationGroup.REGISTER_ACTIVATION_OBJECTS
+        elif ln.c == 15 and ln.d == 0 and ln.e in (0, 1, 2, 3, 4, 5, 6, 7):
+            return RelationGroup.SINGLE_ACTION_SCHEDULE_OBJECTS
+        elif ln.c == 16:
+            if ln.d == 0 or (ln.d == 1 and ln.e in range(0, 10)):
+                return RelationGroup.REGISTER_MONITOR_OBJECTS
+            elif ln.d == 2:
+                return RelationGroup.PARAMETER_MONITOR_OBJECTS
+        elif ln.c == 17 and ln.d == 0:
+            return RelationGroup.LIMITER_OBJECTS
+        elif ln.c == 18 and ln.d == 0:
+            return RelationGroup.ARRAY_MANAGER_OBJECT
+        elif ln.c == 19:
+            if (ln.d in range(0, 10) and ln.e == 0) or ln.d in range(10, 50) or ln.d in (range(50, 60) and ln.e in (1, 2)):
+                return RelationGroup.PAYMENT_METERING_RELATED_OBJECTS
+        elif ln.c == 20 and ln.d == 0 and ln.e in (0, 1):
+            return RelationGroup.IEC_LOCAL_PORT_SETUP_OBJECTS
+        elif ln.c == 21 and ln.d == 0:
+            return RelationGroup.STANDARD_READOUT_PROFILE_OBJECTS
+        elif ln.c == 22 and ln.d == 0 and ln.e == 0:
+            return RelationGroup.IEC_HDLC_SETUP_OBJECTS
+        elif ln.c == 23:
+            if (ln.d in 0, 1, 2 and ln.e == 0) or ln.d == 3:
+                return RelationGroup.IEC_TWISTED_PAIR_1_SETUP_OBJECTS
+        elif ln.c == 24:
+            if (ln.d in (0, 1, 4, 5, 6) and ln.e == 0) or (ln.d in (2, 8, 9)):
+                return RelationGroup.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
+        elif ln.c == 31 and ln.d == 0 and ln.e == 0:
+            return RelationGroup.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
+        elif ln.c == 25:
+            if ln.d in (0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15) and ln.e == 0:
+                return RelationGroup.OBJECTS_TO_SET_UP_DATA_EXCHANGE_OVER_THE_INTERNET
+            elif ln.d == 9 and ln.e == 0:
+                return RelationGroup.OBJECTS_TO_SET_UP_PUSH_SETUP
+        elif ln.c == 26 and ln.d in (0, 1, 2, 3, 5, 6) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_SETTING_UP_DATA_EXCHANGE_USING_S_FSK_PLC
+        elif ln.c == 27 and ln.d in (0, 1, 2) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_SETTING_UP_THE_ISO_IEC_8802_2_LLC_LAYER
+        elif ln.c == 28 and ln.d in (0, 1, 2, 3, 4, 5, 6, 7) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROWBAND_OFDM_PLC_FOR_PRIME_NETWORKS
+        elif ln.c == 29 and ln.d in (0, 1, 2) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROW_BAND_OFDM_PLC_FOR_G3_PLC_NETWORKS
+        elif ln.c == 30 and ln.d in (0, 1, 2, 3, 4):
+            return RelationGroup.ZIGBEE_SETUP_OBJECTS
+        elif ln.c == 32 and ln.d in (0, 1, 2, 3) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_SETTING_UP_AND_MANAGING_DATA_EXCHANGE_USING_ISO_IEC_14908_PLC_NETWORKS
+        elif ln.c == 33 and ln.d in (0, 1, 2, 3) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_HS_PLC_ISO_IEC_12139_1_ISO_EC_12139_1_NETWORKS
+        elif ln.c == 34 and ln.d in (0, 1, 2, 3) and ln.e == 0:
+            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_WI_SUN_NETWORKS
+        elif ln.c == 40 and ln.b == 0 and ln.d == 0:
+            return RelationGroup.ASSOCIATION_OBJECTS
+        elif ln.c == 41 and ln.b == 0 and ln.d == 0 and ln.e == 0:
+            return RelationGroup.SAP_ASSIGNMENT_OBJECT
+        elif ln.c == 42 and ln.b == 0 and ln.d == 0 and ln.e == 0:
+            return RelationGroup.COSEM_LOGICAL_DEVICE_NAME_OBJECT
+        elif ln.c == 43:
+            if (ln.b == 0 and ln.d == 0) or ln.d in (1, 2):
+                return RelationGroup.INFORMATION_SECURITY_RELATED_OBJECTS
+        elif ln.c == 44:
+            if ln.b == 0:
+                if ln.d == 0:
+                    return RelationGroup.IMAGE_TRANSFER_OBJECTS
+                elif ln.d == 1:
+                    return RelationGroup.FUNCTION_CONTROL_OBJECTS
+                elif ln.d == 2:
+                    return RelationGroup.COMMUNICATION_PORT_PROTECTION_OBJECTS
+        elif ln.c == 65 and ln.d in __range63:
+            return RelationGroup.UTILITY_TABLE_OBJECTS
+        elif ln.c == 66 and ln.d == 0:
+            return RelationGroup.COMPACT_DATA_OBJECTS
+        elif ln.c == 96:
+            if ln.d == 1:
+                if ln.e in __range10_and_255:
+                    return RelationGroup.DEVICE_ID_OBJECTS
+                elif ln.e == 10:
+                    return RelationGroup.METERING_POINT_ID_OBJECTS
+            elif ln.d == 2:
+                return RelationGroup.PARAMETER_CHANGES_AND_CALIBRATION_OBJECTS
+            elif ln.d == 3:
+                if ln.e in (0, 1, 2, 3, 4):
+                    return RelationGroup.I_O_CONTROL_SIGNAL_OBJECTS
+                elif ln.e == 10:
+                    return RelationGroup.DISCONNECT_CONTROL_OBJECTS
+                elif ln.e in range(20, 30):
+                    return RelationGroup.ARBITRATOR_OBJECTS
+            elif ln.d == 4 and ln.e in (0, 1, 2, 3, 4):
+                return RelationGroup.STATUS_OF_INTERNAL_CONTROL_SIGNALS_OBJECTS
+            elif ln.d == 5 and ln.e in (0, 1, 2, 3, 4):
+                return RelationGroup.INTERNAL_OPERATING_STATUS_OBJECTS
+            elif ln.d == 6 and ln.e in (0, 1, 2, 3, 4, 5, 6):
+                return RelationGroup.BATTERY_ENTRIES_OBJECTS
+            elif ln.d == 7 and ln.e in range(0, 22):
+                return RelationGroup.POWER_FAILURE_MONITORING_OBJECTS
+            elif ln.d == 8 and ln.e in __range63:
+                return RelationGroup.OPERATING_TIME_OBJECTS
+            elif ln.d == 9 and ln.e in (0, 1, 2):
+                return RelationGroup.ENVIRONMENT_RELATED_PARAMETERS_OBJECTS
+            elif ln.d == 10 and ln.e in range(1, 11):
+                return RelationGroup.STATUS_REGISTER_OBJECTS
+            elif ln.d == 11 and ln.e in range(0, 100):
+                return RelationGroup.EVENT_CODE_OBJECTS
+            elif ln.d == 12 and ln.e in range(0, 7):
+                return RelationGroup.COMMUNICATION_PORT_LOG_PARAMETER_OBJECTS
+            elif ln.d == 13 and ln.e in (0, 1):
+                return RelationGroup.CONSUMER_MESSAGE_OBJECTS
+            elif ln.d == 14 and ln.e in range(0, 16):
+                return RelationGroup.CURRENTLY_ACTIVE_TARIFF_OBJECTS
+            elif ln.d == 15 and ln.e in range(0, 100):
+                return RelationGroup.EVENT_COUNTER_OBJECTS
+            elif ln.d == 16 and ln.e in range(0, 10):
+                return RelationGroup.PROFILE_ENTRY_DIGITAL_SIGNATURE_OBJECTS
+            elif ln.d == 17 and ln.e in range(0, 128):
+                return RelationGroup.PROFILE_ENTRY_COUNTER_OBJECTS
+            elif ln.d == 20:
+                return RelationGroup.METER_TAMPER_EVENT_RELATED_OBJECTS
+        elif ln.c == 97:
+            if ln.d == 97 and ln.e in __range10_and_255:
+                return RelationGroup.ERROR_REGISTER_OBJECTS
+            elif ln.d == 98 and (ln.e in chain(range(0, 30), (255,))):
+                return RelationGroup.ALARM_REGISTER_FILTER_DESCRIPTOR_OBJECTS
+        elif ln.c == 98:
+            return RelationGroup.GENERAL_LIST_OBJECTS
+        elif ln.c == 99 and ln.d == 98:
+            return RelationGroup.EVENT_LOG_OBJECTS
+        elif ln.c == 127 and ln.d == 0:
+            return RelationGroup.INACTIVE_OBJECTS
+    elif ln.a == MediaId.ELECTRICITY:
+        if ln.c == 0:
+            if ln.d == 0 and ln.e in __range10_and_255:
+                return RelationGroup.ID_NUMBERS_ELECTRICITY
+            elif ln.d == 1:
+                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_EL
+            elif ln.d in (2, 3, 4, 6, 7, 8, 9, 10):
+                return RelationGroup.OTHER_ELECTRICITY_RELATED_GENERAL_PURPOSE_OBJECTS
+            elif ln.d == 11 and ln.e in (1, 2, 3, 4, 5, 6, 7):
+                return RelationGroup.MEASUREMENT_ALGORITHM
+        elif ln.c == 96:
+            if ln.d == 1 and ln.e in __range10_and_255:
+                return RelationGroup.METERING_POINT_ID_OBJECTS
+            elif ln.d == 5 and ln.e in (0, 1, 2, 3, 4, 5):
+                return RelationGroup.ELECTRICITY_RELATED_STATUS_OBJECTS
+            elif ln.d == 10 and ln.e in (0, 1, 2, 3):
+                return RelationGroup.ELECTRICITY_RELATED_STATUS_OBJECTS
+        elif ln.c == 98:
+            return RelationGroup.LIST_OBJECTS_ELECTRICITY
+        elif ln.d in range(31, 46) and ln.f in __range100_and_255:
+            if ln.c in __c1 and ln.e in __range63:
+                return RelationGroup.THRESHOLD_VALUES
+            elif ln.c in __table44 and ln.e in __range120_and_124_127:
+                return RelationGroup.THRESHOLD_VALUES
+        elif ln.f in __range100_and_255:
+            if ln.d in (31, 35, 39, 4, 5, 14, 15, 24, 25):
+                if ln.c in __c1 and ln.e in __range63:
+                    return RelationGroup.REGISTER_MONITOR_OBJECTS
+                elif ln.c in __c2 and ln.e in __range120_and_124_127:
+                    return RelationGroup.REGISTER_MONITOR_OBJECTS
+    elif ln.a == MediaId.HCA:
+        if ln.c == 0:
+            if ln.d == 0 and ln.e in __range10_and_255:
+                return RelationGroup.ID_NUMBERS_HCA
+            elif ln.d == 1 and ln.e in (1, 2, 10, 11):
+                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_HCA
+            elif ln.d == 2 and ln.e in (0, 1, 2, 3):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+            elif ln.d == 4 and ln.e in (0, 1, 2, 3, 4, 5, 6):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+            elif ln.d == 5 and ln.e in (10, 11):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+            elif ln.d == 8 and ln.e in (0, 4, 6):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+            elif ln.d == 9 and ln.e in (1, 2, 3):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+        elif ln.c in (1, 2) and ln.e == 0:
+            if ln.d in (0, 6) and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_HCA_CONSUMPTION
+            elif ln.d in (1, 2, 3, 4, 5) and ln.f in __range100_and_101_125_and_255:
+                return RelationGroup.MEASURED_VALUES_HCA_CONSUMPTION
+        elif ln.c in range(3, 8) and ln.d in (0, 4, 5, 6) and ln.e == 255 and ln.f == 255:
+            return RelationGroup.MEASURED_VALUES_HCA_TEMPERATURE
+        elif ln.c == 97 and ln.d == 97:
+            return RelationGroup.ERROR_REGISTER_OBJECTS_HCA
+        elif ln.c == 98:
+            return RelationGroup.LIST_OBJECTS_HCA
+        elif ln.c == 99 and ln.d == 1:
+            return RelationGroup.DATA_PROFILE_OBJECTS_HCA
+    elif ln.a == MediaId.THERMAL_1 or ln.a == MediaId.THERMAL_2:
+        if ln.c == 0:
+            if ln.d == 0 and ln.e in __range10_and_255:
+                return RelationGroup.ID_NUMBERS_THERMAL
+            elif ln.d == 1 and ln.e in (1, 2, 10, 11):
+                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_THERMAL
+            elif ln.d == 2 and ln.e in chain(range(0, 5), range(10, 14)):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+            elif ln.d == 4 and ln.e in (1, 2, 3):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+            elif ln.d == 5 and ln.e in chain(range(1, 10), range(21, 25)):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+            elif ln.d == 8 and ln.e in chain(range(0, 8), range(11, 15), range(21, 26), range(31, 35)):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+            elif ln.d == 9 and ln.e in (1, 2, 3):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+        elif ln.c in range(1, 8):
+            if ln.e in range(10):
+                if ln.d in (0, 1, 2, 3, 7) and ln.f == 255:
+                    return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+                elif ln.d in (3, 8, 9) and ln.f in __range100_and_101_125_and_255:
+                    return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+                elif ln.d in (1, 2, 4, 5, 12, 13, 14, 15) and ln.f in chain(range(100), range(100, 126)):
+                    return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+            elif ln.d == 6 and ln.e == 255 and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+        elif ln.e in range(10):
+            if ln.f in __range100_and_101_125_and_255:
+                if ln.c in range(1, 8) and ln.d in (5, 15):
+                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                elif ln.c in (8, 9) and ln.d in (1, 4, 5, 12, 13, 14, 15):
+                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+            elif ln.c in range(10, 14):
+                if ln.d == 0 and ln.f == 255:
+                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                elif ln.d in (4, 5, 14, 15) and ln.f in chain(range(100), range(101, 126)):
+                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                elif ln.d in (6, 7, 10, 11) and ln.f == 255:
+                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+            elif ln.c in range(1, 14) and (ln.d in range(20, 26)) and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+
+        elif ln.c == 97 and ln.d == 97 and ln.e in (0, 1, 2):
+            return RelationGroup.ERROR_REGISTER_OBJECTS_THERMAL
+        elif ln.c == 98:
+            return RelationGroup.LIST_OBJECTS_THERMAL
+        elif ln.c == 99 and ln.f == 255:
+            if ln.d in (1, 2) and ln.e in (1, 2, 3):
+                return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
+            elif ln.d == 3 and ln.e == 1:
+                return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
+            elif ln.d == 99:
+                return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
+    elif ln.a == MediaId.GAS:
+        if ln.c == 0:
+            if ln.d == 0 and ln.e in __range10_and_255:
+                return RelationGroup.ID_NUMBERS_GAS
+            elif ln.d == 1:
+                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_GAS
+            elif ln.d in (2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_GAS
+        elif ln.c == 96 and ln.d == 5 and (ln.e in range(10)):
+            return RelationGroup.INTERNAL_OPERATING_STATUS_OBJECTS_GAS
+        elif ln.c in chain(range(1, 9), range(11, 17), range(21, 27), range(31, 36), range(61, 66)) and ln.e in __range63:
+            if ln.d in (24, 25, 26, 42, 43, 44, 63, 64, 65, 81, 82, 83) and ln.f in chain(range(100), range(101, 127)):
+                return RelationGroup.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
+            elif ln.d in chain(range(6, 24), range(27, 33), range(45, 51), range(66, 72), range(84, 90)) and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
+            elif ln.d in chain(range(33, 42), range(52, 63), range(72, 81), range(90, 99)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
+                return RelationGroup.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
+        elif ln.c == 42 and ln.e == 0:
+            if ln.d in chain(0, 1, 2, 13, range(15, 19), range(19, 31), range(35, 51), range(55, 71)) and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_GAS_FLOW_RATE
+            elif ln.d in chain(range(31, 35), range(51, 55)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
+                return RelationGroup.MEASURED_VALUES_GAS_FLOW_RATE
+        elif ln.c in chain((41, 42), range(44, 50)) and ln.d in (0, 2, 3, 10, 11, 13, range(15, 92)) and ln.e == 0 and ln.f == 255:
+            return RelationGroup.MEASURED_VALUES_GAS_PROCESS_VALUES
+        elif ln.c in range(51, 56):
+            if ln.d in (0, 2, 3, 10, 11) and ln.e in chain((0, 1), range(11, 29)) and ln.f == 255:
+                return RelationGroup.CONVERSION_RELATED_FACTORS_AND_COEFFICIENTS_GAS
+            elif ln.d == 12 and ln.e in range(20) and ln.f == 255:
+                return RelationGroup.CALCULATION_METHODS_GAS
+        elif ln.c == 70 and ln.f == 255:
+            if ln.d in (8, 9) and ln.e == 0:
+                return RelationGroup.NATURAL_GAS_ANALYSIS
+            elif ln.d in chain(range(10, 21), range(60, 85)) and ln.e in chain((0, 1), range(11, 29)):
+                return RelationGroup.NATURAL_GAS_ANALYSIS
+        elif ln.c == 98:
+            return RelationGroup.LIST_OBJECTS_GAS
+    elif ln.a == MediaId.WATER_1 or ln.a == MediaId.WATER_2:
+        if ln.c == 0:
+            if ln.d == 0 and ln.e in __range10_and_255:
+                return RelationGroup.ID_NUMBERS_WATER
+            elif ln.d == 1 and ln.e in (1, 2, 10, 11, 12):
+                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_WATER
+            elif ln.d == 2 and ln.e in (0, 3):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+            elif ln.d in (5, 7) and ln.e == 1:
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+            elif ln.d == 8 and ln.e in (1, 6):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+            elif ln.d == 9 and ln.e in (1, 2, 3):
+                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+        elif ln.c == 1 and ln.e in range(0, 13):
+            if ln.d in (0, 1, 2, 3, 6) and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_WATER_CONSUMPTION
+            elif ln.d in range(1, 6) and ln.f in chain(range(100), range(101, 126)):
+                return RelationGroup.MEASURED_VALUES_WATER_CONSUMPTION
+        elif ln.c in (2, 3) and ln.e in range(0, 13):
+            if ln.d in (0, 1, 2, 3, 6) and ln.f == 255:
+                return RelationGroup.MEASURED_VALUES_WATER_MONITORING_VALUES
+            elif ln.d in range(1, 6) and ln.f in chain(range(100), range(101, 126)):
+                return RelationGroup.MEASURED_VALUES_WATER_MONITORING_VALUES
+        elif ln.c == 97 and ln.d == 97:
+            return RelationGroup.ERROR_REGISTER_OBJECTS_WATER
+        elif ln.c == 98:
+            return RelationGroup.LIST_OBJECTS_WATER
+        elif ln.c == 99 and ln.d == 1:
+            return RelationGroup.DATA_PROFILE_OBJECTS_WATER
+    return RelationGroup.UNKNOWN
+
+
+def group_filter(container: list[InterfaceClass], group: RelationGroup) -> filter[InterfaceClass]:
+    """return filter by relation group"""
+    return filter(lambda obj: get_relation_group(obj.logical_name) == group, container)
+
+
+def class_id_filter(container: list[InterfaceClass], class_id: ClassID) -> filter[InterfaceClass]:
+    """return filter by class_id"""
+    return filter(lambda obj: obj.CLASS_ID == class_id, container)

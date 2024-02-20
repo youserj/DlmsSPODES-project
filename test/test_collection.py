@@ -385,3 +385,22 @@ class TestType(unittest.TestCase):
 
     def test_get_object_list_desc(self):
         self.assertEqual(collection.AttrDesc.OBJECT_LIST.contents, b'\x00\x0f\x00\x00(\x00\x00\xff\x02\x00', "check cached object_list")
+
+    def test_get_relation_group(self):
+        ln = cst.LogicalName("0.0.1.0.0.255")
+        self.assertEqual(collection.get_relation_group(ln), collection.RelationGroup.CLOCK_OBJECTS, "check_group")
+
+    def test_group_objects(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        c = col.filter_by_ass(1)
+        print(c)
+        d = list(collection.group_filter(c, collection.RelationGroup.DEVICE_ID_OBJECTS))
+        print(d)
+        e = list(collection.class_id_filter(d, collection.ClassID.DATA))
+        print(e)
