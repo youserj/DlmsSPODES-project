@@ -413,3 +413,8 @@ class TestType(unittest.TestCase):
         print(f)
         g = list(collection.params_filter(col, (collection.RelationGroup.CLOCK_OBJECTS, collection.media_id.ELECTRICITY)))
         print(g)
+
+    def test_media_id(self):
+        a = collection.media_id.MediaId.from_int(1)
+        b = collection.media_id.ELECTRICITY
+        print(a is b)

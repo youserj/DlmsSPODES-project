@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 class MediaId(ABC):
     """DLMS UA 1000-1 Ed 14. Table 53 – OBIS code structure and use of value groups. For Group A"""
     _value: tuple[int]
+    _inst = None
 
     @classmethod
     def from_int(cls, value: int):
@@ -37,37 +38,47 @@ class TwoValueMixin:
         return True if other in self._value else False
 
 
-class _Abstract(OneValueMixin, MediaId):
+class Singleton:
+    _inst: MediaId | None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._inst:
+            return cls._inst
+        else:
+            return super().__new__(cls)
+
+
+class _Abstract(OneValueMixin, Singleton, MediaId):
     _value = 0
     __slots__ = tuple()
 
 
-class _Electricity(OneValueMixin, MediaId):
+class _Electricity(OneValueMixin, Singleton, MediaId):
     _value = 1
     __slots__ = tuple()
 
 
-class _HCA(OneValueMixin, MediaId):
+class _HCA(OneValueMixin, Singleton, MediaId):
     _value = 4
     __slots__ = tuple()
 
 
-class _Thermal(TwoValueMixin, MediaId):
+class _Thermal(TwoValueMixin, Singleton, MediaId):
     _value = 5, 6
     __slots__ = tuple()
 
 
-class _Gas(OneValueMixin, MediaId):
+class _Gas(OneValueMixin, Singleton, MediaId):
     _value = 7
     __slots__ = tuple()
 
 
-class _Water(TwoValueMixin, MediaId):
+class _Water(TwoValueMixin, Singleton, MediaId):
     _value = 8, 9
     __slots__ = tuple()
 
 
-class _Other(OneValueMixin, MediaId):
+class _Other(OneValueMixin, Singleton, MediaId):
     _value = 15
     __slots__ = tuple()
 
@@ -86,15 +97,3 @@ THERMAL = _Thermal()
 GAS = _Gas()
 WATER = _Water()
 OTHER_MEDIA = _Other()
-
-
-def get_media_id(value: int) -> MediaId:
-    match value:
-        case 0: return ABSTRACT
-        case 1: return ELECTRICITY
-        case 4: return HCA
-        case 5 | 6: return THERMAL
-        case 7: return GAS
-        case 8 | 9: return WATER
-        case 15: return OTHER_MEDIA
-        case _: return _Reserved(value)

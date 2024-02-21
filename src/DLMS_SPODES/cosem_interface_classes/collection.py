@@ -2448,4 +2448,4 @@ def params_filter(container: DLMSObjectContainer, params: tuple[RelationGroup | 
 
 
 def get_media_id(ln: cst.LogicalName) -> media_id.MediaId:
-    return media_id.get_media_id(ln.a)
+    return media_id.MediaId.from_int(ln.a)
