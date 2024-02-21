@@ -389,6 +389,9 @@ class TestType(unittest.TestCase):
     def test_get_relation_group(self):
         ln = cst.LogicalName("0.0.1.0.0.255")
         self.assertEqual(collection.get_relation_group(ln), collection.RelationGroup.CLOCK_OBJECTS, "check_group")
+        ln = cst.LogicalName("0.0.94.1.1.255")
+        a = collection.get_relation_group(ln)
+        print(a.name)
 
     def test_group_objects(self):
         type_ = "4d324d5f31"
@@ -404,3 +407,5 @@ class TestType(unittest.TestCase):
         print(d)
         e = list(collection.class_id_filter(d, collection.ClassID.DATA))
         print(e)
+        f = list(collection.group_filter(c, (collection.RelationGroup.DEVICE_ID_OBJECTS, collection.RelationGroup.CLOCK_OBJECTS)))
+        print(f)

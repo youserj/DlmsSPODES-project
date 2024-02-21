@@ -2411,11 +2411,14 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
     return RelationGroup.UNKNOWN
 
 
-def group_filter(container: list[InterfaceClass], group: RelationGroup) -> filter[InterfaceClass]:
-    """return filter by relation group"""
-    return filter(lambda obj: get_relation_group(obj.logical_name) == group, container)
+def group_filter(container: list[InterfaceClass], group: RelationGroup | tuple[RelationGroup, ...]) -> filter[InterfaceClass]:
+    """return filter by relation group(s)"""
+    if isinstance(group, RelationGroup):
+        return filter(lambda obj: get_relation_group(obj.logical_name) == group, container)
+    else:
+        return filter(lambda obj: get_relation_group(obj.logical_name) in group, container)
 
 
-def class_id_filter(container: list[InterfaceClass], class_id: ClassID) -> filter[InterfaceClass]:
+def class_id_filter(container: Collection | list[InterfaceClass], class_id: ClassID) -> filter[InterfaceClass]:
     """return filter by class_id"""
     return filter(lambda obj: obj.CLASS_ID == class_id, container)
