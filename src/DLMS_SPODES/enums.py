@@ -640,18 +640,6 @@ class Unit(IntEnum):
     NO_UNIT_UNITLESS_COUNT = 255
 
 
-class MediaId(IntEnum):
-    """DLMS UA 1000-1 Ed 14. Table 53 – OBIS code structure and use of value groups. For Group A"""
-    ABSTRACT = 0
-    ELECTRICITY = 1
-    HCA = 4
-    THERMAL_1 = 5
-    THERMAL_2 = 6
-    GAS = 7
-    WATER_1 = 8
-    WATER_2 = 9
-
-
 class RelationGroup(IntEnum):
     """DLMS UA 1000-1 Ed 14. 6. Relation to OBIS. value: x_y, according to: 6.x.y in document"""
     UNKNOWN = 0

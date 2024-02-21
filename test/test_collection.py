@@ -389,8 +389,10 @@ class TestType(unittest.TestCase):
     def test_get_relation_group(self):
         ln = cst.LogicalName("0.0.1.0.0.255")
         self.assertEqual(collection.get_relation_group(ln), collection.RelationGroup.CLOCK_OBJECTS, "check_group")
+        b1 = collection.get_media_id(ln)
         ln = cst.LogicalName("0.0.94.1.1.255")
         a = collection.get_relation_group(ln)
+        b2 = collection.get_media_id(ln)
         print(a.name)
 
     def test_group_objects(self):
@@ -409,3 +411,5 @@ class TestType(unittest.TestCase):
         print(e)
         f = list(collection.group_filter(c, (collection.RelationGroup.DEVICE_ID_OBJECTS, collection.RelationGroup.CLOCK_OBJECTS)))
         print(f)
+        g = list(collection.params_filter(col, (collection.RelationGroup.CLOCK_OBJECTS, collection.media_id.ELECTRICITY)))
+        print(g)

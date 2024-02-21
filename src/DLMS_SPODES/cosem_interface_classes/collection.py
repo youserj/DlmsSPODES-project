@@ -60,11 +60,11 @@ from xml.dom import minidom
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
-from ..enums import TagsName, MechanismId, RelationGroup, MediaId
+from ..enums import TagsName, MechanismId, RelationGroup
 from . import obis as o
 from .. import pdu_enums as pdu
 from ..config_parser import config
-
+from ..obis import media_id
 
 LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
                           | ut.CosemMethodDescriptor
@@ -2082,7 +2082,7 @@ __c2: tuple = tuple(chain(__table44, range(100, 108)))
 
 @lru_cache(maxsize=1000)
 def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
-    if ln.a == MediaId.ABSTRACT:
+    if ln.a == media_id.ABSTRACT:
         if ln.c == 0:
             if ln.d == 1:
                 return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES
@@ -2230,7 +2230,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
             return RelationGroup.EVENT_LOG_OBJECTS
         elif ln.c == 127 and ln.d == 0:
             return RelationGroup.INACTIVE_OBJECTS
-    elif ln.a == MediaId.ELECTRICITY:
+    elif ln.a == media_id.ELECTRICITY:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
                 return RelationGroup.ID_NUMBERS_ELECTRICITY
@@ -2260,7 +2260,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
                     return RelationGroup.REGISTER_MONITOR_OBJECTS
                 elif ln.c in __c2 and ln.e in __range120_and_124_127:
                     return RelationGroup.REGISTER_MONITOR_OBJECTS
-    elif ln.a == MediaId.HCA:
+    elif ln.a == media_id.HCA:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
                 return RelationGroup.ID_NUMBERS_HCA
@@ -2289,7 +2289,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
             return RelationGroup.LIST_OBJECTS_HCA
         elif ln.c == 99 and ln.d == 1:
             return RelationGroup.DATA_PROFILE_OBJECTS_HCA
-    elif ln.a == MediaId.THERMAL_1 or ln.a == MediaId.THERMAL_2:
+    elif ln.a == media_id.THERMAL:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
                 return RelationGroup.ID_NUMBERS_THERMAL
@@ -2342,7 +2342,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
                 return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
             elif ln.d == 99:
                 return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
-    elif ln.a == MediaId.GAS:
+    elif media_id.GAS == ln.a:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
                 return RelationGroup.ID_NUMBERS_GAS
@@ -2378,7 +2378,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
                 return RelationGroup.NATURAL_GAS_ANALYSIS
         elif ln.c == 98:
             return RelationGroup.LIST_OBJECTS_GAS
-    elif ln.a == MediaId.WATER_1 or ln.a == MediaId.WATER_2:
+    elif ln.a == media_id.WATER:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
                 return RelationGroup.ID_NUMBERS_WATER
@@ -2411,7 +2411,10 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
     return RelationGroup.UNKNOWN
 
 
-def group_filter(container: list[InterfaceClass], group: RelationGroup | tuple[RelationGroup, ...]) -> filter[InterfaceClass]:
+DLMSObjectContainer: TypeAlias = Collection | list[InterfaceClass] | filter
+
+
+def group_filter(container: DLMSObjectContainer, group: RelationGroup | tuple[RelationGroup, ...]) -> filter[InterfaceClass]:
     """return filter by relation group(s)"""
     if isinstance(group, RelationGroup):
         return filter(lambda obj: get_relation_group(obj.logical_name) == group, container)
@@ -2419,6 +2422,30 @@ def group_filter(container: list[InterfaceClass], group: RelationGroup | tuple[R
         return filter(lambda obj: get_relation_group(obj.logical_name) in group, container)
 
 
-def class_id_filter(container: Collection | list[InterfaceClass], class_id: ClassID) -> filter[InterfaceClass]:
+def class_id_filter(container: DLMSObjectContainer, class_id: ClassID) -> filter[InterfaceClass]:
     """return filter by class_id"""
     return filter(lambda obj: obj.CLASS_ID == class_id, container)
+
+
+def media_id_filter(container: DLMSObjectContainer, media_id: media_id.MediaId) -> filter[InterfaceClass]:
+    return filter(lambda obj: obj.logical_name.a == media_id, container)
+
+
+def params_filter(container: DLMSObjectContainer, params: tuple[RelationGroup | ClassID | media_id.MediaId, ...]) -> filter[InterfaceClass]:
+    def always_true(_):
+        return True
+
+    ret = filter(always_true, container)
+    for p in params:
+        match p:
+            case RelationGroup() | [RelationGroup()]:
+                ret = group_filter(ret, p)
+            case ClassID():
+                ret = class_id_filter(ret, p)
+            case media_id.MediaId():
+                ret = media_id_filter(ret, p)
+    return ret
+
+
+def get_media_id(ln: cst.LogicalName) -> media_id.MediaId:
+    return media_id.get_media_id(ln.a)
