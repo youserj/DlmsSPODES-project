@@ -213,3 +213,12 @@ class TestType(unittest.TestCase):
         self.assertEqual(int(value), 1, "check value decode")
         value2 = cdt.Boolean(b"\x03\x00")
         print(value2)
+
+    def test_mechanism_id(self):
+        from src.DLMS_SPODES.cosem_interface_classes.association_ln import mechanism_id
+        value = mechanism_id.MechanismIdElement(0)
+        value.set(1)
+        print(value)
+        value2 = mechanism_id.NONE
+        value2.set(1)
+        print(value2)

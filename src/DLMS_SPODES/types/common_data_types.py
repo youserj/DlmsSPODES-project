@@ -253,6 +253,12 @@ class SimpleDataType(CommonDataType, ABC):
             self.cb_post_set()
 
 
+class ConstantMixin:
+    """override set method for SimpleDataType"""
+    def set(self, *args, **kwargs):
+        raise AttributeError(F"not support <set> for {self.__class__.__name__} constant")
+
+
 class ComplexDataType(CommonDataType, ABC):
     values: list[CommonDataType, ...]
 
@@ -1856,13 +1862,14 @@ class Enum(SimpleDataType, ABC):
 
     def __init_subclass__(cls, **kwargs):
         """initiate ELEMENTS name use config.toml"""
-        elements: tuple[int, ...] = kwargs["elements"]
-        try:
-            c = {par["e"]: par["v"] for par in config["DLMS"][cls.__name__]}
-        except KeyError as e:
-            c = dict()
-            logger.warning(F"not find {e} in config.toml")
-        cls.ELEMENTS = {el if issubclass(cls, FlagMixin) else el.to_bytes(1, "big"): c.get(el, F"{cls.__name__}({el})") for el in elements}
+        if not cls.ELEMENTS:
+            elements: tuple[int, ...] = kwargs["elements"]
+            try:
+                c = {par["e"]: par["v"] for par in config["DLMS"][cls.__name__]}
+            except KeyError as e:
+                c = dict()
+                logger.warning(F"not find {e} in config.toml")
+            cls.ELEMENTS = {el if issubclass(cls, FlagMixin) else el.to_bytes(1, "big"): c.get(el, F"{cls.__name__}({el})") for el in elements}
 
     @property
     def encoding(self) -> bytes:

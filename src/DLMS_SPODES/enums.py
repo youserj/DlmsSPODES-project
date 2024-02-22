@@ -129,21 +129,6 @@ class ChannelNumber(IntEnum):
         return next(filter(lambda i: i.name == value, ChannelNumber))
 
 
-class MechanismId(IntEnum):
-    NONE = 0
-    LOW = 1
-    HIGH = 2
-    HIGH_MD5 = 3
-    HIGH_SHA1 = 4
-    HIGH_GMAC = 5
-    HIGH_SHA256 = 6
-    HIGH_ECDSA = 7
-
-    @classmethod
-    def from_str(cls, value: str) -> Self:
-        return next(filter(lambda i: i.name == value, cls))
-
-
 class ContextId(IntEnum):
     LN_NO_CIPHERING = 1
     SN_NO_CIPHERING = 2
