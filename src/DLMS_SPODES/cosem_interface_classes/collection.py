@@ -18,6 +18,7 @@ from ..types.implementations import structs, enums, octet_string
 from . import cosem_interface_class as ic
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
+from .association_ln import mechanism_id
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
 from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ObjectListElement
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
@@ -60,7 +61,7 @@ from xml.dom import minidom
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
-from ..enums import TagsName, MechanismId, RelationGroup
+from ..enums import TagsName, RelationGroup
 from . import obis as o
 from .. import pdu_enums as pdu
 from ..config_parser import config
@@ -1728,14 +1729,14 @@ class Collection:
     def is_accessible(self, ln: cst.LogicalName,
                       index: int,
                       association_id: int,
-                      mechanism_id: MechanismId = None
+                      m_id: mechanism_id.MechanismIdElement = None
                       ) -> bool:
         """for ver 0 and 1 only"""
 
         return self.getASSOCIATION(association_id).is_accessible(
             ln=ln,
             index=index,
-            mechanism_id=mechanism_id
+            m_id=m_id
         )
 
     @lru_cache(maxsize=100)

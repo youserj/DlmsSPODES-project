@@ -4,7 +4,7 @@ from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ... import pdu_enums as pdu
-from ...enums import MechanismId
+from . import mechanism_id
 
 
 class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
@@ -138,10 +138,6 @@ class XDLMSContextType(cdt.Structure):
     cyphering_info: cdt.OctetString
 
 
-class MechanismIdElement(cdt.Enum, elements=tuple(range(8))):
-    TAG = b'\x11'
-
-
 class AuthenticationMechanismName(cdt.Structure):
     """ Contains the name of the authentication mechanism for the association (see IEC 62056-53). The authentication mechanism name is specified as an
     OBJECT IDENTIFIER in 7.3.7.2 of IEC 62056-53. The authentication_mechanism_name attribute includes the arc labels of the OBJECT IDENTIFIER. """
@@ -152,7 +148,7 @@ class AuthenticationMechanismName(cdt.Structure):
     identified_organization_element: cdt.Unsigned
     DLMS_UA_element: cdt.Unsigned
     authentication_mechanism_name_element: cdt.Unsigned
-    mechanism_id_element: MechanismIdElement
+    mechanism_id_element: mechanism_id.MechanismIdElement
 
     def get_info(self) -> bytes:
         """ info for PDU from application_context_name. """
@@ -389,11 +385,11 @@ class AssociationLN(ic.COSEMInterfaceClasses):
 
     def __init_secret(self):
         """ before initiating secret need knowledge what kind of mechanism ID """
-        match int(self.authentication_mechanism_name.mechanism_id_element), self.LLS_secret:
-            case MechanismId.NONE | MechanismId.LOW, LLCSecret(): """keep secret value"""
-            case MechanismId.NONE | MechanismId.LOW, _:           self.set_attr_link(7, LLCSecret())
-            case MechanismId.HIGH, LLCSecretHigh():                          """keep secret value"""
-            case MechanismId.HIGH, _:                                        self.set_attr_link(7, LLCSecretHigh())
+        match self.authentication_mechanism_name.mechanism_id_element, self.LLS_secret:
+            case mechanism_id.NONE | mechanism_id.LOW, LLCSecret(): """keep secret value"""
+            case mechanism_id.NONE | mechanism_id.LOW, _:           self.set_attr_link(7, LLCSecret())
+            case mechanism_id.HIGH, LLCSecretHigh():                          """keep secret value"""
+            case mechanism_id.HIGH, _:                                        self.set_attr_link(7, LLCSecretHigh())
             case unknown, _:                                                            raise ValueError(F'Not support Secret with {unknown}')
 
     def __check_dlms_version_with_collection(self):
@@ -505,7 +501,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
 
     def is_accessible(self, ln: cst.LogicalName,
                       index: int,
-                      mechanism_id: MechanismId = None
+                      m_id: mechanism_id.MechanismIdElement = None
                       ) -> bool:
         """for ver 0 and 1 only"""
         match self.object_list.get_meth_access(ln, index):
@@ -514,9 +510,9 @@ class AssociationLN(ic.COSEMInterfaceClasses):
             case pdu.MethodAccess.ACCESS:
                 return True
             case pdu.MethodAccess.AUTHENTICATED_ACCESS:
-                if not mechanism_id:
-                    mechanism_id = int(self.authentication_mechanism_name.mechanism_id_element)
-                if mechanism_id >= MechanismId.LOW:
+                if not m_id:
+                    m_id = self.authentication_mechanism_name.mechanism_id_element
+                if m_id >= mechanism_id.LOW:
                     return True
                 else:
                     return False
