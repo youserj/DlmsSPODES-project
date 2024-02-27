@@ -199,10 +199,12 @@ class COSEMInterfaceClasses(ABC):
         """ initiate all attributes and methods of class """
 
     def get_attr(self, index: int) -> Any | None:
-        if index >= 1:
+        if index > (max_l := self.get_attr_length()):
+            raise IndexError(F"for {self} got attribute index: {index}, expected 0..{max_l}")
+        elif index >= 1:
             return self.__attributes[index-1]
         else:
-            raise IndexError(F'not support {index=} as attribute')
+            raise IndexError(F"not support {index=} as attribute")
 
     def set_attr_force(self,
                        index: int,

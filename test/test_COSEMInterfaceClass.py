@@ -53,3 +53,7 @@ class TestType(unittest.TestCase):
         data = collection.Data("0.0.96.1.1.255")
         value = data.encode(2, "4")
         self.assertEqual(value, None)
+
+    def test_get_attr(self):
+        data = collection.Data("0.0.96.1.1.255")
+        data.get_attr(3)
