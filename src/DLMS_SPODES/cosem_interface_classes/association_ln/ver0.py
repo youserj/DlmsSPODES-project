@@ -445,11 +445,16 @@ class AssociationLN(ic.COSEMInterfaceClasses):
             ret.append(self.collection.get_object(el.logical_name))
         return ret
 
+    def __check_empty_object_list(self):
+        if self.object_list is None:
+            raise exc.ITEApplication(F"empty <{self.get_attr_element(2).NAME}> in {self}")
+
     def is_readable(self,
                     ln: cst.LogicalName,
                     index: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
+        self.__check_empty_object_list()
         match self.object_list.get_attr_access(ln, index):
             case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
                 return False
@@ -477,6 +482,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                     index: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
+        self.__check_empty_object_list()
         match self.object_list.get_attr_access(ln, index):
             case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_ONLY:
                 return False
@@ -504,6 +510,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                       m_id: mechanism_id.MechanismIdElement = None
                       ) -> bool:
         """for ver 0 and 1 only"""
+        self.__check_empty_object_list()
         match self.object_list.get_meth_access(ln, index):
             case pdu.MethodAccess.NO_ACCESS:
                 return False
