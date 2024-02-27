@@ -210,6 +210,20 @@ class COSEMInterfaceClasses(ABC):
         self.__attributes[index-1] = value
         """use for change official types to custom(not valid)"""
 
+    def encode(self,
+               index: int,
+               value: str | int) -> cdt.CommonDataType | None:
+        """encode attribute value from string if possible, else return None(for CHOICE variant)"""
+        if (attr := self.get_attr(index)) is None:
+            data_type = self.get_attr_element(index).DATA_TYPE
+            if isinstance(data_type, ut.CHOICE):
+                return None
+            else:
+                return self.get_attr_element(index).DATA_TYPE(value)
+        else:
+            ret = attr.copy()
+            return ret.set(value)
+
     def set_attr(self,
                  index: int,
                  value=None,

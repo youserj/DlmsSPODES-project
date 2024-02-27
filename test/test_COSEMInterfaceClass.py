@@ -45,3 +45,11 @@ class TestType(unittest.TestCase):
                     print(F"{i}")
             except AttributeError as e:
                 print(F"skip {c}: {e}")
+
+    def test_encode(self):
+        clock = collection.Clock("0.0.1.0.0.255")
+        tz = clock.encode(3, 4)
+        self.assertEqual(tz.encoding, b'\x10\x00\x04')
+        data = collection.Data("0.0.96.1.1.255")
+        value = data.encode(2, "4")
+        self.assertEqual(value, None)
