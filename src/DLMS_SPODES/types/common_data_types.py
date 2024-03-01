@@ -1470,6 +1470,7 @@ class BitString(SimpleDataType):
             case bytearray():                           self.from_bytearray(value)
             case str():                                 self.contents = self.from_str(value)
             case int():                                 self.contents = self.from_int(value)
+            case list():                                self.contents = self.from_list(value)
             case BitString():
                 self.contents = value.contents
                 self.__length = len(value)
@@ -1486,11 +1487,10 @@ class BitString(SimpleDataType):
     def from_str(self, value: str) -> bytes:
         self.__length = len(value)
         value = value + '0' * ((8 - self.__length) % 8)
-        list_ = [value[count:(count + 8)] for count in range(0, self.__length, 8)]
-        value = b''
-        for byte in list_:
-            value += int(byte, base=2).to_bytes(1, byteorder='little')
-        return value
+        return bytes((int(value[count:(count + 8)], base=2) for count in range(0, self.__length, 8)))
+
+    def from_list(self, value: list[int]) -> bytes:
+        return self.from_str("".join(map(str, value)))
 
     def from_int(self, value: int) -> bytes:
         """ TODO: see like as Conformance """

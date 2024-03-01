@@ -38,6 +38,9 @@ class TestType(unittest.TestCase):
         a.set(pattern)
         self.assertEqual(cdt.BitString(pattern), a, 'check set_contents_from')
         self.assertEqual(a.decode(), [1, 0, 1, 0, 1, 1], 'decode to list')
+        a.set("1010101010101")
+        a.set([1, 0, 1])
+        print(a)
 
     def test_DateTime(self):
         pattern = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
