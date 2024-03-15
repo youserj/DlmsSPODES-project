@@ -1,3 +1,4 @@
+from typing import Self
 from ..types import common_data_types as cdt
 import datetime
 
@@ -84,6 +85,9 @@ class LogicalName(cdt.OctetString, size=6):
     def f(self) -> int:
         """ group F """
         return self.contents[5]
+
+    def __lt__(self, other: Self):
+        return self.contents < other.contents
 
 
 class OctetStringDateTime(cdt.DateTime, tag=9, size=12):

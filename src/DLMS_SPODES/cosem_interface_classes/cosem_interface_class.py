@@ -298,6 +298,9 @@ class COSEMInterfaceClasses(ABC):
         The value of the logical_name conforms to OBIS (see IEC 62056-61)"""
         return self.get_attr(1)
 
+    def __lt__(self, other: Self):
+        return self.logical_name < other.logical_name
+
     def __setattr__(self, key, value):
         match key:
             case 'VERSION' | 'CLASS_ID' | 'A_ELEMENTS' | 'M_ELEMENTS' as prop: raise ValueError(F"Don't support set {prop}")
@@ -306,7 +309,7 @@ class COSEMInterfaceClasses(ABC):
     def __getitem__(self, item) -> cdt.CommonDataType:
         """ get attribute value by index, start with 1 """
         if isinstance(item, str):
-            return self.__getattr__(item)
+            return super(COSEMInterfaceClasses, self).__getattr__(item)
         return self.get_attr(item)
 
     def __iter__(self) -> Iterator[cdt.CommonDataType]:

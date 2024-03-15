@@ -225,3 +225,12 @@ class TestType(unittest.TestCase):
         value2 = mechanism_id.NONE
         value2.set(1)
         print(value2)
+
+    def test_LN_sort(self):
+        l = [
+            cst.LogicalName("0.0.1.0.0.255"),
+            cst.LogicalName("0.0.0.0.1.255"),
+            cst.LogicalName("0.0.1.0.1.255"),
+        ]
+        l2 = sorted(l)
+        print(l2)

@@ -4,6 +4,7 @@ import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES import cosem_interface_classes
+from src.DLMS_SPODES.obis import electricity
 from src.DLMS_SPODES.version import AppVersion
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
 
@@ -388,12 +389,12 @@ class TestType(unittest.TestCase):
 
     def test_get_relation_group(self):
         ln = cst.LogicalName("0.0.1.0.0.255")
-        self.assertEqual(collection.get_relation_group(ln), collection.RelationGroup.CLOCK_OBJECTS, "check_group")
+        self.assertEqual(collection.get_relation_group(ln), collection.abstract.CLOCK_OBJECTS, "check_group")
         b1 = collection.get_media_id(ln)
         ln = cst.LogicalName("0.0.94.1.1.255")
         a = collection.get_relation_group(ln)
         b2 = collection.get_media_id(ln)
-        print(a.name)
+        print(a)
 
     def test_group_objects(self):
         type_ = "4d324d5f31"
@@ -418,3 +419,60 @@ class TestType(unittest.TestCase):
         a = collection.media_id.MediaId.from_int(1)
         b = collection.media_id.ELECTRICITY
         print(a is b)
+
+    def test_get_tree(self):
+        from src.DLMS_SPODES.obis.media_id import MediaId
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        res = collection.get_object_tree(
+            objects=col.filter_by_ass(3),
+            mode="gmc")
+        print(res)
+
+    def test_sort_objects(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        res = collection.get_sorted(col.filter_by_ass(3), mode="l")
+        res = collection.get_sorted(col.filter_by_ass(3), mode="n")
+        res = collection.get_sorted(col.filter_by_ass(3), mode="c")
+        print(res)
+
+    def test_get_filtered(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        res = collection.get_filtered(
+            objects=col.filter_by_ass(3),
+            keys=(collection.ClassID.DATA, collection.ClassID.REGISTER, collection.media_id.ELECTRICITY))
+        print(res)
+
+    def test_get_attr_tree(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        res = col.get_attr_tree(
+            ass_id=3,
+            obj_mode="mc",
+            obj_filter=(collection.ClassID.REGISTER, collection.media_id.ABSTRACT),
+            sort_mode="l",
+            af_mode="lrw"
+        )
+        print(res)

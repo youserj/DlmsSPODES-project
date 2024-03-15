@@ -10,7 +10,7 @@ import datetime
 import dataclasses
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Self
+from typing import TypeAlias, Iterator, Type, Self, Callable, Literal
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
@@ -61,11 +61,11 @@ from xml.dom import minidom
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
-from ..enums import TagsName, RelationGroup
+from ..enums import TagsName
 from . import obis as o
 from .. import pdu_enums as pdu
 from ..config_parser import config
-from ..obis import media_id
+from ..obis import media_id, abstract, electricity, hca, thermal, gas, water
 
 LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
                           | ut.CosemMethodDescriptor
@@ -86,6 +86,10 @@ InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister 
 
 
 UsedAttributes: TypeAlias = dict[cst.LogicalName, set[int]]
+
+
+ObjectTreeMode: TypeAlias = Literal["m", "g", "c", "mc", "cm", "gm", "gc", "cg", "gmc"]
+SortMode: TypeAlias = Literal["l", "n", "c", "cl", "cn"]
 
 
 class ClassMap(dict):
@@ -1765,6 +1769,57 @@ class Collection:
             pass
         return names, data_type
 
+    def get_attr_tree(self,
+                      ass_id: int,
+                      obj_mode: ObjectTreeMode = "c",
+                      obj_filter: tuple[ClassID | media_id.MediaId, ...] = None,
+                      sort_mode: SortMode = "",
+                      af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw"] = "l"):
+        """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable"""
+        without_ln = True if "l" in af_mode else False
+        only_read = True if "r" in af_mode else False
+        only_write = True if "w" in af_mode else False
+        filtered = self.filter_by_ass(ass_id)
+        if obj_filter:
+            filtered = get_filtered(filtered, obj_filter)
+        ret = get_object_tree(
+            objects=get_sorted(
+                objects=filtered,
+                mode=sort_mode),
+            mode=obj_mode)
+        stack = [(None, None, ret)]
+        while len(stack) != 0:
+            d, k, v = stack.pop()
+            if isinstance(d, dict):
+                for k_, v_ in tuple(d.items()):
+                    if len(v_) == 0:
+                        d.pop(k_)
+            if isinstance(v, list):
+                objects = dict()
+                for obj in v:
+                    indexes = list()
+                    for i, attr in obj.get_index_with_attributes():
+                        if without_ln and i == 1:
+                            continue
+                        elif only_read and not self.is_readable(obj.logical_name, i, ass_id):
+                            continue
+                        elif only_write and not self.is_writable(obj.logical_name, i, ass_id):
+                            continue
+                        else:
+                            indexes.append(i)
+                    if len(indexes) != 0:
+                        objects[obj] = indexes
+                if len(objects) != 0:
+                    d[k] = objects
+                else:
+                    d.pop(k)
+            elif isinstance(v, dict):
+                for k_, v_ in v.items():
+                    stack.append((v, k_, v_))
+            else:
+                raise ValueError('not support')
+        return ret
+
     # def decode(self, file_name: str,
     #            root_tag: str = TagsName.DEVICE_ROOT.value):
     #     objects = self.__get_base_xml_element(root_tag)
@@ -2081,335 +2136,489 @@ __c2: tuple = tuple(chain(__table44, range(100, 108)))
 """DLMS UA 1000-1 Ed 14. Table 45 c2"""
 
 
+def get_media_id(ln: cst.LogicalName) -> media_id.MediaId:
+    return media_id.MediaId.from_int(ln.a)
+
+
+def get_class_id(obj: InterfaceClass) -> ClassID:
+    return obj.CLASS_ID
+
+
+def get_map_by_obj(objects: list[InterfaceClass] | tuple[InterfaceClass], key: Callable[[InterfaceClass], ...]) -> dict[media_id.MediaId, list[InterfaceClass]]:
+    ret = dict()
+    for obj in objects:
+        if ret.get(new_key := key(obj)):
+            ret[new_key].append(obj)
+        else:
+            ret[new_key] = [obj]
+    return ret
+
+
+def get_object_tree(objects: list[InterfaceClass] | tuple[InterfaceClass],
+                    mode: ObjectTreeMode) -> dict[media_id.MediaId | ClassID, list[InterfaceClass]]:
+    """mode: m-media_id, g-relation_group, c-class_id"""
+    mode = list(mode)
+    ret = objects
+    while mode:
+        match mode.pop():
+            case "m":
+                key = lambda obj: get_media_id(obj.logical_name)
+            case "g":
+                key = lambda obj: get_relation_group(obj.logical_name)
+            case "c":
+                key = get_class_id
+            case _:
+                raise KeyError(F"got unknown {mode=} for get_map")
+        stack = [(None, None, ret)]
+        while len(stack) != 0:
+            d, k, v = stack.pop()
+            if isinstance(v, list):
+                res = get_map_by_obj(v, key)
+                if d is None:
+                    ret = res
+                else:
+                    d[k] = res
+            elif isinstance(v, dict):
+                stack.extend(((v, k_, v_) for k_, v_ in v.items()))
+            else:
+                raise ValueError('not support')
+    return ret
+
+
+def get_sorted(objects: list[InterfaceClass],
+               mode: SortMode) -> list[InterfaceClass]:
+    """mode: l-logical_name, n-name, c-class_id
+    """
+    mode = list(mode)
+    while mode:
+        match mode.pop():
+            case "l":
+                key = None
+            case "n":
+                key = lambda obj: get_name(obj.logical_name)
+            case "c":
+                key = lambda obj: obj.CLASS_ID
+            case _:
+                raise KeyError(F"got unknown {mode=} for get_map")
+        objects = sorted(objects, key=key)
+    return objects
+
+
+def get_filtered(objects: list[InterfaceClass],
+                 keys: tuple[ClassID | media_id.MediaId, ...]) -> list[InterfaceClass]:
+    c_ids: list[ut.CosemClassId] = list()
+    media: list[int] = list()
+    group: list[int] = list()
+    medias = tuple(m.subgroup for m in RelationGroups)
+    for k in keys:
+        if isinstance(k, ut.CosemClassId):
+            c_ids.append(k)
+        elif isinstance(k, RelationGroup):
+            if (s_g := k.subgroup) in medias:
+                media.append(s_g)
+            else:
+                group.append(s_g)
+    new_list = list()
+    for obj in objects:
+        if c_ids and not obj.CLASS_ID in c_ids:
+            continue
+        elif group and get_relation_group(obj.logical_name).subgroup not in group:
+            continue
+        elif media and get_media_id(obj.logical_name) not in media:
+            continue
+        new_list.append(obj)
+    return new_list
+
+
+RelationGroup: TypeAlias = media_id.Abstract | media_id.Electricity | media_id.Hca | media_id.Gas | media_id.Thermal | media_id.Water | media_id.Other
+RelationGroups: tuple[media_id.MediaId, ...] = (media_id.ABSTRACT, media_id.ELECTRICITY, media_id.HCA, media_id.GAS, media_id.THERMAL, media_id.WATER)
+
+
 @lru_cache(maxsize=1000)
 def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
     if ln.a == media_id.ABSTRACT:
         if ln.c == 0:
             if ln.d == 1:
-                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES
+                return abstract.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES
             elif ln.d in (2, 9):
-                return RelationGroup.OTHER_ABSTRACT_GENERAL_PURPOSE_OBIS_CODES
+                return abstract.OTHER_ABSTRACT_GENERAL_PURPOSE_OBIS_CODES
         elif ln.c == 1:
             if ln.d in (0, 1, 2, 3, 4, 5, 6):
-                return RelationGroup.CLOCK_OBJECTS
+                return abstract.CLOCK_OBJECTS
         elif ln.c == 2:
             if ln.d in (0, 1, 2):
-                return RelationGroup.MODEM_CONFIGURATION_AND_RELATED_OBJECTS
+                return abstract.MODEM_CONFIGURATION_AND_RELATED_OBJECTS
         elif ln.c == 10 and ln.d == 0 and ln.e in (0, 1, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 125):
-            return RelationGroup.SCRIPT_TABLE_OBJECTS
+            return abstract.SCRIPT_TABLE_OBJECTS
         elif ln.c == 11 and ln.d == 0:
-            return RelationGroup.SPECIAL_DAYS_TABLE_OBJECTS
+            return abstract.SPECIAL_DAYS_TABLE_OBJECTS
         elif ln.c == 12 and ln.d == 0:
-            return RelationGroup.SCHEDULE_OBJECTS
+            return abstract.SCHEDULE_OBJECTS
         elif ln.c == 13 and ln.d == 0:
-            return RelationGroup.ACTIVITY_CALENDAR_OBJECTS
+            return abstract.ACTIVITY_CALENDAR_OBJECTS
         elif ln.c == 14 and ln.d == 0:
-            return RelationGroup.REGISTER_ACTIVATION_OBJECTS
+            return abstract.REGISTER_ACTIVATION_OBJECTS
         elif ln.c == 15 and ln.d == 0 and ln.e in (0, 1, 2, 3, 4, 5, 6, 7):
-            return RelationGroup.SINGLE_ACTION_SCHEDULE_OBJECTS
+            return abstract.SINGLE_ACTION_SCHEDULE_OBJECTS
         elif ln.c == 16:
             if ln.d == 0 or (ln.d == 1 and ln.e in range(0, 10)):
-                return RelationGroup.REGISTER_MONITOR_OBJECTS
+                return abstract.REGISTER_OBJECTS_MONITOR
             elif ln.d == 2:
-                return RelationGroup.PARAMETER_MONITOR_OBJECTS
+                return abstract.PARAMETER_MONITOR_OBJECTS
         elif ln.c == 17 and ln.d == 0:
-            return RelationGroup.LIMITER_OBJECTS
+            return abstract.LIMITER_OBJECTS
         elif ln.c == 18 and ln.d == 0:
-            return RelationGroup.ARRAY_MANAGER_OBJECT
+            return abstract.ARRAY_MANAGER_OBJECT
         elif ln.c == 19:
             if (ln.d in range(0, 10) and ln.e == 0) or ln.d in range(10, 50) or ln.d in (range(50, 60) and ln.e in (1, 2)):
-                return RelationGroup.PAYMENT_METERING_RELATED_OBJECTS
+                return abstract.PAYMENT_METERING_RELATED_OBJECTS
         elif ln.c == 20 and ln.d == 0 and ln.e in (0, 1):
-            return RelationGroup.IEC_LOCAL_PORT_SETUP_OBJECTS
+            return abstract.IEC_LOCAL_PORT_SETUP_OBJECTS
         elif ln.c == 21 and ln.d == 0:
-            return RelationGroup.STANDARD_READOUT_PROFILE_OBJECTS
+            return abstract.STANDARD_READOUT_PROFILE_OBJECTS
         elif ln.c == 22 and ln.d == 0 and ln.e == 0:
-            return RelationGroup.IEC_HDLC_SETUP_OBJECTS
+            return abstract.IEC_HDLC_SETUP_OBJECTS
         elif ln.c == 23:
             if (ln.d in 0, 1, 2 and ln.e == 0) or ln.d == 3:
-                return RelationGroup.IEC_TWISTED_PAIR_1_SETUP_OBJECTS
+                return abstract.IEC_TWISTED_PAIR_1_SETUP_OBJECTS
         elif ln.c == 24:
             if (ln.d in (0, 1, 4, 5, 6) and ln.e == 0) or (ln.d in (2, 8, 9)):
-                return RelationGroup.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
+                return abstract.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
         elif ln.c == 31 and ln.d == 0 and ln.e == 0:
-            return RelationGroup.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
+            return abstract.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
         elif ln.c == 25:
             if ln.d in (0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15) and ln.e == 0:
-                return RelationGroup.OBJECTS_TO_SET_UP_DATA_EXCHANGE_OVER_THE_INTERNET
+                return abstract.OBJECTS_TO_SET_UP_DATA_EXCHANGE_OVER_THE_INTERNET
             elif ln.d == 9 and ln.e == 0:
-                return RelationGroup.OBJECTS_TO_SET_UP_PUSH_SETUP
+                return abstract.OBJECTS_TO_SET_UP_PUSH_SETUP
         elif ln.c == 26 and ln.d in (0, 1, 2, 3, 5, 6) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_SETTING_UP_DATA_EXCHANGE_USING_S_FSK_PLC
+            return abstract.OBJECTS_FOR_SETTING_UP_DATA_EXCHANGE_USING_S_FSK_PLC
         elif ln.c == 27 and ln.d in (0, 1, 2) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_SETTING_UP_THE_ISO_IEC_8802_2_LLC_LAYER
+            return abstract.OBJECTS_FOR_SETTING_UP_THE_ISO_IEC_8802_2_LLC_LAYER
         elif ln.c == 28 and ln.d in (0, 1, 2, 3, 4, 5, 6, 7) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROWBAND_OFDM_PLC_FOR_PRIME_NETWORKS
+            return abstract.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROWBAND_OFDM_PLC_FOR_PRIME_NETWORKS
         elif ln.c == 29 and ln.d in (0, 1, 2) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROW_BAND_OFDM_PLC_FOR_G3_PLC_NETWORKS
+            return abstract.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROW_BAND_OFDM_PLC_FOR_G3_PLC_NETWORKS
         elif ln.c == 30 and ln.d in (0, 1, 2, 3, 4):
-            return RelationGroup.ZIGBEE_SETUP_OBJECTS
+            return abstract.ZIGBEE_SETUP_OBJECTS
         elif ln.c == 32 and ln.d in (0, 1, 2, 3) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_SETTING_UP_AND_MANAGING_DATA_EXCHANGE_USING_ISO_IEC_14908_PLC_NETWORKS
+            return abstract.OBJECTS_FOR_SETTING_UP_AND_MANAGING_DATA_EXCHANGE_USING_ISO_IEC_14908_PLC_NETWORKS
         elif ln.c == 33 and ln.d in (0, 1, 2, 3) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_HS_PLC_ISO_IEC_12139_1_ISO_EC_12139_1_NETWORKS
+            return abstract.OBJECTS_FOR_DATA_EXCHANGE_USING_HS_PLC_ISO_IEC_12139_1_ISO_EC_12139_1_NETWORKS
         elif ln.c == 34 and ln.d in (0, 1, 2, 3) and ln.e == 0:
-            return RelationGroup.OBJECTS_FOR_DATA_EXCHANGE_USING_WI_SUN_NETWORKS
+            return abstract.OBJECTS_FOR_DATA_EXCHANGE_USING_WI_SUN_NETWORKS
         elif ln.c == 40 and ln.b == 0 and ln.d == 0:
-            return RelationGroup.ASSOCIATION_OBJECTS
+            return abstract.ASSOCIATION_OBJECTS
         elif ln.c == 41 and ln.b == 0 and ln.d == 0 and ln.e == 0:
-            return RelationGroup.SAP_ASSIGNMENT_OBJECT
+            return abstract.SAP_ASSIGNMENT_OBJECT
         elif ln.c == 42 and ln.b == 0 and ln.d == 0 and ln.e == 0:
-            return RelationGroup.COSEM_LOGICAL_DEVICE_NAME_OBJECT
+            return abstract.COSEM_LOGICAL_DEVICE_NAME_OBJECT
         elif ln.c == 43:
             if (ln.b == 0 and ln.d == 0) or ln.d in (1, 2):
-                return RelationGroup.INFORMATION_SECURITY_RELATED_OBJECTS
+                return abstract.INFORMATION_SECURITY_RELATED_OBJECTS
         elif ln.c == 44:
             if ln.b == 0:
                 if ln.d == 0:
-                    return RelationGroup.IMAGE_TRANSFER_OBJECTS
+                    return abstract.IMAGE_TRANSFER_OBJECTS
                 elif ln.d == 1:
-                    return RelationGroup.FUNCTION_CONTROL_OBJECTS
+                    return abstract.FUNCTION_CONTROL_OBJECTS
                 elif ln.d == 2:
-                    return RelationGroup.COMMUNICATION_PORT_PROTECTION_OBJECTS
+                    return abstract.COMMUNICATION_PORT_PROTECTION_OBJECTS
         elif ln.c == 65 and ln.d in __range63:
-            return RelationGroup.UTILITY_TABLE_OBJECTS
+            return abstract.UTILITY_TABLE_OBJECTS
         elif ln.c == 66 and ln.d == 0:
-            return RelationGroup.COMPACT_DATA_OBJECTS
+            return abstract.COMPACT_DATA_OBJECTS
         elif ln.c == 96:
             if ln.d == 1:
                 if ln.e in __range10_and_255:
-                    return RelationGroup.DEVICE_ID_OBJECTS
+                    return abstract.DEVICE_ID_OBJECTS
                 elif ln.e == 10:
-                    return RelationGroup.METERING_POINT_ID_OBJECTS
+                    return abstract.METERING_POINT_ID_OBJECTS
             elif ln.d == 2:
-                return RelationGroup.PARAMETER_CHANGES_AND_CALIBRATION_OBJECTS
+                return abstract.PARAMETER_CHANGES_AND_CALIBRATION_OBJECTS
             elif ln.d == 3:
                 if ln.e in (0, 1, 2, 3, 4):
-                    return RelationGroup.I_O_CONTROL_SIGNAL_OBJECTS
+                    return abstract.I_O_CONTROL_SIGNAL_OBJECTS
                 elif ln.e == 10:
-                    return RelationGroup.DISCONNECT_CONTROL_OBJECTS
+                    return abstract.DISCONNECT_CONTROL_OBJECTS
                 elif ln.e in range(20, 30):
-                    return RelationGroup.ARBITRATOR_OBJECTS
+                    return abstract.ARBITRATOR_OBJECTS
             elif ln.d == 4 and ln.e in (0, 1, 2, 3, 4):
-                return RelationGroup.STATUS_OF_INTERNAL_CONTROL_SIGNALS_OBJECTS
+                return abstract.STATUS_OF_INTERNAL_CONTROL_SIGNALS_OBJECTS
             elif ln.d == 5 and ln.e in (0, 1, 2, 3, 4):
-                return RelationGroup.INTERNAL_OPERATING_STATUS_OBJECTS
+                return abstract.INTERNAL_OPERATING_STATUS_OBJECTS
             elif ln.d == 6 and ln.e in (0, 1, 2, 3, 4, 5, 6):
-                return RelationGroup.BATTERY_ENTRIES_OBJECTS
+                return abstract.BATTERY_ENTRIES_OBJECTS
             elif ln.d == 7 and ln.e in range(0, 22):
-                return RelationGroup.POWER_FAILURE_MONITORING_OBJECTS
+                return abstract.POWER_FAILURE_MONITORING_OBJECTS
             elif ln.d == 8 and ln.e in __range63:
-                return RelationGroup.OPERATING_TIME_OBJECTS
+                return abstract.OPERATING_TIME_OBJECTS
             elif ln.d == 9 and ln.e in (0, 1, 2):
-                return RelationGroup.ENVIRONMENT_RELATED_PARAMETERS_OBJECTS
+                return abstract.ENVIRONMENT_RELATED_PARAMETERS_OBJECTS
             elif ln.d == 10 and ln.e in range(1, 11):
-                return RelationGroup.STATUS_REGISTER_OBJECTS
+                return abstract.STATUS_REGISTER_OBJECTS
             elif ln.d == 11 and ln.e in range(0, 100):
-                return RelationGroup.EVENT_CODE_OBJECTS
+                return abstract.EVENT_CODE_OBJECTS
             elif ln.d == 12 and ln.e in range(0, 7):
-                return RelationGroup.COMMUNICATION_PORT_LOG_PARAMETER_OBJECTS
+                return abstract.COMMUNICATION_PORT_LOG_PARAMETER_OBJECTS
             elif ln.d == 13 and ln.e in (0, 1):
-                return RelationGroup.CONSUMER_MESSAGE_OBJECTS
+                return abstract.CONSUMER_MESSAGE_OBJECTS
             elif ln.d == 14 and ln.e in range(0, 16):
-                return RelationGroup.CURRENTLY_ACTIVE_TARIFF_OBJECTS
+                return abstract.CURRENTLY_ACTIVE_TARIFF_OBJECTS
             elif ln.d == 15 and ln.e in range(0, 100):
-                return RelationGroup.EVENT_COUNTER_OBJECTS
+                return abstract.EVENT_COUNTER_OBJECTS
             elif ln.d == 16 and ln.e in range(0, 10):
-                return RelationGroup.PROFILE_ENTRY_DIGITAL_SIGNATURE_OBJECTS
+                return abstract.PROFILE_ENTRY_DIGITAL_SIGNATURE_OBJECTS
             elif ln.d == 17 and ln.e in range(0, 128):
-                return RelationGroup.PROFILE_ENTRY_COUNTER_OBJECTS
+                return abstract.PROFILE_ENTRY_COUNTER_OBJECTS
             elif ln.d == 20:
-                return RelationGroup.METER_TAMPER_EVENT_RELATED_OBJECTS
+                return abstract.METER_TAMPER_EVENT_RELATED_OBJECTS
+            elif ln.d in range(50, 100):
+                return abstract.ABSTRACT_MANUFACTURER_SPECIFIC
         elif ln.c == 97:
             if ln.d == 97 and ln.e in __range10_and_255:
-                return RelationGroup.ERROR_REGISTER_OBJECTS
+                return abstract.ERROR_REGISTER_OBJECTS
             elif ln.d == 98 and (ln.e in chain(range(0, 30), (255,))):
-                return RelationGroup.ALARM_REGISTER_FILTER_DESCRIPTOR_OBJECTS
+                return abstract.ALARM_REGISTER_FILTER_DESCRIPTOR_OBJECTS
         elif ln.c == 98:
-            return RelationGroup.GENERAL_LIST_OBJECTS
-        elif ln.c == 99 and ln.d == 98:
-            return RelationGroup.EVENT_LOG_OBJECTS
+            return abstract.GENERAL_LIST_OBJECTS
+        elif ln.c == 99:
+            if ln.d in (1, 2, 12, 13, 14, 15, 16, 17, 18) or (ln.d == 3 and ln.e == 0):
+                return abstract.ABSTRACT_DATA_PROFILE_OBJECTS
+            if ln.d == 98:
+                return abstract.EVENT_LOG_OBJECTS
         elif ln.c == 127 and ln.d == 0:
-            return RelationGroup.INACTIVE_OBJECTS
+            return abstract.INACTIVE_OBJECTS
+        else:
+            return media_id.ABSTRACT
     elif ln.a == media_id.ELECTRICITY:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
-                return RelationGroup.ID_NUMBERS_ELECTRICITY
+                return electricity.ID_NUMBERS_ELECTRICITY
             elif ln.d == 1:
-                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_EL
+                return electricity.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_EL
             elif ln.d in (2, 3, 4, 6, 7, 8, 9, 10):
-                return RelationGroup.OTHER_ELECTRICITY_RELATED_GENERAL_PURPOSE_OBJECTS
+                return electricity.OTHER_ELECTRICITY_RELATED_GENERAL_PURPOSE_OBJECTS
             elif ln.d == 11 and ln.e in (1, 2, 3, 4, 5, 6, 7):
-                return RelationGroup.MEASUREMENT_ALGORITHM
+                return electricity.MEASUREMENT_ALGORITHM
+        elif ln.c in (1, 21, 41, 61):
+            return electricity.ACTIVE_POWER_PLUS
+        elif ln.c in (2, 22, 42, 62):
+            return electricity.ACTIVE_POWER_MINUS
+        elif ln.c in (3, 23, 43, 63):
+            return electricity.REACTIVE_POWER_PLUS
+        elif ln.c in (4, 24, 44, 64):
+            return electricity.REACTIVE_POWER_MINUS
+        elif ln.c in (5, 25, 45, 65):
+            return electricity.REACTIVE_POWER_QI
+        elif ln.c in (6, 26, 46, 66):
+            return electricity.REACTIVE_POWER_QII
+        elif ln.c in (7, 27, 47, 67):
+            return electricity.REACTIVE_POWER_QIII
+        elif ln.c in (8, 28, 48, 68):
+            return electricity.REACTIVE_POWER_QIV
+        elif ln.c in (9, 29, 49, 69):
+            return electricity.APPARENT_POWER_PLUS
+        elif ln.c in (10, 30, 50, 70):
+            return electricity.APPARENT_POWER_MINUS
+        elif ln.c in (11, 31, 51, 71):
+            return electricity.CURRENT
+        elif ln.c in (12, 32, 52, 72):
+            return electricity.VOLTAGE
+        elif ln.c in (13, 33, 53, 73):
+            return electricity.POWER_FACTOR
+        elif ln.c in (14, 34, 54, 74):
+            return electricity.SUPPLY_FREQUENCY
+        elif ln.c in (15, 35, 55, 75):
+            return electricity.ACTIVE_POWER_SUM
+        elif ln.c in (16, 36, 56, 76):
+            return electricity.ACTIVE_POWER_DIFF
+        elif ln.c in (17, 37, 57, 77):
+            return electricity.ACTIVE_POWER_QI
+        elif ln.c in (18, 38, 58, 78):
+            return electricity.ACTIVE_POWER_QII
+        elif ln.c in (19, 39, 59, 79):
+            return electricity.ACTIVE_POWER_QIII
+        elif ln.c in (20, 40, 60, 80):
+            return electricity.ACTIVE_POWER_QIV
         elif ln.c == 96:
             if ln.d == 1 and ln.e in __range10_and_255:
-                return RelationGroup.METERING_POINT_ID_OBJECTS
+                return electricity.METERING_POINT_ID_OBJECTS
             elif ln.d == 5 and ln.e in (0, 1, 2, 3, 4, 5):
-                return RelationGroup.ELECTRICITY_RELATED_STATUS_OBJECTS
+                return electricity.ELECTRICITY_RELATED_STATUS_OBJECTS
             elif ln.d == 10 and ln.e in (0, 1, 2, 3):
-                return RelationGroup.ELECTRICITY_RELATED_STATUS_OBJECTS
+                return electricity.ELECTRICITY_RELATED_STATUS_OBJECTS
         elif ln.c == 98:
-            return RelationGroup.LIST_OBJECTS_ELECTRICITY
+            return electricity.LIST_OBJECTS_ELECTRICITY
         elif ln.d in range(31, 46) and ln.f in __range100_and_255:
             if ln.c in __c1 and ln.e in __range63:
-                return RelationGroup.THRESHOLD_VALUES
+                return electricity.THRESHOLD_VALUES
             elif ln.c in __table44 and ln.e in __range120_and_124_127:
-                return RelationGroup.THRESHOLD_VALUES
+                return electricity.THRESHOLD_VALUES
         elif ln.f in __range100_and_255:
             if ln.d in (31, 35, 39, 4, 5, 14, 15, 24, 25):
                 if ln.c in __c1 and ln.e in __range63:
-                    return RelationGroup.REGISTER_MONITOR_OBJECTS
+                    return electricity.REGISTER_MONITOR_OBJECTS
                 elif ln.c in __c2 and ln.e in __range120_and_124_127:
-                    return RelationGroup.REGISTER_MONITOR_OBJECTS
+                    return electricity.REGISTER_MONITOR_OBJECTS
+        else:
+            return media_id.ELECTRICITY
     elif ln.a == media_id.HCA:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
-                return RelationGroup.ID_NUMBERS_HCA
+                return hca.ID_NUMBERS_HCA
             elif ln.d == 1 and ln.e in (1, 2, 10, 11):
-                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_HCA
+                return hca.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_HCA
             elif ln.d == 2 and ln.e in (0, 1, 2, 3):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+                return hca.GENERAL_PURPOSE_OBJECTS_HCA
             elif ln.d == 4 and ln.e in (0, 1, 2, 3, 4, 5, 6):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+                return hca.GENERAL_PURPOSE_OBJECTS_HCA
             elif ln.d == 5 and ln.e in (10, 11):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+                return hca.GENERAL_PURPOSE_OBJECTS_HCA
             elif ln.d == 8 and ln.e in (0, 4, 6):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+                return hca.GENERAL_PURPOSE_OBJECTS_HCA
             elif ln.d == 9 and ln.e in (1, 2, 3):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_HCA
+                return hca.GENERAL_PURPOSE_OBJECTS_HCA
         elif ln.c in (1, 2) and ln.e == 0:
             if ln.d in (0, 6) and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_HCA_CONSUMPTION
+                return hca.MEASURED_VALUES_HCA_CONSUMPTION
             elif ln.d in (1, 2, 3, 4, 5) and ln.f in __range100_and_101_125_and_255:
-                return RelationGroup.MEASURED_VALUES_HCA_CONSUMPTION
+                return hca.MEASURED_VALUES_HCA_CONSUMPTION
         elif ln.c in range(3, 8) and ln.d in (0, 4, 5, 6) and ln.e == 255 and ln.f == 255:
-            return RelationGroup.MEASURED_VALUES_HCA_TEMPERATURE
+            return hca.MEASURED_VALUES_HCA_TEMPERATURE
         elif ln.c == 97 and ln.d == 97:
-            return RelationGroup.ERROR_REGISTER_OBJECTS_HCA
+            return hca.ERROR_REGISTER_OBJECTS_HCA
         elif ln.c == 98:
-            return RelationGroup.LIST_OBJECTS_HCA
+            return hca.LIST_OBJECTS_HCA
         elif ln.c == 99 and ln.d == 1:
-            return RelationGroup.DATA_PROFILE_OBJECTS_HCA
+            return hca.DATA_PROFILE_OBJECTS_HCA
+        else:
+            return media_id.HCA
     elif ln.a == media_id.THERMAL:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
-                return RelationGroup.ID_NUMBERS_THERMAL
+                return thermal.ID_NUMBERS_THERMAL
             elif ln.d == 1 and ln.e in (1, 2, 10, 11):
-                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_THERMAL
+                return thermal.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_THERMAL
             elif ln.d == 2 and ln.e in chain(range(0, 5), range(10, 14)):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+                return thermal.GENERAL_PURPOSE_OBJECTS_THERMAL
             elif ln.d == 4 and ln.e in (1, 2, 3):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+                return thermal.GENERAL_PURPOSE_OBJECTS_THERMAL
             elif ln.d == 5 and ln.e in chain(range(1, 10), range(21, 25)):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+                return thermal.GENERAL_PURPOSE_OBJECTS_THERMAL
             elif ln.d == 8 and ln.e in chain(range(0, 8), range(11, 15), range(21, 26), range(31, 35)):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+                return thermal.GENERAL_PURPOSE_OBJECTS_THERMAL
             elif ln.d == 9 and ln.e in (1, 2, 3):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_THERMAL
+                return thermal.GENERAL_PURPOSE_OBJECTS_THERMAL
         elif ln.c in range(1, 8):
             if ln.e in range(10):
                 if ln.d in (0, 1, 2, 3, 7) and ln.f == 255:
-                    return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+                    return thermal.MEASURED_VALUES_THERMAL_CONSUMPTION
                 elif ln.d in (3, 8, 9) and ln.f in __range100_and_101_125_and_255:
-                    return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+                    return thermal.MEASURED_VALUES_THERMAL_CONSUMPTION
                 elif ln.d in (1, 2, 4, 5, 12, 13, 14, 15) and ln.f in chain(range(100), range(100, 126)):
-                    return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+                    return thermal.MEASURED_VALUES_THERMAL_CONSUMPTION
             elif ln.d == 6 and ln.e == 255 and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_THERMAL_CONSUMPTION
+                return thermal.MEASURED_VALUES_THERMAL_CONSUMPTION
         elif ln.e in range(10):
             if ln.f in __range100_and_101_125_and_255:
                 if ln.c in range(1, 8) and ln.d in (5, 15):
-                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                    return thermal.MEASURED_VALUES_THERMAL_ENERGY
                 elif ln.c in (8, 9) and ln.d in (1, 4, 5, 12, 13, 14, 15):
-                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                    return thermal.MEASURED_VALUES_THERMAL_ENERGY
             elif ln.c in range(10, 14):
                 if ln.d == 0 and ln.f == 255:
-                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                    return thermal.MEASURED_VALUES_THERMAL_ENERGY
                 elif ln.d in (4, 5, 14, 15) and ln.f in chain(range(100), range(101, 126)):
-                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                    return thermal.MEASURED_VALUES_THERMAL_ENERGY
                 elif ln.d in (6, 7, 10, 11) and ln.f == 255:
-                    return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
+                    return thermal.MEASURED_VALUES_THERMAL_ENERGY
             elif ln.c in range(1, 14) and (ln.d in range(20, 26)) and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_THERMAL_ENERGY
-
+                return thermal.MEASURED_VALUES_THERMAL_ENERGY
         elif ln.c == 97 and ln.d == 97 and ln.e in (0, 1, 2):
-            return RelationGroup.ERROR_REGISTER_OBJECTS_THERMAL
+            return thermal.ERROR_REGISTER_OBJECTS_THERMAL
         elif ln.c == 98:
-            return RelationGroup.LIST_OBJECTS_THERMAL
+            return thermal.LIST_OBJECTS_THERMAL
         elif ln.c == 99 and ln.f == 255:
             if ln.d in (1, 2) and ln.e in (1, 2, 3):
-                return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
+                return thermal.DATA_PROFILE_OBJECTS_THERMAL
             elif ln.d == 3 and ln.e == 1:
-                return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
+                return thermal.DATA_PROFILE_OBJECTS_THERMAL
             elif ln.d == 99:
-                return RelationGroup.DATA_PROFILE_OBJECTS_THERMAL
+                return thermal.DATA_PROFILE_OBJECTS_THERMAL
+        else:
+            return media_id.THERMAL
     elif media_id.GAS == ln.a:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
-                return RelationGroup.ID_NUMBERS_GAS
+                return gas.ID_NUMBERS_GAS
             elif ln.d == 1:
-                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_GAS
+                return gas.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_GAS
             elif ln.d in (2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_GAS
+                return gas.GENERAL_PURPOSE_OBJECTS_GAS
         elif ln.c == 96 and ln.d == 5 and (ln.e in range(10)):
-            return RelationGroup.INTERNAL_OPERATING_STATUS_OBJECTS_GAS
+            return gas.INTERNAL_OPERATING_STATUS_OBJECTS_GAS
         elif ln.c in chain(range(1, 9), range(11, 17), range(21, 27), range(31, 36), range(61, 66)) and ln.e in __range63:
             if ln.d in (24, 25, 26, 42, 43, 44, 63, 64, 65, 81, 82, 83) and ln.f in chain(range(100), range(101, 127)):
-                return RelationGroup.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
+                return gas.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
             elif ln.d in chain(range(6, 24), range(27, 33), range(45, 51), range(66, 72), range(84, 90)) and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
+                return gas.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
             elif ln.d in chain(range(33, 42), range(52, 63), range(72, 81), range(90, 99)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
-                return RelationGroup.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
+                return gas.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
         elif ln.c == 42 and ln.e == 0:
             if ln.d in chain(0, 1, 2, 13, range(15, 19), range(19, 31), range(35, 51), range(55, 71)) and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_GAS_FLOW_RATE
+                return gas.MEASURED_VALUES_GAS_FLOW_RATE
             elif ln.d in chain(range(31, 35), range(51, 55)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
-                return RelationGroup.MEASURED_VALUES_GAS_FLOW_RATE
+                return gas.MEASURED_VALUES_GAS_FLOW_RATE
         elif ln.c in chain((41, 42), range(44, 50)) and ln.d in (0, 2, 3, 10, 11, 13, range(15, 92)) and ln.e == 0 and ln.f == 255:
-            return RelationGroup.MEASURED_VALUES_GAS_PROCESS_VALUES
+            return gas.MEASURED_VALUES_GAS_PROCESS_VALUES
         elif ln.c in range(51, 56):
             if ln.d in (0, 2, 3, 10, 11) and ln.e in chain((0, 1), range(11, 29)) and ln.f == 255:
-                return RelationGroup.CONVERSION_RELATED_FACTORS_AND_COEFFICIENTS_GAS
+                return gas.CONVERSION_RELATED_FACTORS_AND_COEFFICIENTS_GAS
             elif ln.d == 12 and ln.e in range(20) and ln.f == 255:
-                return RelationGroup.CALCULATION_METHODS_GAS
+                return gas.CALCULATION_METHODS_GAS
         elif ln.c == 70 and ln.f == 255:
             if ln.d in (8, 9) and ln.e == 0:
-                return RelationGroup.NATURAL_GAS_ANALYSIS
+                return gas.NATURAL_GAS_ANALYSIS
             elif ln.d in chain(range(10, 21), range(60, 85)) and ln.e in chain((0, 1), range(11, 29)):
-                return RelationGroup.NATURAL_GAS_ANALYSIS
+                return gas.NATURAL_GAS_ANALYSIS
         elif ln.c == 98:
-            return RelationGroup.LIST_OBJECTS_GAS
+            return gas.LIST_OBJECTS_GAS
+        else:
+            return media_id.GAS
     elif ln.a == media_id.WATER:
         if ln.c == 0:
             if ln.d == 0 and ln.e in __range10_and_255:
-                return RelationGroup.ID_NUMBERS_WATER
+                return water.ID_NUMBERS_WATER
             elif ln.d == 1 and ln.e in (1, 2, 10, 11, 12):
-                return RelationGroup.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_WATER
+                return water.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_WATER
             elif ln.d == 2 and ln.e in (0, 3):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+                return water.GENERAL_PURPOSE_OBJECTS_WATER
             elif ln.d in (5, 7) and ln.e == 1:
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+                return water.GENERAL_PURPOSE_OBJECTS_WATER
             elif ln.d == 8 and ln.e in (1, 6):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+                return water.GENERAL_PURPOSE_OBJECTS_WATER
             elif ln.d == 9 and ln.e in (1, 2, 3):
-                return RelationGroup.GENERAL_PURPOSE_OBJECTS_WATER
+                return water.GENERAL_PURPOSE_OBJECTS_WATER
         elif ln.c == 1 and ln.e in range(0, 13):
             if ln.d in (0, 1, 2, 3, 6) and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_WATER_CONSUMPTION
+                return water.MEASURED_VALUES_WATER_CONSUMPTION
             elif ln.d in range(1, 6) and ln.f in chain(range(100), range(101, 126)):
-                return RelationGroup.MEASURED_VALUES_WATER_CONSUMPTION
+                return water.MEASURED_VALUES_WATER_CONSUMPTION
         elif ln.c in (2, 3) and ln.e in range(0, 13):
             if ln.d in (0, 1, 2, 3, 6) and ln.f == 255:
-                return RelationGroup.MEASURED_VALUES_WATER_MONITORING_VALUES
+                return water.MEASURED_VALUES_WATER_MONITORING_VALUES
             elif ln.d in range(1, 6) and ln.f in chain(range(100), range(101, 126)):
-                return RelationGroup.MEASURED_VALUES_WATER_MONITORING_VALUES
+                return water.MEASURED_VALUES_WATER_MONITORING_VALUES
         elif ln.c == 97 and ln.d == 97:
-            return RelationGroup.ERROR_REGISTER_OBJECTS_WATER
+            return water.ERROR_REGISTER_OBJECTS_WATER
         elif ln.c == 98:
-            return RelationGroup.LIST_OBJECTS_WATER
+            return water.LIST_OBJECTS_WATER
         elif ln.c == 99 and ln.d == 1:
-            return RelationGroup.DATA_PROFILE_OBJECTS_WATER
-    return RelationGroup.UNKNOWN
+            return water.DATA_PROFILE_OBJECTS_WATER
+        else:
+            return media_id.WATER
+    return media_id.OTHER_MEDIA
 
 
 DLMSObjectContainer: TypeAlias = Collection | list[InterfaceClass] | filter
@@ -2447,6 +2656,3 @@ def params_filter(container: DLMSObjectContainer, params: tuple[RelationGroup | 
                 ret = media_id_filter(ret, p)
     return ret
 
-
-def get_media_id(ln: cst.LogicalName) -> media_id.MediaId:
-    return media_id.MediaId.from_int(ln.a)
