@@ -4,7 +4,7 @@ import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES import cosem_interface_classes
-from src.DLMS_SPODES.obis import electricity
+from src.DLMS_SPODES.obis import media_id
 from src.DLMS_SPODES.version import AppVersion
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
 
@@ -389,7 +389,7 @@ class TestType(unittest.TestCase):
 
     def test_get_relation_group(self):
         ln = cst.LogicalName("0.0.1.0.0.255")
-        self.assertEqual(collection.get_relation_group(ln), collection.abstract.CLOCK_OBJECTS, "check_group")
+        self.assertEqual(collection.get_relation_group(ln), collection.media_id.CLOCK_OBJECTS, "check_group")
         b1 = collection.get_media_id(ln)
         ln = cst.LogicalName("0.0.94.1.1.255")
         a = collection.get_relation_group(ln)
@@ -419,6 +419,16 @@ class TestType(unittest.TestCase):
         a = collection.media_id.MediaId.from_int(1)
         b = collection.media_id.ELECTRICITY
         print(a is b)
+        print(b)
+        c = media_id.THRESHOLD_VALUES
+        print(c)
+
+        import inspect
+        import sys
+
+        clsmembers = inspect.getmembers(media_id, inspect.isclass)
+        for it in clsmembers:
+            print(F'{it[0]} = ""')
 
     def test_get_tree(self):
         from src.DLMS_SPODES.obis.media_id import MediaId

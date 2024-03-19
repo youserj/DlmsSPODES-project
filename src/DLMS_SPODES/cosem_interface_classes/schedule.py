@@ -45,7 +45,7 @@ class ScheduleTableEntry(cdt.Structure):
 
 # TODO: rewrite to new API
 class Entries(cdt.Array):
-    """ Specifies the list of schedule_table_entry """
+    """ Specifies the list of schedule_table_entry. Todo: validate by unique index"""
     TYPE = ScheduleTableEntry
     unique = True
 
@@ -55,26 +55,6 @@ class Entries(cdt.Array):
         for schedule_table_entry in self:
             schedule_table_entry: ScheduleTableEntry
             schedule_table_entry.index.set_callback(self.get_indexes)
-
-    def append(self, element: ScheduleTableEntry | None = None):
-        """ append element to end with unique index """
-        if element is None:
-            element: ScheduleTableEntry = self.get_type()()
-            indexes = self.get_indexes()
-            count_ = count(1)
-            while True:
-                new_index = next(count_)
-                if new_index not in indexes:
-                    break
-            element.index = Index.with_cb(new_index, self.get_indexes)
-        if isinstance(element, self.get_type()):
-            if self.unique:
-                for i in self:
-                    if i == element:
-                        raise ValueError(F"Element {element.__class__.__name__} already exist in {self.__class__.__name__}")
-            self.append(element)
-        else:
-            raise ValueError(F'Types not equal. Must be {self.TYPE.NAME} got {type(element).__name__}')
 
     def get_indexes(self) -> list[int]:
         """ getter for callback Index """
@@ -193,13 +173,3 @@ class Schedule(ic.COSEMInterfaceClasses):
             # print('set delete')
         except KeyError:  # At init time
             print('set delete NO:')
-
-
-if __name__ == '__main__':
-
-    a = b'\x01\x04\x02\n\x12\x00\x01\x03\x00\t\x06\x00\x00\n\x00d\xff\x12\x00\x01\t\x04\x00\x00\x00\xff\x12\x00\x01\x04\x07\xe2\x04\x01\x80\t\x05\xff\xff\x01\x01\xff\t\x05\xff\xff\x01\x01\xff\x02\n\x12\x00\x02\x03\x00\t\x06\x00\x00\n\x00d\xff\x12\x00\x02\t\x04\x00\x00\x00\xff\x12\x00\x01\x04\x07\xe2\x04\x02\x80\t\x05\xff\xff\x01\x01\xff\t\x05\xff\xff\x01\x01\xff\x02\n\x12\x00\x03\x03\x00\t\x06\x00\x00\n\x00d\xff\x12\x00\x03\t\x04\x00\x00\x00\xff\x12\x00\x01\x04\x07\xe2\x04\x02\xc0\t\x05\xff\xff\x01\x01\xff\t\x05\xff\xff\x01\x01\xff\x02\n\x12\x00\x04\x03\x00\t\x06\x00\x00\n\x00d\xff\x12\x00\x04\t\x04\x00\x00\x00\xff\x12\x00\x01\x04\x07\xe2\x04\x03\x80\t\x05\xff\xff\x01\x01\xff\t\x05\xff\xff\x01\x01\xff'
-    b = Entries(a)
-
-    a = Schedule('0.0.12.0.0.255')
-    pass
-    print(a)
