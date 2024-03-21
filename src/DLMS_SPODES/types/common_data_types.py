@@ -310,9 +310,12 @@ class _String(ABC):
             case bytes() as encoding:
                 length, pdu = get_length_and_pdu(encoding[1:])
                 match encoding[:1]:
-                    case self.TAG if length <= len(pdu):                     self.contents = pdu[:length]
-                    case self.TAG:                                           raise ValueError(F'Length is {length}, but contents got only {len(pdu)}')
-                    case _:                                                  raise TypeError(F"got {TAG(encoding[:1])}, expected {self.TAG}")
+                    case self.TAG if length <= len(pdu):
+                        self.contents = pdu[:length]
+                    case self.TAG:
+                        raise ValueError(F'Length is {length}, but contents got only {len(pdu)}')
+                    case _:
+                        raise TypeError(F"init {self.__class__.__name__} got {TAG(encoding[:1])}, expected {self.TAG}")
             case bytearray():                                                self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
             case str():                                                      self.contents = self.from_str(value)
             case int():                                                      self.contents = self.from_int(value)
