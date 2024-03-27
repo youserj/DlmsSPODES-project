@@ -315,7 +315,7 @@ class _String(ABC):
                     case self.TAG:
                         raise ValueError(F'Length is {length}, but contents got only {len(pdu)}')
                     case _:
-                        raise TypeError(F"init {self.__class__.__name__} got {TAG(encoding[:1])}, expected {self.TAG}")
+                        raise ValueError(F"init {self.__class__.__name__} got {TAG(encoding[:1])}, expected {self.TAG}")
             case bytearray():                                                self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
             case str():                                                      self.contents = self.from_str(value)
             case int():                                                      self.contents = self.from_int(value)
@@ -413,7 +413,7 @@ class Digital(ABC):
                     case self.TAG if self.LENGTH <= len(length_and_contents): self.contents = length_and_contents[:self.LENGTH]
                     case self.TAG:                                                     raise ValueError(F'Length of contents for {self.TAG} must be at least '
                                                                                                         F'{self.LENGTH}, but got {len(length_and_contents)}')
-                    case _ as wrong_tag:                                               raise TypeError(F'Expected {self.TAG} type, got {TAG(wrong_tag)}')
+                    case _ as wrong_tag:                                               raise ValueError(F'Expected {self.TAG} type, got {TAG(wrong_tag)}')
             case bytearray():                                                          self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
             case str('-') if self.SIGNED:                                              self.contents = bytes(self.LENGTH)
             case int() | float():                                                      self.contents = self.from_int(value)
@@ -455,7 +455,7 @@ class Digital(ABC):
             match self.SCALER_UNIT:
                 case ScalUnitType(): value *= 10**(-self.SCALER_UNIT.scaler.decode()+self.SCALER_UNIT.unit.get_scaler())
                 case None:           """ no scaler """
-                case _ as error:     raise TypeError(F'Unknown scaler_unit: {error}')
+                case _ as error:     raise ValueError(F'Unknown scaler_unit: {error}')
             return int(value).to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
         except OverflowError:
             raise ValueError(F'value {value} out of range')
@@ -478,7 +478,7 @@ class Digital(ABC):
         match self.SCALER_UNIT:
             case None:           return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
             case ScalUnitType(): return int.from_bytes(self.contents, 'big', signed=self.SIGNED) * 10 ** (self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler())
-            case _ as error:     raise TypeError(F'Unknown scaler_unit type {error}')
+            case _ as error:     raise ValueError(F'Unknown scaler_unit type {error}')
 
     def __int__(self):
         if self.SCALER_UNIT is None:
@@ -531,7 +531,7 @@ class Digital(ABC):
         match other:
             case int():     return self.decode() > other
             case Digital(): return self.decode() > other.decode()
-            case _:         raise TypeError(F'Compare type is {other.__class__}, expected Digital')
+            case _:         raise ValueError(F'Compare type is {other.__class__}, expected Digital')
 
     def __len__(self) -> int:
         return self.LENGTH
@@ -542,7 +542,7 @@ class Digital(ABC):
             case 'SCALER_UNIT', None:                                        self.__dict__['SCALER_UNIT'] = None
             case 'SCALER_UNIT', ScalUnitType() if self.SCALER_UNIT == value: """ double set Scaler Unit """
             case 'SCALER_UNIT', ScalUnitType():                              raise ValueError('Scaler Unit already set')
-            case 'SCALER_UNIT', _ as error:                                  raise TypeError(F'Unknown type {error} for Scaler Unit')
+            case 'SCALER_UNIT', _ as error:                                  raise ValueError(F'Unknown type {error} for Scaler Unit')
             case 'SIGNED' as prop:                                           raise ValueError(F"Don't support set {prop}")
             case _:                                                          super().__setattr__(key, value)
 
@@ -588,7 +588,7 @@ class Float(ABC):
                     case self.TAG, int() if len(self) <= len(length_and_contents): self.contents = length_and_contents[:len(self)]
                     case self.TAG, _:                                              raise ValueError(F'Length of contents for {self.TAG} must be at least '
                                                                                                     F'{len(self)}, but got {len(length_and_contents)}')
-                    case _ as wrong_tag, _:                                        raise TypeError(F'Expected {self.TAG} type, got {get_common_data_type_from(wrong_tag).TAG}')
+                    case _ as wrong_tag, _:                                        raise ValueError(F'Expected {self.TAG} type, got {get_common_data_type_from(wrong_tag).TAG}')
             case bytearray():                                                      self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
             case str():                                                            self.contents = self.from_str(value)
             case int():                                                            self.contents = self.from_float(float(value))
@@ -673,7 +673,7 @@ class __DateTime(ABC):
                     case self.TAG:
                         raise ValueError(F"length of contents for {self.TAG} must be at least {len(self)}, but got {len(length_and_contents)}")
                     case _ as wrong_tag:
-                        raise TypeError(F"got {TAG(wrong_tag)}, expected {self.TAG} type")
+                        raise ValueError(F"got {TAG(wrong_tag)}, expected {self.TAG} type")
             case None:                                                                 self.clear()
             case bytearray():                                                          self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
             case str():                                                                self.contents = self.from_str(value)
@@ -1047,7 +1047,7 @@ class NullData(SimpleDataType):
     def __init__(self, value: bytes | str | Self = None):
         match value:
             case bytes() if value[:1] == self.TAG: pass
-            case bytes():                          raise TypeError(F"got {TAG(value[:1])}, expected {self.TAG} type, ")
+            case bytes():                          raise ValueError(F"got {TAG(value[:1])}, expected {self.TAG} type, ")
             case None | str() | NullData():        pass
             case _:                                raise ValueError(F"error create {self.TAG} with value {value}")
 
@@ -1091,11 +1091,11 @@ class Array(__Array, ComplexDataType):
                             new_element, pdu = get_instance_and_pdu(self.TYPE, pdu)
                             self.append(new_element)
                     case b'', _:   raise ValueError(F'Wrong Value. Value not consist the tag. Empty Value.')
-                    case _:        raise TypeError(F"Expected {self.TAG} type, got {TAG(value[:1])}")
+                    case _:        raise ValueError(F"Expected {self.TAG} type, got {TAG(value[:1])}")
             case list():           deque(map(self.append, value))
             case None:             """create empty array"""
             case Array():          self.__init__(value.encoding)  # TODO: make with bytearray
-            case _:                raise TypeError(F'Init {self.__class__} with Value: "{value}" not supported')
+            case _:                raise ValueError(F'Init {self.__class__} with Value: "{value}" not supported')
 
     def __str__(self):
         return F"{self.TAG if self.TYPE is None else self.TYPE.TAG}[{len(self.values)}]"
@@ -1189,7 +1189,7 @@ class Structure(ComplexDataType):
             case bytearray():              self.from_content(bytes(value))
             case Structure():              self.from_content(value.contents)
             # case Structure():              self.__from_sequence(value)
-            case _:                        raise TypeError(F'for {self.__class__.__name__} "{value=}" not supported')
+            case _:                        raise ValueError(F'for {self.__class__.__name__} "{value=}" not supported')
 
     @property
     def get_el0(self):
@@ -1256,7 +1256,7 @@ class Structure(ComplexDataType):
     def from_bytes(self, encoding: bytes):
         tag, length_and_contents = encoding[:1], encoding[1:]
         if tag != self.TAG:
-            raise TypeError(F'Expected {self.TAG} type, got {TAG(tag)}')
+            raise ValueError(F'Expected {self.TAG} type, got {TAG(tag)}')
         length, pdu = get_length_and_pdu(length_and_contents)
         if not hasattr(self, "ELEMENTS"):
             el: list[StructElement] = list()
@@ -1386,7 +1386,7 @@ class AXDR(ABC):
                                     tmp = 0
                             self.__dict__['values'] = tuple(values)
                         else:
-                            raise TypeError(F"expected {self.TAG} type, got {TAG(encoding[:1])}")
+                            raise ValueError(F"expected {self.TAG} type, got {TAG(encoding[:1])}")
                     case _:
                         self.__dict__['is_xdr'] = False
                         super(AXDR, self).__init__(value)
@@ -1426,7 +1426,7 @@ class Boolean(SimpleDataType):
             case 1:  raise ValueError(F"for create {self.TAG} got encoding: {encoding.hex()} without contents")
             case _:  """OK"""
         if (tag := encoding[:1]) != self.TAG:
-            raise TypeError(F"expected {self.TAG} type, got {TAG(tag)}")
+            raise ValueError(F"expected {self.TAG} type, got {TAG(tag)}")
         return self.from_int(encoding[1])
 
     def from_int(self, value: int):
@@ -1485,7 +1485,7 @@ class BitString(SimpleDataType):
             case self.TAG if self.__length == 0:            return b''
             case self.TAG if self.__length <= len(pdu) * 8: return pdu[:ceil(self.__length / 8)]
             case self.TAG:                                  raise ValueError(F'Length is {self.__length}, but contents got only {len(pdu) * 8}')
-            case _ as error:                                raise TypeError(F"got {TAG(error)}, expected {self.TAG}")
+            case _ as error:                                raise ValueError(F"got {TAG(error)}, expected {self.TAG}")
 
     def from_str(self, value: str) -> bytes:
         self.__length = len(value)
@@ -1497,7 +1497,7 @@ class BitString(SimpleDataType):
 
     def from_int(self, value: int) -> bytes:
         """ TODO: see like as Conformance """
-        raise TypeError('not supported init from int')
+        raise ValueError('not supported init from int')
 
     def from_bytearray(self, value: bytearray) -> bytes:
         self.__length = len(value) << 3
