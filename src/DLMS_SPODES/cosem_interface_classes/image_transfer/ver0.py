@@ -1,19 +1,6 @@
-from .__class_init__ import *
-from ..types.implementations import integers
-
-
-TRANSFER_NOT_INITIATED = 0
-TRANSFER_INITIATED = 1
-VERIFICATION_INITIATED = 2
-VERIFICATION_SUCCESSFUL = 3
-VERIFICATION_FAILED = 4
-ACTIVATION_INITIATED = 5
-ACTIVATION_SUCCESSFUL = 6
-ACTIVATION_FAILED = 7
-
-
-class ImageTransferStatus(cdt.Enum, elements=tuple(range(8))):
-    """ Holds the status of the Image transfer process. """
+from ..__class_init__ import *
+from ...types.implementations import integers
+from . image_transfer_status import ImageTransferStatus
 
 
 class ImageToActivateInfoElement(cdt.Structure):

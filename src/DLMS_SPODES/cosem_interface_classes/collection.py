@@ -35,7 +35,7 @@ from .gsm_diagnostic.ver1 import GSMDiagnostic as GSMDiagnosticVer1
 from .gsm_diagnostic.ver2 import GSMDiagnostic as GSMDiagnosticVer2
 from .iec_hdlc_setup.ver0 import IECHDLCSetup as IECHDLCSetupVer0
 from .iec_hdlc_setup.ver1 import IECHDLCSetup as IECHDLCSetupVer1
-from .image_transfer import ImageTransfer
+from .image_transfer.ver0 import ImageTransfer
 from .ipv4_setup import IPv4Setup
 from .modem_configuration.ver0 import PSTNModemConfiguration
 from .modem_configuration.ver1 import ModemConfigurationVer1
