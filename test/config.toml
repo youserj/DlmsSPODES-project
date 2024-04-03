@@ -987,7 +987,15 @@ for_terminals_cover = "крышки клеммников"
 disconnected = "разъединено"
 connected = "соединено"
 
+[[DLMS.firmwares]]
+man="KPZ"
+path="./Firmwares/firmwares.dat"
+[DLMS.firmwares.key]
+codec="ascii"
+value="00000000password"
+
 [DLMS]
+
 scaler_prefix = [
     {name = "к", value = 3}
 ]

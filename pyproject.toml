@@ -9,9 +9,12 @@ requires = [
 
 [project]
 name = "DLMS_SPODES"
-version = "0.69.0"
+version = "0.69.2"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
+]
+dependencies = [
+    "pycryptodomex>=3.15"
 ]
 description="dlms-spodes"
 readme = "README.md"
