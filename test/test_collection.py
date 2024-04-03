@@ -486,3 +486,21 @@ class TestType(unittest.TestCase):
             af_mode="lrw"
         )
         print(res)
+
+    def test_LNPattern(self):
+        pattern = collection.LNPattern("a.2.(1, 200, 43, 51, 3-8).4.5.9")
+        pattern2 = collection.LNPattern("a.2.31.4.5.9")
+        print(pattern)
+        print(cst.LogicalName("1.2.33.4.5.9") in (pattern, pattern2))
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+        res = collection.get_filtered(
+            objects=col.filter_by_ass(3),
+            keys=(collection.LNPattern("a.b.(14-20).d.e.f"),)
+        )
+        print(res)
