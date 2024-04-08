@@ -37,14 +37,14 @@ def get_values2(*args: str) -> tuple[str, int]:
     return par, 0
 
 
-try:
-    print(F"path={os.path.abspath(__file__)}")
-    with open("./config.toml", "rb") as f:
-        config = tomllib.load(f)
-except FileNotFoundError as e:
-    logger.warning(e)
-    config = None
-
+if not os.path.isfile(path := ".//config.toml"):
+    path = F"{os.path.dirname(__file__)}{path}"
+elif not os.path.isfile(path):
+    logger.warning("NOT FIND CONFIGURATION: <config.toml>")
+with open(path, "rb") as f:
+    config = tomllib.load(f)
+    logger.info(F"Find configuration <config.toml> with path: {f}")
+    print(F"Find configuration <config.toml> with path: {f}")
 
 _messages = get_values("DLMS", "messages")
 
