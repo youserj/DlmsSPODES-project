@@ -3,6 +3,7 @@ from ...types import choices
 from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types.implementations import structs
+from . import authentication_mechanism_name
 
 
 class AccessMode(cdt.Enum, elements=tuple(range(7))):
@@ -83,7 +84,7 @@ class ContextNameType(cdt.AXDR, ver0.ApplicationContextName):
     DEFAULT = b'\x09\x07\x60\x85\x74\x05\x08\x01\x01'
 
 
-class MechanismNameType(cdt.AXDR, ver0.AuthenticationMechanismName):
+class MechanismNameType(cdt.AXDR, authentication_mechanism_name.AuthenticationMechanismName):
     """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
     application association. This attribute contains the name of the application context for that association."""
     DEFAULT = b'\x09\x07\x60\x85\x74\x05\x08\x02\x00'

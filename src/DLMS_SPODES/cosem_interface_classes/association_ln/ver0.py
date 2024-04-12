@@ -4,7 +4,7 @@ from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ... import pdu_enums as pdu
-from . import mechanism_id
+from . import mechanism_id, authentication_mechanism_name
 
 
 class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
@@ -136,32 +136,6 @@ class XDLMSContextType(cdt.Structure):
     dlms_version_number: cdt.Unsigned
     quality_of_service: cdt.Integer
     cyphering_info: cdt.OctetString
-
-
-class AuthenticationMechanismName(cdt.Structure):
-    """ Contains the name of the authentication mechanism for the association (see IEC 62056-53). The authentication mechanism name is specified as an
-    OBJECT IDENTIFIER in 7.3.7.2 of IEC 62056-53. The authentication_mechanism_name attribute includes the arc labels of the OBJECT IDENTIFIER. """
-    DEFAULT = (2, 16, 756, 5, 8, 2, 0)
-    joint_iso_ctt_element: cdt.Unsigned
-    country_element: cdt.Unsigned
-    country_name_element: cdt.LongUnsigned
-    identified_organization_element: cdt.Unsigned
-    DLMS_UA_element: cdt.Unsigned
-    authentication_mechanism_name_element: cdt.Unsigned
-    mechanism_id_element: mechanism_id.MechanismIdElement
-
-    def get_info(self) -> bytes:
-        """ info for PDU from application_context_name. """
-        return self.joint_iso_ctt_element.contents + \
-               self.country_element.contents + \
-               self.country_name_element.contents[1:] + \
-               self.identified_organization_element.contents + \
-               self.DLMS_UA_element.contents + \
-               self.authentication_mechanism_name_element.contents + \
-               self.mechanism_id_element.contents
-
-    def get_mechanism_id_element(self) -> bytes:
-        return self.mechanism_id_element.contents
 
 
 class AssociationStatus(cdt.Enum, elements=(0, 1, 2)):
@@ -298,7 +272,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                   ic.ICAElement("associated_partners_id", AssociatedPartnersType),
                   ic.ICAElement("application_context_name", ApplicationContextName),
                   ic.ICAElement("xDLMS_context_info", XDLMSContextType),
-                  ic.ICAElement("authentication_mechanism_name", AuthenticationMechanismName),
+                  ic.ICAElement("authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
                   ic.ICAElement("LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
                   ic.ICAElement("association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
     M_ELEMENTS = (ic.ICMElement("reply_to_HLS_authentication", cdt.OctetString),
@@ -337,7 +311,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         return self.get_attr(5)
 
     @property
-    def authentication_mechanism_name(self) -> AuthenticationMechanismName:
+    def authentication_mechanism_name(self) -> authentication_mechanism_name.AuthenticationMechanismName:
         return self.get_attr(6)
 
     @property
