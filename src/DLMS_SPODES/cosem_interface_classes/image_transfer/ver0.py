@@ -124,6 +124,10 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
     def current_block_transfer(self) -> int:
         return int(self.image_block_transfer.image_block_number)
 
+    def get_n_blocks(self) -> int:
+        """get sum of blocks"""
+        return len(self.__blocks_for_update)
+
     def set_next_block(self):
         """ set next block transfer """
         try:

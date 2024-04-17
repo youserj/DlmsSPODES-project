@@ -14,7 +14,7 @@ DLMS_SPODES = ["config.toml"]
 
 [project]
 name = "DLMS_SPODES"
-version = "0.69.5"
+version = "0.69.6"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
