@@ -205,7 +205,7 @@ LimiterObjects = "Ограничители"
 MeterTamperEventRelatedObjects = "События связаные с внешним воздействием"
 MeteringPointIdObjects = "Данные точки учета"
 ModemConfigurationAndRelatedObjects = "Конфигурации модема и связи"
-ObjectsForDataExchangeUsingHsPlcIsoIec121391IsoEc121391Networks = "Для обмена по HS-PLC\IEC 12139-1"
+ObjectsForDataExchangeUsingHsPlcIsoIec121391IsoEc121391Networks = "Для обмена по HS-PLC/IEC 12139-1"
 ObjectsForDataExchangeUsingNarrowBandOfdmPlcForG3PlcNetworks = "Для обмена по OFDM-G3-PLC"
 ObjectsForDataExchangeUsingNarrowbandOfdmPlcForPrimeNetworks = "Для обмена по OFDM-G3-PRIME"
 ObjectsForDataExchangeUsingWiSunNetworks = "Для обмена по Wi-SUN"
@@ -1502,3 +1502,16 @@ TYPE = [
     {e=5, v="Размер времени выполнения = N; Значения времени могут быть разными, подстановочные знаки в дате разрешены"},
 ]
 
+[[DLMS.firmwares]]
+man="KPZ"
+path="./Firmwares/firmwares.dat"
+[DLMS.firmwares.key]
+codec="ascii"
+value="00000000password"
+
+[[DLMS.firmwares]]
+man="101"
+path="./Firmwares/firmwares.dat"
+[DLMS.firmwares.key]
+codec="ascii"
+value="00000000password"
