@@ -183,7 +183,7 @@ class LimiterObjects(Abstract):
     """6_2_15"""
 
 
-class ArrayManagerObject(Abstract):
+class ArrayManagerObjects(Abstract):
     """6_2_16"""
 
 
@@ -412,7 +412,7 @@ SINGLE_ACTION_SCHEDULE_OBJECTS = SingleActionScheduleObjects()
 REGISTER_OBJECTS_MONITOR = RegisterObjectsMonitor()
 PARAMETER_MONITOR_OBJECTS = ParameterMonitorObjects()
 LIMITER_OBJECTS = LimiterObjects()
-ARRAY_MANAGER_OBJECT = ArrayManagerObject()
+ARRAY_MANAGER_OBJECT = ArrayManagerObjects()
 PAYMENT_METERING_RELATED_OBJECTS = PaymentMeteringRelatedObjects()
 IEC_LOCAL_PORT_SETUP_OBJECTS = IecLocalPortSetupObjects()
 STANDARD_READOUT_PROFILE_OBJECTS = StandardReadoutProfileObjects()
