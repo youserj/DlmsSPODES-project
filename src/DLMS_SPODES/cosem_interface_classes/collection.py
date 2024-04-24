@@ -7,7 +7,7 @@ import os
 import copy
 from struct import pack
 import datetime
-import dataclasses
+from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self, Callable, Literal
@@ -267,7 +267,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ObjectRelation:
     IC: int | tuple[int, ...] | ic.COSEMInterfaceClasses
     Additional: bytes | dict | bool = None
@@ -2088,12 +2088,14 @@ def get(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> Collection:
 def get_collection(
         manufacturer: bytes,
         server_type: cdt.CommonDataType,
-        server_ver: AppVersion) -> Collection:
+        server_ver: AppVersion,
+        ver_instance: int = 0
+) -> Collection:
     """get copy of collection with caching"""
     ret = get(manufacturer, server_type, server_ver).copy()
     ret.set_server_type(server_type)  # if xml file not contains the type
     ret.set_server_ver(  # todo: for actual version set, not from file
-        instance=0,
+        instance=ver_instance,
         value=server_ver,
         force=True)
     return ret
