@@ -2065,7 +2065,7 @@ def get_manufactures_container() -> dict[bytes, dict[bytes, dict[AppVersion, os.
 
 @lru_cache(maxsize=100)
 def get_dir_entry(m: bytes, t: cdt.CommonDataType, ver: AppVersion) -> os.DirEntry:
-    """one recursion collection get way. ret: file, is_searched"""
+    """one recursion collection get way. ret: file, is_searched"""  # todo: make <ver> handle non SemVer from CDT
     if (man := get_manufactures_container().get(m)) is None:
         raise exc.NoConfig(F"no support manufacturer: {m.decode('utf-8', errors='strict')}")
     elif (type_ := man.get(t.encoding)) is None:
@@ -2089,15 +2089,10 @@ def get_collection(
         manufacturer: bytes,
         server_type: cdt.CommonDataType,
         server_ver: AppVersion,
-        ver_instance: int = 0
 ) -> Collection:
     """get copy of collection with caching"""
     ret = get(manufacturer, server_type, server_ver).copy()
     ret.set_server_type(server_type)  # if xml file not contains the type
-    ret.set_server_ver(  # todo: for actual version set, not from file
-        instance=ver_instance,
-        value=server_ver,
-        force=True)
     return ret
 
 
