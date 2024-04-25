@@ -5,6 +5,7 @@ from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ... import pdu_enums as pdu
 from . import mechanism_id, authentication_mechanism_name
+import method
 
 
 class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
@@ -275,7 +276,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                   ic.ICAElement("authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
                   ic.ICAElement("LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
                   ic.ICAElement("association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
-    M_ELEMENTS = (ic.ICMElement("reply_to_HLS_authentication", cdt.OctetString),
+    M_ELEMENTS = (ic.ICMElement("reply_to_HLS_authentication", method.ReplyToHLSAuthentication),
                   ic.ICMElement("change_HLS_secret", LLCSecret),
                   ic.ICMElement("add_object", ObjectListElement),
                   ic.ICMElement("remove_object", ObjectListElement))
@@ -323,7 +324,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         return self.get_attr(8)
 
     @property
-    def reply_to_HLS_authentication(self) -> cdt.OctetString:
+    def reply_to_HLS_authentication(self) -> method.ReplyToHLSAuthentication:
         return self.get_meth(1)
 
     @property
