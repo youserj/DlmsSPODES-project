@@ -1,0 +1,128 @@
+from functools import lru_cache
+from .useful_types import Unsigned16
+from ..config_parser import get_values
+
+
+class CosemClassId(Unsigned16):
+    """COSEMpdu-Gb83.asn"""
+
+    def __str__(self):
+        if _class_names:
+            return _class_names.get(self, repr(self))
+        else:
+            return repr(self)
+
+    def __repr__(self):
+        return F"{self.__class__.__name__}({int(self)})"
+
+
+_class_names = {CosemClassId(int(k)): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
+"""use for string representation CosemClassId"""
+
+DATA = CosemClassId(1)
+REGISTER = CosemClassId(3)
+EXT_REGISTER = CosemClassId(4)
+DEMAND_REGISTER = CosemClassId(5)
+REGISTER_ACTIVATION = CosemClassId(6)
+PROFILE_GENERIC = CosemClassId(7)
+CLOCK = CosemClassId(8)
+SCRIPT_TABLE = CosemClassId(9)
+SCHEDULE = CosemClassId(10)
+SPECIAL_DAYS_TABLE = CosemClassId(11)
+ASSOCIATION_SN = CosemClassId(12)
+ASSOCIATION_LN = CosemClassId(15)
+SAP_ASSIGNMENT = CosemClassId(17)
+IMAGE_TRANSFER = CosemClassId(18)
+IEC_LOCAL_PORT_SETUP = CosemClassId(19)
+ACTIVITY_CALENDAR = CosemClassId(20)
+REGISTER_MONITOR = CosemClassId(21)
+SINGLE_ACTION_SCHEDULE = CosemClassId(22)
+IEC_HDLC_SETUP = CosemClassId(23)
+IEC_TWISTED_PAIR_1_SETUP = CosemClassId(24)
+M_BUS_SLAVE_PORT_SETUP = CosemClassId(25)
+UTILITY_TABLES = CosemClassId(26)
+MODEM_CONFIGURATION = CosemClassId(27)
+AUTO_ANSWER = CosemClassId(28)
+AUTO_CONNECT = CosemClassId(29)
+COSEM_DATA_PROTECTION = CosemClassId(30)
+PUSH_SETUP = CosemClassId(40)
+TCP_UDP_SETUP = CosemClassId(41)
+IPV4_SETUP = CosemClassId(42)
+PRIME_NB_OFDM_PLC_MAC_ADDRESS_SETUP = CosemClassId(43)
+PPP_SETUP = CosemClassId(44)
+GPRS_MODEM_SETUP = CosemClassId(45)
+SMTP_SETUP = CosemClassId(46)
+GSM_DIAGNOSTIC = CosemClassId(47)
+IPV6_SETUP = CosemClassId(48)
+S_FSK_PHY_MAC_SET_UP = CosemClassId(50)
+S_FSK_ACTIVE_INITIATOR = CosemClassId(51)
+S_FSK_MAC_SYNCHRONIZATION_TIMEOUTS = CosemClassId(52)
+S_FSK_MAC_COUNTERS = CosemClassId(53)
+IEC_61334_4_32_LLC_SETUP = CosemClassId(55)
+S_FSK_REPORTING_SYSTEM_LIST = CosemClassId(56)
+ISO_IEC_8802_2_LLC_TYPE_1_SETUP = CosemClassId(57)
+ISO_IEC_8802_2_LLC_TYPE_2_SETUP = CosemClassId(58)
+ISO_IEC_8802_2_LLC_TYPE_3_SETUP = CosemClassId(59)
+REGISTER_TABLE = CosemClassId(61)
+COMPACT_DATA = CosemClassId(62)
+STATUS_MAPPING = CosemClassId(63)
+SECURITY_SETUP = CosemClassId(64)
+PARAMETER_MONITOR = CosemClassId(65)
+SENSOR_MANAGER_INTERFACE_CLASS = CosemClassId(67)
+ARBITRATOR = CosemClassId(68)
+DISCONNECT_CONTROL = CosemClassId(70)
+LIMITER = CosemClassId(71)
+M_BUS_CLIENT = CosemClassId(72)
+WIRELESS_MODE_Q_CHANNEL = CosemClassId(73)
+M_BUS_MASTER_PORT_SETUP = CosemClassId(74)
+DLMS_COSEM_SERVER_M_BUS_PORT_SETUP = CosemClassId(76)
+M_BUS_DIAGNOSTIC = CosemClassId(77)
+_61334_4_32_LLC_SSCS_SETUP = CosemClassId(80)
+PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS = CosemClassId(81)
+PRIME_NB_OFDM_PLC_MAC_SETUP = CosemClassId(82)
+PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS = CosemClassId(83)
+PRIME_NB_OFDM_PLC_MAC_COUNTERS = CosemClassId(84)
+PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA = CosemClassId(85)
+PRIME_NB_OFDM_PLC_APPLICATION_IDENTIFICATION = CosemClassId(86)
+G3_PLC_MAC_LAYER_COUNTERS = CosemClassId(90)
+G3_PLC_MAC_SETUP = CosemClassId(91)
+G3_PLC_MAC_6LOWPAN_ADAPTATION_LAYER_SETUP = CosemClassId(92)
+WI_SUN_SETUP = CosemClassId(95)
+WI_SUN_DIAGNOSTIC = CosemClassId(96)
+RPL_DIAGNOSTIC = CosemClassId(97)
+MPL_DIAGNOSTIC = CosemClassId(98)
+NTP_SETUP = CosemClassId(100)
+ZIGBEE_SAS_STARTUP = CosemClassId(101)
+ZIGBEE_SAS_JOIN = CosemClassId(102)
+ZIGBEE_SAS_APS_FRAGMENTATION = CosemClassId(103)
+ZIGBEE_NETWORK_CONTROL = CosemClassId(104)
+ZIGBEE_TUNNEL_SETUP = CosemClassId(105)
+ACCOUNT = CosemClassId(111)
+CREDIT_INTERFACE_CLASS = CosemClassId(112)
+CHARGE = CosemClassId(113)
+TOKEN_GATEWAY = CosemClassId(115)
+FUNCTION_CONTROL = CosemClassId(122)
+ARRAY_MANAGER = CosemClassId(123)
+COMMUNICATION_PORT_PROTECTION = CosemClassId(124)
+SCHC_LPWAN_SETUP = CosemClassId(126)
+SCHC_LPWAN_DIAGNOSTIC = CosemClassId(127)
+LoRaWAN_SETUP = CosemClassId(128)
+LoRaWAN_DIAGNOSTIC = CosemClassId(129)
+ISO_IEC14908_IDENTIFICATION = CosemClassId(130)
+ISO_IEC14908_PROTOCOL_SETUP = CosemClassId(131)
+ISO_IEC14908_PROTOCOL_STATUS = CosemClassId(132)
+ISO_IEC14908_PROTOCOL_DIAGNOSTIC = CosemClassId(133)
+HS_PLC_ISO_IEC_12139_1_MAC_SETUP = CosemClassId(140)
+HS_PLC_ISO_IEC_12139_1_CPAS_SETUP = CosemClassId(141)
+HS_PLC_ISO_IEC_12139_1_IP_SSAS_SETUP = CosemClassId(142)
+HS_PLC_ISO_IEC_12139_1_HDLC_SSAS_SETUP = CosemClassId(143)
+LTE_MONITORING = CosemClassId(151)
+
+
+all_id = dir(__name__)
+print(all_id)
+# @lru_cache(1)
+# def get_all_id(cls) -> tuple[int]:
+#     """return all id container in build-in <int>"""
+#     return tuple(map(int, filter(lambda it: isinstance(it, ut.CosemClassId), cls.__dict__.values())))
+

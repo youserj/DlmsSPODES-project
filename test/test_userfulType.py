@@ -72,3 +72,11 @@ class TestType(unittest.TestCase):
 
         value = OctetOptional(ut.OCTET_STRING.from_str('hello'))
         print(value.contents)
+
+    def test_invoke_id_and_priority(self):
+        s_c = ut.service_class.UNCONFIRMED
+        print(s_c)
+        value = ut.InvokeIdAndPriority(0, ut.service_class.UNCONFIRMED, ut.priority.HIGH)
+        value2 = ut.InvokeIdAndPriority.from_contents(b'\x24')
+        print(value2)
+

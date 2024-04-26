@@ -2,11 +2,13 @@ from __future__ import annotations
 from functools import lru_cache
 from abc import ABC, abstractmethod
 from typing import Type, Any, Callable, Self
-from dataclasses import dataclass, astuple, asdict
-from struct import pack
+from dataclasses import dataclass, astuple, asdict, field
 from ..types import common_data_types as cdt
 from ..exceptions import DLMSException
 from ..config_parser import get_values
+from . import (
+    service_class,
+    priority)
 
 
 class UserfulTypesException(DLMSException):
@@ -510,56 +512,51 @@ class Integer8(DigitalMixin, UT):
     SIGNED = True
 
 
-class Integer16(DigitalMixin, UsefulType):
+class Integer16(DigitalMixin, UT):
     """ INTEGER(-32 768...32 767) """
     LENGTH = 2
     SIGNED = True
 
 
-class Integer32(DigitalMixin, UsefulType):
+class Integer32(DigitalMixin, UT):
     """ INTEGER(-2 147 483 648...2 147 483 647) """
     LENGTH = 4
     SIGNED = True
 
 
-class Integer64(DigitalMixin, UsefulType):
+class Integer64(DigitalMixin, UT):
     """ INTEGER(-2^63...2^63-1) """
     LENGTH = 8
     SIGNED = True
 
 
-class Unsigned8(DigitalMixin, UsefulType):
+class Unsigned8(DigitalMixin, UT):
     """ INTEGER(0...255) """
     LENGTH = 1
     SIGNED = False
     # __match_args__ = ('contents',)
 
 
-class Unsigned16(DigitalMixin, UsefulType):
+class Unsigned16(DigitalMixin, UT):
     """ INTEGER(0...65 535) """
     LENGTH = 2
     SIGNED = False
 
 
-class Unsigned32(DigitalMixin, UsefulType):
+class Unsigned32(DigitalMixin, UT):
     """ INTEGER(0...4 294 967 295) """
     LENGTH = 4
     SIGNED = False
 
 
-class Unsigned64(DigitalMixin, UsefulType):
+class Unsigned64(DigitalMixin, UT):
     """ INTEGER(0...264-1) """
     LENGTH = 8
     SIGNED = False
 
 
 class CosemClassId(Unsigned16):
-    """ Identification code of the IC (range 0 to 65 535). The class_id of each object is retrieved together with the logical name by reading the object_list attribute of an
-    “Association LN” / ”Association SN” object.
-        - class_id-s from 0 to 8 191 are reserved to be specified by the DLMS UA.
-        - class_id-s from 8 192 to 32 767 are reserved for manufacturer specific ICs.
-        - class_id-s from 32 768 to 65 535 are reserved for user group specific ICs.
-    The DLMS UA reserves the right to assign ranges to individual manufacturers or user groups. """
+    """COSEMpdu-Gb83"""
 
     def __str__(self):
         if _class_names:
@@ -570,8 +567,11 @@ class CosemClassId(Unsigned16):
     def __repr__(self):
         return F"{self.__class__.__name__}({int(self)})"
 
+    @property
+    def contents(self) -> bytes:
+        return b''
 
-_class_names = {CosemClassId(int(k)): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
+_class_names = {CosemClassId(value=int(k)): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
 """use for string representation CosemClassId"""
 
 
@@ -733,10 +733,41 @@ class CosemAttributeDescriptorWithSelection(SEQUENCE):
         """ return elements. Need initiate in subclass """
 
 
+@dataclass
 class InvokeIdAndPriority(Unsigned8):
+    invoke_id: int
+    service_class: service_class.ServiceClass
+    priority: priority.Priority
+
+    @classmethod
+    def from_contents(cls, value: bytes) -> Self:
+        if cls.LENGTH > len(value):  # todo: copypast from DigitalMixin
+            raise ValueError(F"for {cls.__name__} got content length={len(value)}, expected at least {cls.LENGTH}")
+        else:
+            return cls(
+                invoke_id=value[0] & 0b0000_1111,
+                service_class=service_class.ServiceClass(bool(value[0] & 0b0100_0000)),
+                priority=priority.Priority(bool(value[0] & 0b0100_0000)))
+
+    @property
+    def contents(self) -> bytes:
+        return int(self).to_bytes(1, "big")
+
+    def __str__(self):
+        return F"{self.priority} | {self.service_class} | {self.invoke_id}"
+
+    @classmethod
+    def from_str(cls, value: str):
+        raise RuntimeError(F"for {cls.__name__} not implemented method <from_str>")
+
+    def decode(self) -> int:
+        return self.invoke_id + int(self.service_class) + int(self.priority)
+
+
+class InvokeIdAndPriorityOld(Unsigned8):
 
     def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = 0b1100_0000):
-        super(InvokeIdAndPriority, self).__init__(value)
+        super(InvokeIdAndPriorityOld, self).__init__(value)
         if self.contents[0] & 0b00110000:
             raise ValueError(F'For {self.__class__.__name__} set reserved bits')
 
@@ -795,13 +826,13 @@ if __name__ == '__main__':
     print(a > b)
 
     a = CosemClassId(cdt.LongUnsigned(1).contents)
-    a = InvokeIdAndPriority()
+    a = InvokeIdAndPriorityOld()
     c = a.invoke_id
     d = a.service_class
     f = a.priority
     a.service_class = 1
     a.invoke_id = 14
-    e = InvokeIdAndPriority.from_parameters(1, 1, 1)
+    e = InvokeIdAndPriorityOld.from_parameters(1, 1, 1)
     class AccessSelector(Unsigned8):
         """ Unsigned8 1..4 """
         def __init__(self, value: int | str | Unsigned8 = 1):
