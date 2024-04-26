@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import dataclass
 from src.DLMS_SPODES.types import cdt, cst, useful_types as ut
 
 
@@ -36,3 +37,38 @@ class TestType(unittest.TestCase):
         self.assertEqual(1, int(value), "check decode")
         for v in range(2**16):
             str(ut.CosemClassId(v))
+
+    def test_Data(self):
+        data = ut.Data()
+        a = data(cdt.Integer(10).encoding)
+        print(a)
+
+    def test_Null(self):
+        value = ut.Null()
+        print(value)
+        self.assertEqual(value.contents, b'', "default init")
+
+    def test_boolean(self):
+        value = ut.Boolean(False)
+        print(value.contents)
+
+    def test_SEQUENCE(self):
+
+        @dataclass(frozen=True)
+        class MySeq(ut.SEQUENCE):
+            a: ut.Unsigned8
+            b: ut.Unsigned16
+
+        value = MySeq(a=ut.Unsigned8(1), b=ut.Unsigned16(4))
+        print(value.contents)
+
+    def test_Octet_string(self):
+        value = ut.OCTET_STRING.from_contents(b'\x021234')
+        print(value.contents)
+
+    def test_OPTIONAL(self):
+        class OctetOptional(ut.OPTIONAL):
+            TYPE = ut.OCTET_STRING
+
+        value = OctetOptional(ut.OCTET_STRING.from_str('hello'))
+        print(value.contents)

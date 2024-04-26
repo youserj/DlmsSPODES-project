@@ -11,7 +11,6 @@ class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
     unambiguous interpretation is ensured. The list of possible data types is defined in the “Attribute description” section of a COSEM interface
     class specification. DLMS UA 1000-1 Ed. 13. The tag of a type defined using the CHOICE keyword takes the value of the tag of the type from which
     the chosen data value is taken. ITU-T Rec. X.680 | ISO/IEC 8824-1 """
-    TYPE = cdt.CommonDataType
 
     def __init_subclass__(cls, **kwargs):
         cls.ELEMENTS = dict()
@@ -71,7 +70,6 @@ RegisterValues: TypeAlias = ExtendedRegisterValues | cdt.DoubleLong | cdt.Intege
 
 
 class RestrictionValue(ut.CHOICE):
-    TYPE = (cdt.Structure, cdt.NullData)
     ELEMENTS = {0: ut.SequenceElement("no restriction apply", cdt.NullData),
                 1: ut.SequenceElement("restriction by date", structs.RestrictionByDate),
                 2: ut.SequenceElement("restriction by entry", structs.RestrictionByEntry)}
@@ -99,7 +97,6 @@ class AgreedKeyInfoOptions(cdt.Structure):
 
 
 class KeyInfoOptions(ut.CHOICE):
-    TYPE = (cdt.Enum, cdt.Structure)
     ELEMENTS = {0: ut.SequenceElement("identified_key", IdentifiedKeyInfoOptions),
                 1: ut.SequenceElement("wrapped_key", WrappedKeyInfoOptions),
                 2: ut.SequenceElement("agreed_key", AgreedKeyInfoOptions)}

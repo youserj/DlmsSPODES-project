@@ -1,8 +1,9 @@
 from __future__ import annotations
 from functools import lru_cache
 from abc import ABC, abstractmethod
-from typing import Type, Any, Callable
-from dataclasses import dataclass
+from typing import Type, Any, Callable, Self
+from dataclasses import dataclass, astuple, asdict
+from struct import pack
 from ..types import common_data_types as cdt
 from ..exceptions import DLMSException
 from ..config_parser import get_values
@@ -12,7 +13,36 @@ class UserfulTypesException(DLMSException):
     """override DLMSException"""
 
 
-class _String(ABC):
+class UT(ABC):
+    @abstractmethod
+    def __init__(self, value: Any):
+        """constructor from PYTHON build-in"""
+
+    @classmethod
+    @abstractmethod
+    def from_contents(cls, value: bytes) -> Self:
+        """constructor from bytes"""
+
+    @property
+    @abstractmethod
+    def contents(self) -> bytes:
+        """return contents"""
+
+    @abstractmethod
+    def decode(self) -> Any:
+        """decode to PYTHON build-in types"""
+
+    @classmethod
+    @abstractmethod
+    def from_str(cls, value: str) -> Self:
+        """constructor from python string"""
+
+    @abstractmethod
+    def __str__(self):
+        """string representation"""
+
+
+class StringMixin(ABC):
     LENGTH: int | None
 
     def __init__(self, value: bytes | bytearray | str | int | tuple | UsefulType = None):
@@ -37,44 +67,52 @@ class _String(ABC):
         """ define in subclasses """
 
 
-class OCTET_STRING(_String):
+class OCTET_STRING(UT):
     """ An ordered sequence of octets (8 bit bytes) """
+    _contents: bytes
 
-    def from_str(self, value: str) -> bytes:
+    def __init__(self, value: bytes = None, contents: bytes = None):
+        if contents:
+            self._contents = contents
+        else:
+            self._contents = value
+
+    @classmethod
+    def from_contents(cls, value: bytes) -> Self:
+        length, pdu = cdt.get_length_and_pdu(value)
+        if length <= len(pdu):
+            return cls(contents=pdu[:length])
+        else:
+            raise ValueError(F"for {cls.__name__} got {length=}, but content length only: {len(pdu)}")
+
+    @property
+    def contents(self) -> bytes:
+        return cdt.encode_length(len(self)) + self._contents
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
         """ input as hex code """
-        return bytes.fromhex(value)
-
-    def from_int(self, value: int) -> bytes:
-        """ Convert with recursion. Maximum convert length is 32 """
-        def to_bytes_with(length_):
-            try:
-                return int.to_bytes(value, length_, 'big')
-            except OverflowError:
-                if length_ > 31:
-                    raise ValueError(F'Value {value} is big to convert to bytes')
-                return to_bytes_with(length_+1)
-        length = 1
-        return to_bytes_with(length)
+        return cls(value.encode("utf-8"))
 
     def __str__(self):
-        return self.contents.hex(' ')
+        return self._contents.hex(' ')
 
     def __len__(self):
-        return len(self.contents)
+        return len(self._contents)
 
     def __getitem__(self, item):
-        return self.contents[item]
+        return self._contents[item]
 
     # TODO: maybe remove as redundante?
     def decode(self) -> bytes:
         """ decode to build in bytes type """
-        return self.contents
+        return self._contents
 
     # TODO: maybe remove as redundante?
-    def to_str(self, encoding: str = 'cp1251') -> str:
+    def to_str(self, encoding: str = 'utf-8') -> str:
         """ decode to cp1251 by default, replace to '?' if unsupported """
         temp = list()
-        for i in self.contents:
+        for i in self._contents:
             temp.append(i if i > 32 else 63)
         return bytes(temp).decode(encoding)
 
@@ -82,23 +120,6 @@ class OCTET_STRING(_String):
 class CHOICE(ABC):
     """ TODO: with cdt.CHOICE """
     ELEMENTS: dict[int, SequenceElement | dict[int, SequenceElement]]
-
-    @property
-    @abstractmethod
-    def TYPE(self) -> Any:
-        """ return valid types """
-
-    def __init_subclass__(cls, **kwargs):
-        if hasattr(cls, 'ELEMENTS'):
-            for el in cls.ELEMENTS.values():
-                if isinstance(el, dict):
-                    """pass, maybe it is for cst.AnyTime"""
-                elif issubclass(el.TYPE, cls.TYPE):
-                    """ type in order """
-                else:
-                    raise ValueError(F'For {cls.__name__} got type {el.TYPE.__name__} with {el.NAME=}, expected {cls.TYPE.__name__}')
-        else:
-            """ subclass with type carry initiate """
 
     def __getitem__(self, item: int) -> SequenceElement:
         return self.ELEMENTS[item]
@@ -161,6 +182,11 @@ def get_instance_and_context(meta: Type[UsefulType], value: bytes) -> tuple[Usef
     return instance, value[len(instance.contents):]
 
 
+class SEQUENCE_OF(ABC):
+    type: None
+    values: list
+
+
 @dataclass(frozen=True)
 class SequenceElement:
     NAME: str
@@ -170,22 +196,182 @@ class SequenceElement:
         return F'{self.NAME}: {self.TYPE.__name__}'
 
 
+class UT(ABC):
+    @abstractmethod
+    def __init__(self, value: Any):
+        """constructor from PYTHON build-in"""
+
+    @classmethod
+    @abstractmethod
+    def from_contents(cls, value: bytes) -> Self:
+        """constructor from bytes"""
+
+    @property
+    @abstractmethod
+    def contents(self) -> bytes:
+        """return contents"""
+
+    @abstractmethod
+    def decode(self) -> Any:
+        """decode to PYTHON build-in types"""
+
+    @classmethod
+    @abstractmethod
+    def from_str(cls, value: str) -> Self:
+        """constructor from python string"""
+
+    @abstractmethod
+    def __str__(self):
+        """string representation"""
+
+
+class Null(UT):
+    __slots__ = tuple()
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def from_contents(cls, value: bytes) -> Self:
+        return NULL
+
+    @property
+    def contents(self):
+        return b''
+
+    def decode(self) -> None:
+        return None
+
+    @classmethod
+    def from_str(cls, value: str):
+        return NULL
+
+    def __str__(self):
+        return self.__class__.__name__
+
+
+NULL = Null()
+
+
+class Boolean(UT):
+    __contents: bytes
+    __slots__ = ("__contents",)
+
+    def __init__(self, value: bool = True):
+        self.__contents = b'\x01' if value else b'\x00'
+
+    @classmethod
+    def from_contents(cls, value: bytes) -> Self:
+        if len(value) == 0:
+            raise ValueError(F"for {cls.__name__} got contents length = 0, expected 1")
+        elif value[0] == 0:
+            return FALSE
+        else:
+            return TRUE
+
+    @property
+    def contents(self):
+        return self.__contents
+
+    @classmethod
+    def from_int(cls, value: int):
+        return FALSE if value == 0 else TRUE
+
+    @classmethod
+    def from_str(cls, value: str):
+        match value:
+            case "0", "False":
+                return FALSE
+            case "1", "True":
+                return TRUE
+            case _:
+                raise ValueError(F"for {cls.__name__}.from_str got unknown {value=}")
+
+    def __str__(self):
+        return str(self.decode())
+
+    def decode(self) -> bool:
+        """ decode to bool """
+        return False if self.contents == b'\x00' else True
+
+    def __bool__(self):
+        return self.decode()
+
+    def __int__(self):
+        return 0 if self.contents == b'\x00' else 1
+
+
+FALSE = Boolean(False)
+TRUE = Boolean(True)
+
+
+class OPTIONAL(UT, ABC):
+    TYPE: Type[UT]
+    __slots__ = ("value",)
+
+    def __init__(self, value: UT = None):
+        if value is None:
+            self.value = None
+        elif isinstance(value, self.TYPE):
+            self.value = value
+        else:
+            raise ValueError(F"for {self.__class__.__name__} got type{value.__class__.__name__}, expected {self.TYPE}")
+
+    @classmethod
+    def from_contents(cls, value: bytes):
+        if len(value) == 0:
+            raise ValueError(F"for {cls.__name__} got contents length = 0, expected at least 1")
+        elif value[0] == 0:
+            return cls(None)
+        else:
+            return cls(cls.TYPE(value[1:]))
+
+    @property
+    def contents(self):
+        if self.value is None:
+            return FALSE.contents
+        else:
+            return TRUE.contents + self.value.contents
+
+    def __str__(self):
+        return str(NULL) if self.value is None else self.value
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        raise RuntimeError(F"Not implementation for {cls.__name__}")
+
+    def decode(self) -> Any:
+        if self.value:
+            return self.value.decode()
+        else:
+            return NULL.decode()
+
+
+@dataclass(slots=True, frozen=True)
 class SEQUENCE(ABC):
     """ TODO: """
-    ELEMENTS: tuple[SequenceElement | SEQUENCE, ...]
-    values: list[UsefulType]
 
-    def __init__(self, value: bytes | tuple | list | None | SEQUENCE = None):
-        self.__dict__['values'] = [None] * len(self.ELEMENTS)
-        match value:
-            case tuple() | list():
-                if len(value) != len(self):
-                    raise ValueError(F'Struct {self.__class__.__name__} got length:{len(value)}, expected length:{len(self)}')
-                self.from_tuple(value)
-            case bytes():           self.from_bytes(value)
-            case None:              self.from_default()
-            case self.__class__():  self.from_bytes(value.contents)
-            case _:                 raise TypeError(F'Value: "{value}" not supported')
+    @property
+    def contents(self):
+        data = bytearray()
+        for it in astuple(self, tuple_factory=iter):
+            data.extend(it.contents)
+        return bytes(data)
+
+    # def __init__(self, value: bytes | tuple | list):
+    #     self.__dict__['values'] = [None] * len(self.ELEMENTS)
+    #     match value:
+    #         case bytes():
+    #             for i, element in enumerate(self.ELEMENTS):
+    #                 self.values[i], value = get_instance_and_context(element.TYPE, value)
+    #         case tuple() | list():
+    #             if len(value) != len(self):
+    #                 raise ValueError(F'Struct {self.__class__.__name__} got length:{len(value)}, expected length:{len(self)}')
+    #             self.from_tuple(value)
+    #         case bytes():           self.from_bytes(value)
+    #         case None:              self.from_default()
+    #         case self.__class__():  self.from_bytes(value.contents)
+    #         case _:                 raise TypeError(F'Value: "{value}" not supported')
 
     def from_default(self):
         for i in range(len(self)):
@@ -200,10 +386,10 @@ class SEQUENCE(ABC):
             self.values[i] = self.ELEMENTS[i].TYPE(val)
 
     def __str__(self):
-        return F'{{{", ".join(map(lambda val: F"{val[0].NAME}: {val[1]}", zip(self.ELEMENTS, self.values)))}}}'
+        return str(asdict(self))
 
-    def __repr__(self):
-        return F'{self.__class__.__name__}(({(", ".join(map(str, self.values)))}))'
+    # def __repr__(self):
+    #     return F'{self.__class__.__name__}(({(", ".join(map(str, self.values)))}))'
 
     def __get_index(self, name: str) -> int | None:
         """ get index by name. Return None if not found """
@@ -212,17 +398,6 @@ class SEQUENCE(ABC):
                 return i
         else:
             return None
-
-    def __setattr__(self, key, value: UsefulType):
-        match self.__get_index(key):
-            case int() as i if isinstance(value, self.ELEMENTS[i]):                self.values[i] = value
-            case int() as i:                raise ValueError(F'Try assign {key} Type got {value.__class__.__name__}, expected {self.ELEMENTS[i].NAME}')
-            case _:                raise ValueError(F'Unsupported change: {key}')
-
-    def __getattr__(self, item: str) -> UsefulType:
-        match self.__get_index(item):
-            case int() as i: return self.values[i]
-            case _:          return self.__dict__[item]
 
     def __getitem__(self, item: str | int) -> UsefulType:
         """ get element by index or name """
@@ -239,11 +414,7 @@ class SEQUENCE(ABC):
             raise ValueError(F'Type got {value.__class__.__name__}, expected {self.ELEMENTS[key].TYPE}')
 
     def __len__(self):
-        return len(self.ELEMENTS)
-
-    @property
-    def contents(self) -> bytes:
-        return b''.join(el.contents for el in self.values)
+        return len(astuple(self))
 
     @property
     def NAME(self) -> str:
@@ -286,26 +457,30 @@ class DigitalMixin(ABC):
     LENGTH: int
     contents: bytes
 
-    def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = None):
-        match value:
-            case bytes() if self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
-            case bytes():            raise ValueError(F'Length of contents for {self.__class__.__name__} must be at least {self.LENGTH}, but got {len(value)}')
-            case bytearray():                          self.__dict__["contents"] = bytes(value)  # Attention!!! changed method content getting from bytearray
-            case str('-') if self.SIGNED:              self.__dict__["contents"] = bytes(self.LENGTH)
-            case int():                                self.__dict__["contents"] = self.from_int(value)
-            case str():                                self.__dict__["contents"] = self.from_str(value)
-            case None:                                 self.__dict__["contents"] = bytes(self.LENGTH)
-            case self.__class__():                     self.__dict__["contents"] = value.contents
-            case _:                                    raise ValueError(F'Error create {self.__class__.__name__} with value: {value}')
+    def __init__(self, value: int = None, contents: bytes = None):
+        if contents is not None:  # from contents
+            self.contents = contents
+        elif value is None:
+            self.contents = b'\x00'*self.LENGTH
+        else:
+            try:
+                self.contents = value.to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
+            except OverflowError:
+                raise ValueError(F"for {self.__class__.__name__} got out of range {value=}")
 
-    def from_int(self, value: int | float) -> bytes:
-        try:
-            return int(value).to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
-        except OverflowError:
-            raise ValueError(F'value {value} out of range')
+    @classmethod
+    def from_contents(cls, value: bytes):
+        if cls.LENGTH > len(value):
+            raise ValueError(F"for {cls.__name__} got content length={len(value)}, expected at least {cls.LENGTH}")
+        else:
+            return cls(contents=value[:cls.LENGTH])
 
-    def from_str(self, value: str) -> bytes:
-        return self.from_int(float(value))
+    @classmethod
+    def from_str(cls, value: str):
+        return cls(int(value))
+
+    def decode(self) -> int:
+        return self.__int__()
 
     def __int__(self):
         """ return the build in integer type """
@@ -328,13 +503,8 @@ class DigitalMixin(ABC):
     def __hash__(self):
         return int(self)
 
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position. Use in Entry. TODO: remove it, make better """
-        type(self)(value=value)
-        return value, cursor_position
 
-
-class Integer8(DigitalMixin, UsefulType):
+class Integer8(DigitalMixin, UT):
     """ INTEGER(-127…128) """
     LENGTH = 1
     SIGNED = True
@@ -401,7 +571,8 @@ class CosemClassId(Unsigned16):
         return F"{self.__class__.__name__}({int(self)})"
 
 
-_class_names = {CosemClassId(k): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
+_class_names = {CosemClassId(int(k)): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
+"""use for string representation CosemClassId"""
 
 
 class CosemObjectInstanceId(OCTET_STRING, UsefulType):
@@ -497,7 +668,11 @@ class CosemMethodDescriptor(SEQUENCE):
 
 
 class Data(CHOICE, ABC):
-    TYPE = cdt.CommonDataType
+    ELEMENTS = {
+        0: SequenceElement('null-data', Null),
+        1: SequenceElement('array', SEQUENCE),
+        15: SequenceElement('integer', Integer8),
+    }
 
 
 class SelectiveAccessDescriptor(SEQUENCE, ABC):

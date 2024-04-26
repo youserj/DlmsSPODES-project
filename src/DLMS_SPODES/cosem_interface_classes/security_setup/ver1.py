@@ -85,7 +85,6 @@ class CertificateIdentificationType(cdt.Enum, elements=(0, 1)):
 
 
 class CertificationIdentificationOption(ut.CHOICE):
-    TYPE = cdt.Structure
     ELEMENTS = {0: ut.SequenceElement('by entity', CertificateIdentificationByEntity),
                 1: ut.SequenceElement('by serial', CertificateIdentificationBySerial)}
 
