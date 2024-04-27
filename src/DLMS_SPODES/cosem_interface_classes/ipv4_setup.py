@@ -16,7 +16,7 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     """ This IC allows modelling the setup of teh IPv4 layer, handling all information related to the IP Address settings associated to a given device adn to a lower layer
     connection on which these settings are used. There shall be and instance of this IC in a device for each different network interface implemented. For example, if a device has
     two interfaces (using the TCP-UDP/ITv4 profile on both of them), there shall be two instances of the IPc4 setup IC in that device: one for each of these interfaces."""
-    CLASS_ID = ClassID.IPV4_SETUP
+    CLASS_ID = classID.IPV4_SETUP
     VERSION = Version.V0
     # TODO: more 7 attr and 3 methods
     A_ELEMENTS = (ic.ICAElement("DL_reference", cdt.OctetString),

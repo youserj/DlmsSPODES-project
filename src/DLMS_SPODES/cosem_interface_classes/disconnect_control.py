@@ -40,7 +40,7 @@ class OutputState(cdt.Boolean):
 
 class DisconnectControl(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.8 Disconnect control"""
-    CLASS_ID = ClassID.DISCONNECT_CONTROL
+    CLASS_ID = classID.DISCONNECT_CONTROL
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("output_state", OutputState, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("control_state", ControlState, classifier=ic.Classifier.DYNAMIC),

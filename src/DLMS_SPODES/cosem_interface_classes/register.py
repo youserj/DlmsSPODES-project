@@ -7,7 +7,7 @@ class Register(ic.COSEMInterfaceClasses):
     """ A “Register” object stores a process value or a status value with its associated unit. The register object knows
     the nature of the process value or of the status value. The nature of the value is described by the attribute
     “logical name” using the OBIS identification system. """
-    CLASS_ID = ClassID.REGISTER
+    CLASS_ID = classID.REGISTER
     VERSION = Version.V0
     scaler_unit_not_settable: bool
     A_ELEMENTS = (ic.ICAElement("value", choices.register, classifier=ic.Classifier.NOT_SPECIFIC),

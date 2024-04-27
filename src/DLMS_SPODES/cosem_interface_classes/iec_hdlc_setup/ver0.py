@@ -2,7 +2,7 @@ from ..__class_init__ import *
 
 
 class IECHDLCSetup(ic.COSEMInterfaceClasses):
-    CLASS_ID = ClassID.IEC_HDLC_SETUP
+    CLASS_ID = classID.IEC_HDLC_SETUP
 
     def __new__(cls, *args, **kwargs):
         raise ValueError(F"version: {__name__[-1]} of {cls.__class__.__name__} not support framework")

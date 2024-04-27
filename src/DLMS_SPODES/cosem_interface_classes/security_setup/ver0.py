@@ -29,7 +29,7 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
     """ Instances of the “Security setup” IC contain the necessary information on the security suite in use and the security policy applicable between the server and a client
     and/or third party indentify by their respective system titles. They also provide methods to increase the level of security and to manage symmetric keys, asymmetric key pairs
      and certificates """
-    CLASS_ID = ClassID.SECURITY_SETUP
+    CLASS_ID = classID.SECURITY_SETUP
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicy, 0, 3, 0),
                   ic.ICAElement("security_suite", SecuritySuite, 0, 0, 0),

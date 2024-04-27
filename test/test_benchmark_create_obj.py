@@ -1,7 +1,7 @@
 import unittest
 from itertools import permutations
 from struct import pack
-from src.DLMS_SPODES.types import cdt, cst, ut
+from src.DLMS_SPODES.types import cdt, cst, ut, cosemClassID as classID
 from src.DLMS_SPODES.cosem_interface_classes import collection
 
 
@@ -13,7 +13,7 @@ class TestType(unittest.TestCase):
         ln = cst.LogicalName("0.0.96.1.1.255")
         # for i in range(100_000):
         #     cont.append(collection.Data(cst.LogicalName("0.0.96.1.1.255")))
-        class_id = ut.CosemClassId(1)
+        class_id = classID.DATA
         version = cdt.Unsigned(0)
         buf = bytearray(6)
         for i, j in permutations(range(100), 2):

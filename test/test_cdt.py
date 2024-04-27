@@ -3,6 +3,7 @@ import unittest
 import inspect
 from itertools import count
 from src.DLMS_SPODES.types.common_data_types import encode_length
+from src.DLMS_SPODES.types.cosemClassID import CosemClassId
 from src.DLMS_SPODES.cosem_interface_classes import ic, collection
 from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl, choices
 from src.DLMS_SPODES import relation_to_OBIS, enums
@@ -55,12 +56,12 @@ class TestType(unittest.TestCase):
         from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver1 import ObjectListElement
         from src.DLMS_SPODES.types.implementations import structs
         col = Collection()
-        col.add(class_id=ut.CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
-        col.add(class_id=ut.CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
-        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
-        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.1.29.0.255'))
-        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.3.29.0.255'))
-        col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.4.29.0.255'))
+        col.add(class_id=CosemClassId(15), version=cdt.Unsigned(1), logical_name=cst.LogicalName('0.0.40.0.0.255'))
+        col.add(class_id=CosemClassId(8), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.1.0.0.255'))
+        col.add(class_id=CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.2.29.0.255'))
+        col.add(class_id=CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.1.29.0.255'))
+        col.add(class_id=CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.3.29.0.255'))
+        col.add(class_id=CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName('1.0.4.29.0.255'))
         profile = col.add(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName('1.0.94.7.4.255'))
         profile.collection = col
         profile.set_attr(6, structs.CaptureObjectDefinition().encoding)
@@ -109,7 +110,7 @@ class TestType(unittest.TestCase):
 
     def test_ImageTransfer(self):
         col = Collection()
-        col.add(class_id=ut.CosemClassId(18), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.44.0.0.255'))
+        col.add(class_id=CosemClassId(18), version=cdt.Unsigned(0), logical_name=cst.LogicalName('0.0.44.0.0.255'))
         print(col)
 
     def test_UTF8(self):

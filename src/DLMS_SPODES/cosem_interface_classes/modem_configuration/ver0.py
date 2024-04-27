@@ -42,7 +42,7 @@ class ModemProfile(cdt.Array):
 class PSTNModemConfiguration(ic.COSEMInterfaceClasses):
     """ An  instance of the 'PSTN modem configuration' IC stores data related to the initialization of modems, which are used for data transfer from/to a device. Several modems
     can be configured."""
-    CLASS_ID = ClassID.MODEM_CONFIGURATION
+    CLASS_ID = classID.MODEM_CONFIGURATION
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("comm_speed", CommSpeed, 0, 9, 5),
                   ic.ICAElement("initialization_string", InitializationString),

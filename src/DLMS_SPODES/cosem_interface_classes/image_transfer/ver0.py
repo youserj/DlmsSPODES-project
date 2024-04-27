@@ -34,7 +34,7 @@ class ImageBlockTransfer(cdt.Structure):
 
 class ImageTransfer(ic.COSEMInterfaceClasses):
     """ Instance of the Image transfer IC model the process of transferring binary files, called Images to COSEM servers. """
-    CLASS_ID = ClassID.IMAGE_TRANSFER
+    CLASS_ID = classID.IMAGE_TRANSFER
     VERSION = Version.V0
     __blocks_for_update: list[bytearray]
     A_ELEMENTS = (ic.ICAElement("image_block_size", cdt.DoubleLongUnsigned),

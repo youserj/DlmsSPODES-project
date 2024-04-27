@@ -1,9 +1,6 @@
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection
-from src.DLMS_SPODES.version import AppVersion
-from src.DLMS_SPODES.cosem_interface_classes.overview import ClassID, Version
-from src.DLMS_SPODES import exceptions as exc
 
 
 class TestType(unittest.TestCase):

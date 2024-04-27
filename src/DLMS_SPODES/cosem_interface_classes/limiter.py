@@ -40,7 +40,7 @@ class Limiter(ic.COSEMInterfaceClasses):
         The threshold value can be normal or emergency threshold. The emergency threshold is activated via the emergency profile defined by emergency profile id, activation start
     time, and duration. The emergency profile id element is matched to an emergency profile group id: this mechanism enables the activation of the emergency threshold only
     for a specific emergency group. """
-    CLASS_ID = ClassID.LIMITER
+    CLASS_ID = classID.LIMITER
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("monitored_value", structs.ValueDefinition),
                   ic.ICAElement("threshold_active", choices.simple_dt, classifier=ic.Classifier.DYNAMIC),

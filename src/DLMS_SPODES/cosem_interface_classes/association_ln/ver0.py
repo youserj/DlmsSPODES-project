@@ -1,7 +1,7 @@
 from enum import IntFlag, auto
 from ... import exceptions as exc
 from ..__class_init__ import *
-from ...types import choices
+from ...types import choices, cosemObjectInstanceId
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ... import pdu_enums as pdu
 from . import mechanism_id, authentication_mechanism_name
@@ -76,7 +76,7 @@ class ObjectListType(arrays.SelectionAccess):
                 raise ValueError(F"not find in {ln} attribute index: {index}")
         return True
 
-    def __get_access_right(self, ln: cst.LogicalName | ut.CosemObjectInstanceId) -> AccessRight:
+    def __get_access_right(self, ln: cst.LogicalName | cosemObjectInstanceId.New) -> AccessRight:
         """return object_list_element of object_list AssociationLN"""
         el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
         if el is None:
@@ -267,7 +267,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     """ COSEM logical devices able to establish application associations within a COSEM context using logical name referencing, model the associations
     through instances of the “Association LN” class. A COSEM logical device has one instance of this IC for each association
     the device is able to support"""
-    CLASS_ID = ClassID.ASSOCIATION_LN
+    CLASS_ID = classID.ASSOCIATION_LN
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
                   ic.ICAElement("associated_partners_id", AssociatedPartnersType),

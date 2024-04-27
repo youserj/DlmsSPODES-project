@@ -23,7 +23,7 @@ class AuthenticationKeys(cdt.Array):
 
 class NTPSetup(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed 14, 4.9.7 NTP setup"""
-    CLASS_ID = ClassID.NTP_SETUP
+    CLASS_ID = classID.NTP_SETUP
     VERSION = Version.V0
     A_ELEMENTS = (
         ic.ICAElement("activated", cdt.Boolean, default=False),

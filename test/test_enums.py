@@ -1,20 +1,20 @@
 import unittest
-from src.DLMS_SPODES.cosem_interface_classes.overview import ClassID, Version
-from src.DLMS_SPODES.types import ut, cst
+from src.DLMS_SPODES.cosem_interface_classes.overview import Version
+from src.DLMS_SPODES.types import ut, cst, cosemClassID as classID
 from src.DLMS_SPODES.cosem_interface_classes import collection
 
 
 class TestType(unittest.TestCase):
     def test_CosemClassId(self):
-        self.assertEqual(ClassID.DATA, ut.CosemClassId(1), "check ClassID enum")
-        for i in filter(lambda it: isinstance(it, ut.CosemClassId), ClassID.__dict__.values()):
+        self.assertEqual(classID.DATA, ut.CosemClassId(1), "check ClassID enum")
+        for i in filter(lambda it: isinstance(it, classID.CosemClassId), classID.__dict__.values()):
             print(i, i.__class__)
 
     def test_SecuritySuite(self):
         col = collection.Collection()
         print(col)
         ss = col.add(
-            class_id=ClassID.SECURITY_SETUP,
+            class_id=classID.SECURITY_SETUP,
             version=Version.V1,
             logical_name=cst.LogicalName("0.0.43.0.0.255")
         )

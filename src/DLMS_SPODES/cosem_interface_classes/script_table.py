@@ -39,7 +39,7 @@ class ScriptTable(ic.COSEMInterfaceClasses):
     action_specifications. An action_specification activates a method of a COSEM object or modifies attributes of a COSEM object within the logical
     device. A specific script may be activated by other COSEM objects within the same logical device or from the outside. If two scripts have to be
     executed at the same time instance, then the one with the smaller index is executed first """
-    CLASS_ID = ClassID.SCRIPT_TABLE
+    CLASS_ID = classID.SCRIPT_TABLE
     VERSION = Version.V0
     A_ELEMENTS = ic.ICAElement("scripts", Scripts),
     M_ELEMENTS = ic.ICMElement("execute", cdt.LongUnsigned),

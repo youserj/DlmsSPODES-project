@@ -1,8 +1,13 @@
-from __future__ import annotations
 import dataclasses
 from abc import ABC, abstractmethod
 from typing import Iterator, Type, TypeAlias, Callable, Any, Self
-from ..types import cdt, ut, cst
+from ..types import (
+    cdt, ut, cst,
+    cosemClassID as classID,
+    cosemObjectInstanceId,
+    cosemAttributeDescriptor
+)
+from ..types.cosemClassID import CosemClassId
 from ..relation_to_OBIS import get_name
 import logging
 from enum import IntEnum
@@ -102,7 +107,7 @@ class ObjectValidationError(exc.DLMSException):
 
 
 class COSEMInterfaceClasses(ABC):
-    CLASS_ID: overview.ClassID
+    CLASS_ID: classID
     VERSION: overview.Version | None = None
     """ Identification code of the version of the class. The version of each object is retrieved together with the logical name and the class_id by reading the object_list 
     attribute of an “Association LN” / ”Association SN” object. Within one logical device, all instances of a certain class must be of the same version."""
@@ -113,7 +118,7 @@ class COSEMInterfaceClasses(ABC):
     __specific_methods: tuple[cdt.CommonDataType, ...] = None
     _cbs_attr_post_init: dict[int, Callable]
     __record_time: list[cdt.DateTime | None]  # TODO: make to int
-    collection: col.Collection | None
+    collection: Any  # col.Collection | None
 
     def __init__(self, logical_name: cst.LogicalName | bytes | str):
         self.collection = None
@@ -347,19 +352,19 @@ class COSEMInterfaceClasses(ABC):
 
     def get_attr_descriptor(self,
                             value: int,
-                            with_selection: bool = False) -> ut.CosemAttributeDescriptor:
+                            with_selection: bool = False) -> cosemAttributeDescriptor.New:
         """ return AttributeDescriptor without selection """
-        return ut.CosemAttributeDescriptor((
+        return cosemAttributeDescriptor.New(
             self.CLASS_ID,
-            ut.CosemObjectInstanceId(self.logical_name.contents),
-            ut.CosemObjectAttributeId(value)))
+            cosemObjectInstanceId.New(self.logical_name.contents),
+            ut.CosemObjectAttributeId(value))
 
     def get_meth_descriptor(self, value: str | int) -> ut.CosemMethodDescriptor:
         """ TODO """
         match value:
             case int() as index:
-                return ut.CosemMethodDescriptor((ut.CosemClassId(self.CLASS_ID.contents),
-                                                 ut.CosemObjectInstanceId(self.logical_name.contents),
+                return ut.CosemMethodDescriptor((CosemClassId(self.CLASS_ID.contents),
+                                                 cosemObjectInstanceId.New(self.logical_name.contents),
                                                  ut.CosemObjectMethodId(index)))
 
     def __hash__(self):

@@ -13,7 +13,15 @@ from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self, Callable, Literal
 import logging
 from ..version import AppVersion
-from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
+from ..types import (
+    common_data_types as cdt,
+    cosem_service_types as cst,
+    useful_types as ut,
+    cosemClassID as classID,
+    cosemAttributeDescriptor as attrDesc,
+    cosemObjectInstanceId
+)
+from ..types.cosemClassID import CosemClassId
 from ..types.implementations import structs, enums, octet_string
 from . import cosem_interface_class as ic
 from .activity_calendar import ActivityCalendar
@@ -60,15 +68,15 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
-from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
+from ..cosem_interface_classes.overview import Version, CountrySpecificIdentifiers
 from ..enums import TagsName
 from . import obis as o
 from .. import pdu_enums as pdu
 from ..config_parser import config
 from ..obis import media_id
 
-LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
-                          | ut.CosemMethodDescriptor
+LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
+                          | ut.CosemMethodDescriptor | cosemObjectInstanceId.New
 
 AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
@@ -232,7 +240,7 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
 }
 
 
-def get_interface_class(class_map: dict[int, CosemClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> Type[InterfaceClass]:
+def get_interface_class(class_map: dict[int, CosemClassMap], c_id: CosemClassId, ver: cdt.Unsigned) -> Type[InterfaceClass]:
     """new version <get_type_from_class>"""
     ret = class_map.get(int(c_id), None)
     if ret:
@@ -532,7 +540,7 @@ __func_map_for_create.update({
 func_maps["KPZ1"]: FUNC_MAP = get_func_map(__func_map_for_create)
 
 
-def get_type(class_id: ut.CosemClassId,
+def get_type(class_id: CosemClassId,
              version: cdt.Unsigned | None,
              ln: cst.LogicalName,
              func_map: FUNC_MAP) -> Type[InterfaceClass]:
@@ -585,7 +593,7 @@ class Collection:
         self.__container = dict()
         """ all DLMS objects container with obis key """
         ldn_obj = self.add(
-            class_id=ClassID.DATA,
+            class_id=classID.DATA,
             version=Version.V0,
             logical_name=cst.LogicalName("0.0.42.0.0.255"))
         if ldn:
@@ -610,7 +618,7 @@ class Collection:
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
             new_collection.__container[obj.logical_name.contents] = new_obj
             new_obj.collection = new_collection
-            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+            if obj.CLASS_ID == classID.ASSOCIATION_LN:
                 if max_ass is None or (obj.object_list and len(max_ass.object_list) < len(obj.object_list)):
                     max_ass = obj
         obj_for_set = max_ass.get_objects()
@@ -845,7 +853,7 @@ class Collection:
                         try:
                             logical_name: cst.LogicalName = cst.LogicalName(ln)
                             if not new.is_in_collection(logical_name):
-                                new_object = new.add(class_id=ut.CosemClassId(class_id),
+                                new_object = new.add(class_id=CosemClassId.from_str(class_id),
                                                      version=None if version is None else cdt.Unsigned(version),
                                                      logical_name=logical_name)
                             else:
@@ -911,11 +919,11 @@ class Collection:
                             logical_name: cst.LogicalName = cst.LogicalName(ln)
                             if version:  # only for AssociationLN
                                 new_object: AssociationLN = new.add_if_missing(
-                                    class_id=ClassID.ASSOCIATION_LN,
+                                    class_id=classID.ASSOCIATION_LN,
                                     version=cdt.Unsigned(version),
                                     logical_name=logical_name)
                                 new.add_if_missing(  # current association with know version
-                                    class_id=ClassID.ASSOCIATION_LN,
+                                    class_id=classID.ASSOCIATION_LN,
                                     version=cdt.Unsigned(version),
                                     logical_name=cst.LogicalName("0.0.40.0.0.255"))
                             else:
@@ -939,7 +947,7 @@ class Collection:
                                         raise ValueError(F'Got {attr.text} attribute Tag, expected {data_type}')
                                 else:  # set common value
                                     new_object.set_attr(i, bytes.fromhex(attr.text))
-                                    if new_object.CLASS_ID == ClassID.ASSOCIATION_LN and i == 2:  # setup new objects from AssociationLN.object_list
+                                    if new_object.CLASS_ID == classID.ASSOCIATION_LN and i == 2:  # setup new objects from AssociationLN.object_list
                                         for obj_el in new_object.object_list:
                                             obj_el: ObjectListElement
                                             new.add_if_missing(
@@ -1010,7 +1018,7 @@ class Collection:
                             logical_name: cst.LogicalName = cst.LogicalName(ln)
                             if not self.is_in_collection(logical_name):
                                 new_object = self.add(
-                                    class_id=ut.CosemClassId(class_id),
+                                    class_id=CosemClassId.from_str(class_id),
                                     version=None if version is None else cdt.Unsigned(version),
                                     logical_name=cst.LogicalName(ln))
                             else:
@@ -1142,11 +1150,11 @@ class Collection:
                with_comment: bool = False,
                is_decode: bool = False):
         """Save attributes of client. For types only STATIC save """
-        classes: set[ut.CosemClassId] = set()
+        classes: set[CosemClassId] = set()
         objects = self.__get_base_xml_element(root_tag)
         for obj in self.values():
             object_node = ET.SubElement(objects, 'object', attrib={'name': F'{get_name(obj.logical_name)}', 'ln': str(obj.logical_name)})
-            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+            if obj.CLASS_ID == classID.ASSOCIATION_LN:
                 ET.SubElement(object_node, "ver").text = str(obj.VERSION)
             classes.add(obj.CLASS_ID)
             for index, attr in obj.get_index_with_attributes():
@@ -1254,7 +1262,7 @@ class Collection:
         objects = self.__get_base_xml_element(root_tag)
         objs: dict[ln, set[int]] = dict()
         """key: LN, value: not writable and readable container"""
-        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN)):
+        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(classID.ASSOCIATION_LN)):
             for obj_el in ass.object_list:
                 if str(obj_el.logical_name) in ("0.0.40.0.0.255", "0.0.42.0.0.255"):
                     """skip LDN and current_association"""
@@ -1270,13 +1278,13 @@ class Collection:
         """container sort by AssociationLN first"""
         for ln in objs.keys():
             obj = self.get_object(ln)
-            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+            if obj.CLASS_ID == classID.ASSOCIATION_LN:
                 o2.insert(0, obj)
             else:
                 o2.append(obj)
         for obj in o2:
             object_node = ET.SubElement(objects, "obj", attrib={'ln': str(obj.logical_name)})
-            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
+            if obj.CLASS_ID == classID.ASSOCIATION_LN:
                 ET.SubElement(object_node, "ver").text = str(obj.VERSION)
             v = objs[obj.logical_name]
             for i, attr in filter(lambda it: it[0] != 1, obj.get_index_with_attributes()):
@@ -1319,7 +1327,7 @@ class Collection:
         else:
             """not support other country"""
 
-    def add_if_missing(self, class_id: ut.CosemClassId,
+    def add_if_missing(self, class_id: CosemClassId,
                        version: cdt.Unsigned | None,
                        logical_name: cst.LogicalName) -> InterfaceClass:
         """ like as add method with check for missing """
@@ -1341,7 +1349,7 @@ class Collection:
     def __len__(self):
         return len(self.__container)
 
-    def add(self, class_id: ut.CosemClassId,
+    def add(self, class_id: CosemClassId,
             version: cdt.Unsigned | None,
             logical_name: cst.LogicalName) -> InterfaceClass:
         """ append new DLMS object to collection with return it"""
@@ -1360,9 +1368,9 @@ class Collection:
         except StopIteration as e:
             raise ValueError(F"not find class version for {class_id=} {logical_name=}: {e}")
 
-    def get_class_version(self) -> dict[ut.CosemClassId, cdt.Unsigned]:
+    def get_class_version(self) -> dict[CosemClassId, cdt.Unsigned]:
         """use for check all class version by unique"""
-        ret: dict[ut.CosemClassId, cdt.Unsigned] = dict()
+        ret: dict[CosemClassId, cdt.Unsigned] = dict()
         for obj in self.__container.values():
             if ver := ret.get(obj.CLASS_ID):
                 if obj.VERSION != ver:
@@ -1396,8 +1404,8 @@ class Collection:
                 logger.warning(F'Dont remove with: {logical_name}')
                 return False
 
-    @lru_cache(maxsize=100)  # amount of all ClassID
-    def find_version(self, class_id: ut.CosemClassId) -> cdt.Unsigned:
+    @lru_cache(maxsize=100)  # amount of all classID
+    def find_version(self, class_id: CosemClassId) -> cdt.Unsigned:
         """use for add new object from profile_generic if absence in object list"""
         return next(filter(lambda obj: obj.CLASS_ID == class_id, self.__container.values())).VERSION
 
@@ -1425,7 +1433,7 @@ class Collection:
         return ret
 
     def get_objects_list(self, value: enums.ClientSAP) -> list[ic.COSEMInterfaceClasses]:
-        for association in self.get_objects_by_class_id(ut.CosemClassId(15)):
+        for association in self.get_objects_by_class_id(classID.ASSOCIATION_LN):
             if association.associated_partners_id.client_SAP == value and association.logical_name.e != 0:
                 if association.object_list is None:
                     raise exc.EmptyObj(F'{association} attr: 2')
@@ -1451,8 +1459,8 @@ class Collection:
         else:
             raise exc.NoObject(F"not found at least one DLMS Objects from collection with {values=}")
 
-    def get_objects_by_class_id(self, value: int | ut.CosemClassId) -> list[InterfaceClass]:
-        class_id = ut.CosemClassId(value)
+    def get_objects_by_class_id(self, value: int | CosemClassId) -> list[InterfaceClass]:
+        class_id = CosemClassId(value)
         return list(filter(lambda obj: obj.CLASS_ID == class_id, self.__container.values()))
 
     def get_objects_descriptions(self) -> list[tuple[cst.LogicalName, cdt.LongUnsigned, cdt.Unsigned]]:
@@ -1462,7 +1470,7 @@ class Collection:
     def get_writable_attr(self) -> UsedAttributes:
         """return all writable {obj.ln: {attribute_index}}"""
         ret: UsedAttributes = dict()
-        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(ClassID.ASSOCIATION_LN)):
+        for ass in filter(lambda it: it.logical_name.e != 0, self.get_objects_by_class_id(classID.ASSOCIATION_LN)):
             for list_type in ass.object_list:
                 for attr_access in list_type.access_rights.attribute_access:
                     if attr_access.access_mode.is_writable():
@@ -1495,16 +1503,6 @@ class Collection:
     @property
     def current_time(self) -> datetime.datetime | None:
         return self.clock.get_current_time()
-
-    def change_association_version(self, version: cdt.Unsigned):
-        """ change Association version with clear attributes """
-        logger.warning(F'Attention. ALL Association attributes will to default')
-        for ass in self.get_objects_by_class_id(ut.CosemClassId(15)):
-            self.__container.pop(ass.logical_name.contents)
-            self.add(
-                class_id=ut.CosemClassId(15),
-                version=version,
-                logical_name=ass.logical_name)
 
     def __get_object(self, obis: bytes) -> InterfaceClass:
         if (obj := self.__container.get(obis)) is None:
@@ -1697,7 +1695,7 @@ class Collection:
     @lru_cache(4)
     def get_association_id(self, client_sap: enums.ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
-        for ass in self.get_objects_by_class_id(ClassID.ASSOCIATION_LN):
+        for ass in self.get_objects_by_class_id(classID.ASSOCIATION_LN):
             if ass.associated_partners_id.client_SAP == client_sap and ass.logical_name.e != 0:
                 return ass.logical_name.e
             else:
@@ -1772,7 +1770,7 @@ class Collection:
     def get_attr_tree(self,
                       ass_id: int,
                       obj_mode: ObjectTreeMode = "c",
-                      obj_filter: tuple[ClassID | media_id.MediaId, ...] = None,
+                      obj_filter: tuple[CosemClassId | media_id.MediaId, ...] = None,
                       sort_mode: SortMode = "",
                       af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw"] = "l"):
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable"""
@@ -2100,7 +2098,7 @@ def get_ln_contents(value: LNContaining) -> bytes:
     """return LN as bytes[6] for use in any searching"""
     match value:
         case bytes():                                                    return value
-        case cst.LogicalName() | ut.CosemObjectInstanceId():             return value.contents
+        case cst.LogicalName() | cosemObjectInstanceId.New():                       return value.contents
         case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return value.instance_id.contents
         case ut.CosemAttributeDescriptorWithSelection():                 return value.cosem_attribute_descriptor.instance_id.contents
         case cdt.Structure(logical_name=value.logical_name):             return value.logical_name.contents
@@ -2112,12 +2110,6 @@ def get_ln_contents(value: LNContaining) -> bytes:
             raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
         case str():                                                      return cst.LogicalName(value).contents
         case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
-
-
-class AttrDesc:
-    """keep constant descriptors"""
-    OBJECT_LIST = ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
-    LDN_VALUE = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.42.0.0.255"), ut.CosemObjectAttributeId(2)))
 
 
 __range10_and_255: tuple = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
@@ -2137,7 +2129,7 @@ def get_media_id(ln: cst.LogicalName) -> media_id.MediaId:
     return media_id.MediaId.from_int(ln.a)
 
 
-def get_class_id(obj: InterfaceClass) -> ClassID:
+def get_class_id(obj: InterfaceClass) -> CosemClassId:
     return obj.CLASS_ID
 
 
@@ -2152,7 +2144,7 @@ def get_map_by_obj(objects: list[InterfaceClass] | tuple[InterfaceClass], key: C
 
 
 def get_object_tree(objects: list[InterfaceClass] | tuple[InterfaceClass],
-                    mode: ObjectTreeMode) -> dict[media_id.MediaId | ClassID, list[InterfaceClass]]:
+                    mode: ObjectTreeMode) -> dict[media_id.MediaId | CosemClassId, list[InterfaceClass]]:
     """mode: m-media_id, g-relation_group, c-class_id"""
     mode = list(mode)
     ret = objects
@@ -2259,14 +2251,14 @@ class LNPattern:
 
 
 def get_filtered(objects: list[InterfaceClass],
-                 keys: tuple[ClassID | media_id.MediaId | LNPattern, ...]) -> list[InterfaceClass]:
-    c_ids: list[ut.CosemClassId] = list()
+                 keys: tuple[CosemClassId | media_id.MediaId | LNPattern, ...]) -> list[InterfaceClass]:
+    c_ids: list[CosemClassId] = list()
     media: list[int] = list()
     group: list[int] = list()
     patterns: list[LNPattern] = list()
     medias = tuple(m.subgroup for m in RelationGroups)
     for k in keys:
-        if isinstance(k, ut.CosemClassId):
+        if isinstance(k, CosemClassId):
             c_ids.append(k)
         elif isinstance(k, RelationGroup):
             if (s_g := k.subgroup) in medias:
@@ -2683,7 +2675,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
 DLMSObjectContainer: TypeAlias = Collection | list[InterfaceClass] | filter
 
 
-def class_id_filter(container: DLMSObjectContainer, class_id: ClassID) -> filter[InterfaceClass]:
+def class_id_filter(container: DLMSObjectContainer, class_id: CosemClassId) -> filter[InterfaceClass]:
     """return filter by class_id"""
     return filter(lambda obj: obj.CLASS_ID == class_id, container)
 

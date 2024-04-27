@@ -5,7 +5,7 @@ reserved for future use."""
 from __future__ import annotations
 from functools import lru_cache
 from . import settings
-from .types import cosem_service_types as cst
+from .types import cosem_service_types as cst, cosemClassID as classID
 from .cosem_interface_classes import overview
 
 match settings.get_current_language():
@@ -173,8 +173,8 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
         case  0, b, 0, 2, 1:    return F"{rn.ACTIVE_FIRMWARE_VERSION}{handle_B(b)}"
         case  0, b, 0, 2, 8:    return F"{rn.ACTIVE_FIRMWARE_SIGNATURE}{handle_B(b)}"
-        case  0, b, 1, 0, e:    return F"{overview.ClassID.CLOCK}{handle_B(b)}{handle_E(e)}"
-        case  0, b, 2, 0, e:    return F"{overview.ClassID.MODEM_CONFIGURATION}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 1, 0, e:    return F"{classID.CLOCK}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 2, 0, e:    return F"{classID.MODEM_CONFIGURATION}{handle_B(b)}{handle_E(e)}"
         case  0, b, 10, 0, 0:   return F"{rn.GLOBAL_METER_RESET_SCRIPT_TABLE}{handle_B(b)}"
         case  0, b, 10, 0, 1:   return F"{rn.MDI_RESET_END_OF_BILLING_PERIOD_SCRIPT_TABLE}{handle_B(b)}"
         case  0, b, 10, 0, 100: return F"{rn.TARIFFICATION_SCRIPT_TABLE}{handle_B(b)}"
@@ -183,10 +183,10 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 10, 0, 107: return F"{rn.IMAGE_ACTIVATION_SCRIPT_TABLE}{handle_B(b)}"
         case  0, b, 10, 0, 108: return F"{rn.PUSH_SCRIPT_TABLE}{handle_B(b)}"
         case  0, b, 10, 0, 128: return F"{rn.RU_STOP_FRAME_SCRIPT_TABLE}{handle_B(b)}"
-        case  0, b, 11, 0, e:   return F"{overview.ClassID.SPECIAL_DAYS_TABLE}{handle_B(b)}{handle_E(e)}"
-        case  0, b, 12, 0, e:   return F"{overview.ClassID.SCHEDULE}{handle_B(b)}{handle_E(e)}"
-        case  0, b, 13, 0, e:   return F"{overview.ClassID.ACTIVITY_CALENDAR}{handle_B(b)}{handle_E(e)}"
-        case  0, b, 14, 0, e:   return F"{overview.ClassID.REGISTER_ACTIVATION}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 11, 0, e:   return F"{classID.SPECIAL_DAYS_TABLE}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 12, 0, e:   return F"{classID.SCHEDULE}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 13, 0, e:   return F"{classID.ACTIVITY_CALENDAR}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 14, 0, e:   return F"{classID.REGISTER_ACTIVATION}{handle_B(b)}{handle_E(e)}"
         case  0, b, 15, 0, 0:   return F"{rn.END_OF_BILLING_PERIOD_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
         case  0, b, 15, 0, 1:   return F"{rn.DISCONNECT_CONTROL_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
         case  0, b, 15, 0, 2:   return F"{rn.IMAGE_ACTIVATION_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
@@ -202,29 +202,29 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 17, 0, 3:   return F"{rn.RU_LIMITER_BY_MAGNETIC}{handle_B(b)}"
         case  0, b, 17, 0, 4:   return F"{rn.RU_LIMITER_BY_DIFFERENCE_CURRENT}{handle_B(b)}"
         case  0, b, 17, 0, 5:   return F"{rn.RU_LIMITER_BY_TEMPERATURE}{handle_B(b)}"
-        case  0, b, 17, 0, e:   return F"{overview.ClassID.LIMITER}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 17, 0, e:   return F"{classID.LIMITER}{handle_B(b)}{handle_E(e)}"
         case  0, 0, 21, 0, 1:   return rn.GENERAL_DISPLAY_READOUT
         case  0, 0, 21, 0, 2:   return rn.ALTERNATE_DISPLAY_READOUT
         case  0, 0, 22, 0, 0:   return rn.RU_IEC_HDLC_SETUP_OPTO
         case  0, 1, 22, 0, 0:   return rn.RU_IEC_HDLC_SETUP_RS_485
         case  0, 2, 22, 0, 0:   return rn.RU_IEC_HDLC_SETUP_GSM
-        case  0, b, 22, 0, 0:   return F"{overview.ClassID.IEC_HDLC_SETUP}{handle_B(b)}"
-        case  0, b, 25, 0, 0:   return F"{overview.ClassID.TCP_UDP_SETUP}{handle_B(b)}"
-        case  0, b, 25, 1, 0:   return F"{overview.ClassID.IPV4_SETUP}{handle_B(b)}"
-        case  0, b, 25, 4, 0:   return F"{overview.ClassID.GPRS_MODEM_SETUP}{handle_B(b)}"
-        case  0, b, 25, 6, 0:   return F"{overview.ClassID.GSM_DIAGNOSTIC}{handle_B(b)}"
-        case  0, b, 25, 9, 0:   return F"{overview.ClassID.PUSH_SETUP}{handle_B(b)}"
-        case  0, b, 25, 10, 0:  return F"{overview.ClassID.NTP_SETUP}{handle_B(b)}"
+        case  0, b, 22, 0, 0:   return F"{classID.IEC_HDLC_SETUP}{handle_B(b)}"
+        case  0, b, 25, 0, 0:   return F"{classID.TCP_UDP_SETUP}{handle_B(b)}"
+        case  0, b, 25, 1, 0:   return F"{classID.IPV4_SETUP}{handle_B(b)}"
+        case  0, b, 25, 4, 0:   return F"{classID.GPRS_MODEM_SETUP}{handle_B(b)}"
+        case  0, b, 25, 6, 0:   return F"{classID.GSM_DIAGNOSTIC}{handle_B(b)}"
+        case  0, b, 25, 9, 0:   return F"{classID.PUSH_SETUP}{handle_B(b)}"
+        case  0, b, 25, 10, 0:  return F"{classID.NTP_SETUP}{handle_B(b)}"
         case  0, 0, 40, 0, 0:   return rn.CURRENT_ASSOCIATION
         case  0, 0, 40, 0, 1:   return rn.RU_PUBLIC_CLIENT_ASSOCIATION
         case  0, 0, 40, 0, 2:   return rn.RU_METER_READER_ASSOCIATION
         case  0, 0, 40, 0, 3:   return rn.RU_UTILITY_SETTING_ASSOCIATION
         case  0, 0, 40, 0, 4:   return rn.RU_PUBLIC_CLIENT_ASSOCIATION
-        case  0, 0, 40, 0, e:   return F"{overview.ClassID.ASSOCIATION_LN}{handle_E(e)}"
+        case  0, 0, 40, 0, e:   return F"{classID.ASSOCIATION_LN}{handle_E(e)}"
         case  0, 0, 42, 0, 0:   return rn.COSEM_LOGICAL_DEVICE_NAME
-        case  0, 0, 43, 0, e:   return F"{overview.ClassID.SECURITY_SETUP}{handle_E(e)}"
+        case  0, 0, 43, 0, e:   return F"{classID.SECURITY_SETUP}{handle_E(e)}"
         case  0, b, 43, 1, e:   return F"{rn.INVOCATION_COUNTER}{handle_B(b)}{handle_E(e)}"
-        case  0, 0, 44, 0, e:   return F"{overview.ClassID.IMAGE_TRANSFER}{handle_E(e)}"
+        case  0, 0, 44, 0, e:   return F"{classID.IMAGE_TRANSFER}{handle_E(e)}"
         case  0, 0, 94, 7, 1:   return rn.RU_SPECIFIC_PASSPORT_DATA_PROFILE
         case  0, b, 96, 1, 0:   return F"{rn.RU_DEVICE_FACTORY_NUMBER}{handle_B(b)}"
         case  0, b, 96, 1, 1:   return F"{rn.RU_DEVICE_TYPE}{handle_B(b)}"
@@ -250,7 +250,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 96, 2, 12:   return F"{rn.DATE_A_CORRECTED_OF_LAST_CLOCK_SYNCHRONIZATION_SETTING}{handle_B(b)}"
         case  0, b, 96, 2, 13:   return F"{rn.DATE_OF_LAST_FIRMWARE_ACTIVATION}{handle_B(b)}"
         case  0, b, 96, 3, 0:   return F"{rn.I_O_CONTROL_SIGNAL_OBJECTS_GLOBAL}{handle_B(b)}"
-        case  0, b, 96, 3, 10:  return F"{overview.ClassID.DISCONNECT_CONTROL}{handle_B(b)}"
+        case  0, b, 96, 3, 10:  return F"{classID.DISCONNECT_CONTROL}{handle_B(b)}"
         case  0, b, 96, 3, 20:  return F"{rn.RU_RELAY_LOAD_ARBITRATOR}{handle_B(b)}"
         case  0, 0, 96, 4, 1:   return rn.RU_LCD_BACKLIGHT_MODE
         case  0, 0, 96, 4, 3:   return rn.RU_LOAD_LOCK_STATUS
@@ -349,7 +349,7 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  0, b, 99, 98, 26: return F"{rn.RU_OVER_VOLTAGE_LOG}{handle_B(b)}"
         case  0, b, 99, 98, 27: return F"{rn.RU_VOLTAGE_INTERRUPTION_LOG}{handle_B(b)}"
         case  0, b, 99, 98, 28: return F"{rn.RU_ABNORMAL_NETWORK_SITUATION_LOG}{handle_B(b)}"
-        case  0, b, 99, 98, e:  return F"{overview.ClassID.PROFILE_GENERIC}{handle_B(b)}{handle_E(e)}"
+        case  0, b, 99, 98, e:  return F"{classID.PROFILE_GENERIC}{handle_B(b)}{handle_E(e)}"
         case  0, 0, 128, 99, 0:   return rn.KPZ_RELAY_TURN_COUNTER
         case  0, 0, 128, 100, 0:   return rn.ITE_FIRMWARE_DESCRIPTOR
         case  0, 0, 128, 100, 0:   return rn.ITE_FIRMWARE_DESCRIPTOR

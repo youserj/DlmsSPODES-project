@@ -29,7 +29,7 @@ class RegisterActivation(ic.COSEMInterfaceClasses):
     """ A “Register” object stores a process value or a status value with its associated unit. The register object knows
     the nature of the process value or of the status value. The nature of the value is described by the attribute
     “logical name” using the OBIS identification system. """
-    CLASS_ID = ClassID.REGISTER_ACTIVATION
+    CLASS_ID = classID.REGISTER_ACTIVATION
     VERSION = Version.V0
     A_ELEMENTS = (
         ic.ICAElement(

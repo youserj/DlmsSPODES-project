@@ -2,13 +2,10 @@ from __future__ import annotations
 from functools import lru_cache
 from abc import ABC, abstractmethod
 from typing import Type, Any, Callable, Self
-from dataclasses import dataclass, astuple, asdict, field
+from dataclasses import dataclass, astuple, asdict, field, fields
 from ..types import common_data_types as cdt
 from ..exceptions import DLMSException
 from ..config_parser import get_values
-from . import (
-    service_class,
-    priority)
 
 
 class UserfulTypesException(DLMSException):
@@ -29,10 +26,6 @@ class UT(ABC):
     @abstractmethod
     def contents(self) -> bytes:
         """return contents"""
-
-    @abstractmethod
-    def decode(self) -> Any:
-        """decode to PYTHON build-in types"""
 
     @classmethod
     @abstractmethod
@@ -69,27 +62,24 @@ class StringMixin(ABC):
         """ define in subclasses """
 
 
-class OCTET_STRING(UT):
+class OctetString(UT):
     """ An ordered sequence of octets (8 bit bytes) """
-    _contents: bytes
+    value: bytes
 
-    def __init__(self, value: bytes = None, contents: bytes = None):
-        if contents:
-            self._contents = contents
-        else:
-            self._contents = value
+    def __init__(self, value: bytes = None):
+        self.value = value
 
     @classmethod
     def from_contents(cls, value: bytes) -> Self:
         length, pdu = cdt.get_length_and_pdu(value)
         if length <= len(pdu):
-            return cls(contents=pdu[:length])
+            return cls(pdu[:length])
         else:
             raise ValueError(F"for {cls.__name__} got {length=}, but content length only: {len(pdu)}")
 
     @property
     def contents(self) -> bytes:
-        return cdt.encode_length(len(self)) + self._contents
+        return cdt.encode_length(len(self)) + self.value
 
     @classmethod
     def from_str(cls, value: str) -> Self:
@@ -97,26 +87,24 @@ class OCTET_STRING(UT):
         return cls(value.encode("utf-8"))
 
     def __str__(self):
-        return self._contents.hex(' ')
+        return self.value.hex(' ')
 
     def __len__(self):
-        return len(self._contents)
+        return len(self.value)
 
     def __getitem__(self, item):
-        return self._contents[item]
-
-    # TODO: maybe remove as redundante?
-    def decode(self) -> bytes:
-        """ decode to build in bytes type """
-        return self._contents
+        return self.value[item]
 
     # TODO: maybe remove as redundante?
     def to_str(self, encoding: str = 'utf-8') -> str:
         """ decode to cp1251 by default, replace to '?' if unsupported """
         temp = list()
-        for i in self._contents:
+        for i in self.value:
             temp.append(i if i > 32 else 63)
         return bytes(temp).decode(encoding)
+
+    def __bytes__(self):
+        return self.value
 
 
 class CHOICE(ABC):
@@ -212,10 +200,6 @@ class UT(ABC):
     @abstractmethod
     def contents(self) -> bytes:
         """return contents"""
-
-    @abstractmethod
-    def decode(self) -> Any:
-        """decode to PYTHON build-in types"""
 
     @classmethod
     @abstractmethod
@@ -342,15 +326,9 @@ class OPTIONAL(UT, ABC):
     def from_str(cls, value: str) -> Self:
         raise RuntimeError(F"Not implementation for {cls.__name__}")
 
-    def decode(self) -> Any:
-        if self.value:
-            return self.value.decode()
-        else:
-            return NULL.decode()
 
-
-@dataclass(slots=True, frozen=True)
-class SEQUENCE(ABC):
+@dataclass
+class SEQUENCE(UT):
     """ TODO: """
 
     @property
@@ -375,13 +353,14 @@ class SEQUENCE(ABC):
     #         case self.__class__():  self.from_bytes(value.contents)
     #         case _:                 raise TypeError(F'Value: "{value}" not supported')
 
-    def from_default(self):
-        for i in range(len(self)):
-            self.values[i] = self.ELEMENTS[i].TYPE()
+    # def from_default(self):
+    #     for i in range(len(self)):
+    #         self.values[i] = self.ELEMENTS[i].TYPE()
 
-    def from_bytes(self, value: bytes | bytearray):
-        for i, element in enumerate(self.ELEMENTS):
-            self.values[i], value = get_instance_and_context(element.TYPE, value)
+    @classmethod
+    def from_contents(cls, value: bytes | bytearray) -> Self:
+        for f in fields(cls):
+            print(f)
 
     def from_tuple(self, value: tuple | list):
         for i, val in enumerate(value):
@@ -389,6 +368,10 @@ class SEQUENCE(ABC):
 
     def __str__(self):
         return str(asdict(self))
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        raise ValueError("not implementation")
 
     # def __repr__(self):
     #     return F'{self.__class__.__name__}(({(", ".join(map(str, self.values)))}))'
@@ -457,53 +440,46 @@ class DigitalMixin(ABC):
     """ Default value is 0 """
     SIGNED: bool
     LENGTH: int
-    contents: bytes
+    value: int
 
-    def __init__(self, value: int = None, contents: bytes = None):
-        if contents is not None:  # from contents
-            self.contents = contents
-        elif value is None:
-            self.contents = b'\x00'*self.LENGTH
-        else:
-            try:
-                self.contents = value.to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
-            except OverflowError:
-                raise ValueError(F"for {self.__class__.__name__} got out of range {value=}")
+    def __init__(self, value: int):
+        self.value = value
+        assert self.contents  # simple validator
 
     @classmethod
     def from_contents(cls, value: bytes):
-        if cls.LENGTH > len(value):
-            raise ValueError(F"for {cls.__name__} got content length={len(value)}, expected at least {cls.LENGTH}")
-        else:
-            return cls(contents=value[:cls.LENGTH])
+        return cls(int.from_bytes(value, "big", signed=cls.SIGNED))
+
+    @property
+    def contents(self) -> bytes:
+        return self.value.to_bytes(self.LENGTH, "big", signed=self.SIGNED)
 
     @classmethod
     def from_str(cls, value: str):
         return cls(int(value))
 
-    def decode(self) -> int:
-        return self.__int__()
+    def __str__(self):
+        return str(self.value)
 
     def __int__(self):
-        """ return the build in integer type """
-        return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
-
-    def __str__(self):
-        return str(int(self))
+        return self.value
 
     def __repr__(self):
-        return F'{self.__class__.__name__}({self})'
+        return F'{self.__class__.__name__}({self.value})'
 
     def __gt__(self, other: DigitalMixin):
         match other:
-            case DigitalMixin(): return int(self) > int(other)
+            case DigitalMixin(): return self.value > other.value
             case _:          raise TypeError(F'Compare type is {other.__class__}, expected Digital')
 
     def __len__(self) -> int:
         return self.LENGTH
 
     def __hash__(self):
-        return int(self)
+        return self.value
+
+    def __eq__(self, other: DigitalMixin):
+        return self.contents == other.contents
 
 
 class Integer8(DigitalMixin, UT):
@@ -567,32 +543,37 @@ class CosemClassId(Unsigned16):
     def __repr__(self):
         return F"{self.__class__.__name__}({int(self)})"
 
-    @property
-    def contents(self) -> bytes:
-        return b''
 
 _class_names = {CosemClassId(value=int(k)): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
 """use for string representation CosemClassId"""
 
 
-class CosemObjectInstanceId(OCTET_STRING, UsefulType):
+class CosemObjectInstanceId(OctetString):
     LENGTH = 6
+
+    def __init__(self, value: bytes):
+        if len(value) == self.LENGTH:
+            super(CosemObjectInstanceId, self).__init__(value)
+        else:
+            raise ValueError(F"for init {self.__class__.__name__} got length value: {len(value)}, expected {self.LENGTH}")
 
     def __str__(self):
         return F"\"{'.'.join(map(str, self.contents))}\""
 
-    def from_str(self, value: str) -> bytes:
+    @classmethod
+    def from_str(cls, value: str) -> Self:
         """ create logical_name: octet_string from string type ddd.ddd.ddd.ddd.ddd.ddd, ex.: 0.0.1.0.0.255 """
         raw_value = bytes()
-        for typecast, separator in zip((self.__from_group_A, )*5+(self.__from_group_F, ), ('.', '.', '.', '.', '.', ' ')):
+        for typecast, separator in zip((cls.__from_group_A, )*5+(cls.__from_group_F, ), ('.', '.', '.', '.', '.', ' ')):
             try:
                 element, value = value.split(separator, 1)
             except ValueError:
                 element, value = value, ''
             raw_value += typecast(element)
-        return raw_value
+        return cls(raw_value)
 
-    def __from_group_A(self, value: str) -> bytes:
+    @staticmethod
+    def __from_group_A(value: str) -> bytes:
         if isinstance(value, str):
             if value == '':
                 return b'\x00'
@@ -603,7 +584,8 @@ class CosemObjectInstanceId(OCTET_STRING, UsefulType):
         else:
             raise TypeError(F'Unsupported type validation from string, got {value.__class__}')
 
-    def __from_group_F(self, value: str) -> bytes:
+    @staticmethod
+    def __from_group_F(value: str) -> bytes:
         if isinstance(value, str):
             if value == '':
                 return b'\xff'
@@ -731,146 +713,3 @@ class CosemAttributeDescriptorWithSelection(SEQUENCE):
     @abstractmethod
     def ELEMENTS(self) -> tuple[SequenceElement, SequenceElement]:
         """ return elements. Need initiate in subclass """
-
-
-@dataclass
-class InvokeIdAndPriority(Unsigned8):
-    invoke_id: int
-    service_class: service_class.ServiceClass
-    priority: priority.Priority
-
-    @classmethod
-    def from_contents(cls, value: bytes) -> Self:
-        if cls.LENGTH > len(value):  # todo: copypast from DigitalMixin
-            raise ValueError(F"for {cls.__name__} got content length={len(value)}, expected at least {cls.LENGTH}")
-        else:
-            return cls(
-                invoke_id=value[0] & 0b0000_1111,
-                service_class=service_class.ServiceClass(bool(value[0] & 0b0100_0000)),
-                priority=priority.Priority(bool(value[0] & 0b0100_0000)))
-
-    @property
-    def contents(self) -> bytes:
-        return int(self).to_bytes(1, "big")
-
-    def __str__(self):
-        return F"{self.priority} | {self.service_class} | {self.invoke_id}"
-
-    @classmethod
-    def from_str(cls, value: str):
-        raise RuntimeError(F"for {cls.__name__} not implemented method <from_str>")
-
-    def decode(self) -> int:
-        return self.invoke_id + int(self.service_class) + int(self.priority)
-
-
-class InvokeIdAndPriorityOld(Unsigned8):
-
-    def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = 0b1100_0000):
-        super(InvokeIdAndPriorityOld, self).__init__(value)
-        if self.contents[0] & 0b00110000:
-            raise ValueError(F'For {self.__class__.__name__} set reserved bits')
-
-    @classmethod
-    def from_parameters(cls, invoke_id: int = 0,
-                        service_class: int = 0,
-                        priority: int = 0):
-        instance = cls()
-        instance.invoke_id = invoke_id
-        instance.service_class = service_class
-        instance.priority = priority
-        return instance
-
-    @property
-    def invoke_id(self) -> int:
-        return self.contents[0] & 0b0000_1111
-
-    @invoke_id.setter
-    def invoke_id(self, value: int):
-        if value & 0b00001111:
-            self.__dict__['contents'] = int((self.contents[0] & 0b1111_0000) | value).to_bytes(1, 'big')
-        else:
-            raise ValueError(F'Got {value} for invoke-id, expected 0..15')
-
-    @property
-    def service_class(self) -> int:
-        """ 0: Unconfirmed or 1: Confirmed bit return """
-        return (self.contents[0] >> 6) & 0b1
-
-    @service_class.setter
-    def service_class(self, value: int):
-        match value:
-            case 0 | 1: self.__dict__['contents'] = int((self.contents[0] & 0b1011_1111) | (value << 6)).to_bytes(1, 'big')
-            case _:     raise ValueError(F'Got {value} for service_class, expected 0..1')
-
-    @property
-    def priority(self) -> int:
-        """ 0: Normal or 1: High bit return """
-        return (self.contents[0] >> 7) & 0b1
-
-    @priority.setter
-    def priority(self, value: int):
-        match value:
-            case 0 | 1: self.__dict__['contents'] = int((self.contents[0] & 0b0111_1111) | (value << 7)).to_bytes(1, 'big')
-            case _:     raise ValueError(F'Got {value} for service_class, expected 0..1')
-
-    def __str__(self):
-        return F'priority: {"High" if self.contents[0] & 0b1000_0000 else "Normal"}, ' \
-               F'service-class: {"Confirmed" if self.contents[0] & 0b0100_0000 else "Unconfirmed"}, ' \
-               F'invoke-id: {self.invoke_id},'
-
-
-if __name__ == '__main__':
-    a = CosemObjectAttributeId(1)
-    b = CosemObjectAttributeId(2)
-    print(a > b)
-
-    a = CosemClassId(cdt.LongUnsigned(1).contents)
-    a = InvokeIdAndPriorityOld()
-    c = a.invoke_id
-    d = a.service_class
-    f = a.priority
-    a.service_class = 1
-    a.invoke_id = 14
-    e = InvokeIdAndPriorityOld.from_parameters(1, 1, 1)
-    class AccessSelector(Unsigned8):
-        """ Unsigned8 1..4 """
-        def __init__(self, value: int | str | Unsigned8 = 1):
-            super(AccessSelector, self).__init__(value)
-            if int(self) > 4 or int(self) < 1:
-                raise ValueError(F'The {self.__class__.__name__} got {self}, expected 1..4')
-
-
-    class MyData(Data):
-        ELEMENTS = {1: SequenceElement('0 a', cdt.NullData),
-                    2: SequenceElement('1 d', cdt.Integer),
-                    3: SequenceElement('second', cdt.ScalUnitType),
-                    4: SequenceElement('3', cdt.Integer)}
-
-    class My(SelectiveAccessDescriptor):
-        access_selector: AccessSelector
-        access_parameters: MyData
-        ELEMENTS = (SequenceElement('access_selector', AccessSelector),
-                    SequenceElement('access_parameters', MyData))
-
-    ba = My()
-    b = My((3, (10, 10)))
-    b2 = b.access_selector
-    b3 = b.access_parameters
-    b4 = b.access_parameters.unit
-    b_repr = My(b'\x03\x0f"')
-    b.set_selector(3, 34)
-    a = CosemAttributeDescriptor((1, '1.1.1.1.1.1', 1))
-    a_repr = CosemAttributeDescriptor(b'\x00\x01\x01\x01\x01\x01\x01\x01\x01\x00')
-
-    class MyWith(CosemAttributeDescriptorWithSelection):
-        access_selection: My
-        ELEMENTS = (SequenceElement('cosem_attribute_descriptor', CosemAttributeDescriptor),
-                    SequenceElement('access_selection', My))
-
-    c = MyWith()
-    c_from = MyWith((a, b))
-    c_repr = MyWith(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x00')
-    print(a)
-    c = CosemAttributeDescriptor(b'\x00\x01\x01\x01\x01\x01\x01\x01\x01\x00')
-    print(c)

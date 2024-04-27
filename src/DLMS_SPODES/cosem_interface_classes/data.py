@@ -6,7 +6,7 @@ from ..types import choices
 class Data(ic.COSEMInterfaceClasses):
     """ Object stores data related to internal meter object(s). The meaning of the value is identified by the logical_name.
     The data type of the value is CHOICE. “Data” is typically used to store configuration data and parameters """
-    CLASS_ID = ClassID.DATA
+    CLASS_ID = classID.DATA
     VERSION = Version.V0
     A_ELEMENTS = ic.ICAElement("value", choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
 

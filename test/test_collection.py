@@ -1,7 +1,7 @@
 import os
 import time
 import unittest
-from src.DLMS_SPODES.types import cdt, cst, ut
+from src.DLMS_SPODES.types import cdt, cst, ut, cosemClassID as classID, cosemObjectInstanceId as instanceId, cosemAttributeDescriptor as attrDesc
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES import cosem_interface_classes
 from src.DLMS_SPODES.obis import media_id
@@ -17,7 +17,7 @@ class TestType(unittest.TestCase):
 
     def test_get_type_from_class(self):
         ln = cst.LogicalName("0.0.1.0.0.255")
-        value = collection.get_interface_class(ut.CosemClassId(7), cdt.Unsigned(0))
+        value = collection.get_interface_class(classID.CosemClassId(7), cdt.Unsigned(0))
         v1 = value(ln)
         print(value, v1)
 
@@ -26,7 +26,7 @@ class TestType(unittest.TestCase):
         col.set_manufacturer(b"KPZ")
         col.set_server_ver(0, AppVersion(1, 4, 0))
         col.set_spec()
-        ver_obj = col.add(class_id=ut.CosemClassId(1),
+        ver_obj = col.add(class_id=classID.CosemClassId(1),
                           version=cdt.Unsigned(0),
                           logical_name=cst.LogicalName("0.0.96.1.6.255"))
         ver_obj.set_attr(2, "33 2e 30")
@@ -159,10 +159,10 @@ class TestType(unittest.TestCase):
         col.set_manufacturer(b"KPZ")
         col.set_server_ver(0, AppVersion(1, 4, 0))
         col.set_spec()
-        ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN,
+        ass_obj = col.add(class_id=classID.ASSOCIATION_LN,
                           version=overview.Version.V1,
                           logical_name=cst.LogicalName("0.0.40.0.3.255"))
-        ver_obj = col.add(class_id=overview.ClassID.DATA,
+        ver_obj = col.add(class_id=classID.DATA,
                           version=overview.Version.V0,
                           logical_name=cst.LogicalName("0.0.0.2.1.255"))
         self.assertRaises(NeedUpdate,
@@ -258,14 +258,6 @@ class TestType(unittest.TestCase):
         manufacture_date_obj.set_attr(2, datetime.date.today().strftime("%d.%m.%y"))
         print(manufacture_date_obj.value)
 
-    def test_change_version(self):
-        col = collection.get_collection(
-            manufacturer=b"KPZ",
-            server_type=cdt.OctetString("4d324d5f31"),
-            server_ver=AppVersion.from_str("1.5.15"))
-        col.change_association_version(cdt.Unsigned(2))
-        print(col)
-
     def test_create_for_codegeneration(self):
         col = collection.get_collection(
             manufacturer=b"KPZ",
@@ -355,7 +347,7 @@ class TestType(unittest.TestCase):
     def test_create_manufacture_obj(self):
         col = collection.Collection()
         obj = col.add(
-            class_id=overview.ClassID.DATA,
+            class_id=classID.DATA,
             version=overview.Version.V0,
             logical_name=cst.LogicalName("0.128.25.6.0.255")
         )
@@ -382,10 +374,10 @@ class TestType(unittest.TestCase):
         kpz_ip = col.get_object("0.128.154.0.0.255")
         kpz_ip.set_attr(2, (1, ["0.0.0.0", "0.0.0.1"]))
         print(kpz_ip)
-        print(overview.ClassID.get_all_id())
+        print(classID.get_all_id())
 
     def test_get_object_list_desc(self):
-        self.assertEqual(collection.AttrDesc.OBJECT_LIST.contents, b'\x00\x0f\x00\x00(\x00\x00\xff\x02\x00', "check cached object_list")
+        self.assertEqual(attrDesc.OBJECT_LIST.contents, b'\x00\x0f\x00\x00(\x00\x00\xff\x02\x00', "check cached object_list")
 
     def test_get_relation_group(self):
         ln = cst.LogicalName("0.0.1.0.0.255")

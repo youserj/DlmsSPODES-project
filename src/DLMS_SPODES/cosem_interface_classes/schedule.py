@@ -132,7 +132,7 @@ class Schedule(ic.COSEMInterfaceClasses):
      Daylight saving
      If the clock is put forward, then all scripts, which fall into the forwarding interval (and would therefore get lost) are executed.
      If the clock is put back, re-execution of the scripts, which fall into the backwarding interval is suppressed. """
-    CLASS_ID = ClassID.SCHEDULE
+    CLASS_ID = classID.SCHEDULE
     VERSION = Version.V0
     A_ELEMENTS = ic.ICAElement("entries", Entries),
     M_ELEMENTS = (ic.ICMElement("enable_disable", DataED),

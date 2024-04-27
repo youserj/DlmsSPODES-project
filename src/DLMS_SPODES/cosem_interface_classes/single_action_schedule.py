@@ -21,7 +21,7 @@ class ExecutionTime(cdt.Array):
 class SingleActionSchedule(ic.COSEMInterfaceClasses):
     """ This IC allows modelling the execution of periodic actions within a meter. Such actions are not necessarily linked to tariffication
     (see “Activity calendar” or “Schedule”).  """
-    CLASS_ID = ClassID.SINGLE_ACTION_SCHEDULE
+    CLASS_ID = classID.SINGLE_ACTION_SCHEDULE
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("executed_script", structs.ActionItem),
                   ic.ICAElement("type", TYPE),

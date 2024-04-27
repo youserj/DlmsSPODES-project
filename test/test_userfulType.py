@@ -1,6 +1,6 @@
 import unittest
 from dataclasses import dataclass
-from src.DLMS_SPODES.types import cdt, cst, useful_types as ut
+from src.DLMS_SPODES.types import cdt, cst, useful_types as ut, cosemClassID as classID, serviceClass, priority, invokeIdAndPriority
 
 
 class TestType(unittest.TestCase):
@@ -63,20 +63,19 @@ class TestType(unittest.TestCase):
         print(value.contents)
 
     def test_Octet_string(self):
-        value = ut.OCTET_STRING.from_contents(b'\x021234')
+        value = ut.OctetString.from_contents(b'\x021234')
         print(value.contents)
 
     def test_OPTIONAL(self):
         class OctetOptional(ut.OPTIONAL):
-            TYPE = ut.OCTET_STRING
+            TYPE = ut.OctetString
 
-        value = OctetOptional(ut.OCTET_STRING.from_str('hello'))
+        value = OctetOptional(ut.OctetString.from_str('hello'))
         print(value.contents)
 
     def test_invoke_id_and_priority(self):
-        s_c = ut.service_class.UNCONFIRMED
-        print(s_c)
-        value = ut.InvokeIdAndPriority(0, ut.service_class.UNCONFIRMED, ut.priority.HIGH)
-        value2 = ut.InvokeIdAndPriority.from_contents(b'\x24')
-        print(value2)
+        value = invokeIdAndPriority.New(4, serviceClass.UNCONFIRMED, priority.NORMAL)
+        value2 = invokeIdAndPriority.New.from_contents(b'\x84')
+        print(value == value2)
+        self.assertEqual(value, value2, "compare new and <from contents>")
 
