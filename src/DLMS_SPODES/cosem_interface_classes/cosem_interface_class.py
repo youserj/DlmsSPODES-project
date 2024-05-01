@@ -352,11 +352,11 @@ class COSEMInterfaceClasses(ABC):
 
     def get_attr_descriptor(self,
                             value: int,
-                            with_selection: bool = False) -> cosemAttributeDescriptor.New:
+                            with_selection: bool = False) -> cosemAttributeDescriptor.CosemAttributeDescriptor:
         """ return AttributeDescriptor without selection """
-        return cosemAttributeDescriptor.New(
+        return cosemAttributeDescriptor.CosemAttributeDescriptor(
             self.CLASS_ID,
-            cosemObjectInstanceId.New(self.logical_name.contents),
+            cosemObjectInstanceId.CosemObjectInstanceId(self.logical_name.contents),
             ut.CosemObjectAttributeId(value))
 
     def get_meth_descriptor(self, value: str | int) -> ut.CosemMethodDescriptor:
@@ -364,7 +364,7 @@ class COSEMInterfaceClasses(ABC):
         match value:
             case int() as index:
                 return ut.CosemMethodDescriptor((CosemClassId(self.CLASS_ID.contents),
-                                                 cosemObjectInstanceId.New(self.logical_name.contents),
+                                                 cosemObjectInstanceId.CosemObjectInstanceId(self.logical_name.contents),
                                                  ut.CosemObjectMethodId(index)))
 
     def __hash__(self):

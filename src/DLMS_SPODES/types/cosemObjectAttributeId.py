@@ -1,14 +1,8 @@
-from . import ut
+from .useful_types import CosemObjectAttributeId
 
 
-class New(ut.Integer8):
-    """Cosem-Object-Attribute-Id"""
-
-
-VALUE = CURRENT_AVERAGE_VALUE = New(2)
-SCALER_UNIT = LAST_AVERAGE_VALUE = New(3)
-STATUS = New(4)
-CAPTURE_TIME = New(5)
+VALUE = CURRENT_AVERAGE_VALUE = OBJECT_LIST = CosemObjectAttributeId(2)
+SCALER_UNIT = LAST_AVERAGE_VALUE = CosemObjectAttributeId(3)
+STATUS = CosemObjectAttributeId(4)
+CAPTURE_TIME = CosemObjectAttributeId(5)
 # todo: and more
-
-

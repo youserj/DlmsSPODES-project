@@ -76,7 +76,7 @@ from ..config_parser import config
 from ..obis import media_id
 
 LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
-                          | ut.CosemMethodDescriptor | cosemObjectInstanceId.New
+                          | ut.CosemMethodDescriptor | cosemObjectInstanceId.CosemObjectInstanceId
 
 AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
@@ -2098,7 +2098,7 @@ def get_ln_contents(value: LNContaining) -> bytes:
     """return LN as bytes[6] for use in any searching"""
     match value:
         case bytes():                                                    return value
-        case cst.LogicalName() | cosemObjectInstanceId.New():                       return value.contents
+        case cst.LogicalName() | cosemObjectInstanceId.CosemObjectInstanceId():                       return value.contents
         case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return value.instance_id.contents
         case ut.CosemAttributeDescriptorWithSelection():                 return value.cosem_attribute_descriptor.instance_id.contents
         case cdt.Structure(logical_name=value.logical_name):             return value.logical_name.contents

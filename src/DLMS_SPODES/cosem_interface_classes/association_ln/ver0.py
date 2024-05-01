@@ -76,7 +76,7 @@ class ObjectListType(arrays.SelectionAccess):
                 raise ValueError(F"not find in {ln} attribute index: {index}")
         return True
 
-    def __get_access_right(self, ln: cst.LogicalName | cosemObjectInstanceId.New) -> AccessRight:
+    def __get_access_right(self, ln: cst.LogicalName | cosemObjectInstanceId.CosemObjectInstanceId) -> AccessRight:
         """return object_list_element of object_list AssociationLN"""
         el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
         if el is None:

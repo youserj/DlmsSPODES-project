@@ -1,23 +1,5 @@
-from functools import lru_cache
-from .useful_types import Unsigned16
-from ..config_parser import get_values
+from .useful_types import CosemClassId
 
-
-class CosemClassId(Unsigned16):
-    """COSEMpdu-Gb83.asn"""
-
-    def __str__(self):
-        if _class_names:
-            return _class_names.get(self, repr(self))
-        else:
-            return repr(self)
-
-    def __repr__(self):
-        return F"{self.__class__.__name__}({int(self)})"
-
-
-_class_names = {CosemClassId(int(k)): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "class_name")) else None
-"""use for string representation CosemClassId"""
 
 DATA = CosemClassId(1)
 REGISTER = CosemClassId(3)
@@ -119,8 +101,7 @@ HS_PLC_ISO_IEC_12139_1_HDLC_SSAS_SETUP = CosemClassId(143)
 LTE_MONITORING = CosemClassId(151)
 
 
-all_id = dir(__name__)
-print(all_id)
+# todo: return anyway for validation maybe
 # @lru_cache(1)
 # def get_all_id(cls) -> tuple[int]:
 #     """return all id container in build-in <int>"""
