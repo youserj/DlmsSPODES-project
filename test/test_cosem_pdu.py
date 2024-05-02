@@ -2,6 +2,7 @@ import sys
 import unittest
 from src.DLMS_SPODES.types import cosem_pdu as pdu
 from src.DLMS_SPODES.types.byte_buffer import ByteBuffer
+from sys import getsizeof
 
 
 class TestType(unittest.TestCase):
@@ -33,7 +34,7 @@ class TestType(unittest.TestCase):
         pdu.Integer8.default().put(buf)
         value.put(buf)
         print(str(buf), buf.buf.hex(' '))
-        buf.pos = 0
+        buf.set_pos(0)
         print(str(buf), buf.buf.hex(' '))
         value2 = pdu.OctetString.get(buf)
         print(value2)
@@ -68,13 +69,27 @@ class TestType(unittest.TestCase):
         print(value)
 
     def test_choice(self):
-        value = pdu.Data.from_str("5 4")
+        value = pdu.Data.from_str("5: 4")
         print(value)
         value = pdu.Data(pdu.Integer64.from_int(1030))
         buf = pdu.Buffer(memoryview(bytearray(10)))
         value.put(buf)
         print(bytes(buf), buf)
-        buf.pos = 0
+        buf.set_pos(0)
         value = pdu.Data.get(buf)
         print(value)
+        value = pdu.Data.from_str("1: 5:4; 5:2; 9:hello")
+        buf = pdu.Buffer(memoryview(bytearray(19)))
+        value.put(buf)
+        print(value, bytes(buf).hex(" "))
+        print(len(value))
 
+    def test_create_buf(self):
+        value = pdu.Data.from_str("1: 5:4; 5:2; 9:hello")
+        # value = pdu.Data.from_str("1: 3:True")
+        buf = pdu.create_buf(value)
+        value2 = pdu.Data.get(buf)
+        print(buf, value2)
+        print(getsizeof(buf))
+        print(getsizeof(value))
+        print(getsizeof(value2))

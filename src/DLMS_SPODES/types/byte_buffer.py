@@ -3,12 +3,14 @@ from typing import Self
 
 class ByteBuffer:
     buf: memoryview
+    __pos: int
+    __slots__ = ("buf", "__pos")
 
     """Object class wrapping a byte array and allowing manipulation"""
     def __init__(self, buffer: memoryview):
         self.buf = buffer
         """ the data buffer """
-        self.pos = 0
+        self.__pos = 0
         """ current position """
 
     @classmethod
@@ -23,20 +25,20 @@ class ByteBuffer:
     def remaining(self, pos: int = None) -> int:
         """remaining bytes"""
         if pos is None:
-            pos = self.pos
+            pos = self.__pos
         return len(self.buf) - pos
 
     def _check_space(self, space: int, pos: int = None):
         """check whether this buffer has enough `space` left for r/w op"""
         if not pos:
-            pos = self.pos
+            pos = self.__pos
         if self.remaining(pos) < space:
             raise BufferError(F"{self} not enough more {space=}")
 
     def read(self, length: int = 1) -> memoryview:
         """return view to position, increase position"""
-        ret = self.read_pos(self.pos, length)
-        self.pos += length
+        ret = self.read_pos(self.__pos, length)
+        self.__pos += length
         return ret
 
     def read_pos(self,
@@ -51,7 +53,7 @@ class ByteBuffer:
               value: memoryview | bytes,
               length: int = None) -> int:
         """keep data to position, increase position"""
-        self.pos += (length := self.write_pos(value, self.pos, length))
+        self.__pos += (length := self.write_pos(value, self.__pos, length))
         return length
 
     def write_pos(self,
@@ -68,8 +70,8 @@ class ByteBuffer:
     def put_int(self, value: int) -> int:
         """put builtin int, increase position"""
         self._check_space(1)
-        self.buf[self.pos] = value
-        self.pos += 1
+        self.buf[self.__pos] = value
+        self.__pos += 1
         return 1
 
     def get_uint(self, length: int) -> int:
@@ -95,7 +97,7 @@ class ByteBuffer:
 
     def slice(self) -> Self:
         """slice the buffer at current position. return new class"""
-        return self.__class__(self.buf[self.pos:])
+        return self.__class__(self.buf[self.__pos:])
 
     def frozen(self) -> Self:
         """return instance with not writable buffer"""
@@ -105,4 +107,14 @@ class ByteBuffer:
         return len(self.buf)
 
     def __str__(self):
-        return F"{self.__class__.__name__}[{len(self)}]: pos={self.pos}, frozen={self.buf.readonly}"
+        return F"{self.__class__.__name__}[{len(self)}]: pos={self.__pos}, frozen={self.buf.readonly}"
+
+    def get_pos(self) -> int:
+        return self.__pos
+
+    def set_pos(self, index):
+        """set new position, with check"""
+        if 0 <= index < len(self):
+            self.__pos = index
+        else:
+            raise IndexError(F"{self} can't set {index=}")

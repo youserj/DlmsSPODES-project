@@ -1,9 +1,24 @@
 from abc import ABC, abstractmethod
-from typing import Self, Type, Iterable
+from typing import Self, Type
 from dataclasses import dataclass
 from struct import pack, pack_into, Struct
 from math import log
 from .byte_buffer import ByteBuffer
+
+
+def decide_len(length: int) -> int:
+    """return of necessary length for allocating in buffer"""
+    if length < 0x80:
+        return 1
+    elif length < 0x1_00:
+        return 2
+    elif length < 0x1_00_00:
+        return 3
+    elif length < 0x1_00_00_00_00:
+        return 5
+    else:
+        amount = int(log(length, 256)) + 1
+        return 1 + amount
 
 
 _length1 = Struct("> B B")
@@ -13,6 +28,8 @@ _length4 = Struct("> B L")
 
 class Buffer(ByteBuffer):
     """Cosem pdu buffer implementation"""
+    __slots__ = ByteBuffer.__slots__
+
     def get_length(self) -> int:
         """ return common element length from buffer, with increasing by decoding according to 8.1.3 Length octets ITU-T Rec. X.690 (07/2002) """
         define_length = self.get_uint8()
@@ -25,7 +42,7 @@ class Buffer(ByteBuffer):
         """with check length"""
         return self.read(self.get_length())
 
-    def put_length(self, length: int) -> int:
+    def put_len(self, length: int) -> int:
         """ put length to buffer, increase position"""
         if length < 0x80:
             return self.put_int(length)
@@ -49,7 +66,7 @@ class Buffer(ByteBuffer):
 
     def write_with_length(self, value: memoryview) -> int:
         """ write to buffer, increase position"""
-        ret: int = self.put_length(len(value))
+        ret: int = self.put_len(len(value))
         return ret + self.write(value)
 
 
@@ -115,6 +132,13 @@ class UT(ABC):
         """"""
 
 
+def create_buf(value: UT) -> Buffer:
+    buf: Buffer = Buffer.allocate(len(value))
+    value.put(buf)
+    buf.set_pos(0)
+    return buf
+
+
 class Simple(UT, ABC):
     contents: memoryview
 
@@ -159,7 +183,7 @@ class Simple(UT, ABC):
 
 class VarSizeMixin(Simple, ABC):
     def __len__(self) -> int:
-        return len(self.contents)
+        return decide_len(len(self.contents)) + len(self.contents)
 
     @classmethod
     def get(cls, buf: Buffer) -> Self:
@@ -198,9 +222,9 @@ class BOOLEAN(Simple):
     @classmethod
     def from_str(cls, value: str):
         match value:
-            case "0", "False":
+            case "0" | "False":
                 return FALSE
-            case "1", "True":
+            case "1" | "True":
                 return TRUE
             case _:
                 raise ValueError(F"for {cls.__name__}.from_str got unknown {value=}")
@@ -485,7 +509,7 @@ class Sequence(UT):
         return self.values[item]
 
 
-class SequenceOptional(UT):
+class _Optional(UT):
     """for used in SEQUENCE now"""
     TYPE: Type[UT]
     value: UT
@@ -532,8 +556,8 @@ class SequenceOptional(UT):
         raise ValueError("not impl")
 
 
-def OPTIONAL(value: Type[UT]) -> Type[SequenceOptional]:
-    class Optional(SequenceOptional):
+def OPTIONAL(value: Type[UT]) -> Type[_Optional]:
+    class Optional(_Optional):
         TYPE = value
 
     return Optional
@@ -568,11 +592,11 @@ class Choice(UT):
 
     def __str__(self):
         el = self._get_element_by_type(self.value.__class__)
-        return F'{self.__class__.__name__}: {el.name} [{el.tag}] {self.value}'
+        return F'{self.__class__.__name__}: {el.name}: {self.value}'
 
     @classmethod
     def from_str(cls, value: str) -> Self:
-        tag, value2 = value.split(sep=" ")
+        tag, value2 = value.split(sep=":", maxsplit=1)
         tag: str
         if not tag.isdigit():
             raise ValueError(F"in {value}, got {tag=}, expected is digit")
@@ -617,12 +641,60 @@ class Choice(UT):
         raise self.value[item]
 
 
+class _SequenceOf(UT):
+    TYPE: Type[UT]
+    values: list[UT]
+    __slots__ = ("values",)
+
+    def __init__(self, value: list[UT]):
+        self.values = value
+
+    @classmethod
+    def get(cls, buf: Buffer) -> Self:
+        return cls([cls.TYPE.get(buf) for _ in range(buf.get_length())])
+
+    def put(self, buf: Buffer) -> int:
+        ret: int = buf.put_len(len(self.values))
+        return ret + sum((el.put(buf) for el in self.values))
+
+    def __str__(self):
+        return F"SEQUENCE OF {self.TYPE.__name__} [{len(self.values)}]"
+
+    @classmethod
+    def from_str(cls, value: str) -> Self:
+        return cls([cls.TYPE.from_str(val) for val in value.replace(' ', '').split(";")])
+
+    @classmethod
+    def default(cls) -> Self:
+        """return sequence with zero length"""
+        return cls([])
+
+    def __bytes__(self):
+        raise ValueError("not impl")
+
+    def __len__(self):
+        return decide_len(len(self.values)) + sum(map(len, self.values))
+
+    def __getitem__(self, item):
+        raise self.values[item]
+
+
+def SEQUENCE_OF(value: Type[UT]) -> Type[_SequenceOf]:
+    class SequenceOf(_SequenceOf):
+        TYPE = value
+
+    return SequenceOf
+
+
 class Data(Choice):
-    ELEMENTS = (
+    ELEMENTS = """define after, because has link to Self"""
+
+
+Data.ELEMENTS = (
         ChoiceElement("null-data",             0, NULL),
-        # ChoiceElement(name="array",               tag=1, type=...),
-        # ChoiceElement(name="structure",           tag=2, type=...),
-        ChoiceElement("boolean",               3,  BOOLEAN),
+        ChoiceElement("array",                 1, SEQUENCE_OF(Data)),
+        ChoiceElement("structure",             2, SEQUENCE_OF(Data)),
+        ChoiceElement("boolean",               3, BOOLEAN),
         # ChoiceElement(name="bit-string",            4,  BitString),
         ChoiceElement("double-long",           5,  Integer32),
         ChoiceElement("double-long-unsigned",  6,  Unsigned32),
