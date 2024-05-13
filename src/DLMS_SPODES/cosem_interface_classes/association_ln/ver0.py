@@ -5,7 +5,7 @@ from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ... import pdu_enums as pdu
 from . import mechanism_id, authentication_mechanism_name
-import method
+from . import method
 
 
 class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
