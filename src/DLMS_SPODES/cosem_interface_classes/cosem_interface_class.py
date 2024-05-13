@@ -224,7 +224,8 @@ class COSEMInterfaceClasses(ABC):
                 return self.get_attr_element(index).DATA_TYPE(value)
         else:
             ret = attr.copy()
-            return ret.set(value)
+            ret.set(value)
+            return ret
 
     def set_attr(self,
                  index: int,
