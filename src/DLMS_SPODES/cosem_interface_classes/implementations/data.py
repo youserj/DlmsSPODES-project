@@ -4,6 +4,8 @@ from .. import events as ev
 from ...types import implementations as impl
 from ...version import AppVersion
 from ...config_parser import get_message
+from ..reports import Report
+import logging
 from ... import exceptions as exc
 
 
@@ -66,11 +68,11 @@ class OctetStringDateTime(DataDynamic):
 
 
 class OpeningBodyUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> str:
+    def get_report(self, with_unit: bool = True) -> Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return get_message("$normal$")
-            case 1: return get_message("$case_is_opened$")
+            case 0: return Report(get_message("$normal$"), logging.INFO)
+            case 1: return Report(get_message("$case_is_opened$"), logging.WARN)
 
 
 class OpeningBody(DataDynamic):
@@ -79,11 +81,11 @@ class OpeningBody(DataDynamic):
 
 
 class OpeningCoverUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> str:
+    def get_report(self, with_unit: bool = True) -> Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return get_message("$normal$")
-            case 1: return get_message("$cover_is_opened$")
+            case 0: return Report(get_message("$normal$"), logging.INFO)
+            case 1: return Report(get_message("$cover_is_opened$"), logging.WARN)
 
 
 class OpeningCover(DataDynamic):
@@ -92,17 +94,17 @@ class OpeningCover(DataDynamic):
 
 
 class ExposureToFieldUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> str:
+    def get_report(self, with_unit: bool = True) -> Report:
 
         if (value := (int(self) & 0b101)) == 0:
-            return get_message("$normal$")
+            return Report(get_message("$normal$"), logging.INFO)
         else:
             ret = ""
             if value & 0b001:
                 ret += get_message("$fixed_field$")
             if value & 0b100:
                 ret += get_message("$exist_field$")
-            return ret
+            return Report(ret, logging.WARN)
 
 
 class ExposureToMagnet(DataDynamic):
@@ -116,7 +118,7 @@ class ExposureToHSField(DataDynamic):
 
 
 class SealUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> str:
+    def get_report(self, with_unit: bool = True) -> Report:
         def get_name(value: int):
             """ СПОДЭСv.3 Е.12.5"""
             match value & 0b11:
@@ -124,7 +126,9 @@ class SealUnsigned(cdt.Unsigned):
                 case 1: return "$contentions$"
                 case 2: return "$breaked_open$"
                 case 3: return "$subsequent_autopsy$"
-        return get_message(F"$for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}")
+        return Report(
+            mess=get_message(F"$for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}"),
+            lev=logging.INFO if int(self) == 0b101 else logging.WARN)
 
 
 class SealStatus(DataDynamic):
@@ -165,8 +169,8 @@ class ChannelNumberValue(cdt.Unsigned):
     def interface(self, value: enu.Interface):
         self.set((int(self) & 0b0001_1111) | (value << 3))
 
-    def get_report(self, with_unit: bool = True) -> str:
-        return F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}"
+    def get_report(self, with_unit: bool = True) -> Report:
+        return Report(F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}")
 
     def __str__(self):
         return self.report

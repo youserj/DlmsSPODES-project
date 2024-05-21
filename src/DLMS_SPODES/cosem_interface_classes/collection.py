@@ -1775,7 +1775,7 @@ class Collection:
     def get_attr_tree(self,
                       ass_id: int,
                       obj_mode: ObjectTreeMode = "c",
-                      obj_filter: tuple[ClassID | media_id.MediaId, ...] = None,
+                      obj_filter: tuple[ClassID | media_id.MediaId | LNPattern, ...] = None,
                       sort_mode: SortMode = "",
                       af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw"] = "l"):
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable"""
