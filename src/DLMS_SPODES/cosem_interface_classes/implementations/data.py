@@ -172,9 +172,6 @@ class ChannelNumberValue(cdt.Unsigned):
     def get_report(self, with_unit: bool = True) -> Report:
         return Report(F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}")
 
-    def __str__(self):
-        return self.report
-
 
 class CommunicationPortParameter(Data):
     """ RU. 0.0.96.12.4.255. СТО_34.01-5.1-006-2019v3. 13.10. Определение номера порта по которому установлено соединение"""
