@@ -69,8 +69,8 @@ class OpeningBodyUnsigned(cdt.Unsigned):
     def get_report(self, with_unit: bool = True) -> str:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return "$normal$"
-            case 1: return "$case_is_opened$"
+            case 0: return get_message("$normal$")
+            case 1: return get_message("$case_is_opened$")
 
 
 class OpeningBody(DataDynamic):
@@ -82,8 +82,8 @@ class OpeningCoverUnsigned(cdt.Unsigned):
     def get_report(self, with_unit: bool = True) -> str:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return "$normal$"
-            case 1: return "$cover_is_opened$"
+            case 0: return get_message("$normal$")
+            case 1: return get_message("$cover_is_opened$")
 
 
 class OpeningCover(DataDynamic):
@@ -95,13 +95,13 @@ class ExposureToFieldUnsigned(cdt.Unsigned):
     def get_report(self, with_unit: bool = True) -> str:
 
         if (value := (int(self) & 0b101)) == 0:
-            return "$normal$"
+            return get_message("$normal$")
         else:
             ret = ""
             if value & 0b001:
-                ret += "$fixed_field$"
+                ret += get_message("$fixed_field$")
             if value & 0b100:
-                ret += "$exist_field$"
+                ret += get_message("$exist_field$")
             return ret
 
 
