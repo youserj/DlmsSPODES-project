@@ -441,7 +441,9 @@ class TestType(unittest.TestCase):
             ver=AppVersion.from_str(ver))
         res = collection.get_object_tree(
             objects=col.filter_by_ass(3),
-            mode="gmc")
+            # mode="gmc"
+            mode=""
+        )
         print(res)
 
     def test_sort_objects(self):

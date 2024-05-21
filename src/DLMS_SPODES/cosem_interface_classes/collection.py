@@ -490,8 +490,11 @@ __func_map_for_create.update({
     (0, 96, 11, 7): ClassMap({0: impl.data.SPODES3SelfDiagnosticEvent}),
     (0, 96, 11, 8): ClassMap({0: impl.data.SPODES3ReactivePowerEvent}),
     (0, 0, 96, 51, 0): ClassMap({0: impl.data.OpeningBody}),
+    (0, 0, 96, 51, 1): ClassMap({0: impl.data.OpeningCover}),
+    (0, 0, 96, 51, 3): ClassMap({0: impl.data.ExposureToMagnet}),
+    (0, 0, 96, 51, 4): ClassMap({0: impl.data.ExposureToHSField}),
     (0, 0, 96, 51, 5): ClassMap({0: impl.data.SealStatus}),
-    (0, 0, 96, 51, (1, 3, 4, 6, 7)): UnsignedDataMap,
+    (0, 0, 96, 51, (6, 7)): UnsignedDataMap,
     (0, 0, 96, 51, (8, 9)): ClassMap({0: impl.data.OctetStringDateTime}),
     # electricity
     (1, 0, 8, (4, 5)): ClassMap({0: impl.data.SPODES3MeasurementPeriod}),

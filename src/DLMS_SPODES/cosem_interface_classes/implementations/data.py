@@ -65,9 +65,54 @@ class OctetStringDateTime(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cst.OctetStringDateTime),
 
 
+class OpeningBodyUnsigned(cdt.Unsigned):
+    def get_report(self, with_unit: bool = True) -> str:
+        """ СПОДЭСv.3 Е.12.5"""
+        match int(self) & 0b1:
+            case 0: return "$normal$"
+            case 1: return "$case_is_opened$"
+
+
 class OpeningBody(DataDynamic):
     """ RU. 0.0.96.51.0.255. СТО_34.01-5.1-006-2019v3. E 12.1 """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cdt.Unsigned),
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=OpeningBodyUnsigned),
+
+
+class OpeningCoverUnsigned(cdt.Unsigned):
+    def get_report(self, with_unit: bool = True) -> str:
+        """ СПОДЭСv.3 Е.12.5"""
+        match int(self) & 0b1:
+            case 0: return "$normal$"
+            case 1: return "$cover_is_opened$"
+
+
+class OpeningCover(DataDynamic):
+    """ RU. 0.0.96.51.1.255. СТО_34.01-5.1-006-2019v3. E 12.2 """
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=OpeningCoverUnsigned),
+
+
+class ExposureToFieldUnsigned(cdt.Unsigned):
+    def get_report(self, with_unit: bool = True) -> str:
+
+        if (value := (int(self) & 0b101)) == 0:
+            return "$normal$"
+        else:
+            ret = ""
+            if value & 0b001:
+                ret += "$fixed_field$"
+            if value & 0b100:
+                ret += "$exist_field$"
+            return ret
+
+
+class ExposureToMagnet(DataDynamic):
+    """ RU. 0.0.96.51.3.255. СТО_34.01-5.1-006-2019v3. E 12.3 """
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExposureToFieldUnsigned),
+
+
+class ExposureToHSField(DataDynamic):
+    """ RU. 0.0.96.51.4.255. СТО_34.01-5.1-006-2019v3. E 12.3 """
+    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExposureToFieldUnsigned),
 
 
 class SealUnsigned(cdt.Unsigned):
@@ -79,7 +124,7 @@ class SealUnsigned(cdt.Unsigned):
                 case 1: return "$contentions$"
                 case 2: return "$breaked_open$"
                 case 3: return "$subsequent_autopsy$"
-        return get_message(F"$electronic_seals$: $for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}")
+        return get_message(F"$for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}")
 
 
 class SealStatus(DataDynamic):
