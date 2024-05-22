@@ -409,7 +409,7 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                             with_selection: bool = False) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
         """ with selection for object_list. TODO: Copypast ProfileGeneric"""
         descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(value)
-        if value == 2 and with_selection:
+        if value == 2 and with_selection and self.object_list:
             return CosemAttributeDescriptorWithSelection((descriptor, self.object_list.selective_access))
         else:
             return descriptor
