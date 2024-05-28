@@ -88,7 +88,7 @@ InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister 
 UsedAttributes: TypeAlias = dict[cst.LogicalName, set[int]]
 
 
-ObjectTreeMode: TypeAlias = Literal["m", "g", "c", "mc", "cm", "gm", "gc", "cg", "gmc"]
+ObjectTreeMode: TypeAlias = Literal["", "m", "g", "c", "mc", "cm", "gm", "gc", "cg", "gmc"]
 SortMode: TypeAlias = Literal["l", "n", "c", "cl", "cn"]
 
 
@@ -1778,14 +1778,15 @@ class Collection:
                       obj_filter: tuple[ClassID | media_id.MediaId | LNPattern, ...] = None,
                       sort_mode: SortMode = "",
                       af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw"] = "l",
-                      ai_filter: tuple[tuple[ClassID, tuple[int, ...]], ...] = None):  # todo: maybe ai_filter with LNPattern, indexes need?
+                      ai_filter: tuple[tuple[ClassID, tuple[int, ...]], ...] = None    # todo: maybe ai_filter with LNPattern, indexes need?
+                      ) -> dict[ClassID | media_id.MediaId, dict[ic.COSEMInterfaceClasses, list[int]]] | dict[ic.COSEMInterfaceClasses, list[int]]:  # todo: not all ret annotation
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable,
         attr_filter(attribute index filter), example: ((ClassID.REGISTER, (2,))) - is restricted for Register only Value attribute without logical_name and scaler_unit
         """
         without_ln = True if "l" in af_mode else False
         only_read = True if "r" in af_mode else False
         only_write = True if "w" in af_mode else False
-        ai_f = dict(ai_filter)
+        ai_f = dict(ai_filter) if ai_filter else dict()
         filtered = self.filter_by_ass(ass_id)
         if obj_filter:
             filtered = get_filtered(filtered, obj_filter)
@@ -1819,6 +1820,8 @@ class Collection:
                             indexes.append(i)
                     if len(indexes) != 0:
                         objects[obj] = indexes
+                if d is None:
+                    return objects
                 if len(objects) != 0:
                     d[k] = objects
                 else:
