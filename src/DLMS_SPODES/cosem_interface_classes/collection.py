@@ -1777,11 +1777,15 @@ class Collection:
                       obj_mode: ObjectTreeMode = "c",
                       obj_filter: tuple[ClassID | media_id.MediaId | LNPattern, ...] = None,
                       sort_mode: SortMode = "",
-                      af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw"] = "l"):
-        """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable"""
+                      af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw"] = "l",
+                      ai_filter: tuple[tuple[ClassID, tuple[int, ...]], ...] = None):  # todo: maybe ai_filter with LNPattern, indexes need?
+        """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable,
+        attr_filter(attribute index filter), example: ((ClassID.REGISTER, (2,))) - is restricted for Register only Value attribute without logical_name and scaler_unit
+        """
         without_ln = True if "l" in af_mode else False
         only_read = True if "r" in af_mode else False
         only_write = True if "w" in af_mode else False
+        ai_f = dict(ai_filter)
         filtered = self.filter_by_ass(ass_id)
         if obj_filter:
             filtered = get_filtered(filtered, obj_filter)
@@ -1800,6 +1804,7 @@ class Collection:
             if isinstance(v, list):
                 objects = dict()
                 for obj in v:
+                    obj: ic.COSEMInterfaceClasses
                     indexes = list()
                     for i, attr in obj.get_index_with_attributes():
                         if without_ln and i == 1:
@@ -1807,6 +1812,8 @@ class Collection:
                         elif only_read and not self.is_readable(obj.logical_name, i, ass_id):
                             continue
                         elif only_write and not self.is_writable(obj.logical_name, i, ass_id):
+                            continue
+                        elif (attrs := ai_f.get(obj.CLASS_ID)) and i not in attrs:
                             continue
                         else:
                             indexes.append(i)
@@ -2286,7 +2293,7 @@ def get_filtered(objects: list[InterfaceClass],
             continue
         elif media and get_media_id(obj.logical_name) not in media:
             continue
-        elif obj.logical_name not in patterns:
+        elif patterns and obj.logical_name not in patterns:
             continue
         new_list.append(obj)
     return new_list

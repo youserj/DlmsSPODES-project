@@ -483,9 +483,11 @@ class TestType(unittest.TestCase):
         res = col.get_attr_tree(
             ass_id=3,
             obj_mode="mc",
-            obj_filter=(collection.ClassID.REGISTER, collection.media_id.ABSTRACT),
+            # obj_filter=(collection.ClassID.REGISTER, collection.media_id.ABSTRACT),
+            obj_filter=(collection.ClassID.REGISTER,),
             sort_mode="l",
-            af_mode="lrw"
+            af_mode="lrw",
+            ai_filter=((overview.ClassID.REGISTER, (3,)),)
         )
         print(res)
 
