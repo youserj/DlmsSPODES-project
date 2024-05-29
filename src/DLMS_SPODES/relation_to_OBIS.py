@@ -59,7 +59,8 @@ def get_harmonics_name(classification: int) -> str:
         case 126:                             return rn.ALL_HARMONICS
         case 127:                             return rn.ALL_HARMONICS_TO_NOMINAL_VALUE_RATIO
         case _ if 120 >= classification >= 1: return F"{rn.HARMONIC} {classification}"
-        case _: raise ValueError(F"for get harmonics unknown {classification=}")
+        case man:
+            return F"Manufacture specific {man}"
 
 
 def get_processing_names(d: int) -> str:

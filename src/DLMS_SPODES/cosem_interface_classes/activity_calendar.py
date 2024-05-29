@@ -15,17 +15,13 @@ class Season(cdt.Structure):
 class SeasonProfile(cdt.Array):
     """ Contains a list of seasons defined by their starting date and a specific week_profile to be executed. The list is sorted according to season_start.  """
     TYPE = Season
-    get_week_names: Callable
     values: list[Season]
-    cb_get_week_profile_names: Callable[[], tuple[cdt.OctetString, ...]]
 
     def new_element(self) -> Season:
         names: list[bytes] = [bytes(el.season_profile_name) for el in self.values]
         for new_name in (i.to_bytes(1, 'big') for i in range(256)):
             if new_name not in names:
-                if len(week_names := self.cb_get_week_profile_names()) == 0:
-                    raise ValueError(F"{WeekProfile.__class__.__name__} container is absense")
-                return Season((bytearray(new_name), None, week_names[0]))
+                return Season((bytearray(new_name), None, bytearray(b'week_name?')))
         raise ValueError(F'in {self} all season names is busy')
 
     def append_validate(self, element: Season):
@@ -53,16 +49,13 @@ class WeekProfileTable(cdt.Array):
     identified. """
     TYPE = WeekProfile
     values: list[WeekProfile]
-    cb_get_day_ids: Callable[[], tuple[cdt.Unsigned]]
 
     def new_element(self) -> WeekProfile:
         """return default WeekProfile with vacant week_profile_name, existed day ID and insert callback for validate change DayID"""
-        names: list[bytes] = [el.week_profile_name.decode() for el in self.values]
+        names: list[bytes] = [bytes(el.week_profile_name) for el in self.values]
         for new_name in (i.to_bytes(1, 'big') for i in range(256)):
             if new_name not in names:
-                if len(days_id := self.cb_get_day_ids()) == 0:
-                    raise ValueError("days_id container is absense")
-                return WeekProfile((bytearray(new_name), *[days_id[0]]*7))
+                return WeekProfile((bytearray(new_name), *[0]*7))
         raise ValueError(F'in {self} all week names is busy')
 
     def append_validate(self, element: WeekProfile):
@@ -145,11 +138,6 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
         self.set_attr(ai.DAY_PROFILE_TABLE_PASSIVE, None)
         self.set_attr(ai.WEEK_PROFILE_TABLE_PASSIVE, None)
         self.set_attr(ai.SEASON_PROFILE_PASSIVE, None)
-
-        self.week_profile_table_active.cb_get_day_ids = self.day_profile_table_active.get_day_ids
-        self.week_profile_table_passive.cb_get_day_ids = self.day_profile_table_passive.get_day_ids
-        self.season_profile_active.cb_get_week_profile_names = self.week_profile_table_active.get_week_profile_names
-        self.season_profile_passive.cb_get_week_profile_names = self.week_profile_table_passive.get_week_profile_names
 
     @property
     def calendar_name_active(self) -> cdt.OctetString:
