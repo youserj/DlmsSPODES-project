@@ -1098,7 +1098,7 @@ class Array(__Array, ComplexDataType):
             case _:                raise ValueError(F'Init {self.__class__} with Value: "{value}" not supported')
 
     def __str__(self):
-        return F"{self.TAG if self.TYPE is None else self.TYPE.TAG}[{len(self.values)}]"
+        return F"{self.TAG}[{len(self.values)}]"
 
     def append(self, element: CommonDataType | None | Any = None):
         """ append element to end """

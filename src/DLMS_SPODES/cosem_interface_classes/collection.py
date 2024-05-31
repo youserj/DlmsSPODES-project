@@ -936,7 +936,7 @@ class Collection:
                                     data_type = new_object.get_attr_element(i).DATA_TYPE
                                     if isinstance(data_type, ut.CHOICE):
                                         new_object.set_attr(i, int(attr.text))
-                                    elif data_type == int(attr.text):
+                                    elif data_type.TAG[0] == int(attr.text):
                                         """ ordering by old"""
                                     else:
                                         raise ValueError(F'Got {attr.text} attribute Tag, expected {data_type}')

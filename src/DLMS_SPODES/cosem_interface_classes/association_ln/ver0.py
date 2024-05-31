@@ -93,7 +93,7 @@ class ObjectListType(arrays.SelectionAccess):
             else:
                 continue
         else:
-            raise ValueError(F"not find in {ln} attribute index: {index}")
+            raise ValueError(F"access for {ln}: {index} is absense")
 
     def get_meth_access(self, ln: cst.LogicalName | ut.CosemObjectInstanceId, index: int) -> pdu.MethodAccess:
         """ index - DLMS object method index """
