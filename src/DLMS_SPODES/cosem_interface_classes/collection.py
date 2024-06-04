@@ -16,6 +16,7 @@ from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
 from ..types.implementations import structs, enums, octet_string
 from . import cosem_interface_class as ic
+from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar
 from .arbitrator import Arbitrator
 from .association_ln import mechanism_id
@@ -2214,65 +2215,8 @@ def get_sorted(objects: list[InterfaceClass],
     return objects
 
 
-class LNPattern:
-    """pattern for use in get_filtred.
-    value "x.x.x.x.x.x" where x is:
-    0..255 - simple value
-    a,b,c,d,e,f - for skip value in each group
-    (y, z, ...) - set of simple values(y or z)
-    ((y-z), ...) - set of simple values with range(from y to z)
-    example: "a.0.(1,2,3).(0-64).0.f"
-    """
-    __values: list[int, set[int]]
-
-    def __init__(self, value: str):
-        self.__values = [-1, -1, -1, -1, -1, -1]
-        for i, val in enumerate(value.split('.', maxsplit=5)):
-            if len(val) == 1 and (ord(val) == 97+i):
-                continue
-            elif val.isdigit():
-                self.__values[i] = int(val)
-                if not (0 <= self.__values[i] <= 255):
-                    raise ValueError(F"in {value=} got element {val=}, expected 0..255")
-            elif val.startswith('(') and val.endswith(')'):
-                el: set[int] = set()
-                val = val.replace('(', "").replace(')', "")
-                for j in val.split(","):
-                    j = j.replace(" ", '')
-                    match j.count('-'):
-                        case 0:
-                            el.add(self.__simple_validate(j))
-                        case 1:
-                            start, end = j.split("-")
-                            el.update(range(
-                                self.__simple_validate(start),
-                                self.__simple_validate(end)+1))
-                        case err:
-                            raise ValueError(F"got a lot of <-> in pattern: {value}, expected one")
-                self.__values[i] = el
-            else:
-                raise ValueError(F"got wrong symbol: {val} in pattern")
-
-    @staticmethod
-    def __simple_validate(value: str) -> int:
-        if value.isdigit() and (0 <= (new := int(value)) <= 255):
-            return new
-        else:
-            raise ValueError(F"got not valid element: {value} in pattern, expected 0..255")
-
-    def __eq__(self, other: cst.LogicalName):
-        for i, j in zip(self.__values, other):
-            if i == j or (i == -1):
-                continue
-            elif isinstance(i, set) and j in i:
-                continue
-            else:
-                return False
-        return True
-
-
 def get_filtered(objects: list[InterfaceClass],
-                 keys: tuple[ClassID | media_id.MediaId | LNPattern, ...]) -> list[InterfaceClass]:
+                 keys: tuple[ClassID | media_id.MediaId | LNPattern | LNPatterns, ...]) -> list[InterfaceClass]:
     c_ids: list[ut.CosemClassId] = list()
     media: list[int] = list()
     group: list[int] = list()
@@ -2288,16 +2232,16 @@ def get_filtered(objects: list[InterfaceClass],
                 group.append(s_g)
         elif isinstance(k, LNPattern):
             patterns.append(k)
+        elif isinstance(k, LNPatterns):
+            patterns.extend(k)
     new_list = list()
     for obj in objects:
-        if c_ids and not obj.CLASS_ID in c_ids:
+        if c_ids and (obj.CLASS_ID not in c_ids):
             continue
-        elif group and get_relation_group(obj.logical_name).subgroup not in group:
-            continue
-        elif media and get_media_id(obj.logical_name) not in media:
-            continue
-        elif patterns and obj.logical_name not in patterns:
-            continue
+        if get_relation_group(obj.logical_name).subgroup not in group:
+            if get_media_id(obj.logical_name) not in media:
+                if obj.logical_name not in patterns:
+                    continue
         new_list.append(obj)
     return new_list
 

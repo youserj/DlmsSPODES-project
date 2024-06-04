@@ -2,7 +2,7 @@ import os
 import time
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
-from src.DLMS_SPODES.cosem_interface_classes import collection, overview
+from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS_SPODES import cosem_interface_classes
 from src.DLMS_SPODES.obis import media_id
 from src.DLMS_SPODES.version import AppVersion
@@ -493,9 +493,10 @@ class TestType(unittest.TestCase):
 
     def test_LNPattern(self):
         pattern = collection.LNPattern("a.2.(1, 200, 43, 51, 3-8).4.5.9")
+        pat3 = ln_pattern.GENERAL_AND_SERVICE_ENTRY_OBJECTS
         pattern2 = collection.LNPattern("a.2.31.4.5.9")
         print(pattern)
-        print(cst.LogicalName("1.2.33.4.5.9") in (pattern, pattern2))
+        print(cst.LogicalName("1.2.31.4.5.9") in (pattern, pattern2))
         type_ = "4d324d5f31"
         ver = "1.5.7"
         man = b"KPZ"
@@ -505,6 +506,7 @@ class TestType(unittest.TestCase):
             ver=AppVersion.from_str(ver))
         res = collection.get_filtered(
             objects=col.filter_by_ass(3),
-            keys=(collection.LNPattern("a.b.(14-20).d.e.f"),)
+            # keys=(collection.LNPattern("a.b.(14-20).d.e.f"),)
+            keys=(pat3,)
         )
         print(res)
