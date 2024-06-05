@@ -1,21 +1,7 @@
-from typing import Any, TypeAlias
-from dataclasses import dataclass
+from typing import Any
 from .collection import ic, cdt
 from ..cosem_interface_classes import collection
 from ..config_parser import get_values
-import logging
-
-
-Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
-
-
-@dataclass(frozen=True)
-class Report:
-    mess: str
-    lev: Level = logging.INFO
-
-    def __str__(self):
-        return self.mess
 
 
 def get_obj_report(

@@ -1,3 +1,5 @@
+import logging
+
 from ..__class_init__ import *
 from ...config_parser import get_message
 
@@ -14,22 +16,24 @@ class PSStatus(cdt.Enum, elements=tuple(range(5))):
     """ Indicates the packet switched status of the modem. """
 
 
-class SignalQuality(cdt.Unsigned):
+class SignalQuality(cdt.ReportMixin, cdt.Unsigned):
     """for string report"""
-    def get_report(self, with_unit: bool = True) -> str:
+    def get_report(self) -> cdt.Report:
         value = int(self)
         if value == 0:
-            return get_message("–113 dBm $or$ $less$(0)")
+            return cdt.Report("–113 dBm $or$ $less$(0)")
         elif value == 1:
-            return F"–111 dBm(1)"
+            return cdt.Report(F"–111 dBm(1)")
         elif value < 31:
-            return F"{-109+(value-2)*2} dBm({value})"
+            return cdt.Report(F"{-109+(value-2)*2} dBm({value})")
         elif value == 31:
-            return get_message("–51 dBm $or$ $greater$(31)")
+            return cdt.Report(get_message("–51 dBm $or$ $greater$(31)"))
         elif value == 99:
-            return get_message("$not_known_or_not_detectable$")
+            return cdt.Report(get_message("$not_known_or_not_detectable$"))
         else:
-            return F"wrong {value=}"
+            return cdt.Report(
+                mess=F"wrong {value=}",
+                lev=logging.WARN)
 
 
 class CellInfoType(cdt.Structure):

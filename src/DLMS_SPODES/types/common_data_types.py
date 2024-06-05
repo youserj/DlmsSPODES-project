@@ -2289,3 +2289,22 @@ class ScalUnitType(Structure):
     """ DLMS UA 1000-1 Ed. 14 4.3.2 Register scaler_unit"""
     scaler: Integer
     unit: Unit
+
+
+Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
+
+
+@dataclass(frozen=True)
+class Report:
+    mess: str
+    lev: Level = logging.INFO
+
+    def __str__(self):
+        return self.mess
+
+
+class ReportMixin(ABC):
+    """mixin for cdt"""
+    @abstractmethod
+    def get_report(self) -> Report:
+        """custom string represent"""

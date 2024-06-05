@@ -4,7 +4,6 @@ from .. import events as ev
 from ...types import implementations as impl
 from ...version import AppVersion
 from ...config_parser import get_message
-from ..reports import Report
 import logging
 from ... import exceptions as exc
 
@@ -67,12 +66,12 @@ class OctetStringDateTime(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cst.OctetStringDateTime),
 
 
-class OpeningBodyUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> Report:
+class OpeningBodyUnsigned(cdt.ReportMixin, cdt.Unsigned):
+    def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return Report(get_message("$normal$"), logging.INFO)
-            case 1: return Report(get_message("$case_is_opened$"), logging.WARN)
+            case 0: return cdt.Report(get_message("$normal$"), logging.INFO)
+            case 1: return cdt.Report(get_message("$case_is_opened$"), logging.WARN)
 
 
 class OpeningBody(DataDynamic):
@@ -80,12 +79,12 @@ class OpeningBody(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=OpeningBodyUnsigned),
 
 
-class OpeningCoverUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> Report:
+class OpeningCoverUnsigned(cdt.ReportMixin, cdt.Unsigned):
+    def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return Report(get_message("$normal$"), logging.INFO)
-            case 1: return Report(get_message("$cover_is_opened$"), logging.WARN)
+            case 0: return cdt.Report(get_message("$normal$"), logging.INFO)
+            case 1: return cdt.Report(get_message("$cover_is_opened$"), logging.WARN)
 
 
 class OpeningCover(DataDynamic):
@@ -93,18 +92,17 @@ class OpeningCover(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=OpeningCoverUnsigned),
 
 
-class ExposureToFieldUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> Report:
-
+class ExposureToFieldUnsigned(cdt.ReportMixin, cdt.Unsigned):
+    def get_report(self) -> cdt.Report:
         if (value := (int(self) & 0b101)) == 0:
-            return Report(get_message("$normal$"), logging.INFO)
+            return cdt.Report(get_message("$normal$"), logging.INFO)
         else:
             ret = ""
             if value & 0b001:
                 ret += get_message("$fixed_field$")
             if value & 0b100:
                 ret += get_message("$exist_field$")
-            return Report(ret, logging.WARN)
+            return cdt.Report(ret, logging.WARN)
 
 
 class ExposureToMagnet(DataDynamic):
@@ -117,8 +115,8 @@ class ExposureToHSField(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExposureToFieldUnsigned),
 
 
-class SealUnsigned(cdt.Unsigned):
-    def get_report(self, with_unit: bool = True) -> Report:
+class SealUnsigned(cdt.ReportMixin, cdt.Unsigned):
+    def get_report(self) -> cdt.Report:
         def get_name(value: int):
             """ СПОДЭСv.3 Е.12.5"""
             match value & 0b11:
@@ -126,7 +124,7 @@ class SealUnsigned(cdt.Unsigned):
                 case 1: return "$contentions$"
                 case 2: return "$breaked_open$"
                 case 3: return "$subsequent_autopsy$"
-        return Report(
+        return cdt.Report(
             mess=get_message(F"$for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}"),
             lev=logging.INFO if int(self) == 0b101 else logging.WARN)
 
@@ -152,7 +150,7 @@ class ITEBitMap(DataStatic):
     A_ELEMENTS = Data.get_attr_element(2).get_change(data_type=BitMapData),
 
 
-class ChannelNumberValue(cdt.Unsigned):
+class ChannelNumberValue(cdt.ReportMixin, cdt.Unsigned):
     @property
     def channel(self) -> enu.ChannelNumber:
         return enu.ChannelNumber(int(self) & 0b0000_0111)
@@ -169,8 +167,8 @@ class ChannelNumberValue(cdt.Unsigned):
     def interface(self, value: enu.Interface):
         self.set((int(self) & 0b0001_1111) | (value << 3))
 
-    def get_report(self, with_unit: bool = True) -> Report:
-        return Report(F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}")
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(F"Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}")
 
 
 class CommunicationPortParameter(Data):
@@ -188,9 +186,9 @@ class AnyDateTime(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=choices.any_date_time),
 
 
-class VoltageEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.voltage_events.get_report(int(self))
+class VoltageEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.voltage_events.get_report(int(self)))
 
 
 class SPODES3VoltageEvent(DataDynamic):
@@ -198,9 +196,9 @@ class SPODES3VoltageEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=VoltageEventValues),
 
 
-class CurrentEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.current_events.get_report(int(self))
+class CurrentEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.current_events.get_report(int(self)))
 
 
 class SPODES3CurrentEvent(DataDynamic):
@@ -208,9 +206,9 @@ class SPODES3CurrentEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=CurrentEventValues),
 
 
-class CommutationEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.commutation_events.get_report(int(self))
+class CommutationEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.commutation_events.get_report(int(self)))
 
 
 class SPODES3CommutationEvent(DataDynamic):
@@ -218,9 +216,9 @@ class SPODES3CommutationEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=CommutationEventValues),
 
 
-class ProgrammingEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.programming_events.get_report(int(self))
+class ProgrammingEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.programming_events.get_report(int(self)))
 
 
 class SPODES3ProgrammingEvent(DataDynamic):
@@ -228,9 +226,9 @@ class SPODES3ProgrammingEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ProgrammingEventValues),
 
 
-class ExternalEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.external_impact_events.get_report(int(self))
+class ExternalEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.external_impact_events.get_report(int(self)))
 
 
 class SPODES3ExternalEvent(DataDynamic):
@@ -238,9 +236,9 @@ class SPODES3ExternalEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExternalEventValues),
 
 
-class CommunicationEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.communication_events.get_report(int(self))
+class CommunicationEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.communication_events.get_report(int(self)))
 
 
 class SPODES3CommunicationEvent(DataDynamic):
@@ -248,9 +246,9 @@ class SPODES3CommunicationEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=CommunicationEventValues),
 
 
-class AccessEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.access_events.get_report(int(self))
+class AccessEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.access_events.get_report(int(self)))
 
 
 class SPODES3AccessEvent(DataDynamic):
@@ -258,9 +256,9 @@ class SPODES3AccessEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=AccessEventValues),
 
 
-class SelfDiagnosticEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.self_diagnostics_events.get_report(int(self))
+class SelfDiagnosticEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.self_diagnostics_events.get_report(int(self)))
 
 
 class SPODES3SelfDiagnosticEvent(DataDynamic):
@@ -268,9 +266,9 @@ class SPODES3SelfDiagnosticEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SelfDiagnosticEventValues),
 
 
-class ReactivePowerEventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.reactive_power_events.get_report(int(self))
+class ReactivePowerEventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.reactive_power_events.get_report(int(self)))
 
 
 class SPODES3ReactivePowerEvent(DataDynamic):
@@ -278,9 +276,9 @@ class SPODES3ReactivePowerEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ReactivePowerEventValues),
 
 
-class PowerQuality2EventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.power_quality_status_2.get_report(int(self))
+class PowerQuality2EventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.power_quality_status_2.get_report(int(self)))
 
 
 class SPODES3PowerQuality2Event(DataNotSpecific):
@@ -288,9 +286,9 @@ class SPODES3PowerQuality2Event(DataNotSpecific):
     A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=PowerQuality2EventValues),
 
 
-class PowerQuality1EventValues(cdt.LongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.power_quality_status_1.get_report(int(self))
+class PowerQuality1EventValues(cdt.ReportMixin, cdt.LongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.power_quality_status_1.get_report(int(self)))
 
 
 class SPODES3PowerQuality1Event(DataNotSpecific):
@@ -299,9 +297,9 @@ class SPODES3PowerQuality1Event(DataNotSpecific):
 
 
 # KPZ implements
-class KPZ1VoltageEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.voltage_events.get_report(int(self))
+class KPZ1VoltageEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.voltage_events.get_report(int(self)))
 
 
 class KPZ1SPODES3VoltageEvent(DataStatic):
@@ -309,9 +307,9 @@ class KPZ1SPODES3VoltageEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1VoltageEventValues),
 
 
-class KPZ1CurrentEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.current_events.get_report(int(self))
+class KPZ1CurrentEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.current_events.get_report(int(self)))
 
 
 class KPZ1SPODES3CurrentEvent(DataStatic):
@@ -319,9 +317,9 @@ class KPZ1SPODES3CurrentEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CurrentEventValues),
 
 
-class KPZ1CommutationEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.commutation_events.get_report(int(self))
+class KPZ1CommutationEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.commutation_events.get_report(int(self)))
 
 
 class KPZ1SPODES3CommutationEvent(DataStatic):
@@ -329,9 +327,9 @@ class KPZ1SPODES3CommutationEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommutationEventValues),
 
 
-class KPZ1ProgrammingEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.programming_events.get_report(int(self))
+class KPZ1ProgrammingEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.programming_events.get_report(int(self)))
 
 
 class KPZ1SPODES3ProgrammingEvent(DataStatic):
@@ -339,9 +337,9 @@ class KPZ1SPODES3ProgrammingEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ProgrammingEventValues),
 
 
-class KPZ1ExternalEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.external_impact_events.get_report(int(self))
+class KPZ1ExternalEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.external_impact_events.get_report(int(self)))
 
 
 class KPZ1SPODES3ExternalEvent(DataStatic):
@@ -349,9 +347,9 @@ class KPZ1SPODES3ExternalEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ExternalEventValues),
 
 
-class KPZ1CommunicationEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.communication_events.get_report(int(self))
+class KPZ1CommunicationEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.communication_events.get_report(int(self)))
 
 
 class KPZ1SPODES3CommunicationEvent(DataStatic):
@@ -359,9 +357,9 @@ class KPZ1SPODES3CommunicationEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommunicationEventValues),
 
 
-class KPZ1AccessEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.access_events.get_report(int(self))
+class KPZ1AccessEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.access_events.get_report(int(self)))
 
 
 class KPZ1SPODES3AccessEvent(DataStatic):
@@ -369,9 +367,9 @@ class KPZ1SPODES3AccessEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1AccessEventValues),
 
 
-class KPZ1SelfDiagnosticEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.self_diagnostics_events.get_report(int(self))
+class KPZ1SelfDiagnosticEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.self_diagnostics_events.get_report(int(self)))
 
 
 class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
@@ -379,9 +377,9 @@ class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1SelfDiagnosticEventValues),
 
 
-class KPZ1ReactivePowerEventValues(cdt.DoubleLongUnsigned):
-    def get_report(self, with_unit: bool = True) -> str:
-        return ev.reactive_power_events.get_report(int(self))
+class KPZ1ReactivePowerEventValues(cdt.ReportMixin, cdt.DoubleLongUnsigned):
+    def get_report(self) -> cdt.Report:
+        return cdt.Report(ev.reactive_power_events.get_report(int(self)))  # todo need refactoring
 
 
 class KPZ1SPODES3ReactivePowerEvent(DataStatic):

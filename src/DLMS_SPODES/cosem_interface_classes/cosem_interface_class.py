@@ -318,7 +318,7 @@ class COSEMInterfaceClasses(ABC):
         return iter(self.__attributes)
 
     def __str__(self):
-        return F'{self.logical_name} {get_name(self.logical_name)}'
+        return F'{self.logical_name.get_report()} {get_name(self.logical_name)}'
 
     def get_obis(self) -> bytes:
         """ return obis as bytes[6] """

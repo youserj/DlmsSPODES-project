@@ -3,7 +3,7 @@ from ..types import common_data_types as cdt
 import datetime
 
 
-class LogicalName(cdt.OctetString, size=6):
+class LogicalName(cdt.ReportMixin, cdt.OctetString, size=6):
     """ Logical Name type. Default is CLock#1 """
     __match_args__ = ('a', 'b', 'c', 'd', 'e', 'f')
     DEFAULT = b'\x00\x00\x01\x00\x00\xff'
@@ -41,8 +41,8 @@ class LogicalName(cdt.OctetString, size=6):
         else:
             raise TypeError(F'Unsupported type validation from string, got {value.__class__}')
 
-    def __str__(self):
-        return '.'.join(map(str, self.contents))
+    def get_report(self) -> cdt.Report:
+        return cdt.Report('.'.join(map(str, self.contents)))  # todo: add error handle
 
     def validate_from(self, value: str, cursor_position=None) -> tuple[str, int]:
         try:
