@@ -67,6 +67,15 @@ class LNPatterns:
         return iter(self.value)
 
 
+ABSTRACT = LNPattern("0")
+ELECTRICITY = LNPattern("1")
+HCA = LNPattern("4")
+THERMAL = LNPattern("(5,6)")
+GAS = LNPattern("7")
+WATER = LNPattern("(8,9)")
+OTHER_MEDIA = LNPattern("15")
+
+
 BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES = LNPatterns((
     LNPattern("0.b.0.1.(0,2,3,5).f"),
     LNPattern("0.b.0.1.(1,4).255")))
@@ -116,4 +125,5 @@ GENERAL_AND_SERVICE_ENTRY_OBJECTS = LNPatterns((
     METER_TAMPER_EVENT_RELATED_OBJECTS,
     MANUFACTURER_SPECIFIC_ABSTRACT))
 """DLMS UA 1000-1 Ed. 14 7.4.1"""
-print('ik')
+
+OTHER_ELECTRICITY_RELATED_GENERAL_PURPOSE_OBJECTS = LNPattern("1.b.0.(2,3,4,6,7,8,9,10).e.255")
