@@ -10,7 +10,7 @@ import datetime
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Self, Callable, Literal
+from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable
 import logging
 from ..version import AppVersion
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
@@ -63,7 +63,7 @@ from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
 from ..enums import TagsName
-from . import obis as o
+from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
 from ..config_parser import config
 from ..obis import media_id
@@ -1421,6 +1421,19 @@ class Collection:
         else:
             return None
 
+    @lru_cache(1000)
+    def get_scaler_unit(self,
+                        ln: cst.LogicalName,
+                        i: int,
+                        *par) -> cdt.ScalUnitType:
+        """search unit for cdt.Digital in collection"""
+        obj = self.get_object(ln)
+        match obj, i:
+            case Limiter(), 6 | 7:
+                return cdt.ScalUnitType((0, 7))
+        return cdt.ScalUnitType()
+        # raise ValueError(F"not find scaler_unit for {ln}: {i} {par}")
+
     def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
         """return only association objects"""
         ret = list()
@@ -1455,9 +1468,8 @@ class Collection:
         else:
             raise exc.NoObject(F"not found at least one DLMS Objects from collection with {values=}")
 
-    def get_objects_by_class_id(self, value: int | ut.CosemClassId) -> list[InterfaceClass]:
-        class_id = ut.CosemClassId(value)
-        return list(filter(lambda obj: obj.CLASS_ID == class_id, self.__container.values()))
+    def get_objects_by_class_id(self, value: ut.CosemClassId) -> list[InterfaceClass]:
+        return list(filter(lambda obj: obj.CLASS_ID == value, self.__container.values()))
 
     def get_objects_descriptions(self) -> list[tuple[cst.LogicalName, cdt.LongUnsigned, cdt.Unsigned]]:
         """ return container of objects for get device clone """
@@ -1701,8 +1713,8 @@ class Collection:
     @lru_cache(4)
     def get_association_id(self, client_sap: enums.ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
-        for ass in self.get_objects_by_class_id(ClassID.ASSOCIATION_LN):
-            if ass.associated_partners_id.client_SAP == client_sap and ass.logical_name.e != 0:
+        for ass in get_filtered(iter(self), (ln_pattern.NON_CURRENT_ASSOCIATION,)):
+            if ass.associated_partners_id.client_SAP == client_sap:
                 return ass.logical_name.e
             else:
                 continue
@@ -2215,21 +2227,13 @@ def get_sorted(objects: list[InterfaceClass],
     return objects
 
 
-def get_filtered(objects: list[InterfaceClass],
-                 keys: tuple[ClassID | media_id.MediaId | LNPattern | LNPatterns, ...]) -> list[InterfaceClass]:
+def get_filtered(objects: Iterable[InterfaceClass],
+                 keys: tuple[ClassID | LNPattern | LNPatterns, ...]) -> list[InterfaceClass]:
     c_ids: list[ut.CosemClassId] = list()
-    media: list[int] = list()
-    group: list[int] = list()
     patterns: list[LNPattern] = list()
-    medias = tuple(m.subgroup for m in RelationGroups)
     for k in keys:
         if isinstance(k, ut.CosemClassId):
             c_ids.append(k)
-        elif isinstance(k, RelationGroup):
-            if (s_g := k.subgroup) in medias:
-                media.append(s_g)
-            else:
-                group.append(s_g)
         elif isinstance(k, LNPattern):
             patterns.append(k)
         elif isinstance(k, LNPatterns):
@@ -2238,10 +2242,8 @@ def get_filtered(objects: list[InterfaceClass],
     for obj in objects:
         if c_ids and (obj.CLASS_ID not in c_ids):
             continue
-        if get_relation_group(obj.logical_name).subgroup not in group:
-            if get_media_id(obj.logical_name) not in media:
-                if obj.logical_name not in patterns:
-                    continue
+        if patterns and (obj.logical_name not in patterns):
+            continue
         new_list.append(obj)
     return new_list
 
