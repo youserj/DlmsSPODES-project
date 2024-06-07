@@ -394,7 +394,8 @@ class Digital(ABC):
     """ Default value is 0 """
     contents: bytes
     TAG: TAG
-    SCALER_UNIT = None  # ScalerUnitType | None
+    SCALER_UNIT = None  # ScalerUnitType | None | -1
+    """None: not required, -1: need search in collection"""
     DEFAULT = None
     MIN: int | None = None
     MAX: int | None = None
@@ -563,6 +564,7 @@ class Digital(ABC):
 
 class Float(ABC):
     contents: bytes
+    SCALER_UNIT = None
     TAG: TAG
 
     @abstractmethod

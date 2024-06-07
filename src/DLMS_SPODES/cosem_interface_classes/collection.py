@@ -1421,18 +1421,29 @@ class Collection:
         else:
             return None
 
-    @lru_cache(1000)
     def get_scaler_unit(self,
                         ln: cst.LogicalName,
                         i: int,
-                        *par) -> cdt.ScalUnitType:
-        """search unit for cdt.Digital in collection"""
+                        *par) -> cdt.ScalUnitType | -1 | None:
+        """search unit for cdt.Digital in collection.
+        None: not requirements
+        -1: not find"""
         obj = self.get_object(ln)
-        match obj, i:
-            case Limiter(), 6 | 7:
-                return cdt.ScalUnitType((0, 7))
-        return cdt.ScalUnitType()
-        # raise ValueError(F"not find scaler_unit for {ln}: {i} {par}")
+        a_val = obj.get_attr(i)
+        if a_val is None:
+            return -1
+        elif isinstance(a_val, (cdt.Digital, cdt.Float)):
+            if a_val.SCALER_UNIT is None:
+                return None
+            elif isinstance(a_val.SCALER_UNIT, cdt.ScalUnitType):
+                return a_val.SCALER_UNIT
+            elif a_val.SCALER_UNIT == -1:
+                match obj, i:
+                    case Register(), 2:
+                        return obj.scaler_unit
+                raise ValueError(F"not find scaler_unit for {ln}: {i} {par}")
+        else:
+            return None
 
     def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
         """return only association objects"""
@@ -2649,3 +2660,40 @@ def class_id_filter(container: DLMSObjectContainer, class_id: ClassID) -> filter
 
 def media_id_filter(container: DLMSObjectContainer, media_id: media_id.MediaId) -> filter[InterfaceClass]:
     return filter(lambda obj: obj.logical_name.a == media_id, container)
+
+
+@lru_cache(1000)
+def get_scaler_unit(obj: ic.COSEMInterfaceClasses,
+                    i: int,
+                    *par) -> cdt.ScalUnitType | None | -1:
+    """return unit for cdt.Digital according to DLMS BlueBook, without reference by collection
+    -1: not requirements,
+    None: not find"""
+    match obj.CLASS_ID, i:
+        case ClassID.LIMITER, 6 | 7:
+            return cdt.ScalUnitType((0, 7))  # sec
+        case ClassID.CLOCK, 3 | 7:
+            return cdt.ScalUnitType((0, 6))  # min
+        case ClassID.CLOCK, 4:
+            return -1
+        case ClassID.DATA, 2:
+            if obj.logical_name in (ln_pattern.DEVICE_IDS, ln_pattern.PROGRAM_ENTRIES, ln_pattern.ELECTRIC_PROGRAM_ENTRIES, ln_pattern.RATIOS,
+                                    ln_pattern.COMMUNICATION_PORT_LOG_PARAMETERS, ln_pattern.INVOCATION_COUNTER_OBJECTS, ln_pattern.ID_NUMBERS_ELECTRICITY,
+                                    ln_pattern.METER_TAMPER_EVENT_RELATED_OBJECTS, ln_pattern.MANUFACTURER_SPECIFIC_ABSTRACT, *ln_pattern.ALARM_REGISTER_FILTER_DESCRIPTOR,
+                                    ln_pattern.INTERNAL_CONTROL_SIGNALS, ln_pattern.EVENT_COUNTER, ln_pattern.PARAMETER_CHANGES_CALIBRATION_AND_ACCESS):
+                return -1
+            elif obj.logical_name in (ln_pattern.RECORDING_INTERVAL,):
+                return cdt.ScalUnitType((0, 6))  # min
+            elif obj.logical_name in (ln_pattern.LNPattern("1.0.0.3.(0,3).255"),):
+                return cdt.ScalUnitType((0, 30))  # pulse active energy
+            elif obj.logical_name in (ln_pattern.LNPattern("1.0.0.3.(1,4).255"),):
+                return cdt.ScalUnitType((0, 32))  # pulse reactive energy
+            elif obj.logical_name in (ln_pattern.LNPattern("1.0.0.3.(2,5).255"),):
+                return cdt.ScalUnitType((0, 31))  # pulse apparent energy
+        case ClassID.IEC_HDLC_SETUP, _:
+            return -1
+        case ClassID.IPV4_SETUP, _:
+            return -1
+        case ClassID.GPRS_MODEM_SETUP, 3:
+            return -1
+    return None

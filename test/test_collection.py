@@ -510,3 +510,21 @@ class TestType(unittest.TestCase):
             keys=(pat3,)
         )
         print(res)
+
+    def test_get_scaler_unit(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+
+        for obj in col:
+            for i, _ in obj.get_index_with_attributes():
+                if i == 1:
+                    continue
+                res = col.get_scaler_unit(
+                    ln=obj.logical_name,
+                    i=i)
+                print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {res}")

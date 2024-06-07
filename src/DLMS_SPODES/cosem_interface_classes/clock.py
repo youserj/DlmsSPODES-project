@@ -28,6 +28,7 @@ class ClockStatus(cdt.Unsigned):
 class DaylightSavingsDeviation(cdt.Integer, min=-120, max=120):
     """Contains the number of minutes by which the deviation in generalized time must be corrected at daylight savings begin.
     Deviation range of up to ± 120 min"""
+    SCALER_UNIT = cdt.ScalUnitType((0, 6))
 
 
 class ClockBase(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
@@ -47,6 +48,10 @@ class ShiftTime(cdt.Long, min=-900, max=900):
     """ Limited Long -900..900 """
 
 
+class TimeZone(cdt.Long):
+    SCALER_UNIT = cdt.ScalUnitType((0, 6))
+
+
 class Clock(ic.COSEMInterfaceClasses):
     """ An instance of the “Clock” interface class handles all information that is related to date and time, including leap years and the deviation of
     the local time to a generalized time reference (Greenwich Mean Time, GMT). The deviation from the local time to the generalized time reference can
@@ -58,7 +63,7 @@ class Clock(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.CLOCK
     VERSION = Version.V0
     A_ELEMENTS = (ic.ICAElement("time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("time_zone", cdt.Long, -720, 840),
+                  ic.ICAElement("time_zone", TimeZone, -720, 840),
                   ic.ICAElement("status", ClockStatus, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("daylight_savings_begin", cst.OctetStringDateTime),
                   ic.ICAElement("daylight_savings_end", cst.OctetStringDateTime),

@@ -79,11 +79,11 @@ class Limiter(ic.COSEMInterfaceClasses):
         return self.get_attr(5)
 
     @property
-    def min_over_threshold_duration(self) -> cdt.DoubleLongUnsigned:
+    def min_over_threshold_duration(self) -> double_long_usingneds.DoubleLongUnsignedSecond:
         return self.get_attr(6)
 
     @property
-    def min_under_threshold_duration(self) -> cdt.DoubleLongUnsigned:
+    def min_under_threshold_duration(self) -> double_long_usingneds.DoubleLongUnsignedSecond:
         return self.get_attr(7)
 
     @property

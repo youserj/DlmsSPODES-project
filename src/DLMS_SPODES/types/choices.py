@@ -46,9 +46,49 @@ class ExtendedRegisterChoice(CommonDataTypeChoiceBase,
     """Types of ExtendedRegister.value"""
 
 
+class DoubleLongUnsigned(cdt.DoubleLongUnsigned):
+    SCALER_UNIT = -1
+
+
+class Unsigned(cdt.Unsigned):
+    SCALER_UNIT = -1
+
+
+class LongUnsigned(cdt.LongUnsigned):
+    SCALER_UNIT = -1
+
+
+class Long64Unsigned(cdt.Long64Unsigned):
+    SCALER_UNIT = -1
+
+
+class DoubleLong(cdt.DoubleLong):
+    SCALER_UNIT = -1
+
+
+class Integer(cdt.Integer):
+    SCALER_UNIT = -1
+
+
+class Long(cdt.Long):
+    SCALER_UNIT = -1
+
+
+class Long64(cdt.Long64):
+    SCALER_UNIT = -1
+
+
+class Float32(cdt.Float32):
+    SCALER_UNIT = -1
+
+
+class Float64(cdt.Float64):
+    SCALER_UNIT = -1
+
+
 class RegisterChoice(CommonDataTypeChoiceBase,
-                     types=(cdt.NullData, cdt.BitString, cdt.DoubleLongUnsigned, cdt.OctetString, cdt.VisibleString, cdt.Utf8String, cdt.Unsigned, cdt.LongUnsigned,
-                            cdt.Long64Unsigned, cdt.DoubleLong, cdt.Integer, cdt.Long, cdt.Long64, cdt.Enum, cdt.Float32, cdt.Float64)):
+                     types=(cdt.NullData, cdt.BitString, DoubleLongUnsigned, cdt.OctetString, cdt.VisibleString, cdt.Utf8String, Unsigned, LongUnsigned,
+                            Long64Unsigned, DoubleLong, Integer, Long, Long64, cdt.Enum, Float32, Float64)):
     """Types of ExtendedRegister.value"""
 
 
