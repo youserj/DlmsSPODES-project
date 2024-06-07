@@ -477,15 +477,15 @@ class Digital(ABC):
     def decode(self) -> int | float:
         """ return the build in integer type or float type """
         match self.SCALER_UNIT:
-            case None:           return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
-            case ScalUnitType(): return int.from_bytes(self.contents, 'big', signed=self.SIGNED) * 10 ** (self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler())
-            case _ as error:     raise ValueError(F'Unknown scaler_unit type {error}')
+            case None | int(-1):
+                return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
+            case ScalUnitType():
+                return int.from_bytes(self.contents, 'big', signed=self.SIGNED) * 10 ** (self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler())
+            case _ as error:
+                raise ValueError(F'Unknown scaler_unit type {error}')
 
     def __int__(self):
-        if self.SCALER_UNIT is None:
-            return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
-        else:
-            raise ValueError(F"not support to_int for {self} with ScalerUnit")
+        return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
 
     def __lshift__(self, other: int):
         for i in range(other):

@@ -388,6 +388,7 @@ class KPZ1SPODES3ReactivePowerEvent(DataStatic):
 
 
 class SPODES3MeasurementPeriodValue(cdt.Unsigned):
+    SCALER_UNIT = cdt.ScalUnitType((0, 6))
     def validate(self):
         super(SPODES3MeasurementPeriodValue, self).validate()
         values: tuple[int, ...] = (1, 2, 3, 5, 10, 15, 20, 30, 60)

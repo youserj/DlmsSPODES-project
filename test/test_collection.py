@@ -471,6 +471,11 @@ class TestType(unittest.TestCase):
             objects=col.filter_by_ass(3),
             keys=(collection.ClassID.DATA, collection.ClassID.REGISTER, collection.media_id.ELECTRICITY))
         print(res)
+        res2 = collection.get_filtered(
+                objects=col,
+                keys=(ln_pattern.DEVICE_IDS,
+                      ln_pattern.PROGRAM_ENTRIES))
+        print(res2)
 
     def test_get_attr_tree(self):
         type_ = "4d324d5f31"

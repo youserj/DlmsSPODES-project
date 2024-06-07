@@ -19,7 +19,7 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.IPV4_SETUP
     VERSION = Version.V0
     # TODO: more 7 attr and 3 methods
-    A_ELEMENTS = (ic.ICAElement("DL_reference", cdt.OctetString),
+    A_ELEMENTS = (ic.ICAElement("DL_reference", cst.LogicalName),
                   ic.ICAElement("IP_address", double_long_usingneds.IPAddress),
                   ic.ICAElement("multicast_IP_address", arrays.MulticastIPAddress),
                   ic.ICAElement("IP_options", IPOptions),
