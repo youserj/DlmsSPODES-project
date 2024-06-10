@@ -526,10 +526,41 @@ class TestType(unittest.TestCase):
             ver=AppVersion.from_str(ver))
 
         for obj in col:
+            for i, a_val in obj.get_index_with_attributes():
+                if i == 1:
+                    continue
+                # res = col.get_scaler_unit(
+                #     ln=obj.logical_name,
+                #     i=i)
+                # print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {res}")
+
+                if isinstance(a_val, cdt.Digital):
+                    if a_val.WITH_SCALER:
+                        scaler = col.get_scaler(obj.logical_name, i)
+                        print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {a_val.get_report(scaler)}")
+                    else:
+                        print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {a_val}")
+
+    def test_get_report(self):
+        type_ = "4d324d5f31"
+        ver = "1.5.7"
+        man = b"KPZ"
+        col = collection.get(
+            m=man,
+            t=cdt.OctetString(type_),
+            ver=AppVersion.from_str(ver))
+
+        for obj in collection.get_filtered(col, (overview.ClassID.LIMITER,)):
             for i, _ in obj.get_index_with_attributes():
                 if i == 1:
                     continue
-                res = col.get_scaler_unit(
+                res = col.get_report(
                     ln=obj.logical_name,
                     i=i)
                 print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {res}")
+                to_put = col.put_report(
+                    obj.logical_name,
+                    i,
+                    res.mess)
+                print(F"{to_put=}")
+

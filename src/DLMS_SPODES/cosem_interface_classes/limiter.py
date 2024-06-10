@@ -56,7 +56,6 @@ class Limiter(ic.COSEMInterfaceClasses):
     def characteristics_init(self):
         self.set_attr(6, None)
         self.set_attr(7, None)
-        self._cbs_attr_post_init.update({2: self.__set_threshold_scaler_unit})
         self._cbs_attr_before_init.update({
             3: lambda value: self.__validate_threshold_scaler_unit(3, value),
             4: lambda value: self.__validate_threshold_scaler_unit(4, value),
@@ -104,25 +103,6 @@ class Limiter(ic.COSEMInterfaceClasses):
 
     def __set_duration_scaler_unit(self, attr_index: int):
         self.get_attr(attr_index).SCALER_UNIT = threshold_scaler_unit
-
-    def __set_threshold_scaler_unit(self):
-        if self.monitored_value is not None:
-            m_o: cosem_interface_classes.collection.Register = self.collection.get_object(self.monitored_value)  # todo: add ExtReg and Data types annotation
-            """monitored object"""
-            m_v: cdt.CommonDataTypes = m_o.get_attr(int(self.monitored_value.attribute_index))
-            """monitored value"""
-            if m_v is not None:
-                for index in (3, 4, 5):
-                    self.set_attr(index, m_v.encoding)
-                    s_v: cdt.CommonDataTypes = self.get_attr(index)
-                    """set value"""
-                    s_v.clear()
-                    if self.monitored_value.class_id in (long_unsigneds.ClassIDCDT.REGISTER, long_unsigneds.ClassIDCDT.EXT_REGISTER):
-                        s_v.SCALER_UNIT = m_o.scaler_unit
-            else:
-                raise exc.EmptyObj(F"monitored_value: {m_o} hasn't value")
-        else:
-            raise exc.EmptyObj(F"don't set attributes: 3, 4, 5 because {self} monitored_value is empty")
 
     def __validate_threshold_scaler_unit(self, index: int, value: cdt.CommonDataTypes):
         if self.monitored_value is not None:

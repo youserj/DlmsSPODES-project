@@ -52,8 +52,7 @@ class DemandRegister(ic.COSEMInterfaceClasses):
 
     def characteristics_init(self):
         self._cbs_attr_post_init.update({2: lambda: self.__set_value_data_type(2),
-                                         3: lambda: self.__set_value_data_type(3),
-                                         4: self.__set_value_scaler_unit})
+                                         3: lambda: self.__set_value_data_type(3)})
 
         self.scaler_unit_not_settable = False
         """ usability scaler unit flag. if True then it not used"""
@@ -70,18 +69,3 @@ class DemandRegister(ic.COSEMInterfaceClasses):
             case cdt.Array() | cdt.CompactArray() | cdt.Structure(): self.set_attr(4, cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\xff'))
             case cdt.Digital() | cdt.Float():                        attr_value.SCALER_UNIT = self.scaler_unit
             case _:                                                  """ nothing do it """
-        match self.scaler_unit:
-            case cdt.ScalUnitType(): self.__set_value_scaler_unit()
-            case _:                  """ not necessary set Scaler Unit """
-
-    def __set_value_scaler_unit(self):
-        match self.current_average_value:
-            case cdt.Digital() | cdt.Float() if self.current_average_value.SCALER_UNIT is None:  self.current_average_value.SCALER_UNIT = self.scaler_unit
-            case cdt.Digital() | cdt.Float() if self.current_average_value.SCALER_UNIT == self.scaler_unit: """ already set """
-            case cdt.Digital() | cdt.Float():                   raise ValueError(F'Got new scaler: {self.scaler_unit} not order with old {self.current_average_value.SCALER_UNIT}')
-            case _:                                             """set only for digital"""
-        match self.last_average_value:
-            case cdt.Digital() | cdt.Float() if self.last_average_value.SCALER_UNIT is None:  self.last_average_value.SCALER_UNIT = self.scaler_unit
-            case cdt.Digital() | cdt.Float() if self.last_average_value.SCALER_UNIT == self.scaler_unit: """ already set """
-            case cdt.Digital() | cdt.Float():                   raise ValueError(F'Got new scaler: {self.scaler_unit} not order with old {self.last_average_value.SCALER_UNIT}')
-            case _:                                             """set only for digital"""

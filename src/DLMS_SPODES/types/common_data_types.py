@@ -15,6 +15,24 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
+Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
+
+@dataclass(frozen=True)
+class Report:
+    mess: str
+    lev: Level = logging.INFO
+
+    def __str__(self):
+        return self.mess
+
+
+class ReportMixin(ABC):
+    """mixin for cdt"""
+    @abstractmethod
+    def get_report(self) -> Report:
+        """custom string represent"""
+
+
 # TODO: rewrite with Cython
 def separate(value: str, pattern: str, max_sep: int) -> tuple[str, list[str]]:
     """ separating string to container by pattern. Use in Date and Time """
@@ -394,19 +412,17 @@ class Digital(ABC):
     """ Default value is 0 """
     contents: bytes
     TAG: TAG
-    SCALER_UNIT = None  # ScalerUnitType | None | -1
-    """None: not required, -1: need search in collection"""
+    WITH_SCALER: bool = False
+    """False: not required, True: need search in collection"""
     DEFAULT = None
     MIN: int | None = None
     MAX: int | None = None
     VALUE: int | None = None
     """integer if is it constant value"""
 
-    def __init__(self, value: bytes | bytearray | str | int | float | Self = None, scaler_unit=None):
+    def __init__(self, value: bytes | bytearray | str | int | float | Self = None):
         if value is None:
             value = self.DEFAULT
-        if scaler_unit:
-            self.__dict__['SCALER_UNIT'] = scaler_unit
         match value:
             case bytes():
                 length_and_contents = value[1:]
@@ -449,20 +465,20 @@ class Digital(ABC):
 
     def _new_instance(self, value) -> Self:
         """ override SimpleDataType for send scaler_unit . use only for check and send contents """
-        return self.__class__(value, self.SCALER_UNIT)
+        return self.__class__(value)
 
     def from_int(self, value: int | float) -> bytes:
         try:
-            match self.SCALER_UNIT:
-                case ScalUnitType(): value *= 10**(-self.SCALER_UNIT.scaler.decode()+self.SCALER_UNIT.unit.get_scaler())
-                case None:           """ no scaler """
-                case _ as error:     raise ValueError(F'Unknown scaler_unit: {error}')
+            # match self.SCALER_UNIT:
+            #     case ScalUnitType(): value *= 10**(-self.SCALER_UNIT.scaler.decode()+self.SCALER_UNIT.unit.get_scaler())
+            #     case None:           """ no scaler """
+            #     case _ as error:     raise ValueError(F'Unknown scaler_unit: {error}')
             return int(value).to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
         except OverflowError:
             raise ValueError(F'value {value} out of range')
 
-    def from_str(self, value: str) -> bytes:
-        return self.from_int(float(value))
+    def from_str(self, value: str, scaler: int = 0) -> bytes:
+        return self.from_int(float(value)*10**(-scaler))
 
     def clear(self):
         if self.DEFAULT:
@@ -476,13 +492,7 @@ class Digital(ABC):
 
     def decode(self) -> int | float:
         """ return the build in integer type or float type """
-        match self.SCALER_UNIT:
-            case None | int(-1):
-                return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
-            case ScalUnitType():
-                return int.from_bytes(self.contents, 'big', signed=self.SIGNED) * 10 ** (self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler())
-            case _ as error:
-                raise ValueError(F'Unknown scaler_unit type {error}')
+        return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
 
     def __int__(self):
         return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
@@ -511,22 +521,21 @@ class Digital(ABC):
         """ Content length of type"""
 
     def __str__(self):
-        match self.decode():
-            case int() as value:   return str(value)
-            case float() as value: return F'{value:.{-min(self.SCALER_UNIT.scaler.decode()-self.SCALER_UNIT.unit.get_scaler(), 0)}f}'
-            case _ as error:       return F'Error decoding type: {error}'
+        return str(int(self))
 
     @property
     def report(self) -> str:
         """TODO: deprecated in future. report value with unit. """
         return self.get_report()
 
-    def get_report(self, with_unit: bool = True) -> str:
+    def get_report(self, scaler: int = 0) -> Report:
         """ report value"""
-        if self.SCALER_UNIT is None or not with_unit:
-            return str(self)
+        if scaler is None:
+            return Report(
+                mess=str(int(self)),
+                lev=logging.WARN)
         else:
-            return F"{self} {self.SCALER_UNIT.unit}"
+            return Report(mess=str(int(self)*10**scaler))
 
     def __gt__(self, other: Self | int):
         match other:
@@ -537,21 +546,11 @@ class Digital(ABC):
     def __len__(self) -> int:
         return self.LENGTH
 
-    def __setattr__(self, key, value):
-        match key, value:
-            case 'SCALER_UNIT', ScalUnitType() if self.SCALER_UNIT is None:  self.__dict__['SCALER_UNIT'] = value
-            case 'SCALER_UNIT', None:                                        self.__dict__['SCALER_UNIT'] = None
-            case 'SCALER_UNIT', ScalUnitType() if self.SCALER_UNIT == value: """ double set Scaler Unit """
-            case 'SCALER_UNIT', ScalUnitType():                              raise ValueError('Scaler Unit already set')
-            case 'SCALER_UNIT', _ as error:                                  raise ValueError(F'Unknown type {error} for Scaler Unit')
-            case 'SIGNED' as prop:                                           raise ValueError(F"Don't support set {prop}")
-            case _:                                                          super().__setattr__(key, value)
-
     def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
         """ return validated value and cursor position """
-        if self.SCALER_UNIT:
+        if self.WITH_SCALER:
             class WithScaler(self.__class__):
-                SCALER_UNIT = self.SCALER_UNIT
+                SCALER_UNIT = self.WITH_SCALER
 
             WithScaler(value=value)
         else:
@@ -2287,26 +2286,11 @@ class Unit(Enum, elements=tuple(range(1, 256))):
         return self.SCALERS[self.contents]
 
 
+def get_unit_scaler(unit_contents: bytes) -> int:
+    return Unit.SCALERS[unit_contents]
+
+
 class ScalUnitType(Structure):
     """ DLMS UA 1000-1 Ed. 14 4.3.2 Register scaler_unit"""
     scaler: Integer
     unit: Unit
-
-
-Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
-
-
-@dataclass(frozen=True)
-class Report:
-    mess: str
-    lev: Level = logging.INFO
-
-    def __str__(self):
-        return self.mess
-
-
-class ReportMixin(ABC):
-    """mixin for cdt"""
-    @abstractmethod
-    def get_report(self) -> Report:
-        """custom string represent"""

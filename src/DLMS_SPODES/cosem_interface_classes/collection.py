@@ -925,10 +925,10 @@ class Collection:
                             else:
                                 new_object = new.__get_object(logical_name.contents)
                         except TypeError as e:
-                            logger.error(F'Object {obj.attrib["name"]} not created : {e}')
+                            logger.error(F'Object {obj.attrib["ln"]} not created : {e}')
                             continue
                         except ValueError as e:
-                            logger.error(F'Object {obj.attrib["name"]} not created. {version=} {ln=}: {e}')
+                            logger.error(F'Object {obj.attrib["ln"]} not created. {version=} {ln=}: {e}')
                             continue
                         for attr in obj.findall("attr"):
                             i: int = int(attr.attrib.get("i"))
@@ -1424,26 +1424,105 @@ class Collection:
     def get_scaler_unit(self,
                         ln: cst.LogicalName,
                         i: int,
+                        a_val=None,
                         *par) -> cdt.ScalUnitType | -1 | None:
         """search unit for cdt.Digital in collection.
         None: not requirements
         -1: not find"""
         obj = self.get_object(ln)
-        a_val = obj.get_attr(i)
+        if a_val is None:  # for recursion
+            a_val = obj.get_attr(i)
         if a_val is None:
             return -1
         elif isinstance(a_val, (cdt.Digital, cdt.Float)):
-            if a_val.SCALER_UNIT is None:
-                return None
-            elif isinstance(a_val.SCALER_UNIT, cdt.ScalUnitType):
-                return a_val.SCALER_UNIT
-            elif a_val.SCALER_UNIT == -1:
+            if a_val.WITH_SCALER:
                 match obj, i:
                     case Register(), 2:
-                        return obj.scaler_unit
+                        if obj.scaler_unit is None:
+                            return -1
+                        else:
+                            return obj.scaler_unit
+                    case Limiter(), 3 | 4 | 5:
+                        if m_v := obj.monitored_value:
+                            return self.get_scaler_unit(
+                                ln=m_v.logical_name,
+                                i=int(m_v.attribute_index),
+                                a_val=a_val)  # recursion 1 level
+                        else:
+                            return -1
                 raise ValueError(F"not find scaler_unit for {ln}: {i} {par}")
+            else:
+                return None
         else:
             return None
+
+    def get_scaler(self,
+                   ln: cst.LogicalName,
+                   i: int,
+                   a_val=None,
+                   *par) -> int | None:
+        su = self.get_scaler_unit(ln, i, a_val, *par)
+        if su is None:
+            return None
+        else:
+            return int(su.scaler)
+
+    def get_report(self,
+                   ln: cst.LogicalName,
+                   i: int,
+                   a_val: cdt.CommonDataType = None,
+                   *par) -> cdt.Report:
+        obj = self.get_object(ln)
+        if a_val is None:  # for recursion
+            a_val = obj.get_attr(i)
+        if a_val is None:
+            return cdt.Report(mess="--")  # empty
+        match obj, i:
+            case Register(), 2:
+                if unit_scaler := obj.get_attr(3):
+                    return cdt.Report(mess=str(int(a_val) * 10 ** (int(unit_scaler.scaler)-cdt.get_unit_scaler(unit_scaler.unit.contents))))
+                else:
+                    return cdt.Report(
+                        mess=str(a_val),
+                        lev=logging.WARN)
+            case Limiter(), 3 | 4 | 5:
+                obj: Limiter
+                if m_v := obj.monitored_value:
+                    return self.get_report(
+                        ln=m_v.logical_name,
+                        i=int(m_v.attribute_index),
+                        a_val=a_val)  # recursion 1 level
+                else:
+                    return cdt.Report(
+                        mess=str(a_val),
+                        lev=logging.WARN)
+            case _:
+                return cdt.Report(mess=str(a_val))
+
+    def put_report(self,
+                   ln: cst.LogicalName,
+                   i: int,
+                   value: str,
+                   *par) -> float:
+        """for cdt.Digital"""
+        obj = self.get_object(ln)
+        match obj, i:
+            case Register(), 2:
+                if unit_scaler := obj.get_attr(3):
+                    return float(value) * 10 ** (-int(unit_scaler.scaler)+cdt.get_unit_scaler(unit_scaler.unit.contents))
+                else:
+                    return float(value)
+            case Limiter(), 3 | 4 | 5:
+                obj: Limiter
+                if m_v := obj.monitored_value:
+                    return self.put_report(
+                        ln=m_v.logical_name,
+                        i=int(m_v.attribute_index),
+                        value=value)  # recursion 1 level
+                else:
+                    return float(value)
+            case _:
+                return float(value)
 
     def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
         """return only association objects"""

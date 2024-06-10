@@ -47,43 +47,43 @@ class ExtendedRegisterChoice(CommonDataTypeChoiceBase,
 
 
 class DoubleLongUnsigned(cdt.DoubleLongUnsigned):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Unsigned(cdt.Unsigned):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class LongUnsigned(cdt.LongUnsigned):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Long64Unsigned(cdt.Long64Unsigned):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class DoubleLong(cdt.DoubleLong):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Integer(cdt.Integer):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Long(cdt.Long):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Long64(cdt.Long64):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Float32(cdt.Float32):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class Float64(cdt.Float64):
-    SCALER_UNIT = -1
+    WITH_SCALER = True
 
 
 class RegisterChoice(CommonDataTypeChoiceBase,

@@ -28,7 +28,6 @@ class ClockStatus(cdt.Unsigned):
 class DaylightSavingsDeviation(cdt.Integer, min=-120, max=120):
     """Contains the number of minutes by which the deviation in generalized time must be corrected at daylight savings begin.
     Deviation range of up to ± 120 min"""
-    SCALER_UNIT = cdt.ScalUnitType((0, 6))
 
 
 class ClockBase(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
@@ -49,7 +48,7 @@ class ShiftTime(cdt.Long, min=-900, max=900):
 
 
 class TimeZone(cdt.Long):
-    SCALER_UNIT = cdt.ScalUnitType((0, 6))
+    """"""
 
 
 class Clock(ic.COSEMInterfaceClasses):
