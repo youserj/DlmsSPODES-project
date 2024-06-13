@@ -51,21 +51,5 @@ class DemandRegister(ic.COSEMInterfaceClasses):
         return self.get_attr(9)
 
     def characteristics_init(self):
-        self._cbs_attr_post_init.update({2: lambda: self.__set_value_data_type(2),
-                                         3: lambda: self.__set_value_data_type(3)})
-
         self.scaler_unit_not_settable = False
         """ usability scaler unit flag. if True then it not used"""
-
-    def __set_value_data_type(self, attr_index: int):
-        """ When instead of a “Data” object a “Register” object is used, (with the scaler_unit attribute not used or with scaler = 0, unit = 255) then the data types allowed for
-        the value attribute of the “Data” interface class are allowed. """
-        attr_value = self.get_attr(attr_index)
-        if self.current_average_value is not None and self.last_average_value is not None and self.current_average_value.TAG != self.last_average_value.TAG:
-            self.clear_attr(attr_index)
-            raise ValueError(F"got {self.get_attr_element(attr_index)} with: {attr_value=}, expected "
-                             F"{cdt.get_common_data_type_from(self.current_average_value.TAG if attr_index == 3 else self.last_average_value.TAG).NAME}")
-        match attr_value:
-            case cdt.Array() | cdt.CompactArray() | cdt.Structure(): self.set_attr(4, cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\xff'))
-            case cdt.Digital() | cdt.Float():                        attr_value.SCALER_UNIT = self.scaler_unit
-            case _:                                                  """ nothing do it """

@@ -65,8 +65,17 @@ from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecific
 from ..enums import TagsName
 from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
-from ..config_parser import config
+from ..config_parser import config, get_values
 from ..obis import media_id
+
+
+_report = {
+    "empty": "--",
+    "empty_unit": "??",
+}
+if toml_val := get_values("DLMS", "report"):
+    _report.update(toml_val)
+
 
 LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
                           | ut.CosemMethodDescriptor
@@ -1387,19 +1396,6 @@ class Collection:
         else:
             return ret
 
-    def try_remove(self, logical_name: cst.LogicalName) -> bool:
-        """ If indexes is None when remove object else:
-        Use in template. Remove attributes by indexes and remove object from collection if it has only logic attribute """
-        match self.get(logical_name.contents):
-            case None:
-                return False
-            case ic.COSEMInterfaceClasses() if logical_name != cst.LogicalName("0.0.42.0.0.255"):
-                self.__container.pop(logical_name.contents)
-                return True
-            case _:
-                logger.warning(F'Dont remove with: {logical_name}')
-                return False
-
     @lru_cache(maxsize=100)  # amount of all ClassID
     def find_version(self, class_id: ut.CosemClassId) -> cdt.Unsigned:
         """use for add new object from profile_generic if absence in object list"""
@@ -1421,108 +1417,113 @@ class Collection:
         else:
             return None
 
-    def get_scaler_unit(self,
-                        ln: cst.LogicalName,
-                        i: int,
-                        a_val=None,
-                        *par) -> cdt.ScalUnitType | -1 | None:
-        """search unit for cdt.Digital in collection.
-        None: not requirements
-        -1: not find"""
-        obj = self.get_object(ln)
-        if a_val is None:  # for recursion
-            a_val = obj.get_attr(i)
-        if a_val is None:
-            return -1
-        elif isinstance(a_val, (cdt.Digital, cdt.Float)):
-            if a_val.WITH_SCALER:
-                match obj, i:
-                    case Register(), 2:
-                        if obj.scaler_unit is None:
-                            return -1
-                        else:
-                            return obj.scaler_unit
-                    case Limiter(), 3 | 4 | 5:
-                        if m_v := obj.monitored_value:
-                            return self.get_scaler_unit(
-                                ln=m_v.logical_name,
-                                i=int(m_v.attribute_index),
-                                a_val=a_val)  # recursion 1 level
-                        else:
-                            return -1
-                raise ValueError(F"not find scaler_unit for {ln}: {i} {par}")
-            else:
-                return None
-        else:
-            return None
-
-    def get_scaler(self,
-                   ln: cst.LogicalName,
-                   i: int,
-                   a_val=None,
-                   *par) -> int | None:
-        su = self.get_scaler_unit(ln, i, a_val, *par)
-        if su is None:
-            return None
-        else:
-            return int(su.scaler)
-
     def get_report(self,
                    ln: cst.LogicalName,
-                   i: int,
-                   a_val: cdt.CommonDataType = None,
-                   *par) -> cdt.Report:
+                   par: list[int],
+                   a_val=None) -> cdt.Report:
         obj = self.get_object(ln)
         if a_val is None:  # for recursion
-            a_val = obj.get_attr(i)
+            a_val = obj.get_attr(par[0])
         if a_val is None:
-            return cdt.Report(mess="--")  # empty
-        match obj, i:
-            case Register(), 2:
-                if unit_scaler := obj.get_attr(3):
-                    return cdt.Report(mess=str(int(a_val) * 10 ** (int(unit_scaler.scaler)-cdt.get_unit_scaler(unit_scaler.unit.contents))))
-                else:
+            return cdt.Report(
+                mess=_report["empty"],
+                lev=logging.WARN)
+        else:
+            match obj.CLASS_ID, par:
+                case (ClassID.REGISTER, [2]) | (ClassID.DEMAND_REGISTER, [2 | 3]):
+                    if (s_u := obj.scaler_unit) is None:
+                        return cdt.Report(
+                            mess=str(a_val),
+                            lev=logging.WARN,
+                            unit=_report["empty_unit"])
+                    else:
+                        if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
+                            s_u = s_u.copy()
+                            s_u.scaler.set(int(s_u.scaler)-s)
+                        return cdt.Report(
+                            mess=str(int(a_val)*10**int(s_u.scaler)),
+                            unit=str(s_u.unit))
+                case ClassID.LIMITER, [3 | 4 | 5]:
+                    if m_v := obj.monitored_value:
+                        return self.get_report(
+                            ln=m_v.logical_name,
+                            par=[int(m_v.attribute_index)],
+                            a_val=a_val)  # recursion 1 level
+                    else:
+                        return cdt.Report(
+                            mess=str(a_val),
+                            lev=logging.WARN,
+                            unit="??")
+                case (ClassID.LIMITER, [6 | 7] | [8, 2]) | (ClassID.DEMAND_REGISTER, [8]) | (ClassID.PROFILE_GENERIC, [4]) | (ClassID.PUSH_SETUP, [5] | [7, _] | [12, 1]) | \
+                     (ClassID.COMMUNICATION_PORT_PROTECTION, [4 | 6]) | (ClassID.CHARGE, [8]) | (ClassID.IEC_HDLC_SETUP, [8]) | (ClassID.AUTO_CONNECT, [4]):
                     return cdt.Report(
                         mess=str(a_val),
-                        lev=logging.WARN)
-            case Limiter(), 3 | 4 | 5:
-                obj: Limiter
-                if m_v := obj.monitored_value:
-                    return self.get_report(
-                        ln=m_v.logical_name,
-                        i=int(m_v.attribute_index),
-                        a_val=a_val)  # recursion 1 level
-                else:
+                        unit=str(cdt.Unit(7)))  # second
+                case ClassID.CLOCK, [3 | 7]:
                     return cdt.Report(
                         mess=str(a_val),
-                        lev=logging.WARN)
-            case _:
-                return cdt.Report(mess=str(a_val))
+                        unit=str(cdt.Unit(6)))  # min
+                case (ClassID.IEC_HDLC_SETUP, [7]) | (ClassID.MODEM_CONFIGURATION, [3, 2]):
+                    return cdt.Report(
+                        mess=str(int(a_val) * 10 ** -3),
+                        unit=str(cdt.Unit(7)))  # millisecond
+                case ClassID.S_FSK_PHY_MAC_SET_UP, [7, _]:
+                    return cdt.Report(
+                        mess=str(a_val),
+                        unit=str(cdt.Unit(44)))    # HZ
+                case ClassID.S_FSK_PHY_MAC_SET_UP, [4 | 5]:
+                    return cdt.Report(
+                        mess=str(a_val),
+                        unit=str(cdt.Unit(72)))    # Db
+                case ClassID.S_FSK_PHY_MAC_SET_UP, [6]:
+                    return cdt.Report(
+                        mess=str(a_val),
+                        unit=str(cdt.Unit(71)))  # DbmicroV
+                case _:
+                    return cdt.Report(str(a_val))
 
-    def put_report(self,
-                   ln: cst.LogicalName,
-                   i: int,
-                   value: str,
-                   *par) -> float:
-        """for cdt.Digital"""
+    def get_scaler_unit(self,
+                        ln: cst.LogicalName,
+                        par: list[int],
+                        a_val=None) -> cdt.ScalUnitType | -1 | None:
         obj = self.get_object(ln)
-        match obj, i:
-            case Register(), 2:
-                if unit_scaler := obj.get_attr(3):
-                    return float(value) * 10 ** (-int(unit_scaler.scaler)+cdt.get_unit_scaler(unit_scaler.unit.contents))
-                else:
-                    return float(value)
-            case Limiter(), 3 | 4 | 5:
-                obj: Limiter
-                if m_v := obj.monitored_value:
-                    return self.put_report(
-                        ln=m_v.logical_name,
-                        i=int(m_v.attribute_index),
-                        value=value)  # recursion 1 level
-                else:
-                    return float(value)
-            case _:
-                return float(value)
+        if a_val is None:  # for recursion
+            a_val = obj.get_attr(par[0])
+        if a_val is None:
+            return -1
+        else:
+            match obj.CLASS_ID, par:
+                case (ClassID.REGISTER, [2]) | (ClassID.DEMAND_REGISTER, [2 | 3]):
+                    if (s_u := obj.scaler_unit) is None:
+                        return -1
+                    else:
+                        if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
+                            s_u = s_u.copy()
+                            s_u.scaler.set(int(s_u.scaler)-s)
+                        return s_u
+                case ClassID.LIMITER, [3 | 4 | 5]:
+                    if m_v := obj.monitored_value:
+                        return self.get_scaler_unit(
+                            ln=m_v.logical_name,
+                            par=[int(m_v.attribute_index)],
+                            a_val=a_val)  # recursion 1 level
+                    else:
+                        return -1
+                case (ClassID.LIMITER, [6 | 7] | [8, 2]) | (ClassID.DEMAND_REGISTER, [8]) | (ClassID.PROFILE_GENERIC, [4]) | (ClassID.PUSH_SETUP, [5] | [7, _] | [12, 1]) | \
+                     (ClassID.COMMUNICATION_PORT_PROTECTION, [4 | 6]) | (ClassID.CHARGE, [8]) | (ClassID.IEC_HDLC_SETUP, [8]) | (ClassID.AUTO_CONNECT, [4]):
+                    return cdt.ScalUnitType((0, 7))  # second
+                case ClassID.CLOCK, [3 | 7]:
+                    return cdt.ScalUnitType((0, 6))  # min
+                case (ClassID.IEC_HDLC_SETUP, [7]) | (ClassID.MODEM_CONFIGURATION, [3, 2]):
+                    return cdt.ScalUnitType((-3, 7))  # millisecond
+                case ClassID.S_FSK_PHY_MAC_SET_UP, [7, _]:
+                    return cdt.ScalUnitType((0, 44))  # HZ
+                case ClassID.S_FSK_PHY_MAC_SET_UP, [4 | 5]:
+                    return cdt.ScalUnitType((0, 72))  # Db
+                case ClassID.S_FSK_PHY_MAC_SET_UP, [6]:
+                    return cdt.ScalUnitType((0, 71))  # DbmicroV
+                case _:
+                    return None
 
     def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
         """return only association objects"""
@@ -2739,40 +2740,3 @@ def class_id_filter(container: DLMSObjectContainer, class_id: ClassID) -> filter
 
 def media_id_filter(container: DLMSObjectContainer, media_id: media_id.MediaId) -> filter[InterfaceClass]:
     return filter(lambda obj: obj.logical_name.a == media_id, container)
-
-
-@lru_cache(1000)
-def get_scaler_unit(obj: ic.COSEMInterfaceClasses,
-                    i: int,
-                    *par) -> cdt.ScalUnitType | None | -1:
-    """return unit for cdt.Digital according to DLMS BlueBook, without reference by collection
-    -1: not requirements,
-    None: not find"""
-    match obj.CLASS_ID, i:
-        case ClassID.LIMITER, 6 | 7:
-            return cdt.ScalUnitType((0, 7))  # sec
-        case ClassID.CLOCK, 3 | 7:
-            return cdt.ScalUnitType((0, 6))  # min
-        case ClassID.CLOCK, 4:
-            return -1
-        case ClassID.DATA, 2:
-            if obj.logical_name in (ln_pattern.DEVICE_IDS, ln_pattern.PROGRAM_ENTRIES, ln_pattern.ELECTRIC_PROGRAM_ENTRIES, ln_pattern.RATIOS,
-                                    ln_pattern.COMMUNICATION_PORT_LOG_PARAMETERS, ln_pattern.INVOCATION_COUNTER_OBJECTS, ln_pattern.ID_NUMBERS_ELECTRICITY,
-                                    ln_pattern.METER_TAMPER_EVENT_RELATED_OBJECTS, ln_pattern.MANUFACTURER_SPECIFIC_ABSTRACT, *ln_pattern.ALARM_REGISTER_FILTER_DESCRIPTOR,
-                                    ln_pattern.INTERNAL_CONTROL_SIGNALS, ln_pattern.EVENT_COUNTER, ln_pattern.PARAMETER_CHANGES_CALIBRATION_AND_ACCESS):
-                return -1
-            elif obj.logical_name in (ln_pattern.RECORDING_INTERVAL,):
-                return cdt.ScalUnitType((0, 6))  # min
-            elif obj.logical_name in (ln_pattern.LNPattern("1.0.0.3.(0,3).255"),):
-                return cdt.ScalUnitType((0, 30))  # pulse active energy
-            elif obj.logical_name in (ln_pattern.LNPattern("1.0.0.3.(1,4).255"),):
-                return cdt.ScalUnitType((0, 32))  # pulse reactive energy
-            elif obj.logical_name in (ln_pattern.LNPattern("1.0.0.3.(2,5).255"),):
-                return cdt.ScalUnitType((0, 31))  # pulse apparent energy
-        case ClassID.IEC_HDLC_SETUP, _:
-            return -1
-        case ClassID.IPV4_SETUP, _:
-            return -1
-        case ClassID.GPRS_MODEM_SETUP, 3:
-            return -1
-    return None

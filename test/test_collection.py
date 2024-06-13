@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import unittest
@@ -529,17 +530,10 @@ class TestType(unittest.TestCase):
             for i, a_val in obj.get_index_with_attributes():
                 if i == 1:
                     continue
-                # res = col.get_scaler_unit(
-                #     ln=obj.logical_name,
-                #     i=i)
-                # print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {res}")
-
-                if isinstance(a_val, cdt.Digital):
-                    if a_val.WITH_SCALER:
-                        scaler = col.get_scaler(obj.logical_name, i)
-                        print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {a_val.get_report(scaler)}")
-                    else:
-                        print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {a_val}")
+                res = col.get_scaler_unit(
+                    ln=obj.logical_name,
+                    par=[i])
+                print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {res}")
 
     def test_get_report(self):
         type_ = "4d324d5f31"
@@ -556,11 +550,6 @@ class TestType(unittest.TestCase):
                     continue
                 res = col.get_report(
                     ln=obj.logical_name,
-                    i=i)
-                print(F"{obj.CLASS_ID} {obj.logical_name.get_report()}:{i} {res}")
-                to_put = col.put_report(
-                    obj.logical_name,
-                    i,
-                    res.mess)
-                print(F"{to_put=}")
+                    par=[i])
+                print(F"{i}: {res=}")
 

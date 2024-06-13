@@ -101,9 +101,6 @@ class Limiter(ic.COSEMInterfaceClasses):
     def actions(self) -> ActionType:
         return self.get_attr(11)
 
-    def __set_duration_scaler_unit(self, attr_index: int):
-        self.get_attr(attr_index).SCALER_UNIT = threshold_scaler_unit
-
     def __validate_threshold_scaler_unit(self, index: int, value: cdt.CommonDataTypes):
         if self.monitored_value is not None:
             """let setup"""

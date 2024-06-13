@@ -17,10 +17,12 @@ logger.level = logging.INFO
 
 Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
 
+
 @dataclass(frozen=True)
 class Report:
     mess: str
     lev: Level = logging.INFO
+    unit: str = ""
 
     def __str__(self):
         return self.mess
@@ -412,8 +414,6 @@ class Digital(ABC):
     """ Default value is 0 """
     contents: bytes
     TAG: TAG
-    WITH_SCALER: bool = False
-    """False: not required, True: need search in collection"""
     DEFAULT = None
     MIN: int | None = None
     MAX: int | None = None
@@ -469,10 +469,6 @@ class Digital(ABC):
 
     def from_int(self, value: int | float) -> bytes:
         try:
-            # match self.SCALER_UNIT:
-            #     case ScalUnitType(): value *= 10**(-self.SCALER_UNIT.scaler.decode()+self.SCALER_UNIT.unit.get_scaler())
-            #     case None:           """ no scaler """
-            #     case _ as error:     raise ValueError(F'Unknown scaler_unit: {error}')
             return int(value).to_bytes(self.LENGTH, 'big', signed=self.SIGNED)
         except OverflowError:
             raise ValueError(F'value {value} out of range')
@@ -523,11 +519,6 @@ class Digital(ABC):
     def __str__(self):
         return str(int(self))
 
-    @property
-    def report(self) -> str:
-        """TODO: deprecated in future. report value with unit. """
-        return self.get_report()
-
     def get_report(self, scaler: int = 0) -> Report:
         """ report value"""
         if scaler is None:
@@ -548,13 +539,7 @@ class Digital(ABC):
 
     def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
         """ return validated value and cursor position """
-        if self.WITH_SCALER:
-            class WithScaler(self.__class__):
-                SCALER_UNIT = self.WITH_SCALER
-
-            WithScaler(value=value)
-        else:
-            type(self)(value=value)
+        type(self)(value=value)
         return value, cursor_position
 
     def __hash__(self):
@@ -563,7 +548,6 @@ class Digital(ABC):
 
 class Float(ABC):
     contents: bytes
-    SCALER_UNIT = None
     TAG: TAG
 
     @abstractmethod
@@ -2267,7 +2251,7 @@ CommonDataTypes: TypeAlias = NullData | Array | Structure | Boolean | BitString 
 
 class Unit(Enum, elements=tuple(range(1, 256))):
     SCALERS: dict[bytes, int] = {it.to_bytes(1, "big"): 0 for it in range(1, 256)}
-    """castom scaler depend from unit. initiate by 0 all"""
+    """custom scaler depend from unit. initiate by 0 all"""
     if unit_table := config_parser.get_values("DLMS", "Unit"):
         for par in unit_table:
             SCALERS[par["e"].to_bytes()] = par.get("scaler", 0)

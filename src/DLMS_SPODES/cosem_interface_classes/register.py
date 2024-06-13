@@ -40,8 +40,6 @@ class Register(ic.COSEMInterfaceClasses):
         match self.value:
             case cdt.Array() | cdt.CompactArray() | cdt.Structure():
                 self.set_attr(3, cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\xff'))
-            case cdt.Digital() | cdt.Float():
-                self.value.WITH_SCALER = self.scaler_unit
             case _:
                 """ nothing do it """
 
