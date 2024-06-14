@@ -13,6 +13,15 @@ match settings.get_current_language():
     case settings.Language.RUSSIAN:     from .Values.RU import relation_to_obis_names as rn
 
 
+def get_energy_names(electric_obj: int) -> str:
+    """ corresponding with Сподэс """
+    match electric_obj:
+        case 1 | 21 | 41 | 61:  return "Активная энергия, импорт"
+        case 2 | 22 | 42 | 62:  return "Активная энергия, экспорт"
+        case 3 | 23 | 43 | 63:  return "Реактивная энергия, импорт"
+        case 4 | 24 | 44 | 64:  return "Реактивная энергия, экспорт"
+
+
 def get_obj_names(electric_obj: int) -> str:
     """ corresponding with DLMS UA 1000-1 Ed. 14 7.5.1 Table 65. Value group C codes – Electricity. Range: 1..80, RU: 124..126 """
     match electric_obj:
@@ -384,6 +393,8 @@ def get_name(logical_name: cst.LogicalName) -> str:
         case  1, b, 0, 10, 1:    return F"{rn.TRANSFORMER_IRON_LOSSES}{handle_B(b)}"
         case  1, b, 0, 10, 2:    return F"{rn.LINE_RESISTANCE_LOSSES}{handle_B(b)}"
         case  1, b, 0, 10, 3:    return F"{rn.LINE_REACTANCE_LOSSES}{handle_B(b)}"
+        case  1, b, 1 | 2 | 3 | 4 as c, 8, e:
+            return F"{handle_B(b)}{get_energy_names(c)} {get_rate(e)}"
         case  1, b, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 as c, d, e:
             return F"{handle_B(b)}{rn.CUMULATIVE} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
         case  1, b, 11 | 12 as c, 7, e:

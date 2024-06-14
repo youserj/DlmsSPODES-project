@@ -570,6 +570,23 @@ def get_type(class_id: ut.CosemClassId,
                                ver=version)
 
 
+@lru_cache(20000)
+def get_unit(class_id: ClassID, par: bytes) -> int | None:
+    match class_id, *par:
+        case (ClassID.CLOCK, 3 | 7):
+            return 6  # min
+        case (ClassID.IEC_HDLC_SETUP, 7) | (ClassID.MODEM_CONFIGURATION, 3, 2):
+            return 7  # millisecond
+        case ClassID.S_FSK_PHY_MAC_SET_UP, 7, _:
+            return 44  # HZ
+        case (ClassID.S_FSK_PHY_MAC_SET_UP, 4 | 5):
+            return 72  # Db
+        case ClassID.S_FSK_PHY_MAC_SET_UP, 6:
+            return 71  # DbmicroV
+        case _:
+            return None
+
+
 class Collection:
     __dlms_ver: int
     __manufacturer: bytes | None
@@ -1418,10 +1435,10 @@ class Collection:
             return None
 
     def get_report(self,
-                   ln: cst.LogicalName,
-                   par: list[int],
+                   obj: ic.COSEMInterfaceClasses,
+                   par: bytes,
                    a_val=None) -> cdt.Report:
-        obj = self.get_object(ln)
+        """par: attribute_index, par1, par2, ..."""
         if a_val is None:  # for recursion
             a_val = obj.get_attr(par[0])
         if a_val is None:
@@ -1429,71 +1446,48 @@ class Collection:
                 mess=_report["empty"],
                 lev=logging.WARN)
         else:
-            match obj.CLASS_ID, par:
-                case (ClassID.REGISTER, [2]) | (ClassID.DEMAND_REGISTER, [2 | 3]):
-                    if (s_u := obj.scaler_unit) is None:
+            if unit := get_unit(obj.CLASS_ID, par):
+                return cdt.Report(
+                    mess=str(a_val),
+                    unit=str(cdt.Unit(unit))
+                )
+            else:
+                match self.get_scaler_unit(obj, par, a_val):
+                    case cdt.ScalUnitType() as s_u:
+                        if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
+                            s_u = s_u.copy()
+                            s_u.scaler.set(int(s_u.scaler) - s)
+                        return cdt.Report(
+                            mess=str(int(a_val) * 10 ** int(s_u.scaler)),
+                            unit=str(s_u.unit))
+                    case int(-1):
                         return cdt.Report(
                             mess=str(a_val),
                             lev=logging.WARN,
                             unit=_report["empty_unit"])
-                    else:
-                        if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                            s_u = s_u.copy()
-                            s_u.scaler.set(int(s_u.scaler)-s)
-                        return cdt.Report(
-                            mess=str(int(a_val)*10**int(s_u.scaler)),
-                            unit=str(s_u.unit))
-                case ClassID.LIMITER, [3 | 4 | 5]:
-                    if m_v := obj.monitored_value:
-                        return self.get_report(
-                            ln=m_v.logical_name,
-                            par=[int(m_v.attribute_index)],
-                            a_val=a_val)  # recursion 1 level
-                    else:
-                        return cdt.Report(
-                            mess=str(a_val),
-                            lev=logging.WARN,
-                            unit="??")
-                case (ClassID.LIMITER, [6 | 7] | [8, 2]) | (ClassID.DEMAND_REGISTER, [8]) | (ClassID.PROFILE_GENERIC, [4]) | (ClassID.PUSH_SETUP, [5] | [7, _] | [12, 1]) | \
-                     (ClassID.COMMUNICATION_PORT_PROTECTION, [4 | 6]) | (ClassID.CHARGE, [8]) | (ClassID.IEC_HDLC_SETUP, [8]) | (ClassID.AUTO_CONNECT, [4]):
-                    return cdt.Report(
-                        mess=str(a_val),
-                        unit=str(cdt.Unit(7)))  # second
-                case ClassID.CLOCK, [3 | 7]:
-                    return cdt.Report(
-                        mess=str(a_val),
-                        unit=str(cdt.Unit(6)))  # min
-                case (ClassID.IEC_HDLC_SETUP, [7]) | (ClassID.MODEM_CONFIGURATION, [3, 2]):
-                    return cdt.Report(
-                        mess=str(int(a_val) * 10 ** -3),
-                        unit=str(cdt.Unit(7)))  # millisecond
-                case ClassID.S_FSK_PHY_MAC_SET_UP, [7, _]:
-                    return cdt.Report(
-                        mess=str(a_val),
-                        unit=str(cdt.Unit(44)))    # HZ
-                case ClassID.S_FSK_PHY_MAC_SET_UP, [4 | 5]:
-                    return cdt.Report(
-                        mess=str(a_val),
-                        unit=str(cdt.Unit(72)))    # Db
-                case ClassID.S_FSK_PHY_MAC_SET_UP, [6]:
-                    return cdt.Report(
-                        mess=str(a_val),
-                        unit=str(cdt.Unit(71)))  # DbmicroV
-                case _:
-                    return cdt.Report(str(a_val))
+                    case None:
+                        match obj.CLASS_ID, *par:
+                            case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
+                                a_val: structs.CaptureObjectDefinition
+                                obj = self.get_object(a_val.logical_name)
+                                return cdt.Report(
+                                    mess=F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
+                                )
+                            case _:
+                                return cdt.Report(str(a_val))
 
+    @lru_cache(20000)
     def get_scaler_unit(self,
-                        ln: cst.LogicalName,
-                        par: list[int],
+                        obj: ic.COSEMInterfaceClasses,
+                        par: bytes,
                         a_val=None) -> cdt.ScalUnitType | -1 | None:
-        obj = self.get_object(ln)
         if a_val is None:  # for recursion
             a_val = obj.get_attr(par[0])
         if a_val is None:
             return -1
         else:
-            match obj.CLASS_ID, par:
-                case (ClassID.REGISTER, [2]) | (ClassID.DEMAND_REGISTER, [2 | 3]):
+            match obj.CLASS_ID, *par:
+                case (ClassID.REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
                     if (s_u := obj.scaler_unit) is None:
                         return -1
                     else:
@@ -1501,26 +1495,27 @@ class Collection:
                             s_u = s_u.copy()
                             s_u.scaler.set(int(s_u.scaler)-s)
                         return s_u
-                case ClassID.LIMITER, [3 | 4 | 5]:
+                case ClassID.LIMITER, 3 | 4 | 5:
                     if m_v := obj.monitored_value:
                         return self.get_scaler_unit(
-                            ln=m_v.logical_name,
-                            par=[int(m_v.attribute_index)],
+                            obj=self.get_object(m_v.logical_name),
+                            par=m_v.contents,
                             a_val=a_val)  # recursion 1 level
                     else:
                         return -1
-                case (ClassID.LIMITER, [6 | 7] | [8, 2]) | (ClassID.DEMAND_REGISTER, [8]) | (ClassID.PROFILE_GENERIC, [4]) | (ClassID.PUSH_SETUP, [5] | [7, _] | [12, 1]) | \
-                     (ClassID.COMMUNICATION_PORT_PROTECTION, [4 | 6]) | (ClassID.CHARGE, [8]) | (ClassID.IEC_HDLC_SETUP, [8]) | (ClassID.AUTO_CONNECT, [4]):
+                case (ClassID.LIMITER, 6 | 7) | (ClassID.LIMITER, 8, 2) | (ClassID.DEMAND_REGISTER, 8) | (ClassID.PROFILE_GENERIC, 4) | (ClassID.PUSH_SETUP, 5) | \
+                     (ClassID.PUSH_SETUP, 7, _) | (ClassID.PUSH_SETUP, 12, 1) | (ClassID.COMMUNICATION_PORT_PROTECTION, 4, 6) | (ClassID.CHARGE, 8) | (ClassID.IEC_HDLC_SETUP, 8) | \
+                     (ClassID.AUTO_CONNECT, 4):
                     return cdt.ScalUnitType((0, 7))  # second
-                case ClassID.CLOCK, [3 | 7]:
+                case ClassID.CLOCK, 3 | 7:
                     return cdt.ScalUnitType((0, 6))  # min
-                case (ClassID.IEC_HDLC_SETUP, [7]) | (ClassID.MODEM_CONFIGURATION, [3, 2]):
+                case (ClassID.IEC_HDLC_SETUP, 7) | (ClassID.MODEM_CONFIGURATION, 3, 2):
                     return cdt.ScalUnitType((-3, 7))  # millisecond
-                case ClassID.S_FSK_PHY_MAC_SET_UP, [7, _]:
+                case ClassID.S_FSK_PHY_MAC_SET_UP, 7, _:
                     return cdt.ScalUnitType((0, 44))  # HZ
-                case ClassID.S_FSK_PHY_MAC_SET_UP, [4 | 5]:
+                case ClassID.S_FSK_PHY_MAC_SET_UP, 4 | 5:
                     return cdt.ScalUnitType((0, 72))  # Db
-                case ClassID.S_FSK_PHY_MAC_SET_UP, [6]:
+                case ClassID.S_FSK_PHY_MAC_SET_UP, 6:
                     return cdt.ScalUnitType((0, 71))  # DbmicroV
                 case _:
                     return None

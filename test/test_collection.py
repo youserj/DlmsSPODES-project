@@ -543,13 +543,23 @@ class TestType(unittest.TestCase):
             m=man,
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
-
-        for obj in collection.get_filtered(col, (overview.ClassID.LIMITER,)):
+        for obj in col:
             for i, _ in obj.get_index_with_attributes():
                 if i == 1:
                     continue
-                res = col.get_report(
-                    ln=obj.logical_name,
-                    par=[i])
-                print(F"{i}: {res=}")
+                par = bytearray([i])
+                value = obj.get_attr(i)
+                stack = [(value, par)]
+                while stack:
+                    value, par = stack.pop()
+                    rep = col.get_report(obj, bytes(par), value)
+                    print(F"{i}: {rep=}")
+                    match value:
+                        case cdt.Structure() | cdt.Array():
+                            for j, el in enumerate(value):
+                                new_par = par.copy()
+                                new_par.append(j)
+                                stack.append((el, new_par))
+        print(F"{col.get_scaler_unit.cache_info()=}")
+        print(F"{collection.get_unit.cache_info()=}")
 
