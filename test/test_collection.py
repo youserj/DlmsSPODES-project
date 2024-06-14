@@ -1,5 +1,6 @@
 import logging
 import os
+from itertools import count
 import time
 import unittest
 from src.DLMS_SPODES.types import cdt, cst, ut
@@ -543,6 +544,7 @@ class TestType(unittest.TestCase):
             m=man,
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
+        rep_count = count()
         for obj in col:
             for i, _ in obj.get_index_with_attributes():
                 if i == 1:
@@ -554,12 +556,19 @@ class TestType(unittest.TestCase):
                     value, par = stack.pop()
                     rep = col.get_report(obj, bytes(par), value)
                     print(F"{i}: {rep=}")
+                    next(rep_count)
                     match value:
-                        case cdt.Structure() | cdt.Array():
+                        case cdt.Structure():
                             for j, el in enumerate(value):
                                 new_par = par.copy()
                                 new_par.append(j)
                                 stack.append((el, new_par))
+                        case cdt.Array():
+                            new_par = par.copy()
+                            new_par.append(0)
+                            for j, el in enumerate(value):
+                                stack.append((el, new_par))
         print(F"{col.get_scaler_unit.cache_info()=}")
         print(F"{collection.get_unit.cache_info()=}")
+        print(F"{rep_count=}")
 

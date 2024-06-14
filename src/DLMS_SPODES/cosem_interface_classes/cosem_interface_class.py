@@ -101,6 +101,16 @@ class ObjectValidationError(exc.DLMSException):
         self.i = i
 
 
+class EmptyAttribute(exc.DLMSException):
+    """need read attribute"""
+    def __init__(self,
+                 ln: cst.LogicalName,
+                 i: int):
+        Exception.__init__(self, F"empty {ln}: {i}")
+        self.ln = ln
+        self.i = i
+
+
 class COSEMInterfaceClasses(ABC):
     CLASS_ID: overview.ClassID
     VERSION: overview.Version | None = None

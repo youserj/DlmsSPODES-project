@@ -1437,7 +1437,8 @@ class Collection:
     def get_report(self,
                    obj: ic.COSEMInterfaceClasses,
                    par: bytes,
-                   a_val=None) -> cdt.Report:
+                   a_val: cdt.CommonDataType = None
+                   ) -> cdt.Report:
         """par: attribute_index, par1, par2, ..."""
         if a_val is None:  # for recursion
             a_val = obj.get_attr(par[0])
@@ -1452,73 +1453,47 @@ class Collection:
                     unit=str(cdt.Unit(unit))
                 )
             else:
-                match self.get_scaler_unit(obj, par, a_val):
-                    case cdt.ScalUnitType() as s_u:
-                        if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                            s_u = s_u.copy()
-                            s_u.scaler.set(int(s_u.scaler) - s)
-                        return cdt.Report(
-                            mess=str(int(a_val) * 10 ** int(s_u.scaler)),
-                            unit=str(s_u.unit))
-                    case int(-1):
-                        return cdt.Report(
-                            mess=str(a_val),
-                            lev=logging.WARN,
-                            unit=_report["empty_unit"])
-                    case None:
-                        match obj.CLASS_ID, *par:
-                            case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
-                                a_val: structs.CaptureObjectDefinition
-                                obj = self.get_object(a_val.logical_name)
-                                return cdt.Report(
-                                    mess=F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
-                                )
-                            case _:
-                                return cdt.Report(str(a_val))
+                if s_u := self.get_scaler_unit(obj, par, a_val):
+                    return cdt.Report(
+                        mess=str(int(a_val) * 10 ** int(s_u.scaler)),
+                        unit=str(s_u.unit))
+                else:
+                    match obj.CLASS_ID, *par:
+                        case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
+                            a_val: structs.CaptureObjectDefinition
+                            obj = self.get_object(a_val.logical_name)
+                            return cdt.Report(
+                                mess=F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
+                            )
+                        case _:
+                            return cdt.Report(str(a_val))
 
     @lru_cache(20000)
     def get_scaler_unit(self,
                         obj: ic.COSEMInterfaceClasses,
                         par: bytes,
-                        a_val=None) -> cdt.ScalUnitType | -1 | None:
-        if a_val is None:  # for recursion
-            a_val = obj.get_attr(par[0])
-        if a_val is None:
-            return -1
-        else:
-            match obj.CLASS_ID, *par:
-                case (ClassID.REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
-                    if (s_u := obj.scaler_unit) is None:
-                        return -1
-                    else:
-                        if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                            s_u = s_u.copy()
-                            s_u.scaler.set(int(s_u.scaler)-s)
-                        return s_u
-                case ClassID.LIMITER, 3 | 4 | 5:
-                    if m_v := obj.monitored_value:
-                        return self.get_scaler_unit(
-                            obj=self.get_object(m_v.logical_name),
-                            par=m_v.contents,
-                            a_val=a_val)  # recursion 1 level
-                    else:
-                        return -1
-                case (ClassID.LIMITER, 6 | 7) | (ClassID.LIMITER, 8, 2) | (ClassID.DEMAND_REGISTER, 8) | (ClassID.PROFILE_GENERIC, 4) | (ClassID.PUSH_SETUP, 5) | \
-                     (ClassID.PUSH_SETUP, 7, _) | (ClassID.PUSH_SETUP, 12, 1) | (ClassID.COMMUNICATION_PORT_PROTECTION, 4, 6) | (ClassID.CHARGE, 8) | (ClassID.IEC_HDLC_SETUP, 8) | \
-                     (ClassID.AUTO_CONNECT, 4):
-                    return cdt.ScalUnitType((0, 7))  # second
-                case ClassID.CLOCK, 3 | 7:
-                    return cdt.ScalUnitType((0, 6))  # min
-                case (ClassID.IEC_HDLC_SETUP, 7) | (ClassID.MODEM_CONFIGURATION, 3, 2):
-                    return cdt.ScalUnitType((-3, 7))  # millisecond
-                case ClassID.S_FSK_PHY_MAC_SET_UP, 7, _:
-                    return cdt.ScalUnitType((0, 44))  # HZ
-                case ClassID.S_FSK_PHY_MAC_SET_UP, 4 | 5:
-                    return cdt.ScalUnitType((0, 72))  # Db
-                case ClassID.S_FSK_PHY_MAC_SET_UP, 6:
-                    return cdt.ScalUnitType((0, 71))  # DbmicroV
-                case _:
-                    return None
+                        a_val: cdt.CommonDataType
+                        ) -> cdt.ScalUnitType | None:
+        match obj.CLASS_ID, *par:
+            case (ClassID.REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
+                if (s_u := obj.scaler_unit) is None:
+                    raise ic.EmptyAttribute(obj.logical_name, 3)
+                else:
+                    if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
+                        s_u = s_u.copy()
+                        s_u.scaler.set(int(s_u.scaler)-s)
+                    return s_u
+            case ClassID.LIMITER, 3 | 4 | 5:
+                obj: Limiter
+                if m_v := obj.monitored_value:
+                    return self.get_scaler_unit(
+                        obj=self.get_object(m_v.logical_name),
+                        par=m_v.contents,
+                        a_val=a_val)  # recursion 1 level
+                else:
+                    raise ic.EmptyAttribute(obj.logical_name, 2)
+            case _:
+                return None
 
     def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
         """return only association objects"""
