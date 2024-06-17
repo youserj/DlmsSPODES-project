@@ -1,5 +1,5 @@
 from itertools import chain
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from struct import pack, unpack
 from abc import ABC, abstractmethod
 from typing import Type, Any, Callable, TypeAlias, Self
@@ -20,7 +20,7 @@ Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
 
 @dataclass
 class Log:
-    lev: Level
+    lev: Level = logging.INFO
     msg: str | Exception = ""
 
 
@@ -28,7 +28,7 @@ class Log:
 class Report:
     msg: str
     unit: str = None
-    log: Log = Log(logging.INFO)
+    log: Log = field(default_factory=Log)
 
     def __str__(self):
         return self.msg
