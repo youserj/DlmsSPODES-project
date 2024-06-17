@@ -1440,38 +1440,33 @@ class Collection:
                    a_val: cdt.CommonDataType | None
                    ) -> cdt.Report:
         """par: attribute_index, par1, par2, ..."""
-        msg = str(a_val)
-        log = cdt.START_LOG
-        unit = None
+        rep = cdt.Report(str(a_val))
         try:
             if a_val is None:
-                msg = _report["empty"]
-                log = cdt.EMPTY_VAL
+                rep.msg = _report["empty"]
+                rep.log = cdt.EMPTY_VAL
             elif isinstance(a_val, cdt.ReportMixin):
-                return a_val.get_report()
+                rep = a_val.get_report()
             else:
                 if unit := get_unit(obj.CLASS_ID, par):
-                    unit = str(cdt.Unit(unit))
+                    rep.unit = str(cdt.Unit(unit))
                 else:
                     if s_u := self.get_scaler_unit(obj, par, a_val):
-                        msg = str(int(a_val) * 10 ** int(s_u.scaler))
-                        unit = str(s_u.unit)
+                        rep.msg = str(int(a_val) * 10 ** int(s_u.scaler))
+                        rep.unit = str(s_u.unit)
                     else:
                         match obj.CLASS_ID, *par:
                             case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
                                 a_val: structs.CaptureObjectDefinition
                                 obj = self.get_object(a_val.logical_name)
-                                msg = F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
+                                rep.msg = F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
                             case _:
                                 pass
-                log = cdt.Log(logging.INFO)
+                rep.log = cdt.Log(logging.INFO)
         except Exception as e:
-            log = cdt.Log(logging.ERROR, e)
+            rep.log = cdt.Log(logging.ERROR, e)
         finally:
-            return cdt.Report(
-                msg=msg,
-                unit=unit,
-                log=log)
+            return rep
 
     @lru_cache(20000)
     def get_scaler_unit(self,

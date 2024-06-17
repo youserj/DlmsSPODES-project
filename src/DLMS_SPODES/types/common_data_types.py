@@ -18,13 +18,13 @@ logger.level = logging.INFO
 Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
 
 
-@dataclass(frozen=True)
+@dataclass
 class Log:
     lev: Level
     msg: str | Exception = ""
 
 
-@dataclass(frozen=True)
+@dataclass
 class Report:
     msg: str
     unit: str = None
