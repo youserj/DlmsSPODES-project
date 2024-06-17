@@ -1437,36 +1437,41 @@ class Collection:
     def get_report(self,
                    obj: ic.COSEMInterfaceClasses,
                    par: bytes,
-                   a_val: cdt.CommonDataType = None
+                   a_val: cdt.CommonDataType | None
                    ) -> cdt.Report:
         """par: attribute_index, par1, par2, ..."""
-        if a_val is None:  # for recursion
-            a_val = obj.get_attr(par[0])
-        if a_val is None:
-            return cdt.Report(
-                mess=_report["empty"],
-                lev=logging.WARN)
-        else:
-            if unit := get_unit(obj.CLASS_ID, par):
-                return cdt.Report(
-                    mess=str(a_val),
-                    unit=str(cdt.Unit(unit))
-                )
+        msg = str(a_val)
+        log = cdt.START_LOG
+        unit = None
+        try:
+            if a_val is None:
+                msg = _report["empty"]
+                log = cdt.EMPTY_VAL
+            elif isinstance(a_val, cdt.ReportMixin):
+                return a_val.get_report()
             else:
-                if s_u := self.get_scaler_unit(obj, par, a_val):
-                    return cdt.Report(
-                        mess=str(int(a_val) * 10 ** int(s_u.scaler)),
-                        unit=str(s_u.unit))
+                if unit := get_unit(obj.CLASS_ID, par):
+                    unit = str(cdt.Unit(unit))
                 else:
-                    match obj.CLASS_ID, *par:
-                        case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
-                            a_val: structs.CaptureObjectDefinition
-                            obj = self.get_object(a_val.logical_name)
-                            return cdt.Report(
-                                mess=F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
-                            )
-                        case _:
-                            return cdt.Report(str(a_val))
+                    if s_u := self.get_scaler_unit(obj, par, a_val):
+                        msg = str(int(a_val) * 10 ** int(s_u.scaler))
+                        unit = str(s_u.unit)
+                    else:
+                        match obj.CLASS_ID, *par:
+                            case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
+                                a_val: structs.CaptureObjectDefinition
+                                obj = self.get_object(a_val.logical_name)
+                                msg = F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
+                            case _:
+                                pass
+                log = cdt.Log(logging.INFO)
+        except Exception as e:
+            log = cdt.Log(logging.ERROR, e)
+        finally:
+            return cdt.Report(
+                msg=msg,
+                unit=unit,
+                log=log)
 
     @lru_cache(20000)
     def get_scaler_unit(self,

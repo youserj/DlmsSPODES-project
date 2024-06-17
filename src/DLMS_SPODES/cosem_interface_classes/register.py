@@ -42,10 +42,3 @@ class Register(ic.COSEMInterfaceClasses):
                 self.set_attr(3, cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\xff'))
             case _:
                 """ nothing do it """
-
-    def get_report(self):
-        match self.value, self.scaler_unit:
-            case None, None: rep = '? ?'
-            case cdt.Digital(), _: rep = self.value.report
-            case _: rep = F'{self.value} {self.scaler_unit}'
-        return F'{self} {rep}'

@@ -70,8 +70,12 @@ class OpeningBodyUnsigned(cdt.ReportMixin, cdt.Unsigned):
     def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return cdt.Report(get_message("$normal$"), logging.INFO)
-            case 1: return cdt.Report(get_message("$case_is_opened$"), logging.WARN)
+            case 0: return cdt.Report(
+                msg=get_message("$normal$"),
+                log=cdt.INFO_LOG)
+            case 1: return cdt.Report(
+                msg=get_message("$case_is_opened$"),
+                log=cdt.Log(logging.WARN))
 
 
 class OpeningBody(DataDynamic):
@@ -83,8 +87,12 @@ class OpeningCoverUnsigned(cdt.ReportMixin, cdt.Unsigned):
     def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
-            case 0: return cdt.Report(get_message("$normal$"), logging.INFO)
-            case 1: return cdt.Report(get_message("$cover_is_opened$"), logging.WARN)
+            case 0: return cdt.Report(
+                msg=get_message("$normal$"),
+                log=cdt.INFO_LOG)
+            case 1: return cdt.Report(
+                msg=get_message("$cover_is_opened$"),
+                log=cdt.Log(logging.WARN))
 
 
 class OpeningCover(DataDynamic):
@@ -95,14 +103,14 @@ class OpeningCover(DataDynamic):
 class ExposureToFieldUnsigned(cdt.ReportMixin, cdt.Unsigned):
     def get_report(self) -> cdt.Report:
         if (value := (int(self) & 0b101)) == 0:
-            return cdt.Report(get_message("$normal$"), logging.INFO)
+            return cdt.Report(get_message("$normal$"), log=cdt.INFO_LOG)
         else:
             ret = ""
             if value & 0b001:
                 ret += get_message("$fixed_field$")
             if value & 0b100:
                 ret += get_message("$exist_field$")
-            return cdt.Report(ret, logging.WARN)
+            return cdt.Report(ret, log=cdt.Log(logging.WARN))
 
 
 class ExposureToMagnet(DataDynamic):
@@ -125,8 +133,8 @@ class SealUnsigned(cdt.ReportMixin, cdt.Unsigned):
                 case 2: return "$breaked_open$"
                 case 3: return "$subsequent_autopsy$"
         return cdt.Report(
-            mess=get_message(F"$for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}"),
-            lev=logging.INFO if int(self) == 0b101 else logging.WARN)
+            msg=get_message(F"$for_cover$ - {get_name(int(self) & 0b11)}, $for_terminals_cover$ - {get_name((int(self) >> 2) & 0b11)}"),
+            log=cdt.Log(logging.INFO if int(self) == 0b101 else logging.WARN))
 
 
 class SealStatus(DataDynamic):

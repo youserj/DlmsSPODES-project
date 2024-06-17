@@ -32,8 +32,8 @@ class SignalQuality(cdt.ReportMixin, cdt.Unsigned):
             return cdt.Report(get_message("$not_known_or_not_detectable$"))
         else:
             return cdt.Report(
-                mess=F"wrong {value=}",
-                lev=logging.WARN)
+                msg=F"wrong {value=}",
+                log=cdt.Log(logging.WARN, "unknown value"))
 
 
 class CellInfoType(cdt.Structure):

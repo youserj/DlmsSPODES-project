@@ -19,13 +19,24 @@ Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
 
 
 @dataclass(frozen=True)
+class Log:
+    lev: Level
+    msg: str | Exception = ""
+
+
+@dataclass(frozen=True)
 class Report:
-    mess: str
-    lev: Level = logging.INFO
-    unit: str = ""
+    msg: str
+    unit: str = None
+    log: Log = Log(logging.INFO)
 
     def __str__(self):
-        return self.mess
+        return self.msg
+
+
+START_LOG = Log(logging.ERROR, "can't report")
+INFO_LOG = Log(logging.INFO)
+EMPTY_VAL = Log(logging.WARN, "empty value")
 
 
 class ReportMixin(ABC):
@@ -518,15 +529,6 @@ class Digital(ABC):
 
     def __str__(self):
         return str(int(self))
-
-    def get_report(self, scaler: int = 0) -> Report:
-        """ report value"""
-        if scaler is None:
-            return Report(
-                mess=str(int(self)),
-                lev=logging.WARN)
-        else:
-            return Report(mess=str(int(self)*10**scaler))
 
     def __gt__(self, other: Self | int):
         match other:
