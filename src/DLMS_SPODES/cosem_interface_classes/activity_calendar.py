@@ -240,22 +240,6 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
         """ return script selector as rate number or AttributeError """
         return self.get_current_action().script_selector.decode()
 
-    def get_index_with_attributes(self, in_init_order: bool = False) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
-        """ override common method """
-        if in_init_order:
-            return iter(((1, self.get_attr(1)),
-                        (2, self.get_attr(2)),
-                        (5, self.get_attr(5)),
-                        (4, self.get_attr(4)),
-                        (3, self.get_attr(3)),
-                        (6, self.get_attr(6)),
-                        (9, self.get_attr(9)),
-                        (8, self.get_attr(8)),
-                        (7, self.get_attr(7)),
-                        (10, self.get_attr(10))))
-        else:
-            return super(ActivityCalendar, self).get_index_with_attributes()
-
     def validate(self):
         def validate_seasons(index: int):
             def handle_duplicates(name: str):
