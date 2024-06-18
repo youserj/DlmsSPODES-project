@@ -1455,7 +1455,7 @@ class Collection:
                 if unit := get_unit(obj.CLASS_ID, par):
                     rep.unit = str(cdt.Unit(unit))
                 else:
-                    if s_u := self.get_scaler_unit(obj, par, a_val):
+                    if s_u := self.get_scaler_unit(obj, par):
                         rep.msg = str(int(a_val) * 10 ** int(s_u.scaler))
                         rep.unit = str(s_u.unit)
                     else:
@@ -1475,8 +1475,7 @@ class Collection:
     @lru_cache(20000)
     def get_scaler_unit(self,
                         obj: ic.COSEMInterfaceClasses,
-                        par: bytes,
-                        a_val: cdt.CommonDataType
+                        par: bytes
                         ) -> cdt.ScalUnitType | None:
         match obj.CLASS_ID, *par:
             case (ClassID.REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
@@ -1492,8 +1491,7 @@ class Collection:
                 if m_v := obj.monitored_value:
                     return self.get_scaler_unit(
                         obj=self.get_object(m_v.logical_name),
-                        par=m_v.attribute_index.contents,
-                        a_val=a_val)  # recursion 1 level
+                        par=m_v.attribute_index.contents)  # recursion 1 level
                 else:
                     raise ic.EmptyAttribute(obj.logical_name, 2)
             case _:
