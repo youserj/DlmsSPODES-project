@@ -545,8 +545,8 @@ class TestType(unittest.TestCase):
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
         rep_count = count()
-        for obj in collection.get_filtered(col, (collection.ClassID.LIMITER,)):
-        # for obj in col:
+        # for obj in collection.get_filtered(col, (collection.ClassID.LIMITER,)):
+        for obj in col:
             for i, _ in obj.get_index_with_attributes():
                 if i == 1:
                     continue

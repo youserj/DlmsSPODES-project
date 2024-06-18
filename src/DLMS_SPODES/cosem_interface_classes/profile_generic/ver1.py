@@ -87,6 +87,8 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
 
     def characteristics_init(self):
         self.set_attr(BUFFER, None)
+
+        # todo remove it
         self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type
 
         self._cbs_attr_post_init.update({CAPTURE_OBJECTS: self.__create_buffer_struct_type,
@@ -270,3 +272,15 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
                     case Register(), 2: result.append(obj.scaler_unit)
                     case _:             result.append(None)
         return result
+
+    # todo remove it
+    def get_index_with_attributes(self, in_init_order: bool = False) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
+        """ override common method """
+        return iter(((1, self.logical_name),
+                    (6, self.sort_object),
+                    (3, self.capture_objects),
+                    (2, self.buffer),
+                    (4, self.capture_period),
+                    (5, self.sort_method),
+                    (7, self.entries_in_use),
+                    (8, self.profile_entries)))
