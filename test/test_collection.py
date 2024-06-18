@@ -475,7 +475,7 @@ class TestType(unittest.TestCase):
         print(res)
         res2 = collection.get_filtered(
                 objects=col,
-                keys=(ln_pattern.DEVICE_IDS,
+                keys=(ln_pattern.DEVICE_ID,
                       ln_pattern.PROGRAM_ENTRIES))
         print(res2)
 
@@ -545,7 +545,8 @@ class TestType(unittest.TestCase):
             t=cdt.OctetString(type_),
             ver=AppVersion.from_str(ver))
         rep_count = count()
-        for obj in col:
+        for obj in collection.get_filtered(col, (collection.ClassID.LIMITER,)):
+        # for obj in col:
             for i, _ in obj.get_index_with_attributes():
                 if i == 1:
                     continue
@@ -555,7 +556,7 @@ class TestType(unittest.TestCase):
                 while stack:
                     value, par = stack.pop()
                     rep = col.get_report(obj, bytes(par), value)
-                    print(F"{i}: {rep=}")
+                    print(F"{obj.logical_name.get_report()} {i}: {rep=}")
                     next(rep_count)
                     match value:
                         case cdt.Structure():

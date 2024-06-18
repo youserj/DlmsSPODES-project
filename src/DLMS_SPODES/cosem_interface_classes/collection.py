@@ -573,7 +573,11 @@ def get_type(class_id: ut.CosemClassId,
 @lru_cache(20000)
 def get_unit(class_id: ClassID, par: bytes) -> int | None:
     match class_id, *par:
-        case (ClassID.CLOCK, 3 | 7):
+        case (ClassID.LIMITER, 6 | 7) | (ClassID.LIMITER, 8, 2) | (ClassID.DEMAND_REGISTER, 8) | (ClassID.PROFILE_GENERIC, 4) | (ClassID.PUSH_SETUP, 5) |\
+             (ClassID.PUSH_SETUP, 7, _) | (ClassID.PUSH_SETUP, 12, 1) | (ClassID.COMMUNICATION_PORT_PROTECTION, 4 | 6) | (ClassID.CHARGE, 8) | (ClassID.IEC_HDLC_SETUP, 8) \
+             | (ClassID.AUTO_CONNECT, 4):
+            return 7  # second
+        case ClassID.CLOCK, 3 | 7:
             return 6  # min
         case (ClassID.IEC_HDLC_SETUP, 7) | (ClassID.MODEM_CONFIGURATION, 3, 2):
             return 7  # millisecond
@@ -1488,7 +1492,7 @@ class Collection:
                 if m_v := obj.monitored_value:
                     return self.get_scaler_unit(
                         obj=self.get_object(m_v.logical_name),
-                        par=m_v.contents,
+                        par=m_v.attribute_index.contents,
                         a_val=a_val)  # recursion 1 level
                 else:
                     raise ic.EmptyAttribute(obj.logical_name, 2)
