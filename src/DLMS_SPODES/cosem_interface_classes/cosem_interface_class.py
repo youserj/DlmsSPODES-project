@@ -378,3 +378,15 @@ class COSEMInterfaceClasses(ABC):
 
     def validate(self):
         """procedure for validate class values"""
+
+    def get_value(self, par: bytes) -> cdt.CommonDataType:
+        ret = self.get_attr(par[0])
+        for i in par[1:]:
+            ret = ret[i]
+        return ret
+
+    def get_values(self, par: bytes) -> list[cdt.CommonDataType]:
+        ret = [self.get_attr(par[0])]
+        for i in par[1:]:
+            ret.append(ret[-1][i])
+        return ret
