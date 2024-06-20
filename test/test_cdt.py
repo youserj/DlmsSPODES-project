@@ -234,3 +234,10 @@ class TestType(unittest.TestCase):
         ]
         l2 = sorted(l)
         print(l2)
+
+    def test_notElement_Structure(self):
+        obj = collection.Data("0.130.25.6.0.255")
+        data = bytes.fromhex("02 02 0f 00 01 02 02 03 06 00 00 61 a9 11 36 11 04 02 03 06 00 00 62 0b 11 00 11 00")
+        obj.set_attr(2, data)
+        obj.set_attr(2, data)
+        print(obj.value)

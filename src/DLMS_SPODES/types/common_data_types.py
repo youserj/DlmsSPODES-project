@@ -1174,8 +1174,10 @@ class Structure(ComplexDataType):
                 for el in self.ELEMENTS:
                     self.values.append(el.TYPE())
             case bytearray():              self.from_content(bytes(value))
-            case Structure():              self.from_content(value.contents)
-            # case Structure():              self.__from_sequence(value)
+            case Structure() if not hasattr(self, "ELEMENTS"):
+                self.from_bytes(value.encoding)
+            case Structure():
+                self.from_content(value.contents)
             case _:                        raise ValueError(F'for {self.__class__.__name__} "{value=}" not supported')
 
     @property
