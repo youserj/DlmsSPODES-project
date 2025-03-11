@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from struct import Struct, pack
+from struct import Struct, pack, unpack_from
 from typing import Self, Optional
 from .. import exceptions as exc
 
@@ -33,7 +33,6 @@ class Parameter:
         piece OPTIONAL
     }
     """
-
     value: bytes
 
     def __bytes__(self):
@@ -58,7 +57,7 @@ class Parameter:
         if l > 8:
             res += F" {"/".join(map(str, self.elements()))}"
         if self.has_piece():
-            res += F" p{self.piece}"
+            res += F"p{self.piece}"
         return res
 
     def validate(self):
@@ -103,6 +102,16 @@ class Parameter:
         else:
             return self.__class__(self.value + pack(">H", index))
 
+    def pop(self) -> tuple[Optional[int], int, Self]:
+        """
+        :return piece, last index and parent Parameter
+        ex.: Parameter("0.0.0.0.0.0:2 1/1/1 p3") => (1, Parameter("0.0.0.0.0.0:2 1/1"))
+        """
+        if self.has_piece():
+            return self.value[-1], int.from_bytes(self.value[-3:-1]), self.__class__(self.value[:-3])
+        else:
+            return None, int.from_bytes(self.value[-2:]), self.__class__(self.value[:-2])
+
     def set_piece(self, index: int) -> Self:
         """add new sequence(array or struct) index element"""
         if len(self.value) >= 7:
@@ -141,9 +150,20 @@ class Parameter:
             yield res
 
     @property
+    def last_element(self) -> int:
+        """:return last element index"""
+        if self.n_elements == 0:
+            raise ValueError("Parameter hasn't elements")
+        if self.has_piece():
+            val = self.value[-3: -1]
+        else:
+            val = self.value[-2:]
+        return int.from_bytes(val, "big")
+
+    @property
     def n_elements(self) -> int:
         """return: amount of elements nested in attribute"""
-        return (len(self.value) - 8) // 2
+        return max(0, (len(self.value) - 8) // 2)
 
     def set(self,
             a: int = None,
@@ -170,6 +190,12 @@ class Parameter:
 
     def __contains__(self, item: Self):
         return item.value in self.value
+
+    def __getitem__(self, item) -> Optional[int]:
+        if self.n_elements > 0:
+            return unpack_from(">H", self.value, item*2 + 8)[0]
+        else:
+            return None
 
     @property
     def a(self) -> int:

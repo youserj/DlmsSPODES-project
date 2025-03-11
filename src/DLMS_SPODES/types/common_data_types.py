@@ -230,6 +230,10 @@ class CommonDataType(ABC):
         """ return DLMS type """
         return cls
 
+    def __copy__(self):
+        return self.__class__(self.encoding)
+
+    @deprecated("use __copy__")
     def copy(self) -> Self:
         """ return copy of object """
         return self.__class__(self.encoding)

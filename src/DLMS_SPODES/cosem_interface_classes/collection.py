@@ -995,7 +995,6 @@ class Collection:
         finally:
             return rep
 
-    @deprecated("use <par2su>")
     def get_scaler_unit(self,
                         obj: ic.COSEMInterfaceClasses,
                         par: bytes

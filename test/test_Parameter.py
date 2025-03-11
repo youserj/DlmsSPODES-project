@@ -15,11 +15,14 @@ class TestType(unittest.TestCase):
         self.assertEqual(par.i, 1)
         print(par)
 
-    def test_add_el(self):
+    def test_append_pop(self):
         par = Parameter(b'123467\x008')
         new_par = par.append(1)
         new_par = new_par.append(2)
         new_par = new_par.append(300)
+        new_par = new_par.set_piece(1)
+        self.assertEqual(new_par.pop(), (1, 300, Parameter(b'123467\x008').extend(1, 2)))
+        self.assertEqual(new_par[1], 2)
         print(new_par)
         for el in new_par.elements():
             print(el)
@@ -59,3 +62,13 @@ class TestType(unittest.TestCase):
         par = par.clear_piece()
         par.append(1)
         print(par)
+
+    def test_n_element(self):
+        par = Parameter(b'1234678').set_i(2).extend(1, 2, 3)
+        self.assertEqual(par.n_elements, 3)
+
+    def test_last_element(self):
+        par = Parameter(b'1234678').set_i(2).extend(1, 2, 3)
+        self.assertEqual(par.last_element, 3)
+        par.set_piece(4)
+        self.assertEqual(par.last_element, 3)
