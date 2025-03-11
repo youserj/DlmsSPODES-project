@@ -447,7 +447,7 @@ class COSEMInterfaceClasses(ABC):
     def parse_attr(self, index: int, value: cdt.Transcript, data_type: cdt.CommonDataType = None):
         """set attribute value by Transcript"""
         dt = self.get_attr_element(index).DATA_TYPE if data_type is None else data_type
-        if isinstance(dt, cdt.CommonDataType):
+        if hasattr(dt, "TAG"):
             self.__attributes[index - 1] = dt.parse(value)
         else:  # maybe CHOICE
             self.__attributes[index - 1] = self.get_attr(index).parse(value)
