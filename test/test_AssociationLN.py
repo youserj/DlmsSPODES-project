@@ -3,7 +3,7 @@ from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES.cosem_interface_classes.association_ln.authentication_mechanism_name import AuthenticationMechanismName
 from src.DLMS_SPODES.cosem_interface_classes.association_ln import mechanism_id
-from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver0 import AssociatedPartnersType, AssociationLN
+from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver0 import AssociatedPartnersType, AssociationLN, AttributeAccessDescriptor
 
 
 class TestType(unittest.TestCase):
@@ -46,3 +46,8 @@ class TestType(unittest.TestCase):
             logical_name=cst.LogicalName("00 00 28 00 00 ff")
         )
         print(ass)
+
+    def test_set_access_right(self):
+        desc = AttributeAccessDescriptor()
+        desc.set_read_access(cdt.Integer(1))
+        print(desc)

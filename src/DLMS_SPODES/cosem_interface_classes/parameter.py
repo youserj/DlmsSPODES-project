@@ -93,14 +93,20 @@ class Parameter:
             tmp = bytes(tmp)
         return self.__class__(tmp)
 
-    def append(self, index: int) -> Self:
-        """add new sequence(array or struct) index element"""
+    def append_validate(self):
         if (l := len(self.value)) < 7:
             raise exc.DLMSException(F"Parameter must has index before")
         elif l % 2 != 0:
             raise exc.DLMSException(F"Can't append to Parameter with piece")
-        else:
-            return self.__class__(self.value + pack(">H", index))
+
+    def append(self, index: int) -> Self:
+        """add new sequence(array or struct) index element"""
+        self.append_validate()
+        return self.__class__(self.value + pack(">H", index))
+
+    def extend(self, *indexes: int):
+        self.append_validate()
+        return self.__class__(self.value + pack(F">{len(indexes)}H", *indexes))
 
     def pop(self) -> tuple[Optional[int], int, Self]:
         """
@@ -136,12 +142,6 @@ class Parameter:
     def clear_piece(self) -> Self:
         if self.has_piece():
             return self.__class__(self.value[:-1])
-
-    def extend(self, *args: int):
-        res = self
-        for i in args:
-            res = res.append(i)
-        return res
 
     def elements(self, start: int = 0) -> iter:
         """return: index elements nested in attribute, started with"""

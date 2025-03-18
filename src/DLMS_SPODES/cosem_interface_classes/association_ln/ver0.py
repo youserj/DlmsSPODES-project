@@ -6,9 +6,10 @@ from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, 
 from ... import pdu_enums as pdu
 from . import mechanism_id, authentication_mechanism_name
 from . import method
+from . import abstract
 
 
-class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
+class AccessMode(abstract.AccessMode, elements=(0, 1, 2, 3)):
     """ TODO: """
     def is_writable(self) -> bool:
         return True if int(self) >= 2 else False
@@ -17,17 +18,29 @@ class AccessMode(cdt.Enum, elements=(0, 1, 2, 3)):
         return True if int(self) in (1, 3) else False
 
 
-class AttributeAccessItem(cdt.Structure):
+class AttributeAccessItem(abstract.AttributeAccessItem):
     """ Implemented attribute and it access . Use in Association LN """
     DEFAULT = b'\x02\x03\x0f\x01\x16\x00\x00'
     attribute_id: cdt.Integer
     access_mode: AccessMode
     access_selectors: choices.access_selectors
 
+    def abstract_marker(self):
+        ...
 
-class AttributeAccessDescriptor(cdt.Array):
+
+class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
     """ Array of attribute_access_item """
     TYPE = AttributeAccessItem
+
+    def set_read_access(self, attribute_id: cdt.Integer):
+        it: AttributeAccessItem
+        for it in self:
+            if it.attribute_id == attribute_id:
+                it.access_mode.set(1)
+                break
+        else:
+            self.append(AttributeAccessItem((attribute_id, AccessMode.parse("1"), None)))
 
 
 class MethodAccessItem(cdt.Structure):

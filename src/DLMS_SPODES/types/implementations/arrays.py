@@ -1,4 +1,5 @@
 from typing import Any
+from abc import ABC, abstractmethod
 from ...types import common_data_types as cdt
 from .structs import UserListEntry
 from .double_long_usingneds import IPAddress

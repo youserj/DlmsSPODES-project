@@ -2,11 +2,12 @@ from . import ver0
 from ...types import choices
 from ... import exceptions as exc
 from ..__class_init__ import *
-from ...types.implementations import structs
+from ...types.implementations import structs, arrays
 from . import authentication_mechanism_name
+from . import abstract
 
 
-class AccessMode(cdt.Enum, elements=tuple(range(7))):
+class AccessMode(abstract.AccessMode, elements=tuple(range(7))):
     """Version 0 extension"""
     def is_writable(self) -> bool:
         return True if int(self) in (2, 3, 5, 6) else False
@@ -20,16 +21,28 @@ class AccessModeMeth(cdt.Enum, elements=(0, 1, 2)):
 
 
 # TODO: make as subclass of ver0
-class AttributeAccessItem(cdt.Structure):
+class AttributeAccessItem(abstract.AttributeAccessItem):
     """ Implemented attribute and it access . Use in Association LN """
     attribute_id: cdt.Integer
     access_mode: AccessMode
     access_selectors: choices.access_selectors
 
+    def abstract_marker(self):
+        ...
 
-class AttributeAccessDescriptor(cdt.Array):
+
+class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
     """ Array of attribute_access_item """
     TYPE = AttributeAccessItem
+
+    def set_read_access(self, attribute_id: cdt.Integer):
+        it: AttributeAccessItem
+        for it in self:
+            if it.attribute_id == attribute_id:
+                it.access_mode.set(1)
+                break
+        else:
+            self.append(AttributeAccessItem((attribute_id, AccessMode.parse("1"), None)))
 
 
 # TODO: make as subclass of ver0

@@ -1,5 +1,6 @@
 import struct
 from itertools import chain, count
+import inspect
 import re
 from dataclasses import dataclass, field
 from struct import pack, unpack
@@ -1091,6 +1092,9 @@ class NullData(SimpleDataType):
     @property
     def contents(self) -> bytes: return b''
 
+    def set(self, value):
+        """override with no change"""
+
     def __str__(self):
         return 'null-data'
 
@@ -1285,7 +1289,9 @@ class Structure(ComplexDataType):
 
     def __init_subclass__(cls, **kwargs):
         """create ELEMENTS from annotations"""
-        if hasattr(cls, "ELEMENTS"):
+        if inspect.isabstract(cls):
+            ...
+        elif hasattr(cls, "ELEMENTS"):
             """init manually, ex: Entry in ProfileGeneric"""
             if len(kwargs) != 0:  # reinit several struct elements
                 elements = list(cls.ELEMENTS)
@@ -1327,7 +1333,10 @@ class Structure(ComplexDataType):
         if len(sequence) != len(self):
             raise ValueError(F'Struct {self.__class__.__name__} got length:{len(sequence)}, expected length:{len(self)}')
         for val, el in zip(sequence, self.ELEMENTS):
-            self.values.append(el.TYPE(val))
+            try:
+                self.values.append(el.TYPE(val))
+            except TypeError as e:
+                print(e)
 
     @classmethod
     def parse(cls, value: list) -> Self:
@@ -1931,7 +1940,10 @@ class Enum(IntegerEnum, Unsigned, ABC):
     def __init_subclass__(cls, **kwargs):
         """initiate NAMES name use config.toml"""
         super().__init_subclass__(**kwargs)
-        if not cls.ELEMENTS:
+        if (
+            not cls.ELEMENTS
+            and not inspect.isabstract(cls)
+        ):
             elements: tuple[int, ...] = kwargs["elements"]
             try:
                 c = {par["e"]: par["v"] for par in config["DLMS"][cls.__name__]}

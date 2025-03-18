@@ -1,4 +1,5 @@
 """ COMMON Structs """
+from abc import ABC, abstractmethod
 from ...types import common_data_types as cdt, cosem_service_types as cst
 from . import long_unsigneds
 
