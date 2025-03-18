@@ -318,9 +318,10 @@ func_maps: dict[str, FUNC_MAP] = dict()
 
 
 def get_func_map(for_create_map: dict) -> FUNC_MAP:
+    keys: list[bytes]
     ret: FUNC_MAP = dict()
     for it in for_create_map:
-        keys: list[bytes] = list()
+        keys = list()
         match len(it):
             case 4:
                 match it[2], it[3]:
@@ -751,22 +752,21 @@ class Collection:
                     except exc.EmptyObj as e:
                         logger.warning(F"can't copy {target} attr={i}, skipped. {e}")
 
-    def copy(self) -> tuple[Self, list[Exception]]:
+    def copy(self) -> Result[Self]:
         """copy collection with value by Association"""
-        new_collection = Collection(
+        res = Result(Collection(
             id_=self.id,
             dlms_ver=self.__dlms_ver,
             country=self.__country,
             cntr_ver=self.__country_ver,
-        )
-        new_collection.spec_map = self.spec_map
-        err: list[Exception] = list()
+        ))
+        res.value.spec_map = self.spec_map
         max_ass: AssociationLN | None = None
         """more full association"""  # todo: move to collection(from_xml)
         for obj in self.__objs.values():
             new_obj: InterfaceClass = obj.__class__(obj.logical_name)
-            new_collection.__objs[obj.logical_name.contents] = new_obj
-            new_obj.collection = new_collection
+            res.value.__objs[obj.logical_name.contents] = new_obj
+            new_obj.collection = res.value  # todo: remove in future
             if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
                 obj: AssociationLN
                 if obj.object_list is not None:
@@ -782,13 +782,13 @@ class Collection:
         while len(ln_for_set) != 0:
             ln = ln_for_set.pop(0)
             try:
-                new_obj = new_collection.get_object(ln.contents)
+                new_obj = res.value.get_object(ln.contents)
                 self.copy_object_values(
                     target=new_obj,
                     association_id=ass_id)
             except Exception as e:
-                err.append(e)
-        return new_collection, err
+                res.append_err(e)
+        return res
 
     @property
     def dlms_ver(self):
