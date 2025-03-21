@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from . import settings
 from .types import cosem_service_types as cst
 from .cosem_interface_classes import overview
+from .obis import media_id
+
 
 match settings.get_current_language():
     case settings.Language.ENGLISH:     from .Values.EN import relation_to_obis_names as rn
@@ -25,26 +27,26 @@ def get_energy_names(electric_obj: int) -> str:
 def get_obj_names(electric_obj: int) -> str:
     """ corresponding with DLMS UA 1000-1 Ed. 14 7.5.1 Table 65. Value group C codes – Electricity. Range: 1..80, RU: 124..126 """
     match electric_obj:
-        case 1 | 21 | 41 | 61:  return rn.ACTIVE_POWER_PLUS
-        case 2 | 22 | 42 | 62:  return rn.ACTIVE_POWER_MINUS
-        case 3 | 23 | 43 | 63:  return rn.REACTIVE_POWER_PLUS
-        case 4 | 24 | 44 | 64:  return rn.REACTIVE_POWER_MINUS
-        case 5 | 25 | 45 | 65:  return rn.REACTIVE_POWER_QI
-        case 6 | 26 | 46 | 66:  return rn.REACTIVE_POWER_QII
-        case 7 | 27 | 47 | 67:  return rn.REACTIVE_POWER_QIII
-        case 8 | 28 | 48 | 68:  return rn.REACTIVE_POWER_QIV
-        case 9 | 29 | 49 | 69:  return rn.APPARENT_POWER_PLUS
-        case 10 | 30 | 50 | 70: return rn.APPARENT_POWER_MINUS
-        case 11 | 31 | 51 | 71: return rn.CURRENT
-        case 12 | 32 | 52 | 72: return rn.VOLTAGE
-        case 13 | 33 | 53 | 73: return rn.POWER_FACTOR
-        case 14 | 34 | 54 | 74: return rn.SUPPLY_FREQUENCY
-        case 15 | 35 | 55 | 75: return rn.ACTIVE_POWER_ABS_PLUS
-        case 16 | 36 | 56 | 76: return rn.ACTIVE_POWER_ABS_MINUS
-        case 17 | 37 | 57 | 77: return rn.ACTIVE_POWER_QI
-        case 18 | 38 | 58 | 78: return rn.ACTIVE_POWER_QII
-        case 19 | 39 | 59 | 79: return rn.ACTIVE_POWER_QIII
-        case 20 | 40 | 60 | 80:  return rn.ACTIVE_POWER_QIV
+        case 1 | 21 | 41 | 61:  return str(media_id.ACTIVE_POWER_PLUS)
+        case 2 | 22 | 42 | 62:  return str(media_id.ACTIVE_POWER_MINUS)
+        case 3 | 23 | 43 | 63:  return str(media_id.REACTIVE_POWER_PLUS)
+        case 4 | 24 | 44 | 64:  return str(media_id.REACTIVE_POWER_MINUS)
+        case 5 | 25 | 45 | 65:  return str(media_id.REACTIVE_POWER_QI)
+        case 6 | 26 | 46 | 66:  return str(media_id.REACTIVE_POWER_QII)
+        case 7 | 27 | 47 | 67:  return str(media_id.REACTIVE_POWER_QIII)
+        case 8 | 28 | 48 | 68:  return str(media_id.REACTIVE_POWER_QIV)
+        case 9 | 29 | 49 | 69:  return str(media_id.APPARENT_POWER_PLUS)
+        case 10 | 30 | 50 | 70: return str(media_id.APPARENT_POWER_MINUS)
+        case 11 | 31 | 51 | 71: return str(media_id.CURRENT)
+        case 12 | 32 | 52 | 72: return str(media_id.VOLTAGE)
+        case 13 | 33 | 53 | 73: return str(media_id.POWER_FACTOR)
+        case 14 | 34 | 54 | 74: return str(media_id.SUPPLY_FREQUENCY)
+        case 15 | 35 | 55 | 75: return str(media_id.ACTIVE_POWER_SUM)
+        case 16 | 36 | 56 | 76: return str(media_id.ACTIVE_POWER_DIFF)
+        case 17 | 37 | 57 | 77: return str(media_id.ACTIVE_POWER_QI)
+        case 18 | 38 | 58 | 78: return str(media_id.ACTIVE_POWER_QII)
+        case 19 | 39 | 59 | 79: return str(media_id.ACTIVE_POWER_QIII)
+        case 20 | 40 | 60 | 80:  return str(media_id.ACTIVE_POWER_QIV)
         case 88: return rn.CUMULATIVE_AMPERE_SQUARED_HOURS
         case 89: return rn.CUMULATIVE_VOLT_SQUARED_HOURS
         case 124: return F"{rn.RU_LINEAR_VOLTAGE} {rn.L1_L2}"

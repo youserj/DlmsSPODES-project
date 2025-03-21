@@ -1450,6 +1450,7 @@ class Collection:
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable,
         oi_filter(object attribute index filter), example: ((ClassID.REGISTER, (2,))) - is restricted for Register only Value attribute without logical_name and scaler_unit
         """
+        objects: dict[ic.COSEMInterfaceClasses, list[int]]
         without_ln = True if "l" in af_mode else False
         only_read = True if "r" in af_mode else False
         only_write = True if "w" in af_mode else False
