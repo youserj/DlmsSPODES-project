@@ -687,10 +687,6 @@ class Collection:
         self.spec_map = "DLMS_6"
         self.__objs = dict()
         """ all DLMS objects container with obis key """
-        self.add(
-            class_id=ClassID.DATA,
-            version=Version.V0,
-            logical_name=cst.LogicalName.from_obis("0.0.42.0.0.255"))
 
     @property
     def id(self) -> ID | None:
