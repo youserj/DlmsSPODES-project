@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from struct import Struct, pack, unpack_from
 from typing import Self, Optional
+import re
 from .. import exceptions as exc
 
-
+_pattern = re.compile("((?:\d{1,3}\.){5}\d{1,3})(?::(m?\d{1,3}))?")
 Index = Struct("?B")
 
 
@@ -37,6 +38,23 @@ class Parameter:
 
     def __bytes__(self):
         return self.value
+
+    @classmethod
+    def parse(cls, value: str) -> Self:
+        """create from string. Only LN, attr/meth type ddd.ddd.ddd.ddd.ddd.ddd:aaa, ex.: 0.0.1.0.0.255 """
+        if (res := _pattern.fullmatch(value)) is None:
+            raise ValueError(F"in {cls.__name__}.parse got wrong :{value:}")
+        else:
+            groups = iter(res.groups())
+            ret = bytes(map(int, next(groups).split(".")))
+            if (a := next(groups)) is not None:
+                if a.startswith('m'):
+                    a = a[1:]
+                    g1 = 256
+                else:
+                    g1 = 0
+                ret += (g1 + int(a)).to_bytes(2)
+            return cls(ret)
 
     def __lt__(self, other: Self):
         """comparing for sort method"""
@@ -227,3 +245,7 @@ class Parameter:
             return Parameter(self.value[:8])
         else:
             raise exc.DLMSException(F"Parameter must has index before")
+
+    @property
+    def obis(self) -> 'Parameter':
+        return Parameter(self.ln)

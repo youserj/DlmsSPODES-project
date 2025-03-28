@@ -9,7 +9,7 @@ from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional
 import logging
 from semver import Version as SemVer
-from StructResult import Result
+from StructResult import result
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
 from ..types.implementations import structs, enums, octet_string
 from . import cosem_interface_class as ic
@@ -748,9 +748,9 @@ class Collection:
                     except exc.EmptyObj as e:
                         logger.warning(F"can't copy {target} attr={i}, skipped. {e}")
 
-    def copy(self) -> Result[Self]:
+    def copy(self) -> result.Simple[Self]:
         """copy collection with value by Association"""
-        res = Result(Collection(
+        res = result.Simple(Collection(
             id_=self.id,
             dlms_ver=self.__dlms_ver,
             country=self.__country,
@@ -1063,8 +1063,8 @@ class Collection:
             ret.append(self.__get_object(olt.logical_name.contents))
         return ret
 
-    def sap2objects(self, value: enums.ClientSAP) -> Result[list[ic.COSEMInterfaceClasses]]:
-        res = Result(list())
+    def sap2objects(self, value: enums.ClientSAP) -> result.List[ic.COSEMInterfaceClasses]:
+        res = result.List()
         for ln in self.sap2association(value).get_lns():
             try:
                 res.value.append(self.__get_object(ln.contents))

@@ -10,9 +10,12 @@ from DLMS_SPODES.cosem_interface_classes.parameter import Parameter
 class TestType(unittest.TestCase):
 
     def test_init(self):
-        par = Parameter(b'123467\x00\x01')
+        par = Parameter(b'\x01\x02\x03\x04\x06\x07\x00\x01')
         par.validate()
         self.assertEqual(par.i, 1)
+        self.assertEqual(par.obis, Parameter.parse("1.2.3.4.6.7"))
+        self.assertEqual(par.attr, Parameter.parse("1.2.3.4.6.7:1"))
+        self.assertEqual(Parameter(b'\x01\x02\x03\x04\x06\x07\x01\x01'), Parameter.parse("1.2.3.4.6.7:m1"))
         print(par)
 
     def test_append_pop(self):
