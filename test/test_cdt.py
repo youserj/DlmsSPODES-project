@@ -302,6 +302,8 @@ class TestType(unittest.TestCase):
         value = cdt.Unsigned(1)
         value += 1
         self.assertEqual(value, cdt.Unsigned(2))
+        self.assertEqual(cdt.Unsigned(255), cdt.Unsigned.max())
+        self.assertEqual(cdt.Integer(127), cdt.Integer.max())
 
     def test_OctetString(self):
         data = cdt.OctetString("00 01 02")

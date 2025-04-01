@@ -2,6 +2,8 @@ from functools import lru_cache
 from itertools import count
 import time
 import unittest
+
+from DLMS_SPODES.cosem_interface_classes import Parameter
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS_SPODES.obis import media_id
@@ -63,18 +65,18 @@ class TestType(unittest.TestCase):
             version=overview.Version.V0,
             logical_name=cst.LogicalName.from_obis("0.0.13.0.0.255")
         )
-        activity_calendar_obj.set_attr(
+        activity_calendar_obj.parse_attr(
             9,
             [
-                (1, [("01:00", "00 00 0A 00 64 FF", 1),]),
-                (2, [("02:00", "00 00 0A 00 64 FF", 2),])
+                ["1", [["01:00", "00 00 0A 00 64 FF", "1"],]],
+                ["2", [["02:00", "00 00 0A 00 64 FF", "2"],]]
             ])
         script_obj = col.add(
             class_id=overview.ClassID.SCRIPT_TABLE,
             version=overview.Version.V0,
             logical_name=cst.LogicalName("00 00 0a 00 64 ff")
         )
-        script_obj.set_attr(2, [(1, [(2, 3, "01 00 01 07 00 FF", 2, None)])])
+        script_obj.parse_attr(2, [['1', [['2', '3', "01 00 01 07 00 FF", '2', "0:"]]]])
         alarm1_obj = col.add(
             class_id=overview.ClassID.DATA,
             version=overview.Version.V0,
@@ -592,6 +594,14 @@ class TestType(unittest.TestCase):
         print(F"{col.get_scaler_unit.cache_info()=}")
         print(F"{collection.get_unit.cache_info()=}")
         print(F"{rep_count=}")
+
+    def test_par2rep(self):
+        col = self.create_collection()
+        par = Parameter.parse("0.0.13.0.0.255:9").extend(0, 0)
+        data = col.par2data(par)
+        rep1 = col.par2rep(par, data)
+        rep2 = col.get_report(col.par2obj(par), b'\x00\x10', data)
+        print(rep1, rep2)
 
     def test_get_profile_s_u(self):
         col = collection.get_collection(

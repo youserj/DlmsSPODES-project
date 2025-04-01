@@ -113,6 +113,16 @@ class CHOICE(ABC):
     def is_key(self, value: int) -> bool:
         return value in self.ELEMENTS.keys()
 
+    @classmethod
+    def parse(cls, value: cdt.Transcript) -> cdt.CommonDataType:
+        """get instance by pattern: <tag>:<value>"""
+        tag, value = value.split(":", maxsplit=1)
+        if (d_t := cls.ELEMENTS.get(int(tag))) is None:
+            raise UserfulTypesException(F"for {cls.__name__} got {cdt.CommonDataType.__name__}: {cdt.TAG(int(tag).to_bytes(1))}; "
+                                        F"expected: {', '.join(map(lambda el: el.NAME, cls.ELEMENTS.values()))}")
+        else:
+            return d_t.TYPE.parse(value)
+
     def __call__(self,
                  value: bytes | int = None,
                  force: bool = False) -> cdt.CommonDataType:

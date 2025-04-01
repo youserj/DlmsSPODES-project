@@ -1,4 +1,5 @@
 import struct
+from copy import copy
 from itertools import chain, count
 import inspect
 import re
@@ -74,12 +75,17 @@ type Number = int
 
 class IntegerEnum(ReportMixin, ABC):
     """value with represent __int__ to string"""
-    NAMES: dict[Number, Message] = None
+    NAMES: dict[Number, Message] = None  # todo: make with ChainMap or more better
 
     def __init_subclass__(cls, **kwargs):
         """initiate NAMES name use config.toml"""
-        if not cls.NAMES:
-            cls.NAMES = {int(k): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "enum_name", F"{cls.__name__}")) else dict()
+        # todo: copypast from IntegerFlag, make better with no copy(use parent dict), maybe ChainMap
+        NAMES = {int(k): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "enum_name", F"{cls.__name__}")) else dict()
+        if not cls.NAMES:  # todo: make check <is None> in future, after remove defaul <dict()>
+            cls.NAMES = NAMES
+        elif NAMES:  # expand
+            cls.NAMES = copy(cls.NAMES)
+            cls.NAMES.update(NAMES)
 
     def get_report(self) -> Report:
         l = INFO_LOG
@@ -542,6 +548,16 @@ class Digital(CommonDataType, ABC):
             tmp = int.from_bytes(self.contents, "big")
             tmp >>= 1
             self.__dict__["contents"] = tmp.to_bytes(self.LENGTH, "big")
+
+    def __add__(self, other: int):
+        return self.__class__(int(self) + other)
+
+    @classmethod
+    def max(cls) -> Self:
+        if cls.SIGNED:
+            return cls(bytearray(b'\x7f'+b'\xff'*(cls.LENGTH-1)))
+        else:
+            return cls(bytearray(b'\xff'*cls.LENGTH))
 
     def __str__(self):
         return str(int(self))
@@ -1339,7 +1355,7 @@ class Structure(ComplexDataType):
                 print(e)
 
     @classmethod
-    def parse(cls, value: list) -> Self:
+    def parse(cls, value: Transcript) -> Self:
         if len(value) != len(cls.ELEMENTS):
             raise ValueError(F"in Struct {cls.__name__} got length:{len(value)}, expected length:{len(cls.ELEMENTS)}")
         return cls([el.TYPE.parse(val) for val, el in zip(value, cls.ELEMENTS)])

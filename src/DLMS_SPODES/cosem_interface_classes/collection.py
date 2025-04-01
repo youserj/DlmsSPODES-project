@@ -6,7 +6,7 @@ from struct import pack
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional
+from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional, Hashable
 import logging
 from semver import Version as SemVer
 from StructResult import result
@@ -537,6 +537,7 @@ func_maps["SPODES_3"] = get_func_map(__func_map_for_create)
 
 # KPZ Update
 __func_map_for_create.update({
+    (0, 96, 11, 4): ClassMap({0: impl.data.KPZSPODES3ExternalEvent}),
     (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.KPZAlarm1}),
     (0, 128, 25, 6, 0): ClassMap({0: impl.data.DataStatic}),
     (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
@@ -585,8 +586,8 @@ def get_type(class_id: ut.CosemClassId,
 
 
 @lru_cache(20000)
-def get_unit(class_id: ClassID, par: bytes) -> int | None:
-    match class_id, *par:
+def get_unit(class_id: ClassID, elements: Iterable[int]) -> int | None:
+    match class_id, *elements:
         case (ClassID.LIMITER, 6 | 7) | (ClassID.LIMITER, 8, 2) | (ClassID.DEMAND_REGISTER, 8) | (ClassID.PROFILE_GENERIC, 4) | (ClassID.PUSH_SETUP, 5) |\
              (ClassID.PUSH_SETUP, 7, _) | (ClassID.PUSH_SETUP, 12, 1) | (ClassID.COMMUNICATION_PORT_PROTECTION, 4 | 6) | (ClassID.CHARGE, 8) | (ClassID.IEC_HDLC_SETUP, 8) \
              | (ClassID.AUTO_CONNECT, 4):
@@ -873,6 +874,14 @@ class Collection:
         """return: DLMSObject"""
         return self.__objs.get(par.ln, exc.NoObject)  # todo: maybe make ic.NoObject
 
+    def par2data(self, par: Parameter) -> Optional[cdt.CommonDataType]:
+        """:return CDT by Parameter, return None if data wasn't setting"""
+        if (a_data := self.par2obj(par).get_attr(par.i)) is None:
+            return None
+        for el in par.elements():
+            a_data = a_data[el]
+        return a_data
+
     def values(self) -> tuple[InterfaceClass]:
         return tuple(self.__objs.values())
 
@@ -949,6 +958,7 @@ class Collection:
         else:
             return None
 
+    @deprecated("use <par2rep>")
     def get_report(self,
                    obj: ic.COSEMInterfaceClasses,
                    par: bytes,
@@ -991,6 +1001,46 @@ class Collection:
         finally:
             return rep
 
+    def par2rep(self, par: Parameter, data: Optional[cdt.CommonDataType]) -> cdt.Report:
+        rep = cdt.Report(str(data))
+        try:
+            if data is None:
+                rep.msg = _report["empty"]
+                rep.log = cdt.EMPTY_VAL
+            elif isinstance(data, cdt.ReportMixin):
+                rep = data.get_report()
+            elif isinstance(data, DayProfileAction):
+                rep.msg = F"{get_message("$rate$")}-{data.script_selector}: {data.start_time}"
+                script_obj = self.get_object(data.script_logical_name)
+                for script in script_obj.scripts:
+                    if script.script_identifier == data.script_selector:
+                        break
+                else:
+                    rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {data.script_selector}")
+            else:
+                obj = self.par2obj(par)
+                elements = tuple(par.elements())
+                if unit := get_unit(obj.CLASS_ID, elements):
+                    rep.unit = cdt.Unit(unit).get_name()
+                else:
+                    if s_u := self.par2su(par):
+                        rep.msg = (_report["scaler_format"]).format(int(data) * 10 ** int(s_u.scaler))
+                        rep.unit = s_u.unit.get_name()
+                    else:
+                        match obj.CLASS_ID, *elements:
+                            case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
+                                data: structs.CaptureObjectDefinition
+                                obj = self.get_object(data.logical_name)
+                                rep.msg = F"{get_name(data.logical_name)}.{obj.get_attr_element(int(data.attribute_index))}"
+                            case _:
+                                pass
+                rep.log = cdt.Log(logging.INFO)
+        except Exception as e:
+            rep.log = cdt.Log(logging.ERROR, e)
+        finally:
+            return rep
+
+    @deprecated("use par2su")
     def get_scaler_unit(self,
                         obj: ic.COSEMInterfaceClasses,
                         par: bytes

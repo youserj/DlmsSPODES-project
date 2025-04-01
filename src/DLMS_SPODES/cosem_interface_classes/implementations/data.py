@@ -199,6 +199,7 @@ class SPODES3CommutationEvent(DataDynamic):
 class SPODES3ProgrammingEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3ProgrammingEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
     A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3ProgrammingEventValues),
@@ -206,6 +207,7 @@ class SPODES3ProgrammingEvent(DataDynamic):
 
 class SPODES3ExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
+
 
 class SPODES3ExternalEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
@@ -305,6 +307,15 @@ class SPODES3PowerQuality1Event(DataNotSpecific):
 
 
 # KPZ implements
+class KPZExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+    NAMES = SPODES3ExternalEventValues.NAMES
+
+
+class KPZSPODES3ExternalEvent(DataStatic):
+    """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZExternalEventValues),
+
+
 class KPZ1VoltageEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3VoltageEventValues.NAMES
 
