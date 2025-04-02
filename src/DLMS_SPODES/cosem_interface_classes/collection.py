@@ -3,6 +3,7 @@ principles (see Clause 4 EN 62056-62:2007), the identification of real data item
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
 from struct import pack
+import inspect
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
@@ -671,7 +672,7 @@ class Collection:
     __dlms_ver: int | None
     __country: CountrySpecificIdentifiers | None
     __country_ver: ParameterValue | None
-    __objs: dict[bytes, InterfaceClass]
+    __objs: dict[o.OBIS, InterfaceClass]
     __const_objs: int
     spec_map: str
 
@@ -751,12 +752,14 @@ class Collection:
 
     def copy(self) -> result.Simple[Self]:
         """copy collection with value by Association"""
-        res = result.Simple(Collection(
-            id_=self.id,
-            dlms_ver=self.__dlms_ver,
-            country=self.__country,
-            cntr_ver=self.__country_ver,
-        ))
+        res = result.Simple(
+            value=Collection(
+                id_=self.id,
+                dlms_ver=self.__dlms_ver,
+                country=self.__country,
+                cntr_ver=self.__country_ver),
+            msg=inspect.currentframe().f_code.co_qualname
+        )
         res.value.spec_map = self.spec_map
         max_ass: AssociationLN | None = None
         """more full association"""  # todo: move to collection(from_xml)
@@ -834,7 +837,6 @@ class Collection:
     def __iter__(self) -> Iterator[ic.COSEMInterfaceClasses]:
         return iter(self.__objs.values())
 
-
     def get_spec(self) -> str:
         """return functional map to specification by identification fields"""
         match self.id.man:
@@ -866,13 +868,13 @@ class Collection:
         else:
             return res
 
-    def get(self, obis: bytes) -> InterfaceClass | None:
+    def get(self, obis: o.OBIS) -> InterfaceClass | None:
         """ get object, return None if it absence """
         return self.__objs.get(obis, None)
 
     def par2obj(self, par: Parameter) -> InterfaceClass:
         """return: DLMSObject"""
-        return self.__objs.get(par.ln, exc.NoObject)  # todo: maybe make ic.NoObject
+        return self.__objs.get(par.obis, exc.NoObject)  # todo: maybe make ic.NoObject
 
     def par2data(self, par: Parameter) -> Optional[cdt.CommonDataType]:
         """:return CDT by Parameter, return None if data wasn't setting"""
@@ -899,7 +901,7 @@ class Collection:
                 ln=logical_name,
                 func_map=func_maps[self.spec_map])(logical_name)
             new_object.collection = self
-            self.__objs[logical_name.contents] = new_object
+            self.__objs[o.OBIS(logical_name.contents)] = new_object
             logger.info(F'Create {new_object}')
             return new_object
         except ValueError as e:
@@ -943,20 +945,12 @@ class Collection:
         return next(filter(lambda obj: obj.CLASS_ID == class_id, self.__objs.values())).VERSION
 
     def is_in_collection(self, value: LNContaining) -> bool:
-        obis: bytes = get_ln_contents(value)
+        obis = lnContents2obis(value)
         return False if self.__objs.get(obis) is None else True
 
     def get_object(self, value: LNContaining) -> InterfaceClass:
         """ return object from obis<string> or raise exception if it absence """
-        return self.__get_object(get_ln_contents(value))
-
-    def get_object2(self, value: LNContaining) -> InterfaceClass | None:
-        """ return object from obis<string> or None"""
-        # todo: refactoring with one get_ln_contents
-        if self.is_in_collection(value):
-            return self.__get_object(get_ln_contents(value))
-        else:
-            return None
+        return self.__get_object(lnContents2obis(value))
 
     @deprecated("use <par2rep>")
     def get_report(self,
@@ -1114,7 +1108,7 @@ class Collection:
         return ret
 
     def sap2objects(self, value: enums.ClientSAP) -> result.List[ic.COSEMInterfaceClasses]:
-        res = result.List()
+        res = result.List(msg=inspect.currentframe().f_code.co_qualname)
         for ln in self.sap2association(value).get_lns():
             try:
                 res.value.append(self.__get_object(ln.contents))
@@ -1203,16 +1197,7 @@ class Collection:
         else:
             return False
 
-    def change_association_version(self, version: cdt.Unsigned):
-        """ change Association version with clear attributes """
-        logger.warning(F'Attention. ALL Association attributes will to default')
-        for ass in self.get_objects_by_class_id(ut.CosemClassId(15)):
-            self.__objs.pop(ass.logical_name.contents)
-            self.add(
-                class_id=ut.CosemClassId(15),
-                version=version,
-                logical_name=ass.logical_name)
-
+    @deprecated("use <obis2obj>")
     def __get_object(self, obis: bytes) -> InterfaceClass:
         if (obj := self.__objs.get(obis)) is None:
             logical_name = cst.LogicalName(bytearray(obis))
@@ -1220,146 +1205,91 @@ class Collection:
         else:
             return obj
 
+    def obis2obj(self, obis: o.OBIS) -> result.Simple[InterfaceClass]:
+        res = result.Simple(
+            value=self.__objs.get(obis),
+            msg=inspect.currentframe().f_code.co_qualname
+        )
+        if res.value is None:
+            res.append_err(exc.NoObject(obis))
+        return res
+
+    def logicalName2obj(self, ln: cst.LogicalName) -> result.Simple[InterfaceClass]:
+        return self.obis2obj(o.OBIS(ln.contents))
+
     @cached_property
     def LDN(self) -> impl.data.LDN:
-        return self.__get_object(o.LDN)
+        return self.obis2obj(o.LDN).unwrap()
 
     @cached_property
     def current_association(self) -> AssociationLN:
-        return self.__get_object(o.CURRENT_ASSOCIATION)
+        return self.obis2obj(o.CURRENT_ASSOCIATION).unwrap()
 
     def getASSOCIATION(self, instance: int) -> AssociationLN:
-        return self.__get_object(bytes((0, 0, 40, 0, instance, 255)))
+        return self.obis2obj(o.AssociationLN(instance)).unwrap()
 
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
-        return self.__get_object(bytes((0, 0, 40, 0, 1, 255)))
+        return self.obis2obj(o.PUBLIC_ASSOCIATION).unwrap()
 
     @property
     def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
-        return self.__get_object(bytes((0, 0, 96, 12, 4, 255)))
+        return self.obis2obj(bytes((0, 0, 96, 12, 4, 255))).unwrap()
 
     @property
     def clock(self) -> Clock:
-        return self.__get_object(bytes((0, 0, 1, 0, 0, 255)))
-
-    @property
-    def activity_calendar(self) -> ActivityCalendar:
-        return self.__get_object(bytes((0, 0, 13, 0, 0, 255)))
-
-    @property
-    def special_day_table(self) -> SpecialDaysTable:
-        return self.__get_object(bytes((0, 0, 11, 0, 0, 255)))
-
-    def getIECHDLCSetup(self, ch: int = 0) -> IECHDLCSetup:
-        return self.__get_object(bytes((0, ch, 22, 0, 0, 255)))
-
-    @cached_property
-    def TCP_UDP_setup(self) -> TCPUDPSetup:
-        return self.__get_object(bytes((0, 0, 25, 0, 0, 255)))
-
-    def getIPv4Setup(self, ch: int = 0) -> IPv4Setup:
-        return self.__get_object(bytes((0, ch, 25, 1, 0, 255)))
-
-    @property
-    def IPv4_setup(self) -> IPv4Setup:
-        return self.__get_object(bytes((0, 0, 25, 1, 0, 255)))
+        return self.obis2obj(bytes((0, 0, 1, 0, 0, 255))).unwrap()
 
     @property
     def boot_image_transfer(self) -> ImageTransfer:
-        return self.__get_object(bytes((0, 0, 44, 0, 128, 255)))
+        return self.obis2obj(bytes((0, 0, 44, 0, 128, 255))).unwrap()
 
     @property
     def firmware_image_transfer(self) -> ImageTransfer:
-        return self.__get_object(bytes((0, 0, 44, 0, 0, 255)))
-
-    @property
-    def RU_EXTENDED_PASSPORT_DATA(self) -> ProfileGeneric:
-        return self.__get_object(bytes((0, 0, 94, 7, 1, 255)))
-
-    @property
-    def firmware_version(self) -> Data:
-        return self.__get_object(bytes((0, 0, 96, 1, 2, 255)))
-
-    @cached_property
-    def device_type(self) -> Data:
-        return self.__get_object(bytes((0, 0, 96, 1, 1, 255)))
-
-    @property
-    def manufacturing_date(self) -> Data:
-        return self.__get_object(bytes((0, 0, 96, 1, 4, 255)))
-
-    @property
-    def RU_LOAD_LOCK_STATUS(self) -> Data:
-        return self.__get_object(bytes((0, 0, 96, 4, 3, 255)))
+        return self.obis2obj(bytes((0, 0, 44, 0, 0, 255))).unwrap()
 
     @property
     def firmwares_description(self) -> Data:
         """ Consist from boot_version, descriptor, ex.: 0005PWRM_M2M_3_F1_5ppm_Spvq. 0.0.128.100.0.255 """
-        return self.__get_object(bytes((0, 0, 128, 100, 0, 255)))
-
-    @property
-    def serial_number(self) -> Data:
-        """ Ex.: 0101000434322 """
-        return self.__get_object(bytes((0, 0, 96, 1, 0, 255)))
-
-    @property
-    def RU_MAGNETIC_EFFECT(self) -> Data:
-        """ Russian. СПОДЕСv3 E.12.3 """
-        return self.__get_object(bytes((0, 0, 96, 51, 3, 255)))
-
-    @property
-    def RU_HF_FIELD_EFFECT(self) -> Data:
-        """ Russian. СПОДЕСv3 E.12.4 """
-        return self.__get_object(bytes((0, 0, 96, 51, 4, 255)))
-
-    @property
-    def RU_ELECTRIC_SEAL_STATUS(self) -> impl.data.SealStatus:
-        """ Russian. СПОДЕС Г.2 """
-        return self.__get_object(bytes((0, 0, 96, 51, 5, 255)))
+        return self.obis2obj(bytes((0, 0, 128, 100, 0, 255))).unwrap()
 
     @property
     def RU_CLOSE_ELECTRIC_SEAL(self) -> Data:
         """ Russian. СПОДЕС Г.2 """
-        return self.__get_object(bytes((0, 0, 96, 51, 6, 255)))
+        return self.obis2obj(bytes((0, 0, 96, 51, 6, 255))).unwrap()
 
     @property
     def RU_ERASE_MAGNETIC_EVENTS(self) -> Data:
         """ Russian. СПОДЕС Г.2 """
-        return self.__get_object(bytes((0, 0, 96, 51, 7, 255)))
-
-    @property
-    def RU_ALARM_REGISTER_2(self) -> Data:
-        """ Russian. Alarm register relay"""
-        return self.__get_object(bytes((0, 0, 97, 98, 1, 255)))
+        return self.obis2obj(bytes((0, 0, 96, 51, 7, 255))).unwrap()
 
     @property
     def RU_FILTER_ALARM_2(self) -> Data:
         """ Russian. Filter of Alarm register relay"""
-        return self.__get_object(bytes((0, 0, 97, 98, 11, 255)))
+        return self.obis2obj(bytes((0, 0, 97, 98, 11, 255))).unwrap()
 
     @property
     def RU_DAILY_PROFILE(self) -> ProfileGeneric:
         """ Russian. Profile of daily values """
-        return self.__get_object(bytes((1, 0, 98, 2, 0, 255)))
+        return self.obis2obj(bytes((1, 0, 98, 2, 0, 255))).unwrap()
 
     @property
     def RU_MAXIMUM_CURRENT_EXCESS_LIMIT(self) -> Register:
         """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum current excess limit before the subscriber is disconnected, % of IMAX """
-        return self.__get_object(bytes((1, 0, 11, 134, 0, 255)))
+        return self.obis2obj(bytes((1, 0, 11, 134, 0, 255))).unwrap()
 
     @property
     def RU_MAXIMUM_VOLTAGE_EXCESS_LIMIT(self) -> Register:
         """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum voltage excess limit before the subscriber is disconnected, % of Unominal """
-        return self.__get_object(bytes((1, 0, 12, 134, 0, 255)))
+        return self.obis2obj(bytes((1, 0, 12, 134, 0, 255))).unwrap()
 
     def getDISCONNECT_CONTROL(self, ch: int = 0) -> DisconnectControl:
         """DLMS UA 1000-1 Ed 14 6.2.46 Disconnect control objects by channel"""
-        return self.__get_object(bytes((0, ch, 96, 3, 10, 255)))
+        return self.obis2obj(bytes((0, ch, 96, 3, 10, 255))).unwrap()
 
     def getARBITRATOR(self, ch: int = 0) -> Arbitrator:
         """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
-        return self.__get_object(bytes((0, ch, 96, 3, 20, 255)))
+        return self.obis2obj(bytes((0, ch, 96, 3, 20, 255))).unwrap()
 
     @property
     def boot_version(self) -> str:
@@ -1571,6 +1501,7 @@ if config is not None:
         raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
 
 
+@deprecated("use lnContents2obis")
 def get_ln_contents(value: LNContaining) -> bytes:
     """return LN as bytes[6] for use in any searching"""
     match value:
@@ -1588,6 +1519,26 @@ def get_ln_contents(value: LNContaining) -> bytes:
         case str() if value.find('.') != -1:
             return cst.LogicalName.from_obis(value).contents
         case str():                                                      return cst.LogicalName(value).contents
+        case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
+
+
+def lnContents2obis(value: LNContaining) -> o.OBIS:
+    """return LN as OBIS for use in any searching"""
+    match value:
+        case bytes():                                                    return o.OBIS(value)
+        case cst.LogicalName() | ut.CosemObjectInstanceId():             return o.OBIS(value.contents)
+        case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return o.OBIS(value.instance_id.contents)
+        case ut.CosemAttributeDescriptorWithSelection():                 return o.OBIS(value.cosem_attribute_descriptor.instance_id.contents)
+        case cdt.Structure(logical_name=value.logical_name):             return o.OBIS(value.logical_name.contents)
+        case cdt.Structure() as s:
+            s: cdt.Structure
+            for it in s:
+                if isinstance(it, cst.LogicalName):
+                    return o.OBIS(it.contents)
+            raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
+        case str() if value.find('.') != -1:
+            return o.OBIS(cst.LogicalName.from_obis(value).contents)
+        case str():                                                      return o.OBIS(cst.LogicalName(value).contents)
         case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
 
 

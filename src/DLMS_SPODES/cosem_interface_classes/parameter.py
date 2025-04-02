@@ -1,8 +1,10 @@
+from typing_extensions import deprecated
 from dataclasses import dataclass
 from struct import Struct, pack, unpack_from
 from typing import Self, Optional
 import re
 from .. import exceptions as exc
+from .obis import OBIS
 
 _pattern = re.compile("((?:\d{1,3}\.){5}\d{1,3})(?::(m?\d{1,3}))?")
 Index = Struct("?B")
@@ -89,6 +91,7 @@ class Parameter:
         return len(self.value) > 6
 
     @property
+    @deprecated("use obis")
     def ln(self) -> bytes:
         """Logical Name"""
         return self.value[:6]
@@ -247,5 +250,9 @@ class Parameter:
             raise exc.DLMSException(F"Parameter must has index before")
 
     @property
-    def obis(self) -> 'Parameter':
-        return Parameter(self.ln)
+    def obj(self) -> 'Parameter':
+        return Parameter(self.value[:6])
+
+    @property
+    def obis(self) -> OBIS:
+        return OBIS(self.value[:6])

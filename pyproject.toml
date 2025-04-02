@@ -12,7 +12,7 @@ exclude = ["test","KPZ"]
 
 [project]
 name = "DLMS_SPODES"
-version = "0.84.4"
+version = "0.85.0"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
@@ -20,7 +20,7 @@ dependencies = [
     "pycryptodomex>=3.15",
     "semver>=3.0",
     "typing-extensions>=4.12.2",  # remove for 3.13(use for @deprecated)
-    "StructResult>=0.4.2"
+    "StructResult>=0.5.0"
 ]
 description="dlms-spodes"
 readme = "README.md"
