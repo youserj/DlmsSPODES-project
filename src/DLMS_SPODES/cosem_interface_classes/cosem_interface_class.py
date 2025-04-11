@@ -3,10 +3,9 @@ DLMS UA 1000-1 Ed 14
 """
 import dataclasses
 from functools import lru_cache
-
 from typing_extensions import deprecated
 from abc import ABC, abstractmethod
-from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal
+from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional
 from ..types import cdt, ut, cst
 from ..relation_to_OBIS import get_name
 import logging
@@ -14,7 +13,6 @@ from enum import IntEnum
 from itertools import count
 from .. import exceptions as exc
 from .overview import ClassID, Version
-
 from ..config_parser import get_values
 
 
@@ -395,7 +393,7 @@ class COSEMInterfaceClasses(ABC):
     def characteristics_init(self):
         """ initiate all attributes and methods of class """
 
-    def get_attr(self, index: int) -> Any | None:
+    def get_attr(self, index: int) -> Optional[cdt.CommonDataType]:
         if index > (max_l := self.get_attr_length()):
             raise IndexError(F"for {self} got attribute index: {index}, expected 0..{max_l}")
         elif index >= 1:

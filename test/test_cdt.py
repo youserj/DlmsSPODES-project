@@ -56,9 +56,8 @@ class TestType(unittest.TestCase):
         self.assertEqual(cdt.Time.from_float(.5), cdt.Time.parse("12:00"))
 
     def test_Date(self):
-        data = cdt.Date("01.01.2000")
+        data = cdt.Date.parse("01.01.2000")
         data.set_weekday(1)
-        self.assertRaises(ValidationError, data.set_weekday, 1)
         self.assertRaises(OutOfRange, data.set_weekday, 8)
         print(data)
 

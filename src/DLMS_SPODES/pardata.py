@@ -6,7 +6,7 @@ from .types import cdt
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(frozen=True)
 class ParValues(Generic[T]):
     par:  Parameter
     data: T
@@ -23,6 +23,6 @@ class ParValues(Generic[T]):
         return F"{self.par} - {self.data}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ParData(ParValues):
     data: cdt.CommonDataType
