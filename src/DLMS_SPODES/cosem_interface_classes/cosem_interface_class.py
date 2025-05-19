@@ -106,7 +106,7 @@ class EmptyAttribute(exc.DLMSException):
         self.i = i
 
 
-Name = Literal[
+Name: Literal = Literal[
     "Data",
     "Register",
     "Extended register",
@@ -210,7 +210,8 @@ Name = Literal[
     "HS-PLC ISO/IEC 12139-1 CPAS setup",
     "HS-PLC ISO/IEC 12139-1 IP SSAS setup",
     "HS-PLC ISO/IEC 12139-1 HDLC SSAS setup",
-    "LTE monitoring"]
+    "LTE monitoring"
+]
 """Interface class name row from Table 3 – List of interface classes by class_id"""
 
 

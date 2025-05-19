@@ -23,13 +23,6 @@ class SeasonProfile(cdt.Array):
                 return Season((bytearray(new_name), None, bytearray(b'week_name?')))
         raise ValueError(F'in {self} all season names is busy')
 
-    def append_validate(self, element: Season):
-        """validate season_profile_name from array"""
-        if cdt.OctetString(element.season_profile_name) in (val.season_profile_name for val in self.values):
-            raise ValueError(F'{element.values} already exist in {self}')
-        else:
-            """validate OK"""
-
     def sort(self, date_time: cdt.DateTime) -> Self:
         """sort by date-time
         :return now Season + next Seasons"""
@@ -85,13 +78,6 @@ class WeekProfileTable(cdt.Array):
                 return WeekProfile((bytearray(new_name), *[0]*7))
         raise ValueError(F'in {self} all week names is busy')
 
-    def append_validate(self, element: WeekProfile):
-        """"""
-        if (err := cdt.OctetString(element.week_profile_name)) in (val.week_profile_name for val in self.values):
-            raise ValueError(F"can't append in {self}, {err} already exist")
-        else:
-            """validate OK"""
-
     def get_week_profile_names(self) -> tuple[cdt.OctetString, ...]:
         return tuple((el.week_profile_name for el in self.values))
 
@@ -132,13 +118,6 @@ class DayProfileTable(cdt.Array):
             if i not in day_ids:
                 return DayProfile((i, None))
         raise ValueError(F'in {self} all days ID is busy')
-
-    def append_validate(self, element: DayProfile):
-        """validate and insert callback for validate change DayID"""
-        if (err := cdt.Unsigned(element.day_id)) in (day_profile.day_id for day_profile in self.values):
-            raise ValueError(F"can't append in {self}, {err} already exist")
-        else:
-            """validate OK"""
 
     def get_day_ids(self) -> tuple[cdt.Unsigned, ...]:
         return tuple((day_profile.day_id for day_profile in self.values))

@@ -1,7 +1,7 @@
 from typing_extensions import deprecated
 from dataclasses import dataclass
 from struct import Struct, pack, unpack_from
-from typing import Self, Optional
+from typing import Self, Optional, cast
 import re
 from .. import exceptions as exc
 from .obis import OBIS
@@ -57,6 +57,11 @@ class Parameter:
                     g1 = 0
                 ret += (g1 + int(a)).to_bytes(2)
             return cls(ret)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Parameter):
+            return cast("bool", self.value == other.value)
+        return NotImplemented
 
     def __lt__(self, other: Self):
         """comparing for sort method"""

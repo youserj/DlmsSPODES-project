@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from struct import pack, unpack
 from abc import ABC, abstractmethod
-from typing import Type, Any, Callable, TypeAlias, Self
+from typing import Any, Callable, TypeAlias, Self, Optional
 from typing_extensions import deprecated
 from collections import deque
 from math import log, ceil
@@ -16,10 +16,6 @@ from semver import Version as SemVer
 from ..config_parser import config, get_values
 from .. import config_parser
 from .. import exceptions as exc
-
-
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
 
 
 Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
@@ -225,10 +221,6 @@ class CommonDataType(ABC):
     def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
         """ get new instance from value and set to content with validation """
 
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ not allowed change of string in common class """
-        raise ValueError(F"not supported for {self.TAG}")
-
     def validate(self):
         """override validation if need"""
 
@@ -295,7 +287,7 @@ class CommonDataType(ABC):
         """inverse of parse"""
 
 
-def get_type_name(value: CommonDataType | Type[CommonDataType]) -> str:
+def get_type_name(value: CommonDataType | type[CommonDataType]) -> str:
     """type name from type or instance of CDT with length and constant value"""
     if isinstance(value, CommonDataType):
         value = value.__class__
@@ -309,7 +301,7 @@ def get_type_name(value: CommonDataType | Type[CommonDataType]) -> str:
     return ret
 
 
-def get_common_data_type_from(tag: bytes) -> Type[CommonDataType]:
+def get_common_data_type_from(tag: bytes) -> type[CommonDataType]:
     """ search and get class from tag if existed """
     try:
         return __types[tag[:1]]
@@ -317,7 +309,7 @@ def get_common_data_type_from(tag: bytes) -> Type[CommonDataType]:
         raise ValueError(F'type with tag:{tag[:1]} is absence in Common Data Type')
 
 
-def get_instance_and_pdu(meta: Type[CommonDataType], value: bytes) -> tuple[CommonDataType, bytes]:
+def get_instance_and_pdu(meta: type[CommonDataType], value: bytes) -> tuple[CommonDataType, bytes]:
     instance = meta(value)
     return instance, value[len(instance.encoding):]
 
@@ -331,11 +323,6 @@ def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDat
 
 
 class SimpleDataType(CommonDataType, ABC):
-
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position """
-        type(self)(value=value)
-        return value, cursor_position
 
     def _new_instance(self, value) -> Self:
         return self.__class__(value)
@@ -386,7 +373,7 @@ class ComplexDataType(CommonDataType, ABC):
 
 
 class __Array(ABC):
-    TYPE: Type[CommonDataType]
+    TYPE: type[CommonDataType]
     values: list[CommonDataType]
 
     def remove(self, element: CommonDataType):
@@ -451,7 +438,7 @@ class _String(ABC):
         return self.contents
 
 
-class Digital(CommonDataType, ABC):
+class Digital(SimpleDataType, ABC):
     """ Default value is 0 """
     SIGNED: bool
     LENGTH: int
@@ -571,11 +558,6 @@ class Digital(CommonDataType, ABC):
     def __len__(self) -> int:
         return self.LENGTH
 
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position """
-        type(self)(value=value)
-        return value, cursor_position
-
     def __hash__(self):
         return int(self)
 
@@ -688,12 +670,6 @@ class Float(SimpleDataType, ABC):
         """  return the build in float type IEEE 60559"""
         return unpack(cls.FORMAT, value)[0]
 
-    def validate_from(self, value: str, cursor_position=None) -> tuple[str, int]:
-        # adding '0' for available set service symbols
-        if value[-1] in '.-+exp':
-            value += '0'
-        return SimpleDataType(self).validate_from(value, cursor_position)
-
     def __str__(self):
         return str(float(self))
 
@@ -756,23 +732,6 @@ class __DateTime(ABC):
         for separator in set(self._separators):
             amount += string.count(separator)
         return amount
-
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        while len(value) > cursor_position and value[cursor_position] == '_':
-            value = value[:cursor_position] + value[cursor_position+1:]
-        while value[cursor_position-2] == '_':
-            value = value[:cursor_position-2] + value[cursor_position-1:]
-            cursor_position -= 1
-        try:
-            type(self)(value)
-            return value, cursor_position
-        except ValueError as e:
-            try:
-                with_separator = F'{value[:cursor_position-1]}{self._separators[self.separator_amount(value[:cursor_position])]}{value[cursor_position-1:]}'
-                type(self)(with_separator)  # check possible
-                return with_separator, cursor_position + (len(with_separator)-len(value))
-            except IndexError:
-                raise ValueError
 
     @abstractmethod
     def DEFAULT(self):
@@ -1124,13 +1083,11 @@ class NullData(SimpleDataType):
 class Array(__Array, ComplexDataType):
     """ The elements of the array are defined in the Attribute or Method description section of a COSEM IC
     specification """
-    TYPE: Type[CommonDataType] = None
+    TYPE: type[CommonDataType] = None
     values: list[CommonDataType]
     TAG = TAG(b"\x01")
-    unique: bool = False
-    """ True for arrays with unique elements """
 
-    def __init__(self, value: list[CommonDataType | list] | bytes | None | Self = None, type_: Type[CommonDataType] = None):
+    def __init__(self, value: list[CommonDataType | list] | bytes | None | Self = None, type_: type[CommonDataType] = None):
         self.__dict__['values'] = list()
         if type_:
             self.__dict__["TYPE"] = type_
@@ -1166,18 +1123,11 @@ class Array(__Array, ComplexDataType):
             self.__dict__['TYPE'] = self.TYPE.ELEMENTS[element.encoding[0]].TYPE
         else:
             element = self.TYPE(element)
-        if self.unique and element in self.values:  # TODO: remove after full implement append_validate (see below)
-            raise ValueError(F"element {element} already exist in {self.__class__.__name__}")
-        # self.append_validate(element)
         self.values.append(element)
 
     def new_element(self) -> CommonDataType:
         """for override elements validator if it consist ID's. """
         return self.TYPE()
-
-    # todo: remove. make simple validate
-    def append_validate(self, element: CommonDataType):
-        """validate before append last value. In override here need insert <raise> in some events and register callbacks"""
 
     @classmethod
     def parse(cls, value: list) -> Self:
@@ -1197,10 +1147,10 @@ class Array(__Array, ComplexDataType):
     def __iter__(self):
         return iter(self.values)
 
-    def get_type(self) -> Type[CommonDataType]:
+    def get_type(self) -> type[CommonDataType]:
         return self.TYPE
 
-    def set_type(self, value: Type[CommonDataType]):
+    def set_type(self, value: type[CommonDataType]):
         """ set new type with clear array"""
         self.clear()
         self.__dict__['TYPE'] = value
@@ -1226,7 +1176,7 @@ _struct_names = config["DLMS"]["struct_name"]
 @dataclass(frozen=True)
 class StructElement:
     NAME: str
-    TYPE: Type[CommonDataType]
+    TYPE: type[CommonDataType]
 
     def __str__(self):
         if _struct_names and (t := _struct_names.get(self.NAME)):
@@ -1317,7 +1267,7 @@ class Structure(ComplexDataType):
                             elements[i] = StructElement(el.NAME, kwargs[k])
                 cls.ELEMENTS = tuple(elements)
         else:
-            elements = list()
+            elements = []
             for (name, type_), f in zip(cls.__annotations__.items(), (
                     Structure.get_el0, Structure.get_el1, Structure.get_el2, Structure.get_el3, Structure.get_el4, Structure.get_el5, Structure.get_el6, Structure.get_el7,
                     Structure.get_el8, Structure.get_el9)):
@@ -1662,11 +1612,6 @@ class BitString(SimpleDataType):
 
         return g()
 
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position. TODO: copypast FlagMixin """
-        type(self)(value=value)
-        return value, cursor_position
-
 
 class DoubleLong(Digital, SimpleDataType):
     """ Integer32 -2 147 483 648… 2 147 483 647 """
@@ -1715,15 +1660,6 @@ class OctetString(_String, SimpleDataType):
 
     def __getitem__(self, item):
         return self.contents[item]
-
-    def validate_from(self, value: str, cursor_position=None) -> tuple[str, int]:
-        try:
-            correct = type(self)(value)
-            return str(correct), cursor_position + (len(str(correct))-len(value))
-        except ValueError:
-            cursor_position: int = len(value)-1 if cursor_position is None else cursor_position
-            type(self)(F'{value[:cursor_position]}0{value[cursor_position:]}')  # check possible
-            return value, cursor_position
 
     def to_str(self, encoding: str = "utf-8") -> str:
         """ decode to utf-8 by default, replace to '?' if unsupported """
@@ -1879,7 +1815,7 @@ class CompactArray(__Array, ComplexDataType):
     """ Provides an alternative, compact encoding of complex data. TODO: need test, may be don't work """
     TAG = TAG(b'\x13')
 
-    def __init__(self, elements_type: Type[SimpleDataType | Structure],
+    def __init__(self, elements_type: type[SimpleDataType | Structure],
                  elements: list[SimpleDataType | Structure] = None,
                  length: int = None):
         super(CompactArray, self).__init__(elements_type, elements, length)
@@ -1918,7 +1854,6 @@ class Enum(IntegerEnum, Unsigned, ABC):
     """ The elements of the enumeration type are defined in the “Attribute description” section of a COSEM interface class specification """
     contents: bytes
     TAG = TAG(b'\x16')
-    ELEMENTS: dict[bytes, str] = None  # todo: remove after removing validate_from
     NAMES: dict[int, str] = None
     __slots__ = ("contents",)
     __match_args__ = ('value2', )
@@ -1952,35 +1887,6 @@ class Enum(IntegerEnum, Unsigned, ABC):
         else:
             return b'\x00'
 
-    @deprecated("use IntegerMenu init_subclass")
-    def __init_subclass__(cls, **kwargs):
-        """initiate NAMES name use config.toml"""
-        super().__init_subclass__(**kwargs)
-        if (
-            not cls.ELEMENTS
-            and not inspect.isabstract(cls)
-        ):
-            elements: tuple[int, ...] = kwargs["elements"]
-            try:
-                c = {par["e"]: par["v"] for par in config["DLMS"][cls.__name__]}
-            except KeyError as e:
-                c = dict()
-                logger.warning(F"not find {e} in config.toml")
-            cls.ELEMENTS = {el.to_bytes(1, "big"): c.get(el, F"{cls.__name__}({el})") for el in elements}
-
-    @deprecated("not use this any more")
-    def validate_from(self, value: str, cursor_position=None):
-        """ return 'Ok' if string is valid else return valid Str """
-        try:
-            type(self)(value=value)
-            return value, cursor_position
-        except ValueError as e:
-            for index in self.ELEMENTS:
-                if self.ELEMENTS[index].startswith(value):
-                    return value, cursor_position
-            else:
-                raise ValueError
-
     @classmethod
     def get_values(cls) -> list[str]:
         """ TODO: """
@@ -2000,6 +1906,9 @@ class Float64(Float, SimpleDataType):
     """float64. ISO/IEC/IEEE 60559:2011"""
     TAG = TAG(b'\x18')
     FORMAT = ">d"
+
+
+_SHORT_MONTHS = (4, 6, 9, 11)
 
 
 class DateTime(__DateTime, __Date, __Time, SimpleDataType):
@@ -2164,33 +2073,39 @@ class DateTime(__DateTime, __Date, __Time, SimpleDataType):
 
     def get_right_nearest_datetime(self, point: datetime.datetime) -> datetime.datetime | None:
         """ search and return datetime in right from point """
-        res: datetime.datetime = self.get_right_nearest_date(point)
-        """ time in left from point """
-        if res is None:
-            return None
-        is_this_day: bool = res.date() == point.date()
-        """ flag of points equaling """
-        for hour in range(point.hour if is_this_day else 0, 24) if self.hour == 0xff else (self.hour,):
-            res = res.replace(hour=hour)
-            for minute in range(point.minute if is_this_day and res.hour == point.hour else 0, 60) if self.minute == 0xff else (self.minute,):
-                res = res.replace(minute=minute)
-                for second in range(point.second if (
-                        is_this_day
-                        and res.hour == point.hour
-                        and res.minute == point.minute
-                ) else 0, 60) if self.second == 0xff else (self.second,):
-                    res = res.replace(second=second)
-                    for microsecond in range(point.microsecond if (
-                            is_this_day
-                            and res.hour == point.hour
-                            and res.minute == point.minute
-                            and res.second == point.second
-                    ) else 0, 990000) if self.hundredths == 0xff else (self.hundredths * 10000,):
-                        res = res.replace(microsecond=microsecond)
-                        if res < point:
-                            continue
-                        else:
-                            return res
+        years = range(point.year, datetime.MAXYEAR + 1) if self.year == 0xFFFF else (self.year,)
+        months = range(point.month, 13) if self.month == 0xFF else (self.month,)
+        days = range(point.day, 32) if self.day == 0xFF else (self.day,)
+        hours = range(point.hour, 24) if self.hour == 0xFF else (self.hour,)
+        minutes = range(point.minute, 60) if self.minute == 0xFF else (self.minute,)
+        seconds = range(point.second, 60) if self.second == 0xFF else (self.second,)
+        if self.time_zone is None:
+            point = point.replace(tzinfo=None)
+        for y in years:
+            for m in months:
+                max_day = 31
+                if m == 2:
+                    max_day = 29 if (
+                            y % 4 == 0
+                            and (
+                                y % 100 != 0
+                                or y % 400 == 0
+                            )
+                    ) else 28
+                elif m in _SHORT_MONTHS:
+                    max_day = 30
+                for d in days:
+                    if d > max_day:
+                        continue
+                    for h in hours:
+                        for min_val in minutes:
+                            for s in seconds:
+                                try:
+                                    dt = datetime.datetime(y, m, d, h, min_val, s, tzinfo=self.time_zone)
+                                    if dt >= point:
+                                        return dt
+                                except ValueError:
+                                    continue
         return None
 
     def get_left_nearest_datetime(self, point: datetime.datetime) -> datetime.datetime | None:
@@ -2335,7 +2250,7 @@ class Time(__DateTime, __Time, SimpleDataType):
             raise ValueError(F"for Time float: got {value=}, expected 0..0.999999")
 
 
-__types: dict[bytes, Type[CommonDataType]] = {
+__types: dict[bytes, type[CommonDataType]] = {
     b'\x00': NullData,
     b'\x01': Array,
     b'\x02': Structure,

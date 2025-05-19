@@ -22,11 +22,6 @@ class Entries(cdt.Array):
                 return SpecDayEntry((i, None, None))  # TODO: insert first DayID from ActiveCalendar as 3 element
         raise ValueError(F'in {self} all indexes is busy')
 
-    def append_validate(self, element: SpecDayEntry):
-        """validate and insert callback for validate change SpecDayEntry"""
-        self.__check_index(element.index)
-        element.index.register_cb_preset(self.__check_index)
-
     def __check_index(self, value):
         """validate day_id from DayProfile"""
         if cdt.LongUnsigned(value) in (entry.index for entry in self.values):
