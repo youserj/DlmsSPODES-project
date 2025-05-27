@@ -1,11 +1,4 @@
-import datetime
 import unittest
-import inspect
-from itertools import count
-from src.DLMS_SPODES.types.common_data_types import encode_length
-from src.DLMS_SPODES.cosem_interface_classes import ic, collection
-from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl, choices
-from src.DLMS_SPODES import relation_to_OBIS, enums
 from src.DLMS_SPODES.config_parser import get_message, get_values
 
 

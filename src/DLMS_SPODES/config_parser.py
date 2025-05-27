@@ -1,6 +1,7 @@
 import logging
 import os
 import tomllib
+from typing_extensions import deprecated
 
 
 print("Path: ", os.getcwd())
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
+@deprecated("use settings.settings")
 def get_values(*args: str) -> dict | None:
     args = list(args)
     par = config
@@ -21,20 +23,6 @@ def get_values(*args: str) -> dict | None:
             logger.info(e.args[0])
             return None
     return par
-
-
-def get_values2(*args: str) -> tuple[str, int]:
-    args2 = list(args)
-    par = config
-    while args2:
-        key = args2.pop(0)
-        try:
-            par = par[key]
-            continue
-        except KeyError as e:
-            logger.info(e.args[0])
-            return ".".join(list(args)), -1
-    return par, 0
 
 
 if not os.path.isfile(path := ".//config.toml"):

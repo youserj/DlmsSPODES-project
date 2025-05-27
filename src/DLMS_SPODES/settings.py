@@ -1,4 +1,48 @@
+import os
+from pydantic import BaseModel, Field
+import tomllib
 from enum import Enum
+
+
+class _ReportStruct(BaseModel):
+    """
+    Patterns. Use for function get_obj_report. Only for struct. Generate custom struct report instead standart. Where %nxx: n - name of struct element,
+    xx - index of struct element; %vxx: v - value of struct element, xx - index of struct element
+    """
+    DayProfileAction: str = "%n00: %v00 - Тариф: %v02"
+
+
+class _Report(BaseModel):
+    empty: str = "--"
+    empty_unit: str = "??"
+    scaler_format: str = "{:.3f}"
+    struct: _ReportStruct = Field(default_factory=_ReportStruct)
+
+
+class _Collection(BaseModel):
+    path: str = "./Types/"
+
+
+class Settings(BaseModel):
+    collection: _Collection = Field(default_factory=_Collection)
+    report: _Report = Field(default_factory=_Report)
+
+
+if not os.path.isfile(path := ".//config.toml"):
+    path = F"{os.path.dirname(__file__)}{path}"
+elif os.path.isfile(path):
+    with open(path, "rb") as f:
+        toml_data = tomllib.load(f)
+        data = toml_data.get("VIEW", {})
+        print(f"Find configuration <config.toml> with path: {f}")
+        settings = Settings(**data)
+else:
+    print("NOT FIND CONFIGURATION: <config.toml>")
+    toml_data = {}
+    settings = Settings()
+
+
+# remove in future
 
 
 def version():
@@ -20,7 +64,3 @@ def set_current_language(value: str):
 
 def get_current_language() -> Language:
     return __current_language
-
-
-def get_supporting_language() -> list[str]:
-    return [language.name for language in Language]

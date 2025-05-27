@@ -60,23 +60,15 @@ from ..cosem_interface_classes import implementations as impl
 from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
 from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
-from ..config_parser import config, get_values, get_message
+from ..config_parser import config, get_message
 from ..obis import media_id
 from .parameter import Parameter
 from typing_extensions import deprecated
+from ..settings import settings
 
 
 class CollectionMapError(exc.DLMSException):
     """"""
-
-
-_report = {
-    "empty": "--",
-    "empty_unit": "??",
-    "scaler_format": "{:.3f}"
-}
-if toml_val := get_values("DLMS", "report"):
-    _report.update(toml_val)
 
 
 LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
@@ -962,7 +954,7 @@ class Collection:
         rep = cdt.Report(str(a_val))
         try:
             if a_val is None:
-                rep.msg = _report["empty"]
+                rep.msg = settings.report.empty
                 rep.log = cdt.EMPTY_VAL
             elif isinstance(a_val, cdt.ReportMixin):
                 rep = a_val.get_report()
@@ -979,7 +971,7 @@ class Collection:
                     rep.unit = cdt.Unit(unit).get_name()
                 else:
                     if s_u := self.get_scaler_unit(obj, par):
-                        rep.msg = (_report["scaler_format"]).format(int(a_val) * 10 ** int(s_u.scaler))
+                        rep.msg = (settings.report.scaler_format).format(int(a_val) * 10 ** int(s_u.scaler))
                         rep.unit = s_u.unit.get_name()
                     else:
                         match obj.CLASS_ID, *par:
@@ -999,7 +991,7 @@ class Collection:
         rep = cdt.Report(str(data))
         try:
             if data is None:
-                rep.msg = _report["empty"]
+                rep.msg = settings.report.empty
                 rep.log = cdt.EMPTY_VAL
             elif isinstance(data, cdt.ReportMixin):
                 rep = data.get_report()
@@ -1018,7 +1010,7 @@ class Collection:
                     rep.unit = cdt.Unit(unit).get_name()
                 else:
                     if s_u := self.par2su(par):
-                        rep.msg = (_report["scaler_format"]).format(int(data) * 10 ** int(s_u.scaler))
+                        rep.msg = (settings.report.scaler_format).format(int(data) * 10 ** int(s_u.scaler))
                         rep.unit = s_u.unit.get_name()
                     else:
                         match obj.CLASS_ID, *elements:
@@ -1496,7 +1488,7 @@ class Collection:
 
 if config is not None:
     try:
-        __collection_path = config['DLMS']['collection']['path']
+        __collection_path = settings.collection.path
     except KeyError as e:
         raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
 
