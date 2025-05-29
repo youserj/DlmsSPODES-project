@@ -23,9 +23,21 @@ class _Collection(BaseModel):
     path: str = "./Types/"
 
 
+class _FirmwaresKey(BaseModel):
+    codec: str = "ascii"
+    value: str = "00000000password"
+
+
+class _Firmware(BaseModel):
+    key: _FirmwaresKey = Field(default_factory=_FirmwaresKey)
+    man: str = "KPZ"
+    path: str = "./Firmwares/firmwares.dat"
+
+
 class Settings(BaseModel):
     collection: _Collection = Field(default_factory=_Collection)
     report: _Report = Field(default_factory=_Report)
+    firmwares: list[_Firmware] = Field(default_factory=list)
 
 
 if not os.path.isfile(path := ".//config.toml"):
@@ -33,7 +45,7 @@ if not os.path.isfile(path := ".//config.toml"):
 elif os.path.isfile(path):
     with open(path, "rb") as f:
         toml_data = tomllib.load(f)
-        data = toml_data.get("VIEW", {})
+        data = toml_data.get("DLMS", {})
         print(f"Find configuration <config.toml> with path: {f}")
         settings = Settings(**data)
 else:

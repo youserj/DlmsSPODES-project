@@ -1,5 +1,6 @@
 import unittest
-from src.DLMS_SPODES.config_parser import get_message, get_values
+from src.DLMS_SPODES.config_parser import get_message
+from src.DLMS_SPODES.firmwares import get_firmware
 
 
 class TestType(unittest.TestCase):
@@ -11,7 +12,5 @@ class TestType(unittest.TestCase):
         print(get_message("–113 dBm $or$ $less$(0)"))
 
     def test_firmwares(self):
-        from src.DLMS_SPODES.firmwares import get_firmware
-
         firmwares = get_firmware(b"KPZ")
         print(firmwares)

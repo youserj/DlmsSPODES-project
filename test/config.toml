@@ -998,13 +998,6 @@ turn_on = "включен(a)"
 lock = "блокировка"
 rate = "Тариф"
 
-[[DLMS.firmwares]]
-man="KPZ"
-path="./Firmwares/firmwares.dat"
-[DLMS.firmwares.key]
-codec="ascii"
-value="00000000password"
-
 [DLMS.enum_name.Unit]
     1="год"
     2="мес"
