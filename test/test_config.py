@@ -1,6 +1,7 @@
 import unittest
 from src.DLMS_SPODES.config_parser import get_message
 from src.DLMS_SPODES.firmwares import get_firmware
+from src.DLMS_SPODES.settings import settings
 
 
 class TestType(unittest.TestCase):

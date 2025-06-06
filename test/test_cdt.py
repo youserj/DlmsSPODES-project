@@ -64,6 +64,7 @@ class TestType(unittest.TestCase):
     def test_DateTime(self):
         data: cdt.DateTime
         data = cdt.DateTime.parse("1.1.0001")
+        data = cdt.DateTime.parse("00:00:00")
         data = cdt.DateTime.parse("__.__.____ __:00")
         z = data.get_right_nearest_datetime(datetime.datetime.now(tz=datetime.timezone.utc))
         pattern = datetime.datetime(2021, 1, 1, 10, tzinfo=datetime.timezone.utc)

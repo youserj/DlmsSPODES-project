@@ -1,7 +1,7 @@
 from typing_extensions import deprecated
 from dataclasses import dataclass
 from struct import Struct, pack, unpack_from
-from typing import Self, Optional, cast
+from typing import Optional, cast, Iterator
 import re
 from .. import exceptions as exc
 from .obis import OBIS
@@ -38,11 +38,11 @@ class Parameter:
     """
     value: bytes
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         return self.value
 
     @classmethod
-    def parse(cls, value: str) -> Self:
+    def parse(cls, value: str) -> "Parameter":
         """create from string. Only LN, attr/meth type ddd.ddd.ddd.ddd.ddd.ddd:aaa, ex.: 0.0.1.0.0.255 """
         if (res := _pattern.fullmatch(value)) is None:
             raise ValueError(F"in {cls.__name__}.parse got wrong :{value:}")
@@ -63,14 +63,14 @@ class Parameter:
             return cast("bool", self.value == other.value)
         return NotImplemented
 
-    def __lt__(self, other: Self):
+    def __lt__(self, other: "Parameter") -> bool:
         """comparing for sort method"""
         if len(self.value) > len(other.value):
             return True
         else:
             return False
 
-    def __str__(self):
+    def __str__(self) -> str:
         if (l := len(self.value)) < 6:
             return "No valid"
         elif l == 7:
@@ -85,7 +85,7 @@ class Parameter:
             res += F"p{self.piece}"
         return res
 
-    def validate(self):
+    def validate(self) -> None:
         if (length := len(self.value)) < 6:
             raise exc.DLMSException(F"Parameter got {length=}, expected at least 6")
         if length == 7:
@@ -109,7 +109,7 @@ class Parameter:
         """attribute or method index"""
         return self.value[7]
 
-    def set_i(self, index: int, is_method: bool = False) -> Self:
+    def set_i(self, index: int, is_method: bool = False) -> "Parameter":
         val = Index.pack(is_method, index)
         if len(self.value) == 6:
             tmp = self.value + val
@@ -119,22 +119,22 @@ class Parameter:
             tmp = bytes(tmp)
         return self.__class__(tmp)
 
-    def append_validate(self):
+    def append_validate(self) -> None:
         if (l := len(self.value)) < 7:
             raise exc.DLMSException(F"Parameter must has index before")
         elif l % 2 != 0:
             raise exc.DLMSException(F"Can't append to Parameter with piece")
 
-    def append(self, index: int) -> Self:
+    def append(self, index: int) -> "Parameter":
         """add new sequence(array or struct) index element"""
         self.append_validate()
         return self.__class__(self.value + pack(">H", index))
 
-    def extend(self, *indexes: int):
+    def extend(self, *indexes: int) -> "Parameter":
         self.append_validate()
         return self.__class__(self.value + pack(F">{len(indexes)}H", *indexes))
 
-    def pop(self) -> tuple[Optional[int], int, Self]:
+    def pop(self) -> tuple[Optional[int], int, "Parameter"]:
         """
         :return piece, last index and parent Parameter
         ex.: Parameter("0.0.0.0.0.0:2 1/1/1 p3") => (1, Parameter("0.0.0.0.0.0:2 1/1"))
@@ -144,7 +144,7 @@ class Parameter:
         else:
             return None, int.from_bytes(self.value[-2:]), self.__class__(self.value[:-2])
 
-    def set_piece(self, index: int) -> Self:
+    def set_piece(self, index: int) -> "Parameter":
         """add new sequence(array or struct) index element"""
         if len(self.value) >= 7:
             return self.__class__(self.value + pack("B", index))
@@ -165,11 +165,11 @@ class Parameter:
         if self.has_piece():
             return self.value[-1]
 
-    def clear_piece(self) -> Self:
+    def clear_piece(self) -> "Parameter":
         if self.has_piece():
             return self.__class__(self.value[:-1])
 
-    def elements(self, start: int = 0) -> iter:
+    def elements(self, start: int = 0) -> Iterator[int]:
         """return: index elements nested in attribute, started with"""
         for i in range(8 + start, 8 + 2 * self.n_elements, 2):
             res = int.from_bytes(self.value[i:i+2], "big")
@@ -198,7 +198,7 @@ class Parameter:
             d: int = None,
             e: int = None,
             f: int = None
-            ) -> Self:
+            ) -> "Parameter":
         val = bytearray(self.value)
         if a is not None:
             val[0] = a
@@ -214,7 +214,7 @@ class Parameter:
             val[5] = f
         return self.__class__(bytes(val))
 
-    def __contains__(self, item: Self):
+    def __contains__(self, item: "Parameter"):
         return item.value in self.value
 
     def __getitem__(self, item) -> Optional[int]:
@@ -248,14 +248,14 @@ class Parameter:
         return self.value[5]
 
     @property
-    def attr(self) -> Self:
+    def attr(self) -> "Parameter":
         if self.has_index:
             return Parameter(self.value[:8])
         else:
             raise exc.DLMSException(F"Parameter must has index before")
 
     @property
-    def obj(self) -> 'Parameter':
+    def obj(self) -> "Parameter":
         return Parameter(self.value[:6])
 
     @property

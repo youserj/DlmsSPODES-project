@@ -866,7 +866,9 @@ class Collection:
 
     def par2obj(self, par: Parameter) -> InterfaceClass:
         """return: DLMSObject"""
-        return self.__objs.get(par.obis, exc.NoObject)  # todo: maybe make ic.NoObject
+        if ret := self.__objs.get(par.obis):
+            return ret
+        raise exc.NoObject(f"with {par=}")
 
     def par2data(self, par: Parameter) -> Optional[cdt.CommonDataType]:
         """:return CDT by Parameter, return None if data wasn't setting"""

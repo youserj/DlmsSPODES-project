@@ -30,7 +30,7 @@ class LogicalName(cdt.ReportMixin, cdt.OctetString, size=6):
             type(self)(with_separator)  # check possible
             return with_separator, cursor_position
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return int.from_bytes(self.contents, 'big')
 
     @property
@@ -63,7 +63,7 @@ class LogicalName(cdt.ReportMixin, cdt.OctetString, size=6):
         """ group F """
         return self.contents[5]
 
-    def __lt__(self, other: Self):
+    def __lt__(self, other: Self) -> bool:
         return self.contents < other.contents
 
 

@@ -13,7 +13,9 @@ from enum import IntEnum
 from itertools import count
 from .. import exceptions as exc
 from .overview import ClassID, Version
+from ..settings import settings
 from ..config_parser import get_values
+from .. import literals
 
 
 _am_names = get_values("DLMS", "am_names")
@@ -79,7 +81,7 @@ class ICMElement(ICElement):
     DATA_TYPE: Type[cdt.CommonDataType]
 
 
-_LN_ELEMENT = ICAElement(
+_LN_ELEMENT: ICAElement = ICAElement(
     NAME="logical_name",
     DATA_TYPE=cst.LogicalName)
 """" first element for each COSEM Interface Class"""

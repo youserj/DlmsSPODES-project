@@ -1,13 +1,11 @@
 from dataclasses import dataclass
-from typing import TypeVar, Generic
 from .cosem_interface_classes import Parameter
+from typing import Optional, Iterator
 from .types import cdt
-
-T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class ParValues(Generic[T]):
+class ParValues[T]:
     par:  Parameter
     data: T
 
@@ -19,10 +17,13 @@ class ParValues(Generic[T]):
         else:
             raise StopIteration
 
+    def __iter__(self) -> Iterator[Parameter | T]:
+        return iter((self.par, self.data))
+
     def __str__(self):
         return F"{self.par} - {self.data}"
 
 
 @dataclass(frozen=True)
 class ParData(ParValues):
-    data: cdt.CommonDataType
+    data: Optional[cdt.CommonDataType]

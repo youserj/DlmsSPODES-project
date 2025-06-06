@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from struct import pack, unpack
 from abc import ABC, abstractmethod
-from typing import Any, Callable, TypeAlias, Self, Optional
+from typing import Any, Callable, TypeAlias, Self, Optional, Iterator, Protocol
 from typing_extensions import deprecated
 from collections import deque
 from math import log, ceil
@@ -394,10 +394,11 @@ class __Array(ABC):
         self.values.clear()
 
 
-class _String(ABC):
+class _String(Protocol):
+    contents: bytes
     TAG: TAG
     DEFAULT: bytes = b''
-    SIZE: int
+    SIZE: Optional[int] = None
 
     def __init__(self, value: bytes | bytearray | str | int | SimpleDataType = None):
         match value:
@@ -423,7 +424,6 @@ class _String(ABC):
         if self.SIZE and len(self.contents) != self.SIZE:
             raise ValueError(F'Length of {self.__class__.__name__} must be {self.SIZE}, but got {len(self.contents)}: {self.contents.hex()}')
 
-    @abstractmethod
     def __len__(self):
         """ define in subclasses """
 
@@ -1350,6 +1350,9 @@ class Structure(ComplexDataType):
     def __getitem__(self, item: int) -> CommonDataType:
         """ get element value by index """
         return self.values[item]
+
+    def __iter__(self) -> Iterator[CommonDataType]:
+        return iter(self.values)
 
     def __setitem__(self, key: int, value: CommonDataType):
         """ set data to element by index. """
