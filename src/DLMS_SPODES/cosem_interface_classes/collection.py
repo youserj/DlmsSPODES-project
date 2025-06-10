@@ -860,6 +860,9 @@ class Collection:
         else:
             return res
 
+    def __getitem__(self, item: o.OBIS) -> InterfaceClass:
+        return self.__objs[item]
+
     def get(self, obis: o.OBIS) -> InterfaceClass | None:
         """ get object, return None if it absence """
         return self.__objs.get(obis, None)

@@ -591,8 +591,7 @@ class TestType(unittest.TestCase):
         par = Parameter.parse("0.0.13.0.0.255:9").extend(0, 0)
         data = col.par2data(par)
         rep1 = col.par2rep(par, data)
-        rep2 = col.get_report(col.par2obj(par), b'\x00\x10', data)
-        print(rep1, rep2)
+        print(rep1)
 
     def test_get_profile_s_u(self):
         col = collection.get_collection(
