@@ -1,11 +1,10 @@
 """
 DLMS UA 1000-1 Ed 14
 """
-import dataclasses
+from dataclasses import dataclass
 from functools import lru_cache
 from typing_extensions import deprecated
-from abc import ABC, abstractmethod
-from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional
+from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional, Protocol
 from ..types import cdt, ut, cst
 from ..relation_to_OBIS import get_name
 import logging
@@ -16,9 +15,6 @@ from .overview import ClassID, Version
 from ..settings import settings
 from ..config_parser import get_values
 from .. import literals
-
-
-_am_names = get_values("DLMS", "am_names")
 
 
 logger = logging.getLogger(__name__)
@@ -43,18 +39,18 @@ class Classifier(IntEnum):
 SelectiveAccessDescriptor: TypeAlias = ut.SelectiveAccessDescriptor  # TODO: make with subclass
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ICElement:
     NAME: str
 
-    def __str__(self):
-        if _am_names and (t := _am_names.get(self.NAME)):
-            return t
-        else:
+    def __str__(self) -> str:
+        try:
+            return getattr(settings.am_names, self.NAME)
+        except AttributeError:
             return self.NAME
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ICAElement(ICElement):
     DATA_TYPE: Type[cdt.CommonDataType] | ut.CHOICE
     min: int = None
@@ -76,7 +72,7 @@ class ICAElement(ICElement):
             selective_access=self.selective_access)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ICMElement(ICElement):
     DATA_TYPE: Type[cdt.CommonDataType]
 
@@ -328,7 +324,7 @@ def ClassIDVer2Name(class_id: ClassID, ver: Version) -> Name:
         case _: raise exc.ITEApplication(F"not find <Interface class name> with: {class_id=}, {ver=}")
 
 
-class COSEMInterfaceClasses(ABC):
+class COSEMInterfaceClasses(Protocol):
     CLASS_ID: ClassID
     VERSION: Version | None = None
     """ Identification code of the version of the class. The version of each object is retrieved together with the logical name and the class_id by reading the object_list 
@@ -392,7 +388,6 @@ class COSEMInterfaceClasses(ABC):
         """ implement in subclasses with methods """
         return cls.M_ELEMENTS[i - 1]
 
-    @abstractmethod
     def characteristics_init(self):
         """ initiate all attributes and methods of class """
 

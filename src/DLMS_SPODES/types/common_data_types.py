@@ -2337,6 +2337,15 @@ class ScalUnitType(ReportMixin, Structure):
             return Report(F"{msg} {self.unit.get_name()}", log=INFO_LOG)
 
 
+def check[T: CommonDataType](data: Optional[CommonDataType], expected_type: type[T]) -> T:
+    """validate data with DLMS type"""
+    if isinstance(data, d_t):
+        return data
+    if data is None:
+        raise TypeError("data is missing")
+    raise TypeError(F"got {type(data)}, expected {d_t}")
+
+
 def encoding2semver(value: bytes) -> SemVer:
     """convert any CDT encoding to SemVer2.0.
     :param value: CDT encoding

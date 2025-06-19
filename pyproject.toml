@@ -12,7 +12,7 @@ exclude = ["test","KPZ"]
 
 [project]
 name = "DLMS_SPODES"
-version = "0.86.4"
+version = "0.86.5"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
@@ -21,7 +21,7 @@ dependencies = [
     "cryptography>=45.0",
     "semver>=3.0",
     "typing-extensions>=4.12.2",  # remove for 3.13(use for @deprecated)
-    "StructResult>=0.5.0"
+    "StructResult>=0.7.0"
 ]
 description="dlms-spodes"
 readme = "README.md"
@@ -32,3 +32,48 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.5.0",
+    "ruff>=0.11",
+    "types-requests"
+]
+
+[tool.mypy]
+exclude = [
+    "build/*",
+    "test/*",
+]
+strict = true
+ignore_missing_imports = true
+disallow_any_generics = true
+explicit_package_bases = true
+
+[tool.ruff]
+src = ["src"]
+line-length = 180
+preview = true
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+include = [
+    "src/**/*.py",
+    "test/test_*.py"
+]
+
+[tool.ruff.lint]
+    ignore = ["SIM108"]  # ternary
+    select = [
+        "E", "F", "W", "C", "Q", "ANN", "ARG", "DTZ", "FBT", "NPY", "PGH", "PIE", "SIM", "RET", "TYP", "TCH", "YTT",
+        # "TRY",
+    ]
+    #extend-select = ["D"]

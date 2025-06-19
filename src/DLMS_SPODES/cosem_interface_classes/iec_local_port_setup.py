@@ -6,5 +6,5 @@ class IECLocalPortSetup(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.IEC_LOCAL_PORT_SETUP
     VERSION = Version.V1
 
-    def characteristics_init(self):
+    def characteristics_init(self) -> None:
         """# TODO: not released ... """
