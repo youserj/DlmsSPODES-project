@@ -2339,7 +2339,7 @@ class ScalUnitType(ReportMixin, Structure):
 
 def check[T: CommonDataType](data: Optional[CommonDataType], expected_type: type[T]) -> T:
     """validate data with DLMS type"""
-    if isinstance(data, d_t):
+    if isinstance(data, expected_type):
         return data
     if data is None:
         raise TypeError("data is missing")
