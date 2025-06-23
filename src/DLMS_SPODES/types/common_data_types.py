@@ -2346,6 +2346,16 @@ def check[T: CommonDataType](data: Optional[CommonDataType], expected_type: type
     raise TypeError(F"got {type(data)}, expected {d_t}")
 
 
+def optional_check[T: CommonDataType](data: Optional[CommonDataType], expected_type: type[T]) -> Optional[T]:
+    """validate data with DLMS type, skip None"""
+    if (
+        isinstance(data, expected_type)
+        or data is None
+    ):
+        return data
+    raise TypeError(F"got {type(data)}, expected {d_t}")
+
+
 def encoding2semver(value: bytes) -> SemVer:
     """convert any CDT encoding to SemVer2.0.
     :param value: CDT encoding
