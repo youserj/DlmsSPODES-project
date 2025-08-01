@@ -1097,6 +1097,20 @@ class Collection:
             case _:
                 return None
 
+    def par2float(self, par: Parameter) -> float:
+        """try convert CDT value according with Parameter to build-in float"""
+        data = self.par2data(par)
+        if hasattr(data, "__int__"):
+            value = float(int(data))
+        elif hasattr(data, "__float__"):
+            value = float(data)
+        else:
+            raise TypeError("can't convert Parameter data to int or float")
+        if (su := self.par2su(par)):
+            value *= 10 ** int(s_u.scaler)
+        return value
+
+
     def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
         """return only association objects"""
         ret = list()

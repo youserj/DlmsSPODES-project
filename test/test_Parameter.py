@@ -1,10 +1,13 @@
 import logging
 import os
+import timeit
 from itertools import count
 import time
 import unittest
+from time import perf_counter
+
 from src.DLMS_SPODES.types import cdt, cst, ut
-from DLMS_SPODES.cosem_interface_classes.parameter import Parameter
+from DLMS_SPODES.cosem_interface_classes.parameter import Parameter, ParPattern
 
 
 class TestType(unittest.TestCase):
@@ -75,3 +78,12 @@ class TestType(unittest.TestCase):
         self.assertEqual(par.last_element, 3)
         par.set_piece(4)
         self.assertEqual(par.last_element, 3)
+
+    def test_ParPattern(self):
+        pat1 = ParPattern.parse("1.1.1.1.1.1:m2")
+        data = {
+            pat1: 1,
+            ParPattern.parse("1.1.1.(2-5).1.1:2"): 2,
+        }
+        z = Parameter.parse("1.1.1.2.1.1:2") in data.keys()
+        print(data)

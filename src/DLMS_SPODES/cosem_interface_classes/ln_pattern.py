@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import Self, Literal
 from ..types import cst
 
-
+SKIP = bytes(range(256))
+RANGE64 = bytes(range(65))
 type ObisGroup = int | set[int]
 type GroupLiteral = Literal['a', 'b', 'c', 'd', 'e', 'f']
 
@@ -18,7 +19,7 @@ class LNPattern:
     !() - as () but, set of exclude values
     example: "a.0.(1,2,3).(0-64).0.f"
     """
-    __values: tuple[ObisGroup, ...]
+    __values: tuple[bytes, ...]
 
     def __post_init__(self):
         if len(self.__values) != 6:
@@ -26,14 +27,14 @@ class LNPattern:
 
     @classmethod
     def parse(cls, value: str) -> Self:
-        values: list[ObisGroup] = [-1, -1, -1, -1, -1, -1]
+        values: list[bytes] = [SKIP, SKIP, SKIP, SKIP, SKIP, SKIP]
         for i, val in enumerate(value.split('.', maxsplit=5)):
             if (
                 len(val) == 1
                 and (ord(val) == 97+i)
             ):
                 if val == 'b':
-                    values[i] = set(range(65))
+                    values[i] = RANGE64
                 else:
                     continue
             elif val.isdigit():
@@ -55,7 +56,7 @@ class LNPattern:
                                 cls.__simple_validate(end)+1))
                         case err:
                             raise ValueError(F"got a lot of <-> in pattern: {value}, expected one")
-                values[i] = el
+                values[i] = bytes(el)
             elif val.startswith('!(') and val.endswith(')'):
                 el: set[int] = set(range(256))
                 val = val.replace('!(', "").replace(')', "")
@@ -73,7 +74,7 @@ class LNPattern:
                             raise ValueError(F"got a lot of <-> in pattern: {value}, expected one")
                 if len(el) == 0:
                     raise ValueError(F"no one element in group: {chr(97+i)}")
-                values[i] = el
+                values[i] = bytes(el)
             else:
                 raise ValueError(F"got wrong symbol: {val} in pattern")
         return cls(tuple(values))
@@ -100,8 +101,11 @@ class LNPattern:
                 return False
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return F"{self.__class__.__name__}(\"{".".join(map(lambda it: str(it) if isinstance(it, int) else str(tuple(it)), self.__values))}\")"
+
+    def __hash__(self) -> int:
+        return hash(self.__values)
 
 
 @dataclass
