@@ -1107,7 +1107,7 @@ class Collection:
         else:
             raise TypeError("can't convert Parameter data to int or float")
         if (su := self.par2su(par)):
-            value *= 10 ** int(s_u.scaler)
+            value *= 10 ** int(su.scaler)
         return value
 
 
