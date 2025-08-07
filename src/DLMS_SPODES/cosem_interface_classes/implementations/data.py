@@ -456,3 +456,22 @@ class KPZGSMPingIPValue(cdt.Structure):
 class KPZGSMPingIP(DataStatic):
     """Проприетарный объект"""
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZGSMPingIPValue),
+
+
+class AFERegister(cdt.Structure):
+    name: cdt.VisibleString
+    value: choices.common_dt
+
+
+class AFERegisters(cdt.Array):
+    TYPE = AFERegister
+    values: list[AFERegister]
+
+
+class AFEOffsets(cdt.Structure):
+    identifier: cdt.VisibleString
+    register_list: AFERegisters
+
+
+class KPZAFEOffsets(DataDynamic):
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=AFEOffsets),

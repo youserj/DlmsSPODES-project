@@ -620,10 +620,10 @@ class Float(SimpleDataType, ABC):
             case None:                                                             self.clear()
             case bytes() as encoding:
                 length_and_contents = encoding[1:]
-                match encoding[:1], len(self):
-                    case self.TAG, int() if len(self) <= len(length_and_contents): self.contents = length_and_contents[:len(self)]
+                match encoding[:1], self.SIZE:
+                    case self.TAG, int() if self.SIZE <= len(length_and_contents): self.contents = length_and_contents[:self.SIZE]
                     case self.TAG, _:                                              raise ValueError(F'Length of contents for {self.TAG} must be at least '
-                                                                                                    F'{len(self)}, but got {len(length_and_contents)}')
+                                                                                                    F'{self.SIZE}, but got {len(length_and_contents)}')
                     case _ as wrong_tag, _:                                        raise ValueError(F'Expected {self.TAG} type, got {get_common_data_type_from(wrong_tag).TAG}')
             case bytearray():                                                      self.contents = bytes(value)  # Attention!!! changed method content getting from bytearray
             case str():                                                            self.contents = self.from_str(value)
@@ -668,13 +668,13 @@ class Float(SimpleDataType, ABC):
 
     def __float__(self):
         """  return the build in float type IEEE 60559"""
-        return unpack(cls.FORMAT, value)[0]
+        return unpack(self.FORMAT, self.contents)[0]
 
     def __str__(self):
         return str(float(self))
 
     def clear(self):  # todo: remove this
-        self.contents = bytes(len(self))
+        self.contents = bytes(self.SIZE)
 
 
 class LIST(ABC):
@@ -1903,12 +1903,13 @@ class Float32(Float, SimpleDataType):
     """float32. ISO/IEC/IEEE 60559:2011"""
     TAG = TAG(b'\x17')
     FORMAT = ">f"
-
+    SIZE = 4
 
 class Float64(Float, SimpleDataType):
     """float64. ISO/IEC/IEEE 60559:2011"""
     TAG = TAG(b'\x18')
     FORMAT = ">d"
+    SIZE = 8
 
 
 _SHORT_MONTHS = (4, 6, 9, 11)

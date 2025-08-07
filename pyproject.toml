@@ -12,7 +12,7 @@ exclude = ["test","KPZ"]
 
 [project]
 name = "DLMS_SPODES"
-version = "0.86.8"
+version = "0.86.9"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]

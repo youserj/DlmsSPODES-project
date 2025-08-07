@@ -533,6 +533,7 @@ __func_map_for_create.update({
     (0, 96, 11, 4): ClassMap({0: impl.data.KPZSPODES3ExternalEvent}),
     (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.KPZAlarm1}),
     (0, 128, 25, 6, 0): ClassMap({0: impl.data.DataStatic}),
+    (0, 128, 96, 2, (0, 1, 2)): ClassMap({0: impl.data.KPZAFEOffsets}),
     (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
     (0, 128, 154, 0, 0): ClassMap({0: impl.data.KPZGSMPingIP}),
     (0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
