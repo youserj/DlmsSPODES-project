@@ -1,6 +1,5 @@
 from typing_extensions import deprecated
 from dataclasses import dataclass
-import functools
 import numpy as np
 from struct import Struct, pack, unpack_from
 from typing import Optional, cast, Iterator

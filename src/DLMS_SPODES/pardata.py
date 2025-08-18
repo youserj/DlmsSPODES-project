@@ -25,5 +25,5 @@ class ParValues[T]:
 
 
 @dataclass(frozen=True)
-class ParData(ParValues):
+class ParData(ParValues[cdt.CommonDataType]):
     data: Optional[cdt.CommonDataType]

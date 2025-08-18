@@ -12,16 +12,19 @@ exclude = ["test","KPZ"]
 
 [project]
 name = "DLMS_SPODES"
-version = "0.86.9"
+version = "0.86.10"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
+[project.urls]
+Source = "https://github.com/youserj/DlmsSPODES-project"
+
 dependencies = [
     "pydantic>=2.11",
     "cryptography>=45.0",
     "semver>=3.0",
     "typing-extensions>=4.12.2",  # remove for 3.13(use for @deprecated)
-    "StructResult>=0.7.3"
+    "StructResult>=0.8.0"
 ]
 description="dlms-spodes"
 readme = "README.md"

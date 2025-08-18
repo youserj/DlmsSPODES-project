@@ -522,8 +522,6 @@ __func_map_for_create.update({
     (1, 0, 148, 136, 0): RegisterMap,
     (1, 94, 7, 0): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3CurrentProfile),
     (1, 94, 7, (1, 2, 3, 4, 5, 6)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3ScalesProfile),  # Todo: RU. Scaler-profile With 1 entry and more
-    # KPZ
-    (128, 0, tuple(range(20)), 0, 0): RegisterMap
 })
 
 func_maps["SPODES_3"] = get_func_map(__func_map_for_create)
@@ -537,6 +535,7 @@ __func_map_for_create.update({
     (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
     (0, 128, 154, 0, 0): ClassMap({0: impl.data.KPZGSMPingIP}),
     (0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
+    (128, 0, tuple(range(20)), 0, 0): RegisterMap
 })
 func_maps["KPZ"]: FUNC_MAP = get_func_map(__func_map_for_create)
 # KPZ1 with bag in log event profiles
@@ -607,7 +606,7 @@ def get_filtered(objects: Iterable[InterfaceClass],
                  keys: ObjFilteredKey) -> list[InterfaceClass]:
     c_ids: list[ut.CosemClassId] = list()
     patterns: list[LNPattern] = list()
-    ch: Channel | None = None
+    ch: Optional[Channel] = None
     for k in keys:
         if isinstance(k, ut.CosemClassId):
             c_ids.append(k)
@@ -680,7 +679,7 @@ class Collection:
         self.__country_ver = cntr_ver
         """country version specification"""
         self.spec_map = "DLMS_6"
-        self.__objs = dict()
+        self.__objs = {}
         """ all DLMS objects container with obis key """
 
     @property
@@ -1128,6 +1127,19 @@ class Collection:
                 res.append_err(e)
         return res
 
+    def iter_classID_objects(self,
+                        class_id: ut.CosemClassId) -> Iterator[InterfaceClass]:
+        return (obj for obj in self.__objs.values() if obj.CLASS_ID == value)
+
+    def LNPattern2objects(self,
+                          pat: LNPattern) -> list[InterfaceClass]:
+        ret = []
+        for obj in self.__objs.values():
+            if obj.logical_name in pat:
+                ret.append(obj)
+        return ret
+
+
     def get_attr(self, value: ut.CosemAttributeDescriptor) -> cdt.CommonDataTypes:
         """attribute value from descriptor"""
         return self.__get_object(value.instance_id.contents).get_attr(int(value.attribute_id))
@@ -1142,17 +1154,14 @@ class Collection:
         else:
             raise exc.NoObject(F"not found at least one DLMS Objects from collection with {values=}")
 
+    @deprecated("use <iter_classID_objects>")
     def get_objects_by_class_id(self, value: ut.CosemClassId) -> list[InterfaceClass]:
         return list(filter(lambda obj: obj.CLASS_ID == value, self.__objs.values()))
-
-    def get_objects_descriptions(self) -> list[tuple[cst.LogicalName, cdt.LongUnsigned, cdt.Unsigned]]:
-        """ return container of objects for get device clone """
-        return list(map(lambda obj: (obj.logical_name, obj.CLASS_ID, obj.VERSION), self.__objs.values()))
 
     def get_writable_attr(self) -> UsedAttributes:
         """return all writable {obj.ln: {attribute_index}}"""
         ret: UsedAttributes = dict()
-        for ass in self.get_objects_by_class_id(ClassID.ASSOCIATION_LN):
+        for ass in self.iter_classID_objects(ClassID.ASSOCIATION_LN):
             if (
                 ass.logical_name.e == 0
                 or ass.object_list is None
@@ -1352,7 +1361,7 @@ class Collection:
             raise ValueError(F"absent association with {client_sap}")
 
     def sap2association(self, sap: enums.ClientSAP) -> AssociationLN:
-        for ass in get_filtered(self, (ClassID.ASSOCIATION_LN,)):
+        for ass in self.iter_classID_objects(ClassID.ASSOCIATION_LN):
             if (
                 ass.associated_partners_id is not None
                 and ass.associated_partners_id.client_SAP == sap

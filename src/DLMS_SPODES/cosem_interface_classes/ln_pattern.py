@@ -1,48 +1,87 @@
 from dataclasses import dataclass
 from typing import Self, Literal
 from ..types import cst
+from copy import copy
 
-SKIP = bytes(range(256))
-RANGE64 = bytes(range(65))
-type ObisGroup = int | set[int]
-type GroupLiteral = Literal['a', 'b', 'c', 'd', 'e', 'f']
+SKIP: int = 0
+RANGE256 = set(range(256))
+RANGE64 = bytes(range(64))
+RANGE64_WITH_LENGTH = b'\x40' + RANGE64
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class LNPattern:
-    """pattern for use in get_filtered.
-    value "x.x.x.x.x.x" where x is:
-    0..255 - simple value
-    a,b,c,d,e,f - for skip value in each group
-    (y, z, ...) - set of simple values(y or z)
-    ((y-z), ...) - set of simple values with range(from y to z)
-    !() - as () but, set of exclude values
-    example: "a.0.(1,2,3).(0-64).0.f"
     """
-    __values: tuple[bytes, ...]
+    LNPattern ::= SEQUENCE (SIZE (6)) OF GroupPattern
 
-    def __post_init__(self):
-        if len(self.__values) != 6:
-            raise ValueError(F"for {self.__class__.__name__} got values with length={len(self.__values)}, expected 6")
+    GroupPattern ::= CHOICE {
+      skip        [0] NULL,               -- SKIP marker
+      single      [1] INTEGER (0..255),   -- single value
+      multiple   [2] SEQUENCE OF INTEGER (0..255)  -- set of values
+    }
+    LNPattern Binary Encoding Specification:
+    ---------------------------------------
+    A compact tag-less binary format for storing 6 OBIS-like groups.
+
+    Structure:
+      [L1][V1][L2][V2]...[L6][V6]
+      where:
+        - Ln: 1-byte length prefix for group n (0-255)
+        - Vn: Value bytes (interpretation depends on Ln)
+
+    Length Semantics:
+      - L=0      : SKIP group (no value bytes follow)
+      - L=1      : Single value (V is 1-byte integer 0-255)
+      - L=2..255 : Value set (V contains L bytes as possible values)
+
+    Special Cases:
+      - Group 'b' (index 1) when marked SKIP uses predefined RANGE64 (0-64)
+      - Empty exclusion sets "!()" are prohibited
+
+    Example:
+      Pattern "a.1.(2-5).!().0.f" encodes as:
+      [00][01][01][04][02][03][04][05][00][01][00][00]
+      (SKIP|1|{2,3,4,5}|SKIP|0|SKIP)
+
+    Properties:
+      - Fixed overhead: 6 bytes (1 length byte per group)
+      - Max size: 6 + 255*6 = 1536 bytes
+      - Order-preserving
+      - Comparison-friendly memory layout
+    """
+    buffer: bytes
 
     @classmethod
     def parse(cls, value: str) -> Self:
-        values: list[bytes] = [SKIP, SKIP, SKIP, SKIP, SKIP, SKIP]
-        for i, val in enumerate(value.split('.', maxsplit=5)):
-            if (
-                len(val) == 1
-                and (ord(val) == 97+i)
-            ):
-                if val == 'b':
-                    values[i] = RANGE64
-                else:
+        buffer = bytearray()
+        parts = value.split('.', maxsplit=5)
+        if len(parts) != 6:
+            raise ValueError(f"got {len(parts)} elements, expected 6")
+        for i, val in enumerate(parts):
+            if val.isdigit():
+                num = int(val)
+                if 0 <= num <= 255:
+                    buffer.extend((1, num))
                     continue
-            elif val.isdigit():
-                values[i] = int(val)
-                if not (0 <= values[i] <= 255):
-                    raise ValueError(F"in {value=} got element {val=}, expected 0..255")
-            elif val.startswith('(') and val.endswith(')'):
-                el: set[int] = set()
+                raise ValueError(f"Value {val} out of range 0-255")
+            if len(val) == 1:
+                if val == "x":
+                    buffer.append(SKIP)
+                    continue
+                elif (
+                    i == 1
+                    and val == "b"
+                ):
+                    buffer.extend(RANGE64_WITH_LENGTH)
+                    continue
+                elif ord(val) == i + 97:
+                    buffer.append(SKIP)
+                    continue
+            if val == "":
+                buffer.append(SKIP)
+                continue
+            if val[0]=='(' and val[-1]==')':
+                el = set()
                 val = val.replace('(', "").replace(')', "")
                 for j in val.split(","):
                     j = j.replace(" ", '')
@@ -53,12 +92,16 @@ class LNPattern:
                             start, end = j.split("-")
                             el.update(range(
                                 cls.__simple_validate(start),
-                                cls.__simple_validate(end)+1))
+                                cls.__simple_validate(end) + 1))
                         case err:
                             raise ValueError(F"got a lot of <-> in pattern: {value}, expected one")
-                values[i] = bytes(el)
-            elif val.startswith('!(') and val.endswith(')'):
-                el: set[int] = set(range(256))
+                # values = bytes(el)
+                # buffer.extend([len(values)] + list(values))
+                buffer.append(len(el))
+                buffer.extend(el)
+                continue
+            if val.startswith('!(') and val.endswith(')'):
+                el = copy(RANGE256)
                 val = val.replace('!(', "").replace(')', "")
                 for j in val.split(","):
                     j = j.replace(" ", '')
@@ -69,15 +112,18 @@ class LNPattern:
                             start, end = j.split("-")
                             el.difference_update(range(
                                 cls.__simple_validate(start),
-                                cls.__simple_validate(end)+1))
+                                cls.__simple_validate(end) + 1))
                         case err:
                             raise ValueError(F"got a lot of <-> in pattern: {value}, expected one")
-                if len(el) == 0:
-                    raise ValueError(F"no one element in group: {chr(97+i)}")
-                values[i] = bytes(el)
-            else:
-                raise ValueError(F"got wrong symbol: {val} in pattern")
-        return cls(tuple(values))
+                if len(el)==0:
+                    raise ValueError(F"no one element in group: {chr(97 + i)}")
+                # values = bytes(el)
+                # buffer.extend([len(values)] + list(values))
+                buffer.append(len(el))
+                buffer.extend(el)
+                continue
+            raise ValueError(f"Invalid pattern: {val}")
+        return cls(bytes(buffer))
 
     @staticmethod
     def __simple_validate(value: str) -> int:
@@ -86,26 +132,66 @@ class LNPattern:
         else:
             raise ValueError(F"got not valid element: {value} in pattern, expected 0..255")
 
-    def get_update(self, group: GroupLiteral, value: str) -> Self:
-        """get new instance with updated group value"""
-        # todo: make this
-        raise RuntimeError("no implement now")
-
-    def __eq__(self, other: cst.LogicalName):
-        for i, j in zip(self.__values, other):
-            if i == j or (i == -1):
+    def __eq__(self, other: "LNPattern") -> bool:
+        ptr = 0
+        for i in range(6):
+            length = self.buffer[ptr]
+            ptr += 1
+            if length == 0:  # SKIP
                 continue
-            elif isinstance(i, set) and j in i:
-                continue
-            else:
-                return False
+            other_byte = other.contents[i]
+            if length == 1:  # Single byte
+                if self.buffer[ptr]!=other_byte:
+                    return False
+            else:  # Multiple bytes
+                if other_byte not in self.buffer[ptr:ptr + length]:
+                    return False
+            ptr += length
         return True
 
-    def __repr__(self) -> str:
-        return F"{self.__class__.__name__}(\"{".".join(map(lambda it: str(it) if isinstance(it, int) else str(tuple(it)), self.__values))}\")"
+    @staticmethod
+    def _format_ranges(values: list[int]) -> str:
+        if not values:
+            return "!()"
+        ranges = []
+        start = end = values[0]
+        for num in values[1:]:
+            if num==end + 1:
+                end = num
+            else:
+                ranges.append((start, end))
+                start = end = num
+        ranges.append((start, end))
+        parts = []
+        for start, end in ranges:
+            if start==end:
+                parts.append(str(start))
+            elif end==start + 1:  # Диапазон из 2 чисел
+                parts.extend([str(start), str(end)])
+            else:
+                parts.append(f"{start}-{end}")
+        if len(parts) > 3 and len(values) > 128:  # Эмпирический порог
+            all_values = set(range(256))
+            excluded = sorted(all_values - set(values))
+            if len(excluded) < len(values):
+                return f"!({','.join(self._format_ranges(excluded))})"
+        return f"({','.join(parts)})"
 
-    def __hash__(self) -> int:
-        return hash(self.__values)
+    def __str__(self) -> str:
+        parts = []
+        ptr = 0
+        for _ in range(6):
+            length = self.buffer[ptr]
+            ptr += 1
+            if length == 0:
+                parts.append("x")
+            elif length == 1:
+                parts.append(str(self.buffer[ptr]))
+            else:
+                values = sorted(set(self.buffer[ptr:ptr + length]))
+                parts.append(self._format_ranges(values))
+            ptr += length
+        return ".".join(parts)
 
 
 @dataclass
@@ -115,14 +201,17 @@ class LNPatterns:
     def __iter__(self):
         return iter(self.value)
 
+    def __str__(self) -> str:
+        return f"[{" | ".join(map(str, self.value))}]"
 
-ABSTRACT = LNPattern.parse("0")
-ELECTRICITY = LNPattern.parse("1")
-HCA = LNPattern.parse("4")
-THERMAL = LNPattern.parse("(5,6)")
-GAS = LNPattern.parse("7")
-WATER = LNPattern.parse("(8,9)")
-OTHER_MEDIA = LNPattern.parse("15")
+
+ABSTRACT = LNPattern.parse("0.....")
+ELECTRICITY = LNPattern.parse("1.....")
+HCA = LNPattern.parse("4.....")
+THERMAL = LNPattern.parse("(5,6).....")
+GAS = LNPattern.parse("7.....")
+WATER = LNPattern.parse("(8,9).....")
+OTHER_MEDIA = LNPattern.parse("15.....")
 
 
 BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES = LNPatterns((
