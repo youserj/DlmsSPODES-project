@@ -1129,7 +1129,7 @@ class Collection:
 
     def iter_classID_objects(self,
                         class_id: ut.CosemClassId) -> Iterator[InterfaceClass]:
-        return (obj for obj in self.__objs.values() if obj.CLASS_ID == value)
+        return (obj for obj in self.__objs.values() if obj.CLASS_ID == class_id)
 
     def LNPattern2objects(self,
                           pat: LNPattern) -> list[InterfaceClass]:

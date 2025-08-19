@@ -7,5 +7,6 @@ class TestType(unittest.TestCase):
     def test_one(self):
         My = prs.Data(Parameter.parse("0.0.0.1.0.255"))
         My2 = prs.Data(Parameter.parse("0.0.1.1.0.255"))
+        My3 = prs.Register(Parameter.parse("0.2.1.1.0.255"))
 
-        print(My.LN, My2.LN)
+        print(My.LN, My2.LN, My3.SCALER_UNIT)
