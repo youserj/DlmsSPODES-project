@@ -594,7 +594,7 @@ class TestType(unittest.TestCase):
     def test_par2rep(self):
         col = self.create_collection()
         par = Parameter.parse("0.0.13.0.0.255:9").extend(0, 0)
-        data = col.par2data(par)
+        data = col.par2data(par).unwrap()
         rep1 = col.par2rep(par, data)
         print(str(col[par.obis].get_attr_element(1)))
         print(rep1)

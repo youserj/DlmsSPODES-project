@@ -669,7 +669,7 @@ class Collection:
     spec_map: str
 
     def __init__(self,
-                 id_: ID = None,
+                 id_: ID,
                  dlms_ver: int = 6,
                  country: CountrySpecificIdentifiers = None,
                  cntr_ver: ParameterValue = None):
@@ -867,19 +867,22 @@ class Collection:
         """ get object, return None if it absence """
         return self.__objs.get(obis, None)
 
-    def par2obj(self, par: Parameter) -> InterfaceClass:
+    def par2obj(self, par: Parameter) -> result.Simple[InterfaceClass] | result.Error:
         """return: DLMSObject"""
-        if ret := self.__objs.get(par.obis):
-            return ret
-        raise exc.NoObject(f"with {par=}")
+        if obj := self.__objs.get(par.obis):
+            return result.Simple(obj)
+        return result.Error.from_e(exc.NoObject(f"with {par=}"))
 
-    def par2data(self, par: Parameter) -> Optional[cdt.CommonDataType]:
+    def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
         """:return CDT by Parameter, return None if data wasn't setting"""
-        if (a_data := self.par2obj(par).get_attr(par.i)) is None:
-            return None
+        if isinstance((res1 := self.par2obj(par)), result.Error):
+            return res1
+        res = result.Option(res1.value.get_attr(par.i))
+        if res.value is None:
+            return res
         for el in par.elements():
-            a_data = a_data[el]
-        return a_data
+            res.value = res.value.a_data[el]
+        return res
 
     def values(self) -> tuple[InterfaceClass]:
         return tuple(self.__objs.values())
@@ -1009,7 +1012,7 @@ class Collection:
                 else:
                     rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {data.script_selector}")
             else:
-                obj = self.par2obj(par)
+                obj = self.par2obj(par).unwrap()
                 elements = tuple(par.elements())
                 if unit := get_unit(obj.CLASS_ID, elements):
                     rep.unit = cdt.Unit(unit).get_name()
@@ -1070,7 +1073,7 @@ class Collection:
     def par2su(self, par: Parameter) -> Optional[cdt.ScalUnitType]:
         """convert Parameter -> Optional[ScalerUnit],
         raise: NoObject, EmptyAttribute"""
-        match (obj := self.par2obj(par)).CLASS_ID, par.i:
+        match (obj := self.par2obj(par).unwrap()).CLASS_ID, par.i:
             case (exc.NoObject, _):
                 raise obj
             case (ClassID.REGISTER | ClassID.EXT_REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
@@ -1099,7 +1102,7 @@ class Collection:
 
     def par2float(self, par: Parameter) -> float:
         """try convert CDT value according with Parameter to build-in float"""
-        data = self.par2data(par)
+        data = self.par2data(par).unwrap()
         if hasattr(data, "__int__"):
             value = float(int(data))
         elif hasattr(data, "__float__"):

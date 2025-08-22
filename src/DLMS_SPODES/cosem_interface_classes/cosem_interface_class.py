@@ -6,6 +6,7 @@ from functools import lru_cache
 from typing_extensions import deprecated
 from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional, Protocol
 from ..types import cdt, ut, cst
+from StructResult import result
 from ..relation_to_OBIS import get_name
 import logging
 from enum import IntEnum
@@ -374,10 +375,10 @@ class COSEMInterfaceClasses(Protocol):
         # print(cls.__name__)
 
     @classmethod
-    def get_attr_element(cls, i: int) -> ICAElement:
+    def getAElement(cls, i: int) -> result.Simple[ICAElement] | result.Error:
         """return element by order index. Override in each new class"""
         if i == 1:
-            return _LN_ELEMENT
+            return result.Simple(_LN_ELEMENT)
         elif i > len(cls.A_ELEMENTS) + 1:
             raise exc.DLMSException(F"got attribute index: {i}, expected 1..{len(cls.A_ELEMENTS) + 1}")
         else:
