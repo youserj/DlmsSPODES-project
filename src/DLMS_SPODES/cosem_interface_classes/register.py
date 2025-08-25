@@ -1,7 +1,7 @@
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import integers
-from ..overview import VERSION_0
+from .overview import VERSION_0
 
 
 class Register(ic.COSEMInterfaceClasses):

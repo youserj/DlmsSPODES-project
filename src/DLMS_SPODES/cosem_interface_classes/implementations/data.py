@@ -1,26 +1,27 @@
 import re
 import logging
-from ..data import Data, ic, cdt, cst, choices
+from ...types import cdt, cst
+from ..data import Data, ic, choices
 from ... import enums as enu
 from ...types import implementations as impl
 from ...config_parser import get_message
 
 
 class DataStatic(Data):
-    A_ELEMENTS = Data.get_attr_element(2).get_change(classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=ic.Classifier.STATIC),
 
 
 class DataDynamic(Data):
-    A_ELEMENTS = Data.get_attr_element(2).get_change(classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=ic.Classifier.DYNAMIC),
 
 
 class DataNotSpecific(Data):
-    A_ELEMENTS = Data.get_attr_element(2).get_change(classifier=ic.Classifier.NOT_SPECIFIC),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=ic.Classifier.NOT_SPECIFIC),
 
 
 class LDN(DataStatic):
     """for ldn"""
-    A_ELEMENTS = Data.get_attr_element(2).get_change(data_type=impl.octet_string.LDN),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(data_type=impl.octet_string.LDN),
 
     @property
     def get_manufacturer(self) -> bytes:

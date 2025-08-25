@@ -1,5 +1,5 @@
 from . __class_init__ import *
-from ..overview import VERSION_0
+from .overview import VERSION_0
 
 
 class QoSElement(cdt.Structure):
