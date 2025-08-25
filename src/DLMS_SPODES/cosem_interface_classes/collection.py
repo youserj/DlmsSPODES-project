@@ -865,7 +865,7 @@ class Collection:
         """ get object, return None if it absence """
         return self.__objs.get(obis, None)
 
-    def par2obj(self, par: Parameter) -> result.Simple[InterfaceClass] | result.Error:
+    def par2obj(self, par: Parameter) -> result.SimpleOrError[InterfaceClass]:
         """return: DLMSObject"""
         if obj := self.__objs.get(par.obis):
             return result.Simple(obj)
@@ -1227,13 +1227,13 @@ class Collection:
         else:
             return obj
 
-    def obis2obj(self, obis: o.OBIS) -> result.Simple[InterfaceClass] | result.Error:
+    def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[InterfaceClass]:
         res = self.__objs.get(obis)
         if res.value is None:
             return result.Error.from_e(exc.NoObject(obis))
         return result.Simple(res.value)
 
-    def logicalName2obj(self, ln: cst.LogicalName) -> result.Simple[InterfaceClass]:
+    def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2obj(o.OBIS(ln.contents))
 
     @cached_property
