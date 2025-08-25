@@ -1,5 +1,6 @@
 from ..__class_init__ import *
 from ...types.implementations import integers
+from ..overview import VERSION_0
 
 
 class ServerAddress(cdt.OctetString):
@@ -24,7 +25,7 @@ class AuthenticationKeys(cdt.Array):
 class NTPSetup(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed 14, 4.9.7 NTP setup"""
     CLASS_ID = ClassID.NTP_SETUP
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (
         ic.ICAElement("activated", cdt.Boolean, default=False),
         ic.ICAElement("server_address", ServerAddress),

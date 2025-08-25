@@ -5,6 +5,7 @@ from ..__class_init__ import *
 from ...types.implementations import structs, arrays
 from . import authentication_mechanism_name
 from . import abstract
+from ..overview import VERSION_1
 
 
 class AccessMode(abstract.AccessMode, elements=tuple(range(7))):
@@ -105,7 +106,7 @@ class MechanismNameType(cdt.AXDR, authentication_mechanism_name.AuthenticationMe
 
 class AssociationLN(ver0.AssociationLN):
     """5.4.6 Association LN"""
-    VERSION = Version.V1
+    VERSION = VERSION_1
     A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
                   ver0.AssociationLN.get_attr_element(3),  # associated_partners_id
                   ic.ICAElement("application_context_name", ContextNameType),

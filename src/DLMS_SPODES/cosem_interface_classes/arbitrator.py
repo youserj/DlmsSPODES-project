@@ -1,5 +1,6 @@
 from .__class_init__ import *
 from ..types.implementations import structs, integers
+from .overview import VERSION_0
 
 
 class Actions(cdt.Array):
@@ -46,7 +47,7 @@ class RequestAction(cdt.Structure):
 class Arbitrator(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.12 Arbitrator"""
     CLASS_ID = ClassID.ARBITRATOR
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("actions", Actions),
                   ic.ICAElement("permission_table", PermissionsTable),
                   ic.ICAElement("weightings_table", WeightingsTable),

@@ -1,12 +1,13 @@
 from ..__class_init__ import *
 from ...types import choices
 from ...types.implementations import integers
+from ..overview import VERSION_0
 
 
 class DemandRegister(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed 14 4.3.4.Demand register"""
     CLASS_ID = ClassID.DEMAND_REGISTER
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (
         ic.ICAElement("current_average_value", choices.register, classifier=ic.Classifier.DYNAMIC),
         ic.ICAElement("last_average_value", choices.register, classifier=ic.Classifier.DYNAMIC),

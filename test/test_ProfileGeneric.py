@@ -38,11 +38,11 @@ class TestType(unittest.TestCase):
         col = collection.Collection()
         col.set_manufacturer(b"KPZ")
         col.spec_map = col.get_spec()
-        readout = col.add(class_id=overview.ClassID.PROFILE_GENERIC, version=overview.Version.V1, logical_name=cst.LogicalName.from_obis('0.0.21.0.1.255'))
-        col.add(class_id=overview.ClassID.REGISTER, version=overview.Version.V0, logical_name=cst.LogicalName.from_obis('1.0.1.8.0.255'))
-        col.add(class_id=overview.ClassID.REGISTER, version=overview.Version.V0, logical_name=cst.LogicalName.from_obis('1.0.1.8.1.255'))
-        col.add(class_id=overview.ClassID.REGISTER, version=overview.Version.V0, logical_name=cst.LogicalName.from_obis('1.0.1.8.2.255'))
-        col.add(class_id=overview.ClassID.REGISTER, version=overview.Version.V0, logical_name=cst.LogicalName.from_obis('1.0.1.8.3.255'))
+        readout = col.add(class_id=overview.ClassID.PROFILE_GENERIC, version=overview.VERSION_1, logical_name=cst.LogicalName.from_obis('0.0.21.0.1.255'))
+        col.add(class_id=overview.ClassID.REGISTER, version=overview.VERSION_0, logical_name=cst.LogicalName.from_obis('1.0.1.8.0.255'))
+        col.add(class_id=overview.ClassID.REGISTER, version=overview.VERSION_0, logical_name=cst.LogicalName.from_obis('1.0.1.8.1.255'))
+        col.add(class_id=overview.ClassID.REGISTER, version=overview.VERSION_0, logical_name=cst.LogicalName.from_obis('1.0.1.8.2.255'))
+        col.add(class_id=overview.ClassID.REGISTER, version=overview.VERSION_0, logical_name=cst.LogicalName.from_obis('1.0.1.8.3.255'))
         readout.set_attr(5, 1)
         readout.set_attr(3, bytes.fromhex("""01 04
         02 04 12 00 03 09 06 01 00 01 08 00 ff 0f 02 12 00 00 
@@ -58,22 +58,22 @@ class TestType(unittest.TestCase):
         col.spec_map = "SPODES_3"
         pg1 = col.add(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             logical_name=cst.LogicalName("01 00 5e 07 04 ff")
         )
         pg2 = col.add(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             logical_name=cst.LogicalName.from_obis("1.0.99.1.0.255")
         )
         pg3 = col.add(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             logical_name=cst.LogicalName.from_obis("1.0.99.2.0.255")
         )
         pg4 = col.add_if_missing(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             logical_name=cst.LogicalName("00 00 15 00 01 ff")
         )
         ver = col.find_version(overview.ClassID.PROFILE_GENERIC)

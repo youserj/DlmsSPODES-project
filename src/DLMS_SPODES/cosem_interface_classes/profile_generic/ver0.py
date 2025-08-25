@@ -2,6 +2,7 @@
 from typing import Type
 from ..__class_init__ import *
 from ...types.implementations import long_unsigneds, integers
+from ..overview import VERSION_0
 
 
 BUFFER = 2
@@ -35,7 +36,7 @@ class SortMethod(cdt.Enum, elements=(1, 2, 3, 4, 5, 6)):
 class ProfileGeneric(ic.COSEMInterfaceClasses):
     """5.3.1 Profile generic"""
     CLASS_ID = ClassID.PROFILE_GENERIC
-    VERSION = Version.V0
+    VERSION = VERSION_0
     # todo: remove down following
     scaler_profile_key: bytes | None = None
     """ obis of scaler profile for this profile if need """

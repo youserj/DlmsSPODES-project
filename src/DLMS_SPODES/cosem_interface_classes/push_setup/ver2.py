@@ -2,6 +2,7 @@ from ..__class_init__ import *
 from ...types.implementations import structs, enums, integers
 from itertools import chain
 from ...types import choices
+from ..overview import VERSION_2
 
 
 class RestrictionElement(choices.StructureMixin, cdt.Structure):
@@ -89,7 +90,7 @@ class PushProtectionParameters(cdt.Array):
 class PushSetup(ic.COSEMInterfaceClasses):
     """ DLMS UA 1000-1 Ed. 14 4.4.8.2 Push setup"""
     CLASS_ID = ClassID.PUSH_SETUP
-    VERSION = Version.V2
+    VERSION = VERSION_2
     A_ELEMENTS = (ic.ICAElement("push_object_list", PushObjectList),
                   ic.ICAElement("send_destination_and_method", SendDestinationAndMethod),
                   ic.ICAElement("communication_window", CommunicationWindow),

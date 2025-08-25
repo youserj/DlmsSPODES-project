@@ -1,5 +1,7 @@
 """DLMS UA 1000-1 Ed 14 4.2 Overview of the COSEM interface classes"""
+from typing import Final
 from functools import lru_cache
+from typing_extensions import deprecated
 from enum import IntEnum
 from dataclasses import dataclass
 from ..types import ut, cdt
@@ -119,12 +121,11 @@ class ClassID:
         return tuple(map(int, filter(lambda it: isinstance(it, ut.CosemClassId), cls.__dict__.values())))
 
 
-@dataclass(frozen=True)
-class Version:
-    V0 = cdt.Unsigned(0)
-    V1 = cdt.Unsigned(1)
-    V2 = cdt.Unsigned(2)
-    V3 = cdt.Unsigned(3)
+VERSION_0: Final[cdt.Unsigned] = cdt.Unsigned(0)
+VERSION_1: Final[cdt.Unsigned] = cdt.Unsigned(1)
+VERSION_2: Final[cdt.Unsigned] = cdt.Unsigned(2)
+VERSION_3: Final[cdt.Unsigned] = cdt.Unsigned(3)
+VERSION_4: Final[cdt.Unsigned] = cdt.Unsigned(4)
 
 
 class CountrySpecificIdentifiers(IntEnum):

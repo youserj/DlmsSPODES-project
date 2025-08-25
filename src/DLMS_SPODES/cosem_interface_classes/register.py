@@ -1,6 +1,7 @@
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import integers
+from ..overview import VERSION_0
 
 
 class Register(ic.COSEMInterfaceClasses):
@@ -8,7 +9,7 @@ class Register(ic.COSEMInterfaceClasses):
     the nature of the process value or of the status value. The nature of the value is described by the attribute
     “logical name” using the OBIS identification system. """
     CLASS_ID = ClassID.REGISTER
-    VERSION = Version.V0
+    VERSION = VERSION_0
     scaler_unit_not_settable: bool
     A_ELEMENTS = (
         ic.ICAElement("value", choices.register, classifier=ic.Classifier.NOT_SPECIFIC),

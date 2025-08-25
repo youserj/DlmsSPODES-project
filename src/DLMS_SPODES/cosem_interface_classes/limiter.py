@@ -3,6 +3,9 @@ from .. import exceptions as exc
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import structs, long_unsigneds, double_long_usingneds
+from .overview import VERSION_0
+
+
 threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 
@@ -41,7 +44,7 @@ class Limiter(ic.COSEMInterfaceClasses):
     time, and duration. The emergency profile id element is matched to an emergency profile group id: this mechanism enables the activation of the emergency threshold only
     for a specific emergency group. """
     CLASS_ID = ClassID.LIMITER
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("monitored_value", structs.ValueDefinition),
                   ic.ICAElement("threshold_active", choices.simple_dt, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("threshold_normal", choices.simple_dt),

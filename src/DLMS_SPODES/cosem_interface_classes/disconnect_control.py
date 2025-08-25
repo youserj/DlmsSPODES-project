@@ -2,6 +2,7 @@ from .__class_init__ import *
 from ..types.implementations import integers
 from itertools import chain
 from ..config_parser import get_message
+from .overview import VERSION_0
 
 
 class ControlState(cdt.Enum, elements=(0, 1, 2)):
@@ -42,7 +43,7 @@ class OutputState(cdt.Boolean):
 class DisconnectControl(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.8 Disconnect control"""
     CLASS_ID = ClassID.DISCONNECT_CONTROL
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("output_state", OutputState, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("control_state", ControlState, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("control_mode", ControlMode))

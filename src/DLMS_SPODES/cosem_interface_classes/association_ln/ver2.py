@@ -1,11 +1,12 @@
 from ..__class_init__ import *
 from . import ver0, ver1
 from ...types.implementations import structs, arrays
+from ..overview import VERSION_2
 
 
 class AssociationLN(ver1.AssociationLN):
     """5.4.7 Association LN"""
-    VERSION = Version.V2
+    VERSION = VERSION_2
     A_ELEMENTS = (
         ver1.AssociationLN.get_attr_element(2),  # <object_list>
         ver0.AssociationLN.get_attr_element(3),  # associated_partners_id

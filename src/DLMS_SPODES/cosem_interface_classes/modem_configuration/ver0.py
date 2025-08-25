@@ -1,5 +1,6 @@
 from ..__class_init__ import *
 from ...types.implementations.enums import CommSpeed
+from ..overview import VERSION_0
 
 
 class InitializationStringElement(cdt.Structure):
@@ -43,7 +44,7 @@ class PSTNModemConfiguration(ic.COSEMInterfaceClasses):
     """ An  instance of the 'PSTN modem configuration' IC stores data related to the initialization of modems, which are used for data transfer from/to a device. Several modems
     can be configured."""
     CLASS_ID = ClassID.MODEM_CONFIGURATION
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("comm_speed", CommSpeed, 0, 9, 5),
                   ic.ICAElement("initialization_string", InitializationString),
                   ic.ICAElement("modem_profile", ModemProfile))

@@ -10,12 +10,12 @@ class TestType(unittest.TestCase):
         col = collection.Collection()
         reg = col.add(
             class_id=overview.ClassID.REGISTER,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName("01 00 01 07 00 ff")
         )
         r_m = col.add(
             class_id=overview.ClassID.REGISTER_MONITOR,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName("00 00 10 00 00 ff")
         )
         reg.set_attr(2, cdt.Integer(8).encoding)

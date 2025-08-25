@@ -1,4 +1,6 @@
+from typing import Iterator
 from enum import IntFlag, auto
+from ..parameters import Parameter
 from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types import choices
@@ -7,6 +9,7 @@ from ... import pdu_enums as pdu
 from . import mechanism_id, authentication_mechanism_name
 from . import method
 from . import abstract
+from ..overview import VERSION_0
 
 
 class AccessMode(abstract.AccessMode, elements=(0, 1, 2, 3)):
@@ -290,7 +293,7 @@ class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelec
 class AssociationLN(ic.COSEMInterfaceClasses):
     """5.4.5 Association LN"""
     CLASS_ID = ClassID.ASSOCIATION_LN
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
                   ic.ICAElement("associated_partners_id", AssociatedPartnersType),
                   ic.ICAElement("application_context_name", ApplicationContextName),
@@ -388,6 +391,9 @@ class AssociationLN(ic.COSEMInterfaceClasses):
         """return all LogicalNames"""
         el: ObjectListElement
         return [el.logical_name  for el in self.object_list]
+
+    def iter_pars(self) -> Iterator[Parameter]:
+        return (Parameter(el.logical_name.contents) for el in self.object_list)
 
     def __check_empty_object_list(self):
         if self.object_list is None:

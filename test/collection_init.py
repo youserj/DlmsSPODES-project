@@ -17,5 +17,5 @@ col.spec_map = col.get_spec()
 print(col)
 ass = col.add(
     class_id=overview.ClassID.ASSOCIATION_LN,
-    version=overview.Version.V1,
+    version=overview.VERSION_1,
     logical_name=cst.LogicalName.from_obis("0.0.40.0.1.255"))

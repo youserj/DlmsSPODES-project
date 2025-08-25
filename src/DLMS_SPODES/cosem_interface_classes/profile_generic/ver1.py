@@ -6,6 +6,7 @@ from ...relation_to_OBIS import get_name
 from ... import exceptions as exc
 from ..__class_init__ import *
 from ...types.implementations import integers, arrays, structs
+from ..overview import VERSION_1
 
 
 class CaptureObjects(cdt.Array):
@@ -37,7 +38,7 @@ class AccessSelector(ut.Unsigned8):
 
 class ProfileGeneric(ver0.ProfileGeneric):
     """4.3.6 Profile generic"""
-    VERSION = Version.V1
+    VERSION = VERSION_1
     A_ELEMENTS = (ic.ICAElement("buffer", arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("capture_objects", CaptureObjects),
                   ver0.ProfileGeneric.get_attr_element(4),

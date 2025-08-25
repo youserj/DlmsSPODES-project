@@ -1,4 +1,5 @@
 from . __class_init__ import *
+from ..overview import VERSION_0
 
 
 class QoSElement(cdt.Structure):
@@ -21,7 +22,7 @@ class QualityOfService(cdt.Structure):
 class GPRSModemSetup(ic.COSEMInterfaceClasses):
     """ This IC allow setting up GPRS modems, by handling all data necessary data for modem management. """
     CLASS_ID = ClassID.GPRS_MODEM_SETUP
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("APN", cdt.OctetString),
                   ic.ICAElement("PIN_code", cdt.LongUnsigned),
                   ic.ICAElement("quality_of_service", QualityOfService))

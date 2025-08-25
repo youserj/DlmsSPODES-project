@@ -1,6 +1,7 @@
 from . import register
 from .__class_init__ import *
 from ..types import choices
+from .overview import VERSION_0
 
 
 class ExtendedRegister(register.Register, ic.COSEMInterfaceClasses):
@@ -8,7 +9,7 @@ class ExtendedRegister(register.Register, ic.COSEMInterfaceClasses):
     the nature of the process value or of the status value. The nature of the value is described by the attribute
     “logical name” using the OBIS identification system. """
     CLASS_ID = ClassID.EXT_REGISTER
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (register.Register.get_attr_element(2),
                   register.Register.get_attr_element(3),
                   ic.ICAElement("status", choices.extended_register, classifier=ic.Classifier.DYNAMIC),

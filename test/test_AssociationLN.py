@@ -42,7 +42,7 @@ class TestType(unittest.TestCase):
         col = collection.Collection()
         ass = col.add(
             class_id=overview.ClassID.ASSOCIATION_LN,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             logical_name=cst.LogicalName("00 00 28 00 00 ff")
         )
         print(ass)

@@ -9,7 +9,7 @@ class TestType(unittest.TestCase):
     def test_set(self):
         t = collection.get_type(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             ln=cst.LogicalName.from_obis("1.0.94.7.4.255"),
             func_map=collection.func_maps["KPZ"]
         )

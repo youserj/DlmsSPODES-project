@@ -1,5 +1,6 @@
 from .__class_init__ import *
 from ..types import choices
+from .overview import VERSION_0
 
 
 class ServiceId(cdt.Enum, elements=(1, 2)):
@@ -46,7 +47,7 @@ class Scripts(cdt.Array):
 class ScriptTable(ic.COSEMInterfaceClasses):
     """Script table"""
     CLASS_ID = ClassID.SCRIPT_TABLE
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = ic.ICAElement("scripts", Scripts),
     M_ELEMENTS = ic.ICMElement("execute", cdt.LongUnsigned),
 

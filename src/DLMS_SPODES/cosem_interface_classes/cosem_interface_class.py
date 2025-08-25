@@ -4,7 +4,7 @@ DLMS UA 1000-1 Ed 14
 from dataclasses import dataclass
 from functools import lru_cache
 from typing_extensions import deprecated
-from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional, Protocol
+from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional, Protocol, ClassVar
 from ..types import cdt, ut, cst
 from StructResult import result
 from ..relation_to_OBIS import get_name
@@ -12,7 +12,7 @@ import logging
 from enum import IntEnum
 from itertools import count
 from .. import exceptions as exc
-from .overview import ClassID, Version
+from .overview import ClassID
 from ..settings import settings
 from ..config_parser import get_values
 from .. import literals
@@ -215,7 +215,7 @@ Name: Literal = Literal[
 
 
 @lru_cache(150)
-def ClassIDVer2Name(class_id: ClassID, ver: Version) -> Name:
+def ClassIDVer2Name(class_id: ClassID, ver: cdt.Unsigned) -> Name:
     """Table 3 – List of interface classes by class_id"""
     match int(class_id), int(ver):
         case 1, 0: return "Data"
@@ -326,8 +326,8 @@ def ClassIDVer2Name(class_id: ClassID, ver: Version) -> Name:
 
 
 class COSEMInterfaceClasses(Protocol):
-    CLASS_ID: ClassID
-    VERSION: Version | None = None
+    CLASS_ID: ClassVar[ut.CosemClassId]
+    VERSION: ClassVar[cdt.Unsigned]
     """ Identification code of the version of the class. The version of each object is retrieved together with the logical name and the class_id by reading the object_list 
     attribute of an “Association LN” / ”Association SN” object. Within one logical device, all instances of a certain class must be of the same version."""
     A_ELEMENTS: tuple[ICAElement, ...]
@@ -374,8 +374,8 @@ class COSEMInterfaceClasses(Protocol):
         cls.hash_ = next(_n_class)
         # print(cls.__name__)
 
-    @deprecated("use <getAElement>")
     @classmethod
+    @deprecated("use <getAElement>")
     def get_attr_element(cls, i: int) -> ICAElement:
         """return element by order index. Override in each new class"""
         if i == 1:
@@ -391,9 +391,9 @@ class COSEMInterfaceClasses(Protocol):
         if i == 1:
             return result.Simple(_LN_ELEMENT)
         elif i > len(cls.A_ELEMENTS) + 1:
-            raise exc.DLMSException(F"got attribute index: {i}, expected 1..{len(cls.A_ELEMENTS) + 1}")
+            return result.Error.from_e(exc.DLMSException(F"got attribute index: {i}, expected 1..{len(cls.A_ELEMENTS) + 1}"))
         else:
-            return cls.A_ELEMENTS[i - 2]
+            return result.Simple(cls.A_ELEMENTS[i - 2])
 
     @classmethod
     def get_meth_element(cls, i: int) -> ICMElement:

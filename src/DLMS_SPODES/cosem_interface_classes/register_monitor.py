@@ -1,6 +1,7 @@
 from .__class_init__ import *
 from ..types import choices
 from ..types.implementations import structs
+from .overview import VERSION_0
 threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 
@@ -24,7 +25,7 @@ class RegisterMonitor(ic.COSEMInterfaceClasses):
     """ DLMS UA 1000-1 Ed.14. 4.5.6. This IC allows modelling the function of monitoring of values modelled by “Data”, “Register”, “Extended register” or “Demand register” objects.
     It allows specifying thresholds, the value monitored, and a set of scripts (see 4.5.2) that are executed when the value monitored crosses a threshold """
     CLASS_ID = ClassID.REGISTER_MONITOR
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("thresholds", Thresholds),
                   ic.ICAElement("monitored_value", structs.ValueDefinition),
                   ic.ICAElement("actions", Actions))

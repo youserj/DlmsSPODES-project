@@ -1,6 +1,7 @@
 from ..__class_init__ import *
 from ...types.implementations import integers
 from . image_transfer_status import ImageTransferStatus
+from ..overview import VERSION_0
 
 
 class ImageToActivateInfoElement(cdt.Structure):
@@ -35,7 +36,7 @@ class ImageBlockTransfer(cdt.Structure):
 class ImageTransfer(ic.COSEMInterfaceClasses):
     """ Instance of the Image transfer IC model the process of transferring binary files, called Images to COSEM servers. """
     CLASS_ID = ClassID.IMAGE_TRANSFER
-    VERSION = Version.V0
+    VERSION = VERSION_0
     __blocks_for_update: list[bytearray]
     A_ELEMENTS = (ic.ICAElement("image_block_size", cdt.DoubleLongUnsigned),
                   ic.ICAElement("image_transferred_blocks_status", cdt.BitString, classifier=ic.Classifier.DYNAMIC),

@@ -2,6 +2,7 @@ import logging
 
 from ..__class_init__ import *
 from ...config_parser import get_message
+from ..overview import VERSION_0
 
 
 class Status(cdt.Enum, elements=tuple(range(6))):
@@ -61,7 +62,7 @@ class GSMDiagnostic(ic.COSEMInterfaceClasses):
      to obtain diagnostic information that allows identifying communication problems in the network. An instance of the 'GSM diagnostic' class stores parameters of the GSM/GPRS
      network necessary for analysing the operation of the network."""
     CLASS_ID = ClassID.GSM_DIAGNOSTIC
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("operator", cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("status", Status, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("cs_attachment", CSAttachment, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),

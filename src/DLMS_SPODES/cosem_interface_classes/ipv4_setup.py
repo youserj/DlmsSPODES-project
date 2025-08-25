@@ -1,5 +1,6 @@
 from .__class_init__ import *
 from ..types.implementations import double_long_usingneds, arrays
+from .overview import VERSION_0
 
 
 class IPOptionsElement(cdt.Structure):
@@ -17,7 +18,7 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     connection on which these settings are used. There shall be and instance of this IC in a device for each different network interface implemented. For example, if a device has
     two interfaces (using the TCP-UDP/ITv4 profile on both of them), there shall be two instances of the IPc4 setup IC in that device: one for each of these interfaces."""
     CLASS_ID = ClassID.IPV4_SETUP
-    VERSION = Version.V0
+    VERSION = VERSION_0
     # TODO: more 7 attr and 3 methods
     A_ELEMENTS = (ic.ICAElement("DL_reference", cst.LogicalName),
                   ic.ICAElement("IP_address", double_long_usingneds.IPAddress),

@@ -1,4 +1,5 @@
 from ..__class_init__ import *
+from ..overview import VERSION_0
 
 
 class SecurityPolicy(cdt.Enum, elements=tuple(range(16))):
@@ -30,7 +31,7 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
     and/or third party indentify by their respective system titles. They also provide methods to increase the level of security and to manage symmetric keys, asymmetric key pairs
      and certificates """
     CLASS_ID = ClassID.SECURITY_SETUP
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicy, 0, 3, 0),
                   ic.ICAElement("security_suite", SecuritySuite, 0, 0, 0),
                   ic.ICAElement("client_system_title", cdt.OctetString, classifier=ic.Classifier.DYNAMIC),

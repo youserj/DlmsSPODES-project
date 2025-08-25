@@ -1,5 +1,5 @@
 import unittest
-from src.DLMS_SPODES.cosem_interface_classes.overview import ClassID, Version
+from src.DLMS_SPODES.cosem_interface_classes.overview import ClassID, VERSION_1
 from src.DLMS_SPODES.types import ut, cst
 from src.DLMS_SPODES.cosem_interface_classes import collection
 
@@ -15,7 +15,7 @@ class TestType(unittest.TestCase):
         print(col)
         ss = col.add(
             class_id=ClassID.SECURITY_SETUP,
-            version=Version.V1,
+            version=VERSION_1,
             logical_name=cst.LogicalName.from_obis("0.0.43.0.0.255")
         )
         print(ss)

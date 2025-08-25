@@ -1,5 +1,6 @@
 from .__class_init__ import *
 from ..types.implementations import structs
+from .overview import VERSION_0
 
 
 class TYPE(cdt.Enum, elements=(1, 2, 3, 4, 5)):
@@ -22,7 +23,7 @@ class SingleActionSchedule(ic.COSEMInterfaceClasses):
     """ This IC allows modelling the execution of periodic actions within a meter. Such actions are not necessarily linked to tariffication
     (see “Activity calendar” or “Schedule”).  """
     CLASS_ID = ClassID.SINGLE_ACTION_SCHEDULE
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("executed_script", structs.ActionItem),
                   ic.ICAElement("type", TYPE),
                   ic.ICAElement("execution_time", ExecutionTime))

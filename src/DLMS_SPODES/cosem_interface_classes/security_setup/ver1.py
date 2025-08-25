@@ -1,5 +1,6 @@
 from . import ver0
 from ..__class_init__ import *
+from ..overview import VERSION_1
 from ...types import choices
 
 
@@ -99,11 +100,12 @@ class CertificateIdentification(choices.StructureMixin, cdt.Structure):
 
 
 class SecuritySetup(ver0.SecuritySetup):
-    VERSION = Version.V1
+    VERSION = VERSION_1
     A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicyVer1),
                   ic.ICAElement("security_suite", SecuritySuite),
-                  ver0.SecuritySetup.get_attr_element(4),
-                  ver0.SecuritySetup.get_attr_element(5),
+                  ver0.SecuritySetup.getAElement(3).unwrap(),
+                  ver0.SecuritySetup.getAElement(4).unwrap(),
+                  ver0.SecuritySetup.getAElement(5).unwrap(),
                   ic.ICAElement("certificates", Certificates, classifier=ic.Classifier.DYNAMIC))
 
     M_ELEMENTS = (ic.ICMElement("security_activate", SecurityPolicyVer1),

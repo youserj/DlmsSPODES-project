@@ -1,6 +1,7 @@
 import datetime
 from .__class_init__ import *
 from ..types.implementations import integers
+from .overview import VERSION_0
 
 
 class ClockStatus(cdt.Unsigned):
@@ -54,7 +55,7 @@ class TimeZone(cdt.Long):
 class Clock(ic.COSEMInterfaceClasses):
     """4.5.1 Clock"""
     CLASS_ID = ClassID.CLOCK
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("time_zone", TimeZone, -720, 840),
                   ic.ICAElement("status", ClockStatus, classifier=ic.Classifier.DYNAMIC),

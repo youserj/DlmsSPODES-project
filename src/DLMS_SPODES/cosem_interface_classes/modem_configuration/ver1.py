@@ -1,5 +1,6 @@
 from ..__class_init__ import *
 from . import ver0
+from ..overview import VERSION_1
 
 
 class InitializationStringElement(cdt.Structure):
@@ -19,8 +20,8 @@ class InitializationString(cdt.Array):
 
 class ModemConfigurationVer1(ic.COSEMInterfaceClasses):
     """ This IC allow modelling the configuration and initialisation of modems used for data transfer from/to a device. Several modems can be configured."""
-    CLASS_ID = ut.CosemClassId(27)
-    VERSION = Version.V1
+    ClassID = ut.CosemClassId(27)
+    VERSION = VERSION_1
     A_ELEMENTS = (ver0.PSTNModemConfiguration.get_attr_element(2),
                   ic.ICAElement("initialization_string", InitializationString),
                   ver0.PSTNModemConfiguration.get_attr_element(4))

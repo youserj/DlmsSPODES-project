@@ -1,5 +1,6 @@
 from typing_extensions import deprecated
 from typing import Self
+from .overview import VERSION_0
 from .__class_init__ import *
 from ..types.implementations import integers, octet_string
 
@@ -135,7 +136,7 @@ class DayProfileTable(cdt.Array):
 class ActivityCalendar(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
     CLASS_ID = ClassID.ACTIVITY_CALENDAR
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("calendar_name_active", octet_string.ID),
                   ic.ICAElement("season_profile_active", SeasonProfile),
                   ic.ICAElement("week_profile_table_active", WeekProfileTable),

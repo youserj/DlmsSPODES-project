@@ -57,7 +57,7 @@ from .tcp_udp_setup import TCPUDPSetup
 from .. import exceptions as exc
 from ..relation_to_OBIS import get_name
 from ..cosem_interface_classes import implementations as impl
-from ..cosem_interface_classes.overview import ClassID, Version, CountrySpecificIdentifiers
+from ..cosem_interface_classes.overview import ClassID, CountrySpecificIdentifiers
 from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
 from ..config_parser import config, get_message
@@ -742,7 +742,7 @@ class Collection:
                     except exc.EmptyObj as e:
                         logger.warning(F"can't copy {target} attr={i}, skipped. {e}")
 
-    def copy(self) -> result.Simple[Self]:
+    def copy(self) -> result.Simple["Collection"]:
         """copy collection with value by Association"""
         res = result.Simple(
             value=Collection(
@@ -779,7 +779,7 @@ class Collection:
                     target=new_obj,
                     association_id=ass_id)
             except Exception as e:
-                res.append_err(e)
+                res.append_e(e, "copy object value")
         return res
 
     @property
@@ -871,7 +871,7 @@ class Collection:
         """return: DLMSObject"""
         if obj := self.__objs.get(par.obis):
             return result.Simple(obj)
-        return result.Error.from_e(exc.NoObject(f"with {par=}"))
+        return result.Error.from_e(exc.NoObject(f"with {par=}"), "get object")
 
     def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
         """:return CDT by Parameter, return None if data wasn't setting"""
@@ -1122,12 +1122,12 @@ class Collection:
         return ret
 
     def sap2objects(self, value: enums.ClientSAP) -> result.List[ic.COSEMInterfaceClasses]:
-        res = result.List(msg=inspect.currentframe().f_code.co_qualname)
-        for ln in self.sap2association(value).get_lns():
-            try:
-                res.value.append(self.__get_object(ln.contents))
-            except exc.NoObject as e:
-                res.append_err(e)
+        res = result.List()
+        for par in self.sap2association(value).iter_pars():
+            if isinstance(res1 := self.par2obj(par), result.Error):
+                res1.append_err(res.err)
+            else:
+                res.append(res1.value)
         return res
 
     def iter_classID_objects(self,
@@ -1229,14 +1229,11 @@ class Collection:
         else:
             return obj
 
-    def obis2obj(self, obis: o.OBIS) -> result.Simple[InterfaceClass]:
-        res = result.Simple(
-            value=self.__objs.get(obis),
-            msg=inspect.currentframe().f_code.co_qualname
-        )
+    def obis2obj(self, obis: o.OBIS) -> result.Simple[InterfaceClass] | result.Error:
+        res = self.__objs.get(obis)
         if res.value is None:
-            res.append_err(exc.NoObject(obis))
-        return res
+            return result.Error.from_e(exc.NoObject(obis))
+        return result.Simple(res.value)
 
     def logicalName2obj(self, ln: cst.LogicalName) -> result.Simple[InterfaceClass]:
         return self.obis2obj(o.OBIS(ln.contents))

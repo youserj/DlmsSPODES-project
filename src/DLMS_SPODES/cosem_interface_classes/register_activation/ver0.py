@@ -1,7 +1,7 @@
 from ..__class_init__ import *
 from ...types import cst
 from ...types.implementations import long_unsigneds
-
+from ..overview import VERSION_0
 
 class ObjectDefinition(cdt.Structure):
     class_id: long_unsigneds.ClassId
@@ -30,7 +30,7 @@ class RegisterActivation(ic.COSEMInterfaceClasses):
     the nature of the process value or of the status value. The nature of the value is described by the attribute
     “logical name” using the OBIS identification system. """
     CLASS_ID = ClassID.REGISTER_ACTIVATION
-    VERSION = Version.V0
+    VERSION = VERSION_0
     A_ELEMENTS = (
         ic.ICAElement(
             NAME="register_assignment",

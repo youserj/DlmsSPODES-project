@@ -55,19 +55,19 @@ class TestType(unittest.TestCase):
         col.spec_map = "SPODES_3"
         reg = col.add(
             class_id=overview.ClassID.REGISTER,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName("01 00 01 07 00 ff")
         )
         col.add(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.Version.V1,
+            version=overview.VERSION_1,
             logical_name=cst.LogicalName("01 00 5e 07 04 ff")
         )
         reg.set_attr(2, cdt.DoubleLongUnsigned(1234567890).encoding)
         reg.set_attr(3, (-8, 33))
         activity_calendar_obj = col.add(
             class_id=overview.ClassID.ACTIVITY_CALENDAR,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName.from_obis("0.0.13.0.0.255")
         )
         activity_calendar_obj.parse_attr(
@@ -78,13 +78,13 @@ class TestType(unittest.TestCase):
             ])
         script_obj = col.add(
             class_id=overview.ClassID.SCRIPT_TABLE,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName("00 00 0a 00 64 ff")
         )
         script_obj.parse_attr(2, [['1', [['2', '3', "01 00 01 07 00 FF", '2', "0:"]]]])
         alarm1_obj = col.add(
             class_id=overview.ClassID.DATA,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName("00 00 61 62 00 FF")
         )
         alarm1_obj.set_attr(2, 11)
@@ -215,10 +215,10 @@ class TestType(unittest.TestCase):
         col.set_firm_ver(server_1_4_0)
         col.spec_map = col.get_spec()
         ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN,
-                          version=overview.Version.V1,
+                          version=overview.VERSION_1,
                           logical_name=cst.LogicalName.from_obis("0.0.40.0.3.255"))
         ver_obj = col.add(class_id=overview.ClassID.DATA,
-                          version=overview.Version.V0,
+                          version=overview.VERSION_0,
                           logical_name=cst.LogicalName.from_obis("0.0.0.2.1.255"))
         self.assertRaises(NeedUpdate,
                           ver_obj.set_attr,
@@ -352,7 +352,7 @@ class TestType(unittest.TestCase):
         col = collection.Collection()
         obj = col.add(
             class_id=overview.ClassID.DATA,
-            version=overview.Version.V0,
+            version=overview.VERSION_0,
             logical_name=cst.LogicalName.from_obis("0.128.25.6.0.255")
         )
         print(obj)
@@ -650,7 +650,7 @@ class TestType(unittest.TestCase):
         vol_ev_obj = col.get_object("0.0.96.11.0.255")
         vol_ev_obj.set_attr(2, 33)
         print(col.get_report(vol_ev_obj, b'\x02', vol_ev_obj.value))
-        col.add(collection.ClassID.DATA, overview.Version.V0, cst.LogicalName.from_obis("0.0.96.5.1.255"))
+        col.add(collection.ClassID.DATA, overview.VERSION_0, cst.LogicalName.from_obis("0.0.96.5.1.255"))
         vol_ev_obj = col.get_object("0.0.96.5.1.255")
         vol_ev_obj.set_attr(2, 5)
         print(col.get_report(vol_ev_obj, b'\x02', vol_ev_obj.value))
