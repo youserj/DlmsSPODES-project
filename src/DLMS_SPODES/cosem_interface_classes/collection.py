@@ -946,7 +946,7 @@ class Collection:
 
     def get_object(self, value: LNContaining) -> InterfaceClass:
         """ return object from obis<string> or raise exception if it absence """
-        return self.__get_object(lnContents2obis(value))
+        return self.obis2obj(lnContents2obis(value)).unwrap()
 
     @deprecated("use <par2rep>")
     def get_report(self,
@@ -1114,7 +1114,7 @@ class Collection:
         """return only association objects"""
         ret = list()
         for olt in self.getASSOCIATION(ass_id).object_list:
-            ret.append(self.__get_object(olt.logical_name.contents))
+            ret.append(self.par2obj(Parameter(olt.logical_name.contents)).unwrap())
         return ret
 
     def sap2objects(self, value: enums.ClientSAP) -> result.List[ic.COSEMInterfaceClasses]:
@@ -1137,11 +1137,6 @@ class Collection:
             if obj.logical_name in pat:
                 ret.append(obj)
         return ret
-
-
-    def get_attr(self, value: ut.CosemAttributeDescriptor) -> cdt.CommonDataTypes:
-        """attribute value from descriptor"""
-        return self.__get_object(value.instance_id.contents).get_attr(int(value.attribute_id))
 
     def get_first(self, values: list[str | bytes | cst.LogicalName]) -> InterfaceClass:
         """ return first object from it exist in collection from value"""
@@ -1199,7 +1194,7 @@ class Collection:
     def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:
         """ copy all attributes value from other and return bool result """
         try:
-            obj: InterfaceClass = self.__get_object(other.get_obis())
+            obj: InterfaceClass = self.par2obj(Parameter(other.logical_name.contents)).unwrap()
             for i, attr in other.get_index_with_attributes(in_init_order=True):
                 if i == 1:
                     continue
@@ -1217,18 +1212,10 @@ class Collection:
         else:
             return False
 
-    @deprecated("use <obis2obj>")
-    def __get_object(self, obis: bytes) -> InterfaceClass:
-        if (obj := self.__objs.get(obis)) is None:
-            logical_name = cst.LogicalName(bytearray(obis))
-            raise exc.NoObject(F"{get_name(logical_name)}:{logical_name} is absence")
-        else:
-            return obj
-
     def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[InterfaceClass]:
         if obj := self.__objs.get(obis):
-            return result.Error.from_e(exc.NoObject(obis))
-        return result.Simple(obj)
+            return result.Simple(obj)
+        return result.Error.from_e(exc.NoObject(obis))
 
     def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2obj(o.OBIS(ln.contents))
@@ -1317,14 +1304,14 @@ class Collection:
 
     def get_script_names(self, ln: cst.LogicalName, selector: cdt.LongUnsigned) -> str:
         """return name from script by selector"""
-        obj = self.__get_object(bytes(ln))
+        obj = self.par2obj(Parameter(ln.contents))
         if isinstance(obj, ScriptTable):
             for script in obj.scripts:
                 script: ScriptTable.scripts
                 if script.script_identifier == selector:
                     names: list[str] = list()
                     for action in script.actions:
-                        action_obj = self.__get_object(bytes(action.logical_name))
+                        action_obj = self.par2obj(Parameter(action.logical_name.contents)).unwrap()
                         if int(action_obj.CLASS_ID) != int(action.class_id):
                             raise ValueError(F"got {action_obj.CLASS_ID}, expected {action.class_id}")
                         match int(action.service_id):
@@ -1409,7 +1396,7 @@ class Collection:
     def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], Type[cdt.CommonDataType]]:
         """ return names and type of element from collection"""
         names: list[str] = list()
-        obj = self.__get_object(value.logical_name.contents)
+        obj = self.par2obj(Parameter(value.logical_name.contents)).unwrap()
         names.append(get_name(obj.logical_name))
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
