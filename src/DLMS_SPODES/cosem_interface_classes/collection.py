@@ -867,9 +867,7 @@ class Collection:
 
     def par2obj(self, par: Parameter) -> result.SimpleOrError[InterfaceClass]:
         """return: DLMSObject"""
-        if obj := self.__objs.get(par.obis):
-            return result.Simple(obj)
-        return result.Error.from_e(exc.NoObject(f"with {par=}"), "get object")
+        return self.obis2obj(par.obis)
 
     def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
         """:return CDT by Parameter, return None if data wasn't setting"""
@@ -1228,10 +1226,9 @@ class Collection:
             return obj
 
     def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[InterfaceClass]:
-        res = self.__objs.get(obis)
-        if res.value is None:
+        if obj := self.__objs.get(obis):
             return result.Error.from_e(exc.NoObject(obis))
-        return result.Simple(res.value)
+        return result.Simple(obj)
 
     def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2obj(o.OBIS(ln.contents))
