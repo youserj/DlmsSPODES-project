@@ -744,13 +744,11 @@ class Collection:
 
     def copy(self) -> result.Simple["Collection"]:
         """copy collection with value by Association"""
-        res = result.Simple(
-            value=Collection(
-                id_=self.id,
-                dlms_ver=self.__dlms_ver,
-                country=self.__country,
-                cntr_ver=self.__country_ver),
-            msg=inspect.currentframe().f_code.co_qualname
+        res = result.Simple(Collection(
+            id_=self.id,
+            dlms_ver=self.__dlms_ver,
+            country=self.__country,
+            cntr_ver=self.__country_ver)
         )
         res.value.spec_map = self.spec_map
         max_ass: AssociationLN | None = None
