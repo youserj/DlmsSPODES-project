@@ -1379,6 +1379,22 @@ class Collection:
         )
 
     @lru_cache(maxsize=1000)
+    def isnt_mutable(self,
+                   par: Parameter,
+                   association_id: int,
+                   security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                   ) -> bool:
+        """is not writable and STATIC data"""
+        if (
+            not self.is_writable(par.ln, par.i, association_id, security_policy, security_policy)
+            and self.par2obj(par
+                             ).unwrap().getAElement(par.i
+                                                    ).unwrap().classifier == ic.Classifier.STATIC
+        ):
+            return True
+        return False
+
+    @lru_cache(maxsize=1000)
     def is_accessible(self, ln: cst.LogicalName,
                       index: int,
                       association_id: int,

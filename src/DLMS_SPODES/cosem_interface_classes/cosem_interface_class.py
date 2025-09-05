@@ -8,20 +8,13 @@ from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Opti
 from ..types import cdt, ut, cst
 from StructResult import result
 from ..relation_to_OBIS import get_name
-import logging
 from enum import IntEnum
 from itertools import count
 from .. import exceptions as exc
 from .overview import ClassID
 from ..settings import settings
-from ..config_parser import get_values
 from .. import literals
 
-
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
-
-logger.info(F'Register start')
 
 _n_class = count(0)
 

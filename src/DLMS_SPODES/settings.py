@@ -478,11 +478,39 @@ class _AmNames(BaseModel):
     xDLMS_context_info: str = "xDLMS context info"
 
 
+class Conformance(BaseModel):
+    reserved_zero: str = "reserved-zero"
+    general_protection: str = "general-protection"
+    general_block_transfer: str = "general-block-transfer"
+    read: str = "read"
+    write: str = "write"
+    unconfirmed_write: str = "unconfirmed-write"
+    reserved_six: str = "reserved-six"
+    reserved_seven: str = "reserved-seven"
+    attribute0_supported_with_set: str = "attribute0-supported-with-set"
+    priority_mgmt_supported: str = "priority-mgmt-supported"
+    attribute0_supported_with_get: str = "attribute0-supported-with-get"
+    block_transfer_with_get_or_read: str = "block-transfer-with-get-or-read"
+    block_transfer_with_set_or_write: str = "block-transfer-with-set-or-write"
+    block_transfer_with_action: str = "block-transfer-with-action"
+    multiple_references: str = "multiple-references"
+    information_report: str = "information-report"
+    data_notification: str = "data-notification"
+    access: str = "access"
+    parameterized_access: str = "parameterized-access"
+    get: str = "get"
+    set: str = "set"
+    selective_access: str = "selective-access"
+    event_notification: str = "event-notification"
+    action: str = "action"
+
+
 class Settings(BaseModel):
     collection: _Collection = Field(default_factory=_Collection)
     report: _Report = Field(default_factory=_Report)
     firmwares: list[_Firmware] = Field(default_factory=list)
     am_names: _AmNames = Field(default_factory=_AmNames)
+    class_name: dict[int, str] = Field(default={1: "Data"})
 
 
 if not os.path.isfile(path := ".//config.toml"):

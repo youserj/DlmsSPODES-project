@@ -18,7 +18,8 @@ class ParValues[T]:
             raise StopIteration
 
     def __iter__(self) -> Iterator[Parameter | T]:
-        return iter((self.par, self.data))
+        yield self.par
+        yield self.data
 
     def __str__(self):
         return F"{self.par} - {self.data}"
@@ -26,4 +27,4 @@ class ParValues[T]:
 
 @dataclass(frozen=True)
 class ParData(ParValues[cdt.CommonDataType]):
-    data: Optional[cdt.CommonDataType]
+    data: cdt.CommonDataType

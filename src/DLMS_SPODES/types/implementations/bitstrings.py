@@ -1,5 +1,7 @@
 from ...types import common_data_types as cdt
 from ...config_parser import get_values
+from ...settings import settings
+
 
 base = get_values("DLMS", "Conformance")
 

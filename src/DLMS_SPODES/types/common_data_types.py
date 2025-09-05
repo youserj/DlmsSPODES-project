@@ -1669,7 +1669,7 @@ class OctetString(_String, SimpleDataType):
         temp = list()
         for i in self.contents:
             temp.append(i if i > 32 else 63)
-        return bytes(temp).decode(encoding)
+        return bytes(temp).decode(encoding, errors="ignore")
 
     def pretty_str(self) -> str:
         """decode to utf-8 or hex labal"""
