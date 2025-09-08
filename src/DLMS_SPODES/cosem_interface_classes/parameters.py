@@ -1,26 +1,41 @@
 from dataclasses import dataclass
 from functools import cached_property
+from typing import Self
 from .parameter import Parameter
 
 
-@dataclass
-class Base:
-    OBIS: Parameter
-
-    @cached_property
-    def LN(self) -> Parameter:
-        return self.OBIS.set_i(1)
+@dataclass(frozen=True)
+class Data(Parameter):
+    @property
+    def value(self) -> Parameter:
+        return self.get_attr(2)
 
 
-@dataclass
-class Data(Base):
-    @cached_property
-    def VALUE(self) -> Parameter:
-        return self.OBIS.set_i(2)
-
-
-@dataclass
+@dataclass(frozen=True)
 class Register(Data):
-    @cached_property
-    def SCALER_UNIT(self) -> Parameter:
-        return self.OBIS.set_i(3)
+    @property
+    def scaler_unit(self) -> Parameter:
+        return self.get_attr(3)
+
+
+@dataclass(frozen=True)
+class DisconnectControl(Parameter):
+
+    @classmethod
+    def from_b(cls, b: int) -> "DisconnectControl":
+        return cls.parse(f"0.{b}.96.3.10.255")
+
+    @property
+    def output_state(self) -> "DisconnectControl":
+        return self.get_attr(2)
+
+    @property
+    def control_state(self) -> "DisconnectControl":
+        return self.get_attr(3)
+
+    @property
+    def control_mode(self) -> "DisconnectControl":
+        return self.get_attr(4)
+
+
+DISCONNECT_CONTROL_0 = DisconnectControl.from_b(0)
