@@ -12,7 +12,9 @@ class Data(Parameter):
 
 
 class ActiveFirmwareIdentifier(Data):
-    def from_b(self, b: int) -> "ActiveFirmwareIdentifier":
+
+    @classmethod
+    def from_b(cls, b: int) -> "ActiveFirmwareIdentifier":
         return cls.parse(f"0.{b}.0.2.0.255")
 
 

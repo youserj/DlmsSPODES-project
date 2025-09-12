@@ -1,5 +1,5 @@
 from typing_extensions import deprecated
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from struct import Struct, pack, unpack_from
 from typing import Optional, cast, Iterator, Self
@@ -64,7 +64,7 @@ class Parameter:
     def logical_name(self) -> "Parameter":
         return self.get_attr(2)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Parameter):
             return cast("bool", self._value==other._value)
         return NotImplemented
@@ -115,12 +115,12 @@ class Parameter:
         """attribute or method index"""
         return self._value[7]
 
-    def get_attr(self, i: int) -> "Parameter":
+    def get_attr(self, i: int) -> Self:
         """get attribute"""
         val = Index.pack(0, i)
         return self.__class__(self._value[:6] + val)
 
-    def get_meth(self, i: int) -> "Parameter":
+    def get_meth(self, i: int) -> Self:
         """get method"""
         val = Index.pack(1, i)
         return self.__class__(self._value[:6] + val)
@@ -130,9 +130,9 @@ class Parameter:
         if len(self._value) == 6:
             tmp = self._value + val
         else:
-            tmp = bytearray(self._value)
-            tmp[6:8] = val
-            tmp = bytes(tmp)
+            tmp_ = bytearray(self._value)
+            tmp_[6:8] = val
+            tmp = bytes(tmp_)
         return self.__class__(tmp)
 
     def append_validate(self) -> None:
@@ -180,10 +180,12 @@ class Parameter:
     def piece(self) -> Optional[int]:
         if self.has_piece():
             return self._value[-1]
+        return None
 
     def clear_piece(self) -> "Parameter":
         if self.has_piece():
             return self.__class__(self._value[:-1])
+        return self
 
     def elements(self, start: int = 0) -> Iterator[int]:
         """return: index elements nested in attribute, started with"""
@@ -216,12 +218,12 @@ class Parameter:
         return max(0, (len(self._value) - 8) // 2)
 
     def set(self,
-            a: int = None,
-            b: int = None,
-            c: int = None,
-            d: int = None,
-            e: int = None,
-            f: int = None
+            a: Optional[int] = None,
+            b: Optional[int] = None,
+            c: Optional[int] = None,
+            d: Optional[int] = None,
+            e: Optional[int] = None,
+            f: Optional[int] = None
             ) -> "Parameter":
         val = bytearray(self._value)
         if a is not None:
@@ -238,12 +240,12 @@ class Parameter:
             val[5] = f
         return self.__class__(bytes(val))
 
-    def __contains__(self, item: "Parameter"):
+    def __contains__(self, item: "Parameter") -> bool:
         return item._value in self._value
 
-    def __getitem__(self, item) -> Optional[int]:
+    def __getitem__(self, item: int) -> Optional[int]:
         if self.n_elements > 0:
-            return unpack_from(">H", self._value, item * 2 + 8)[0]
+            return cast(int, unpack_from(">H", self._value, item * 2 + 8)[0])
         else:
             return None
 
@@ -296,12 +298,12 @@ class ParPattern:
     positions: tuple[int, ...]
     "7 elements , -1 is SKIP, last element is attribute index if positive and method index else negative"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if 6 > len(self.positions) > 7:
             raise ValueError(f"positions must have exactly 6 elements, got {len(self.positions)}")
 
     @classmethod
-    def parse(cls, pattern: str) -> 'LNPattern':
+    def parse(cls, pattern: str) -> "ParPattern":
         """Парсинг строк вида:
         - "a.0.(1,2,3).(0-64).0.f" (6 элементов)
         - "a.0.1.0.0.f:2" (6 элементов + индекс через :)
@@ -379,7 +381,7 @@ class ParPattern:
     @staticmethod
     def _parse_group(group_str: str) -> set[int]:
         """Парсинг групп вида '1,2,3' или '10-20'"""
-        elements = set()
+        elements: set[int] = set()
         for item in group_str.split(','):
             item = item.strip()
             if '-' in item:
@@ -392,7 +394,7 @@ class ParPattern:
     # @functools.cache
     def __hash__(self) -> int:
         print("hash")
-        hash_parts = []
+        hash_parts: list[Optional[bytes]] = []
         for pos in self.positions:
             if pos == -1:
                 hash_parts.append(None)
@@ -475,9 +477,9 @@ class ParPattern:
 class PatternMatcher:
     """Класс для быстрого сопоставления Parameter с ParPattern"""
     patterns: dict['ParPattern', str]
-    _masks: list[tuple[tuple[np.ndarray, ...], str]] = None
+    _masks: list[tuple[tuple[np.ndarray, ...], str]] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Предварительная обработка шаблонов
         masks = []
         for pattern, value in self.patterns.items():
