@@ -4,10 +4,6 @@ from struct import unpack, pack
 from functools import cached_property
 from typing import Deque
 from enum import IntFlag
-import logging
-
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
 
 _FLAG: int = 0x7e
 
@@ -750,13 +746,13 @@ class Frame:
             try:
                 return cls(value)
             except ValueError as e:
-                logger.info(F'Wrong Frame: {e.args[0]}')
+                print(F'Wrong Frame: {e.args[0]}')
                 return None
             except NotEnoughDataError as e:
-                logger.info(F'Frame Error: {e.args[0]}')
+                print(F'Frame Error: {e.args[0]}')
                 return None
             except FormatDataError as e:
-                logger.info(F'Frame Error: {e.args[0]}')
+                print(F'Frame Error: {e.args[0]}')
                 value.pop(0)
                 return None
 
@@ -819,7 +815,7 @@ class Frame:
                 info: bytearray = bytearray(frame.info)
                 break
             else:
-                logger.warning(F'Frame {frame} not handled and deleted')
+                print(F'Frame {frame} not handled and deleted')
         else:
             raise ValueError('Not found information Frame')
         while frame.is_segmentation:
@@ -831,7 +827,7 @@ class Frame:
                     info.extend(next_frame.info)
                     frame = next_frame
                 else:
-                    logger.warning(F'Frame {frame} not handled and deleted')
+                    print(F'Frame {frame} not handled and deleted')
         return info
 
 

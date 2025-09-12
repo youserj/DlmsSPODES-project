@@ -2,7 +2,7 @@ from typing_extensions import deprecated
 from dataclasses import dataclass
 import numpy as np
 from struct import Struct, pack, unpack_from
-from typing import Optional, cast, Iterator
+from typing import Optional, cast, Iterator, Self
 import re
 from functools import cached_property
 from .. import exceptions as exc
@@ -44,7 +44,7 @@ class Parameter:
         return self._value
 
     @classmethod
-    def parse(cls, value: str) -> "Parameter":
+    def parse(cls, value: str) -> Self:
         """create from string. Only LN, attr/meth type ddd.ddd.ddd.ddd.ddd.ddd:aaa, ex.: 0.0.1.0.0.255 """
         if (res := _pattern.fullmatch(value)) is None:
             raise ValueError(F"in {cls.__name__}.parse got wrong :{value:}")

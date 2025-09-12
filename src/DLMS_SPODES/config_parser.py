@@ -1,13 +1,9 @@
-import logging
 import os
 import tomllib
 from typing_extensions import deprecated
 
 
 print("Path: ", os.getcwd())
-
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
 
 
 @deprecated("use settings.settings")
@@ -20,7 +16,7 @@ def get_values(*args: str) -> dict | None:
             par = par[key]
             continue
         except KeyError as e:
-            logger.info(e.args[0])
+            print(f"error: {e.args[0]}")
             return None
     return par
 
@@ -28,10 +24,9 @@ def get_values(*args: str) -> dict | None:
 if not os.path.isfile(path := ".//config.toml"):
     path = F"{os.path.dirname(__file__)}{path}"
 elif not os.path.isfile(path):
-    logger.warning("NOT FIND CONFIGURATION: <config.toml>")
+    print("NOT FIND CONFIGURATION: <config.toml>")
 with open(path, "rb") as f:
     config = tomllib.load(f)
-    logger.info(F"Find configuration <config.toml> with path: {f}")
     print(F"Find configuration <config.toml> with path: {f}")
 
 _messages = get_values("DLMS", "messages")

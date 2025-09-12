@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional, Hashable
-import logging
 from semver import Version as SemVer
 from StructResult import result
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
@@ -275,8 +274,6 @@ _UNDER_OVER_LIMIT_MAGNITUDES = (34, 38)
 _NOT_PROCESSING_OF_MEASUREMENT_VALUES = tuple(set(range(256)).difference((0, 93, 94, 96, 97, 98, 99)))  # BlueBook DLMS UA 1000-1 Ed.14 7.5.2.1 Table 66
 _RU_CHANGE_LIMIT_LEVEL = 134
 
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
 
 
 @dataclass(frozen=True)
@@ -683,7 +680,7 @@ class Collection:
         """ all DLMS objects container with obis key """
 
     @property
-    def id(self) -> ID | None:
+    def id(self) -> ID:
         return self.__id
 
     def set_id(self, value: ID):
@@ -740,7 +737,7 @@ class Collection:
                             value=value.encoding,
                             data_type=source.get_attr(i).__class__)
                     except exc.EmptyObj as e:
-                        logger.warning(F"can't copy {target} attr={i}, skipped. {e}")
+                        print(F"can't copy {target} attr={i}, skipped. {e}")
 
     def copy(self) -> result.Simple["Collection"]:
         """copy collection with value by Association"""
@@ -898,7 +895,7 @@ class Collection:
                 func_map=func_maps[self.spec_map])(logical_name)
             new_object.collection = self
             self.__objs[o.OBIS(logical_name.contents)] = new_object
-            logger.info(F'Create {new_object}')
+            print(F'Create {new_object}')
             return new_object
         except ValueError as e:
             raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
@@ -1186,7 +1183,7 @@ class Collection:
                     obj=self.get_object(obj_def.logical_name),
                     par=bytes([int(obj_def.attribute_index)]))
             except ic.EmptyAttribute as e:
-                logger.error(F"Can't fill Scaler and Unit for {get_name(obj_def.logical_name)}: {e}")
+                print(F"Can't fill Scaler and Unit for {get_name(obj_def.logical_name)}: {e}")
             finally:
                 res.append(s_u)
         return res
@@ -1495,7 +1492,7 @@ class Collection:
                                     continue
                                 indexes.append(-i)
                             except exc.ITEApplication as e:
-                                logger.error(F"skip {i}... methods for {obj}: {e}")
+                                print(F"skip {i}... methods for {obj}: {e}")
                                 break
                     if len(indexes) != 0:
                         objects[obj] = indexes
@@ -2090,7 +2087,7 @@ class Template:
                 obj_col = col.get_object(ln)
             except exc.NoObject as e:
                 ret.append(e)
-                logger.warning(F"<add_collection> skip obj{self}: {e}")
+                print(F"<add_collection> skip obj{self}: {e}")
                 continue
             for i in indexes:
                 if (attr := obj.get_attr(i)) is not None:
