@@ -330,6 +330,7 @@ class COSEMInterfaceClasses(Protocol):
     __specific_methods: tuple[cdt.CommonDataType, ...] = None
     _cbs_attr_post_init: dict[int, Callable]
     collection: Any | None  # Collection. todo: remove in future
+    hash_: int
 
     def __init__(self, logical_name: cst.LogicalName | bytes | str):
         self.collection = None

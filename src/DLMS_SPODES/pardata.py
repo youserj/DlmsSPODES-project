@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .cosem_interface_classes import Parameter
+from .cosem_interface_classes.parameter import Parameter
 from typing import Optional, Iterator
 from .types import cdt
 
@@ -8,14 +8,6 @@ from .types import cdt
 class ParValues[T]:
     par:  Parameter
     data: T
-
-    def __getitem__(self, item):
-        if item == 0:
-            return self.par
-        elif item == 1:
-            return self.data
-        else:
-            raise StopIteration
 
     def __iter__(self) -> Iterator[Parameter | T]:
         yield self.par

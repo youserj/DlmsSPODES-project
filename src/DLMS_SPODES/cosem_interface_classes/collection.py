@@ -62,7 +62,7 @@ from .. import pdu_enums as pdu
 from ..config_parser import config, get_message
 from ..obis import media_id
 from .parameter import Parameter
-from typing_extensions import deprecated
+from typing_extensions import deprecated, override
 from ..settings import settings
 
 
@@ -97,8 +97,9 @@ SortMode: TypeAlias = Literal["l", "n", "c", "cl", "cn"]
 
 
 # todo: make new class ClassMap(for field Collection.spec_map). fields: name, version, dict(current version ClassMap)
-class ClassMap(dict):
-    def __hash__(self):
+class ClassMap(dict[int, ic.COSEMInterfaceClasses]):
+
+    def __hash__(self) -> int:
         return hash(tuple(it.hash_ for it in self.values()))
 
     def renew(self, ver: int, cls_: Type[InterfaceClass]) -> Self:
@@ -1120,7 +1121,7 @@ class Collection:
             if isinstance(res1 := self.par2obj(par), result.Error):
                 res1.append_err(res.err)
             else:
-                res.append(res1.value)
+                res.append(res1)
         return res
 
     def iter_classID_objects(self,
@@ -1631,7 +1632,7 @@ def get_sorted(objects: list[InterfaceClass],
                mode: SortMode) -> list[InterfaceClass]:
     """mode: l-logical_name, n-name, c-class_id
     """
-    mode = list(mode)
+    mode: list[str] = list(mode)
     while mode:
         match mode.pop():
             case "l":
@@ -1650,7 +1651,7 @@ class Channel:
     """for object filter approve"""
     n: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.is_channel(self.n):
             raise ValueError(F"got value={self.n}, expected (0..64)")
 
