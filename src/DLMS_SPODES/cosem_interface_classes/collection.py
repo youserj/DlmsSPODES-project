@@ -97,118 +97,63 @@ SortMode: TypeAlias = Literal["l", "n", "c", "cl", "cn"]
 
 
 # todo: make new class ClassMap(for field Collection.spec_map). fields: name, version, dict(current version ClassMap)
-class ClassMap(dict[int, ic.COSEMInterfaceClasses]):
+class ClassMap:
+
+    def __init__(self, *values: type[ic.COSEMInterfaceClasses]):
+        self._values = values
 
     def __hash__(self) -> int:
-        return hash(tuple(it.hash_ for it in self.values()))
+        return hash(it.hash_ for it in self._values)
 
-    def renew(self, ver: int, cls_: Type[InterfaceClass]) -> Self:
+    def get(self, ver: int) -> type[ic.COSEMInterfaceClasses]:
+        if (ver := int(ver)) < len(self._values):
+            return self._values.index(ver)
+        raise RuntimeError(f"got {ver=}, expected maximal={len(self._values)}")
+
+    def renew(self, ver: int, cls_: type[InterfaceClass]) -> Self:
         """return with one change"""
-        ret = self.__class__(self)
-        ret[ver] = cls_
-        return ret
+        if ver < (l := len(self._values)):
+            tmp = list(self._values)
+            tmp.insert(ver, cls_)
+            return self.__class__(*tmp)
+        if ver == l:
+            return self.__class__(*(self._values + cls_))
+        raise RuntimeError(f"got {ver=}, expected maximal={len(self._values)}")
 
 
-DataMap = ClassMap({
-    0: Data})
-DataStaticMap = ClassMap({
-    0: impl.data.DataStatic})
-DataDynamicMap = ClassMap({
-    0: impl.data.DataDynamic})
-RegisterMap = ClassMap({
-    0: Register})
-ExtendedRegisterMap = ClassMap({
-    0: ExtendedRegister})
-DemandRegisterMap = ClassMap({
-    0: DemandRegisterVer0})
-RegisterActivationMap = ClassMap({
-    0: RegisterActivation})
-ProfileGenericMap = ClassMap({
-    0: ProfileGenericVer0,
-    1: ProfileGenericVer1})
-ClockMap = ClassMap({
-    0: Clock})
-ScriptTableMap = ClassMap({
-    0: ScriptTable})
-ScheduleMap = ClassMap({
-    0: Schedule})
-SpecialDaysTableMap = ClassMap({
-    0: SpecialDaysTable
-})
-AssociationSNMap = ClassMap({
-    0: AssociationSNVer0,
-})
-AssociationLNMap = ClassMap({
-    0: AssociationLNVer0,
-    1: AssociationLNVer1,
-    2: AssociationLNVer2,
-})
-ImageTransferMap = ClassMap({
-    0: ImageTransfer
-})
-ActivityCalendarMap = ClassMap({
-    0: ActivityCalendar
-})
-RegisterMonitorMap = ClassMap({
-    0: RegisterMonitor
-})
-SingleActionScheduleMap = ClassMap({
-    0: SingleActionSchedule
-})
-IECHDLCSetupMap = ClassMap({
-    0: IECHDLCSetupVer0,
-    1: IECHDLCSetupVer1
-})
-ModemConfigurationMap = ClassMap({
-    0: PSTNModemConfiguration,
-    1: ModemConfigurationVer1
-})
-TCPUDPSetupMap = ClassMap({
-    0: TCPUDPSetup
-})
-IPv4SetupMap = ClassMap({
-    0: IPv4Setup
-})
-GPRSModemSetupMap = ClassMap({
-    0: GPRSModemSetup
-})
-GSMDiagnosticMap = ClassMap({
-    0: GSMDiagnosticVer0,
-    1: GSMDiagnosticVer1,
-    2: GSMDiagnosticVer2
-})
-PushSetupMap = ClassMap({
-    0: PushSetupVer0,
-    1: PushSetupVer1,
-    2: PushSetupVer2,
-})
-SecuritySetupMap = ClassMap({
-    0: SecuritySetupVer0,
-    1: SecuritySetupVer1
-})
-ArbitratorMap = ClassMap({
-    0: Arbitrator
-})
-DisconnectControlMap = ClassMap({
-    0: DisconnectControl
-})
-LimiterMap = ClassMap({
-    0: Limiter
-})
-NTPSetupMap = ClassMap({
-    0: NTPSetup
-})
+DataMap = ClassMap(Data)
+DataStaticMap = ClassMap(impl.data.DataStatic)
+DataDynamicMap = ClassMap(impl.data.DataDynamic)
+RegisterMap = ClassMap(Register)
+ExtendedRegisterMap = ClassMap(ExtendedRegister)
+DemandRegisterMap = ClassMap(DemandRegisterVer0)
+RegisterActivationMap = ClassMap(RegisterActivation)
+ProfileGenericMap = ClassMap(ProfileGenericVer0, ProfileGenericVer1)
+ClockMap = ClassMap(Clock)
+ScriptTableMap = ClassMap(ScriptTable)
+ScheduleMap = ClassMap(Schedule)
+SpecialDaysTableMap = ClassMap(SpecialDaysTable)
+AssociationSNMap = ClassMap(AssociationSNVer0)
+AssociationLNMap = ClassMap(AssociationLNVer0, AssociationLNVer1, AssociationLNVer2)
+ImageTransferMap = ClassMap(ImageTransfer)
+ActivityCalendarMap = ClassMap(ActivityCalendar)
+RegisterMonitorMap = ClassMap(RegisterMonitor)
+SingleActionScheduleMap = ClassMap(SingleActionSchedule)
+IECHDLCSetupMap = ClassMap(IECHDLCSetupVer0, IECHDLCSetupVer1)
+ModemConfigurationMap = ClassMap(PSTNModemConfiguration, ModemConfigurationVer1)
+TCPUDPSetupMap = ClassMap(TCPUDPSetup)
+IPv4SetupMap = ClassMap(IPv4Setup)
+GPRSModemSetupMap = ClassMap(GPRSModemSetup)
+GSMDiagnosticMap = ClassMap(GSMDiagnosticVer0, GSMDiagnosticVer1, GSMDiagnosticVer2)
+PushSetupMap = ClassMap(PushSetupVer0, PushSetupVer1, PushSetupVer2)
+SecuritySetupMap = ClassMap(SecuritySetupVer0, SecuritySetupVer1)
+ArbitratorMap = ClassMap(Arbitrator)
+DisconnectControlMap = ClassMap(DisconnectControl)
+LimiterMap = ClassMap(Limiter)
+NTPSetupMap = ClassMap(NTPSetup)
 
 # implementation ClassMap
-UnsignedDataMap = ClassMap({
-    0: impl.data.Unsigned
-})
-
-CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | DemandRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | \
-                           AssociationLNMap | ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | \
-                           TCPUDPSetupMap | IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | \
-                           NTPSetupMap
-
+UnsignedDataMap = ClassMap(impl.data.Unsigned)
 
 LN_C: TypeAlias = int
 LN_D: TypeAlias = int
@@ -244,16 +189,11 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
 }
 
 
-def get_interface_class(class_map: dict[int, CosemClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> Type[InterfaceClass]:
+def get_interface_class(class_map: dict[int, ClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> Type[InterfaceClass]:
     """new version <get_type_from_class>"""
     ret = class_map.get(int(c_id), None)
-    if ret:
-        ret2 = ret.get(int(ver), None)
-        """interface class type"""
-        if ret2:
-            return ret2
-        else:
-            raise CollectionMapError(F"got DLMS class version: {ver} for {c_id=}, expected: {", ".join(map(str, ret.keys()))}")
+    if isinstance(ret, ClassMap):
+        return ret.get(int(ver))
     else:
         if int(c_id) not in common_interface_class_map.keys():
             raise CollectionMapError(F"unknown {c_id=}")
@@ -284,11 +224,11 @@ class ObjectRelation:
 
 
 @lru_cache()
-def _create_map(maps: ClassMap | tuple[ClassMap]) -> dict[int, CosemClassMap]:
+def _create_map(maps: ClassMap | tuple[ClassMap]) -> dict[int, ClassMap]:
     if isinstance(maps, tuple):
         return {int(map_[0].CLASS_ID): map_ for map_ in maps}
     else:
-        return {int((tuple(maps.values())[0]).CLASS_ID): maps}
+        return {int((tuple(maps.get(0))).CLASS_ID): maps}
 
 
 A: TypeAlias = int
@@ -301,7 +241,7 @@ FOR_C: TypeAlias = tuple[A, C]
 FOR_CD: TypeAlias = tuple[A, C | tuple[C, ...], D] | tuple[A, tuple[C, ...], tuple[D, ...]]
 FOR_CDE: TypeAlias = tuple[A, C, D | tuple[D, ...], E | tuple[E, ...]]
 FOR_BCDE: TypeAlias = tuple[A, B, C, D, E | tuple[E, ...]]
-FUNC_MAP: TypeAlias = dict[bytes, dict[int, CosemClassMap]]
+FUNC_MAP: TypeAlias = dict[bytes, dict[int, ClassMap]]
 """ln.BCDE | ln.CDE | ln.CD | ln.C: {class_id: {version: CosemInterfaceClass}}"""
 
 
@@ -367,11 +307,14 @@ def get_func_map(for_create_map: dict) -> FUNC_MAP:
     return ret
 
 
-__func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[ClassMap, ...] | ClassMap] = {
+type PossibleClassMap = tuple[ClassMap, ...] | ClassMap
+
+
+__func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, PossibleClassMap] = {
     # abstract
     (0, 0, 1): DataMap,
     (0, 0, 2): DataMap,
-    (0, 0, 2, 1): ClassMap({0: impl.data.ActiveFirmwareId}),
+    (0, 0, 2, 1): ClassMap(impl.data.ActiveFirmwareId),
     (0, 0, 9): DataMap,
     (0, 1, 0): ClockMap,
     (0, 1, 1): DataMap,
@@ -419,13 +362,13 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[ClassMap,
     #
     (0, 0, 40, 0, tuple(range(8))): (AssociationSNMap, AssociationLNMap),  # todo: now limit by 8 association, solve it
     #
-    (0, 0, 42, 0, 0): ClassMap({0: impl.data.LDN}),
+    (0, 0, 42, 0, 0): ClassMap(impl.data.LDN),
     (0, 0, 43, 0, tuple(range(256))): SecuritySetupMap,
     (0, 43, 1): DataMap,
     #
     (0, 0, 44, 0, tuple(range(256))): ImageTransferMap,
     #
-    (0, 96, 1, tuple(range(0, 11))): ClassMap({0: impl.data.DLMSDeviceIDObject}),
+    (0, 96, 1, tuple(range(0, 11))): ClassMap(impl.data.DLMSDeviceIDObject),
     (0, 96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
     (0, 96, 2): DataDynamicMap,
     (0, 96, 3, tuple(range(0, 4))): DataMap,  # todo: add StatusMapping
@@ -440,7 +383,7 @@ __func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[ClassMap,
     (0, 96, 10, tuple(range(1, 10))): DataMap,  # todo: add StatusMapping
     (0, 96, 11, tuple(range(100))): (DataDynamicMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 12, (0, 1, 2, 3, 5, 6)): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 12, 4): ClassMap({0: impl.data.CommunicationPortParameter}),
+    (0, 96, 12, 4): ClassMap(impl.data.CommunicationPortParameter),
     (0, 96, 13, (0, 1)): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 14, tuple(range(16))): (DataMap, RegisterMap,  ExtendedRegisterMap),
     (0, 96, 15, tuple(range(100))): (DataMap, RegisterMap,  ExtendedRegisterMap),
@@ -484,33 +427,33 @@ func_maps["DLMS_6"] = get_func_map(__func_map_for_create)
 # SPODES3 Update
 __func_map_for_create.update({
     (0, 21, 0): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3DisplayReadout),
-    (0, 96, 1, (0, 2, 4, 5, 8, 9, 10)): ClassMap({0: impl.data.SPODES3IDNotSpecific}),
-    (0, 96, 1, 6): ClassMap({0: impl.data.SPODES3SPODESVersion}),
-    (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
-    (0, 96, 3, 20): ClassMap({0: impl.arbitrator.SPODES3Arbitrator}),
-    (0, 96, 4, 3): ClassMap({0: impl.data.SPODES3LoadLocker}),
-    (0, 96, 5, 1): ClassMap({0: impl.data.SPODES3PowerQuality2Event}),
-    (0, 96, 5, 4): ClassMap({0: impl.data.SPODES3PowerQuality1Event}),
-    (0, 96, 5, 132): ClassMap({0: impl.data.Unsigned}),  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
-    (0, 96, 11, 0): ClassMap({0: impl.data.SPODES3VoltageEvent}),
-    (0, 96, 11, 1): ClassMap({0: impl.data.SPODES3CurrentEvent}),
-    (0, 96, 11, 2): ClassMap({0: impl.data.SPODES3CommutationEvent}),
-    (0, 96, 11, 3): ClassMap({0: impl.data.SPODES3ProgrammingEvent}),
-    (0, 96, 11, 4): ClassMap({0: impl.data.SPODES3ExternalEvent}),
-    (0, 96, 11, 5): ClassMap({0: impl.data.SPODES3CommunicationEvent}),
-    (0, 96, 11, 6): ClassMap({0: impl.data.SPODES3AccessEvent}),
-    (0, 96, 11, 7): ClassMap({0: impl.data.SPODES3SelfDiagnosticEvent}),
-    (0, 96, 11, 8): ClassMap({0: impl.data.SPODES3ReactivePowerEvent}),
-    (0, 0, 96, 51, 0): ClassMap({0: impl.data.OpeningBody}),
-    (0, 0, 96, 51, 1): ClassMap({0: impl.data.OpeningCover}),
-    (0, 0, 96, 51, 3): ClassMap({0: impl.data.ExposureToMagnet}),
-    (0, 0, 96, 51, 4): ClassMap({0: impl.data.ExposureToHSField}),
-    (0, 0, 96, 51, 5): ClassMap({0: impl.data.SealStatus}),
+    (0, 96, 1, (0, 2, 4, 5, 8, 9, 10)): ClassMap(impl.data.SPODES3IDNotSpecific),
+    (0, 96, 1, 6): ClassMap(impl.data.SPODES3SPODESVersion),
+    (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap(impl.data.AnyDateTime),
+    (0, 96, 3, 20): ClassMap(impl.arbitrator.SPODES3Arbitrator),
+    (0, 96, 4, 3): ClassMap(impl.data.SPODES3LoadLocker),
+    (0, 96, 5, 1): ClassMap(impl.data.SPODES3PowerQuality2Event),
+    (0, 96, 5, 4): ClassMap(impl.data.SPODES3PowerQuality1Event),
+    (0, 96, 5, 132): ClassMap(impl.data.Unsigned),  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
+    (0, 96, 11, 0): ClassMap(impl.data.SPODES3VoltageEvent),
+    (0, 96, 11, 1): ClassMap(impl.data.SPODES3CurrentEvent),
+    (0, 96, 11, 2): ClassMap(impl.data.SPODES3CommutationEvent),
+    (0, 96, 11, 3): ClassMap(impl.data.SPODES3ProgrammingEvent),
+    (0, 96, 11, 4): ClassMap(impl.data.SPODES3ExternalEvent),
+    (0, 96, 11, 5): ClassMap(impl.data.SPODES3CommunicationEvent),
+    (0, 96, 11, 6): ClassMap(impl.data.SPODES3AccessEvent),
+    (0, 96, 11, 7): ClassMap(impl.data.SPODES3SelfDiagnosticEvent),
+    (0, 96, 11, 8): ClassMap(impl.data.SPODES3ReactivePowerEvent),
+    (0, 0, 96, 51, 0): ClassMap(impl.data.OpeningBody),
+    (0, 0, 96, 51, 1): ClassMap(impl.data.OpeningCover),
+    (0, 0, 96, 51, 3): ClassMap(impl.data.ExposureToMagnet),
+    (0, 0, 96, 51, 4): ClassMap(impl.data.ExposureToHSField),
+    (0, 0, 96, 51, 5): ClassMap(impl.data.SealStatus),
     (0, 0, 96, 51, (6, 7)): UnsignedDataMap,
-    (0, 0, 96, 51, (8, 9)): ClassMap({0: impl.data.OctetStringDateTime}),
-    (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.SPODES3Alarm1}),
+    (0, 0, 96, 51, (8, 9)): ClassMap(impl.data.OctetStringDateTime),
+    (0, 0, 97, 98, (0, 10, 20)): ClassMap(impl.data.SPODES3Alarm1),
     # electricity
-    (1, 0, 8, (4, 5)): ClassMap({0: impl.data.SPODES3MeasurementPeriod}),
+    (1, 0, 8, (4, 5)): ClassMap(impl.data.SPODES3MeasurementPeriod),
     (1, 98, 1): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3MonthProfile),
     (1, 98, 2): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3DailyProfile),
     (1, 99, (1, 2)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3LoadProfile),
@@ -526,27 +469,27 @@ func_maps["SPODES_3"] = get_func_map(__func_map_for_create)
 
 # KPZ Update
 __func_map_for_create.update({
-    (0, 96, 11, 4): ClassMap({0: impl.data.KPZSPODES3ExternalEvent}),
-    (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.KPZAlarm1}),
-    (0, 128, 25, 6, 0): ClassMap({0: impl.data.DataStatic}),
-    (0, 128, 96, 2, (0, 1, 2)): ClassMap({0: impl.data.KPZAFEOffsets}),
-    (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
-    (0, 128, 154, 0, 0): ClassMap({0: impl.data.KPZGSMPingIP}),
+    (0, 96, 11, 4): ClassMap(impl.data.KPZSPODES3ExternalEvent),
+    (0, 0, 97, 98, (0, 10, 20)): ClassMap(impl.data.KPZAlarm1),
+    (0, 128, 25, 6, 0): ClassMap(impl.data.DataStatic),
+    (0, 128, 96, 2, (0, 1, 2)): ClassMap(impl.data.KPZAFEOffsets),
+    (0, 128, 96, 13, 1): ClassMap(impl.data.ITEBitMap),
+    (0, 128, 154, 0, 0): ClassMap(impl.data.KPZGSMPingIP),
     (0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
     (128, 0, tuple(range(20)), 0, 0): RegisterMap
 })
 func_maps["KPZ"]: FUNC_MAP = get_func_map(__func_map_for_create)
 # KPZ1 with bag in log event profiles
 __func_map_for_create.update({
-    (0, 96, 11, 0): ClassMap({0: impl.data.KPZ1SPODES3VoltageEvent}),
-    (0, 96, 11, 1): ClassMap({0: impl.data.KPZ1SPODES3CurrentEvent}),
-    (0, 96, 11, 2): ClassMap({0: impl.data.KPZ1SPODES3CommutationEvent}),
-    (0, 96, 11, 3): ClassMap({0: impl.data.KPZ1SPODES3ProgrammingEvent}),
-    (0, 96, 11, 4): ClassMap({0: impl.data.KPZ1SPODES3ExternalEvent}),
-    (0, 96, 11, 5): ClassMap({0: impl.data.KPZ1SPODES3CommunicationEvent}),
-    (0, 96, 11, 6): ClassMap({0: impl.data.KPZ1SPODES3AccessEvent}),
-    (0, 96, 11, 7): ClassMap({0: impl.data.KPZ1SPODES3SelfDiagnosticEvent}),
-    (0, 96, 11, 8): ClassMap({0: impl.data.KPZ1SPODES3ReactivePowerEvent}),
+    (0, 96, 11, 0): ClassMap(impl.data.KPZ1SPODES3VoltageEvent),
+    (0, 96, 11, 1): ClassMap(impl.data.KPZ1SPODES3CurrentEvent),
+    (0, 96, 11, 2): ClassMap(impl.data.KPZ1SPODES3CommutationEvent),
+    (0, 96, 11, 3): ClassMap(impl.data.KPZ1SPODES3ProgrammingEvent),
+    (0, 96, 11, 4): ClassMap(impl.data.KPZ1SPODES3ExternalEvent),
+    (0, 96, 11, 5): ClassMap(impl.data.KPZ1SPODES3CommunicationEvent),
+    (0, 96, 11, 6): ClassMap(impl.data.KPZ1SPODES3AccessEvent),
+    (0, 96, 11, 7): ClassMap(impl.data.KPZ1SPODES3SelfDiagnosticEvent),
+    (0, 96, 11, 8): ClassMap(impl.data.KPZ1SPODES3ReactivePowerEvent),
 })
 func_maps["KPZ1"]: FUNC_MAP = get_func_map(__func_map_for_create)
 
@@ -556,7 +499,14 @@ def get_type(class_id: ut.CosemClassId,
              ln: cst.LogicalName,
              func_map: FUNC_MAP) -> Type[InterfaceClass]:
     """use DLMS UA 1000-1 Ed. 14 Table 54"""
-    if (128 <= ln.b <= 199) or (128 <= ln.c <= 199) or ln.c == 240 or (128 <= ln.d <= 254) or (128 <= ln.e <= 254) or (128 <= ln.f <= 254):
+    if (
+        (128 <= ln.b <= 199)
+        or (128 <= ln.c <= 199)
+        or ln.c == 240
+        or (128 <= ln.d <= 254)
+        or (128 <= ln.e <= 254)
+        or (128 <= ln.f <= 254)
+    ):
         # try search in ABCDE group for manufacture object before in CDE
         c_m = func_map.get(ln.contents[:5], common_interface_class_map)
     else:
