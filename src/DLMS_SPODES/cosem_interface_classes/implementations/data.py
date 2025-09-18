@@ -302,6 +302,15 @@ class KPZAlarm1(DataStatic):
     A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZAlarm1Values),
 
 
+class SPODES3ControlAlarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
+    ...
+
+
+class SPODES3ControlAlarm1(DataDynamic):
+    """СТО 34.01-5.1-006-2023v4 Таблица 13.5 Распределение событий отключения реле нагрузки по битам"""
+    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=SPODES3ControlAlarm1Values),
+
+
 class SPODES3PowerQuality1Event(DataNotSpecific):
     """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
     A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=SPODES3PowerQuality1EventValues),

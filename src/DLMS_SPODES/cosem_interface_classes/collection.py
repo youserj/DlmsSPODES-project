@@ -509,6 +509,7 @@ __func_map_for_create.update({
     (0, 0, 96, 51, (6, 7)): UnsignedDataMap,
     (0, 0, 96, 51, (8, 9)): ClassMap({0: impl.data.OctetStringDateTime}),
     (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.SPODES3Alarm1}),
+    (0, 0, 97, 98, (1, 11)): ClassMap({0: impl.data.SPODES3ControlAlarm1}),
     # electricity
     (1, 0, 8, (4, 5)): ClassMap({0: impl.data.SPODES3MeasurementPeriod}),
     (1, 98, 1): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3MonthProfile),
