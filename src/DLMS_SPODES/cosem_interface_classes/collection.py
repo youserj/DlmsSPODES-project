@@ -7,7 +7,7 @@ import inspect
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional, Hashable
+from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, cast, Annotated
 from semver import Version as SemVer
 from StructResult import result
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
@@ -97,124 +97,72 @@ SortMode: TypeAlias = Literal["l", "n", "c", "cl", "cn"]
 
 
 # todo: make new class ClassMap(for field Collection.spec_map). fields: name, version, dict(current version ClassMap)
-class ClassMap(dict[int, ic.COSEMInterfaceClasses]):
+class ClassMap:
+
+    def __init__(self, *values: type[InterfaceClass]):
+        self._values = values
 
     def __hash__(self) -> int:
-        return hash(tuple(it.hash_ for it in self.values()))
+        return hash(it.hash_ for it in self._values)
 
-    def renew(self, ver: int, cls_: Type[InterfaceClass]) -> Self:
+    def get(self, ver: int) -> type[InterfaceClass]:
+        if (ver := int(ver)) < len(self._values):
+            return self._values[ver]
+        raise RuntimeError(f"got {ver=}, expected maximal={len(self._values)}")
+
+    def renew(self, ver: int, cls_: type[InterfaceClass]) -> Self:
         """return with one change"""
-        ret = self.__class__(self)
-        ret[ver] = cls_
-        return ret
+        if ver < (l := len(self._values)):
+            tmp = list(self._values)
+            tmp.insert(ver, cls_)
+            return self.__class__(*tmp)
+        if ver == l:
+            return self.__class__(*(self._values + (cls_,)))
+        raise RuntimeError(f"got {ver=}, expected maximal={len(self._values)}")
+
+    def __str__(self) -> str:
+        return f"{self._values[0].CLASS_ID}[{len(self._values)}]"
 
 
-DataMap = ClassMap({
-    0: Data})
-DataStaticMap = ClassMap({
-    0: impl.data.DataStatic})
-DataDynamicMap = ClassMap({
-    0: impl.data.DataDynamic})
-RegisterMap = ClassMap({
-    0: Register})
-ExtendedRegisterMap = ClassMap({
-    0: ExtendedRegister})
-DemandRegisterMap = ClassMap({
-    0: DemandRegisterVer0})
-RegisterActivationMap = ClassMap({
-    0: RegisterActivation})
-ProfileGenericMap = ClassMap({
-    0: ProfileGenericVer0,
-    1: ProfileGenericVer1})
-ClockMap = ClassMap({
-    0: Clock})
-ScriptTableMap = ClassMap({
-    0: ScriptTable})
-ScheduleMap = ClassMap({
-    0: Schedule})
-SpecialDaysTableMap = ClassMap({
-    0: SpecialDaysTable
-})
-AssociationSNMap = ClassMap({
-    0: AssociationSNVer0,
-})
-AssociationLNMap = ClassMap({
-    0: AssociationLNVer0,
-    1: AssociationLNVer1,
-    2: AssociationLNVer2,
-})
-ImageTransferMap = ClassMap({
-    0: ImageTransfer
-})
-ActivityCalendarMap = ClassMap({
-    0: ActivityCalendar
-})
-RegisterMonitorMap = ClassMap({
-    0: RegisterMonitor
-})
-SingleActionScheduleMap = ClassMap({
-    0: SingleActionSchedule
-})
-IECHDLCSetupMap = ClassMap({
-    0: IECHDLCSetupVer0,
-    1: IECHDLCSetupVer1
-})
-ModemConfigurationMap = ClassMap({
-    0: PSTNModemConfiguration,
-    1: ModemConfigurationVer1
-})
-TCPUDPSetupMap = ClassMap({
-    0: TCPUDPSetup
-})
-IPv4SetupMap = ClassMap({
-    0: IPv4Setup
-})
-GPRSModemSetupMap = ClassMap({
-    0: GPRSModemSetup
-})
-GSMDiagnosticMap = ClassMap({
-    0: GSMDiagnosticVer0,
-    1: GSMDiagnosticVer1,
-    2: GSMDiagnosticVer2
-})
-PushSetupMap = ClassMap({
-    0: PushSetupVer0,
-    1: PushSetupVer1,
-    2: PushSetupVer2,
-})
-SecuritySetupMap = ClassMap({
-    0: SecuritySetupVer0,
-    1: SecuritySetupVer1
-})
-ArbitratorMap = ClassMap({
-    0: Arbitrator
-})
-DisconnectControlMap = ClassMap({
-    0: DisconnectControl
-})
-LimiterMap = ClassMap({
-    0: Limiter
-})
-NTPSetupMap = ClassMap({
-    0: NTPSetup
-})
+DataMap = ClassMap(Data)
+DataStaticMap = ClassMap(impl.data.DataStatic)
+DataDynamicMap = ClassMap(impl.data.DataDynamic)
+RegisterMap = ClassMap(Register)
+ExtendedRegisterMap = ClassMap(ExtendedRegister)
+DemandRegisterMap = ClassMap(DemandRegisterVer0)
+RegisterActivationMap = ClassMap(RegisterActivation)
+ProfileGenericMap = ClassMap(ProfileGenericVer0, ProfileGenericVer1)
+ClockMap = ClassMap(Clock)
+ScriptTableMap = ClassMap(ScriptTable)
+ScheduleMap = ClassMap(Schedule)
+SpecialDaysTableMap = ClassMap(SpecialDaysTable)
+AssociationSNMap = ClassMap(AssociationSNVer0)
+AssociationLNMap = ClassMap(AssociationLNVer0, AssociationLNVer1, AssociationLNVer2)
+ImageTransferMap = ClassMap(ImageTransfer)
+ActivityCalendarMap = ClassMap(ActivityCalendar)
+RegisterMonitorMap = ClassMap(RegisterMonitor)
+SingleActionScheduleMap = ClassMap(SingleActionSchedule)
+IECHDLCSetupMap = ClassMap(IECHDLCSetupVer0, IECHDLCSetupVer1)
+ModemConfigurationMap = ClassMap(PSTNModemConfiguration, ModemConfigurationVer1)
+TCPUDPSetupMap = ClassMap(TCPUDPSetup)
+IPv4SetupMap = ClassMap(IPv4Setup)
+GPRSModemSetupMap = ClassMap(GPRSModemSetup)
+GSMDiagnosticMap = ClassMap(GSMDiagnosticVer0, GSMDiagnosticVer1, GSMDiagnosticVer2)
+PushSetupMap = ClassMap(PushSetupVer0, PushSetupVer1, PushSetupVer2)
+SecuritySetupMap = ClassMap(SecuritySetupVer0, SecuritySetupVer1)
+ArbitratorMap = ClassMap(Arbitrator)
+DisconnectControlMap = ClassMap(DisconnectControl)
+LimiterMap = ClassMap(Limiter)
+NTPSetupMap = ClassMap(NTPSetup)
 
 # implementation ClassMap
-UnsignedDataMap = ClassMap({
-    0: impl.data.Unsigned
-})
-
-CosemClassMap: TypeAlias = DataMap | RegisterMap | ExtendedRegisterMap | DemandRegisterMap | ProfileGenericMap | ClockMap | ScriptTableMap | ScheduleMap | SpecialDaysTableMap | \
-                           AssociationLNMap | ImageTransferMap | ActivityCalendarMap | RegisterMonitorMap | SingleActionScheduleMap | IECHDLCSetupMap | ModemConfigurationMap | \
-                           TCPUDPSetupMap | IPv4SetupMap | GPRSModemSetupMap | GSMDiagnosticMap | SecuritySetupMap | ArbitratorMap | DisconnectControlMap | LimiterMap | \
-                           NTPSetupMap
-
+UnsignedDataMap = ClassMap(impl.data.Unsigned)
 
 LN_C: TypeAlias = int
 LN_D: TypeAlias = int
 
 
-common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] = {
+common_interface_class_map: dict[int, ClassMap] = {
     1: DataMap,
     3: RegisterMap,
     4: ExtendedRegisterMap,
@@ -244,16 +192,11 @@ common_interface_class_map: dict[int, dict[[int, None], Type[InterfaceClass]]] =
 }
 
 
-def get_interface_class(class_map: dict[int, CosemClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> Type[InterfaceClass]:
+def get_interface_class(class_map: dict[int, ClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> type[InterfaceClass]:
     """new version <get_type_from_class>"""
     ret = class_map.get(int(c_id), None)
-    if ret:
-        ret2 = ret.get(int(ver), None)
-        """interface class type"""
-        if ret2:
-            return ret2
-        else:
-            raise CollectionMapError(F"got DLMS class version: {ver} for {c_id=}, expected: {", ".join(map(str, ret.keys()))}")
+    if isinstance(ret, ClassMap):
+        return ret.get(int(ver))
     else:
         if int(c_id) not in common_interface_class_map.keys():
             raise CollectionMapError(F"unknown {c_id=}")
@@ -276,19 +219,12 @@ _NOT_PROCESSING_OF_MEASUREMENT_VALUES = tuple(set(range(256)).difference((0, 93,
 _RU_CHANGE_LIMIT_LEVEL = 134
 
 
-
-@dataclass(frozen=True)
-class ObjectRelation:
-    IC: int | tuple[int, ...] | ic.COSEMInterfaceClasses
-    Additional: bytes | dict | bool = None
-
-
 @lru_cache()
-def _create_map(maps: ClassMap | tuple[ClassMap]) -> dict[int, CosemClassMap]:
+def _create_map(maps: ClassMap | tuple[ClassMap]) -> dict[int, ClassMap]:
     if isinstance(maps, tuple):
-        return {int(map_[0].CLASS_ID): map_ for map_ in maps}
+        return {int(map_.get(0).CLASS_ID): map_ for map_ in maps}
     else:
-        return {int((tuple(maps.values())[0]).CLASS_ID): maps}
+        return {int(maps.get(0).CLASS_ID): maps}
 
 
 A: TypeAlias = int
@@ -297,185 +233,258 @@ C: TypeAlias = int
 D: TypeAlias = int
 E: TypeAlias = int
 
-FOR_C: TypeAlias = tuple[A, C]
-FOR_CD: TypeAlias = tuple[A, C | tuple[C, ...], D] | tuple[A, tuple[C, ...], tuple[D, ...]]
-FOR_CDE: TypeAlias = tuple[A, C, D | tuple[D, ...], E | tuple[E, ...]]
-FOR_BCDE: TypeAlias = tuple[A, B, C, D, E | tuple[E, ...]]
-FUNC_MAP: TypeAlias = dict[bytes, dict[int, CosemClassMap]]
+
+class Xgroup(Protocol):
+    fmt: str
+
+    def get_key(self) -> Iterator[bytes]:
+        ...
+
+
+class SimpleGroup(Xgroup, Protocol):
+    def get_key(self) -> Iterator[bytes]:
+        yield pack(self.fmt, *self)  # type: ignore[misc]
+
+
+class ACgroup(SimpleGroup, tuple[A, C]):
+    """Grouping of OBIS codes by group A (media) and group C (attribute).
+    Creates a composite key for objects sharing the same media type and attribute.
+    """
+    fmt = ">BB"
+
+
+class ACDgroup_(Xgroup, Protocol):
+    """Grouping of OBIS codes by groups A (media), C (attribute), and D (data) with mask support.
+    Supports exact values or masks for attribute (C) and data (D) groups.
+    Allows flexible grouping by media type with variable attribute and data patterns.
+    """
+    fmt: str = ">BBB"
+
+
+class ACDgroup(SimpleGroup, ACDgroup_, tuple[A, C, D]):
+    ...
+
+
+class ACCDgroup(ACDgroup_, tuple[A, tuple[C, ...], D]):
+    def get_key(self) -> Iterator[bytes]:
+        a, _, d = self
+        return (pack(self.fmt, a, c, d) for c in self[1])
+
+
+class ACDDgroup(ACDgroup_, tuple[A, C, tuple[D, ...]]):
+    def get_key(self) -> Iterator[bytes]:
+        a, c, _ = self
+        print(self)
+        return (pack(self.fmt, a, c, d) for d in self[2])
+
+
+class ACCDDgroup(ACDgroup_, tuple[A, tuple[C, ...], tuple[D, ...]]):
+    """Grouping of OBIS codes by groups A (media), C (attribute), and D (data) with mask support.
+    Supports exact values or masks for attribute (C) and data (D) groups.
+    Allows flexible grouping by media type with variable attribute and data patterns.
+    """
+    def get_key(self) -> Iterator[bytes]:
+        a = self[0]
+        return (pack(self.fmt, a, c, d) for c in self[1] for d in self[2])
+
+
+class ACDEgroup_(Xgroup, Protocol):
+    """Grouping of OBIS codes by groups A (media), C (attribute), D (data), and E (data version) with mask support.
+    Groups by fixed media and attribute with support for data and data version masks.
+    Enables precise control over data grouping with optional version filtering.
+    """
+    fmt: str = ">BBBB"
+
+
+class ACDEgroup(SimpleGroup, ACDEgroup_, tuple[A, C, D, E]):
+    ...
+
+
+class ACDDEgroup(ACDEgroup_, tuple[A, C, tuple[D, ...], E]):
+    def get_key(self) -> Iterator[bytes]:
+        a, c, _, e = self
+        return (pack(self.fmt, a, c, d, e) for d in self[2])
+
+
+
+class ACDEEgroup(ACDEgroup_, tuple[A, C, D, tuple[E, ...]]):
+    def get_key(self) -> Iterator[bytes]:
+        a, c, d, _ = self
+        return (pack(self.fmt, a, c, d, e) for e in self[3])
+
+
+class ACDDEEgroup(ACDEgroup_, tuple[A, C, tuple[D, ...], tuple[E, ...]]):
+    def get_key(self) -> Iterator[bytes]:
+        a, c, _, _ = self
+        return (pack(self.fmt, a, c, d, e) for d in self[2] for e in self[3])
+
+
+class ABCDEgroup_(Xgroup, Protocol):
+    """Grouping of OBIS codes by all OBIS groups A-E with data version mask support.
+
+    Comprehensive grouping by:
+    - A: media
+    - B: channel/interface
+    - C: attribute
+    - D: data
+    - E: data version (with mask support)
+
+    Provides complete OBIS code grouping with flexible version matching.
+    """
+    fmt: str = ">BBBBB"
+
+
+class ABCDEgroup(SimpleGroup, ABCDEgroup_, tuple[A, B, C, D, E]):
+    ...
+
+
+class ABCCDEgroup(ABCDEgroup_, tuple[A, B, tuple[C, ...], D, E]):
+    def get_key(self) -> Iterator[bytes]:
+        a, b, _, d, e = self
+        return (pack(self.fmt, a, b, c, d, e) for c in self[2])
+
+
+class ABCDEEgroup(ABCDEgroup_, tuple[A, B, C, D, tuple[E, ...]]):
+    def get_key(self) -> Iterator[bytes]:
+        a, b, c, d, _ = self
+        return (pack(self.fmt, a, b, c, d, e) for e in self[4])
+
+
+type PossibleGroup = ACgroup | ACDgroup_ | ACDEgroup | ABCDEgroup
+FUNC_MAP: TypeAlias = dict[bytes, dict[int, ClassMap]]
 """ln.BCDE | ln.CDE | ln.CD | ln.C: {class_id: {version: CosemInterfaceClass}}"""
 
 
-func_maps: dict[str, FUNC_MAP] = dict()
+func_maps: dict[str, FUNC_MAP] = {}
+type PossibleClassMap = tuple[ClassMap, ...] | ClassMap
 
 
-def get_func_map(for_create_map: dict) -> FUNC_MAP:
-    keys: list[bytes]
-    ret: FUNC_MAP = dict()
-    for it in for_create_map:
-        keys = list()
-        match len(it):
-            case 4:
-                match it[2], it[3]:
-                    case int(), tuple() as e_g:
-                        for e in e_g:
-                            keys.append(pack(">BBBB", it[0], it[1], it[2], e))
-                    case tuple() as d_g, int():
-                        for d in d_g:
-                            keys.append(pack(">BBBB", it[0], it[1], d, it[3]))
-                    case tuple() as d_g, tuple() as e_g:
-                        for d in d_g:
-                            for e in e_g:
-                                keys.append(pack(">BBBB", it[0], it[1], d, e))
-                    case int(), int():
-                        keys.append(bytes(it))
-                    case _:
-                        raise ValueError(F"unknown {it[2]=} and {it[3]=} in dict values: {it}")
-            case 3:
-                match it[1], it[2]:
-                    case int(), int():
-                        keys.append(bytes(it))
-                    case tuple() as c_g, int():
-                        for c in c_g:
-                            keys.append(pack(">BBB", it[0], c, it[2]))
-                    case int(), tuple() as d_g:
-                        for d in d_g:
-                            keys.append(pack(">BBB", it[0], it[1], d))
-                    case tuple() as c_g, tuple() as d_g:
-                        for c in c_g:
-                            for d in d_g:
-                                keys.append(pack(">BBB", it[0], c, d))
-                    case err:
-                        raise ValueError(F"unknown {it[1]=} in dict values: {err}")
-            case 5:
-                match it[2], it[4]:
-                    case int(), int():
-                        keys.append(bytes(it))
-                    case int(), tuple() as e_g:
-                        for e in e_g:
-                            keys.append(pack(">BBBBB", it[0], it[1], it[2], it[3], e))
-                    case tuple() as c_g, int():
-                        for c in c_g:
-                            keys.append(pack(">BBBBB", it[0], it[1], c, it[3], it[4]))
-                    case _:
-                        raise ValueError(F"unknown dict values: {it}")
-            case 2:
-                keys.append(bytes(it))
-            case err_len:
-                raise ValueError(F"got {err_len=} map_for_create, expect 2..5")
-        for k in keys:
-            ret[k] = _create_map(for_create_map[it])
+def get_func_map(for_create_map: dict[PossibleGroup, PossibleClassMap]) -> FUNC_MAP:
+    ret: FUNC_MAP = {}
+    for g in for_create_map:
+        for k in g.get_key():
+            ret[k] = _create_map(for_create_map[g])
     return ret
 
 
-__func_map_for_create: dict[FOR_C | FOR_CD | FOR_CDE | FOR_BCDE, tuple[ClassMap, ...] | ClassMap] = {
+__func_map_for_create: dict[PossibleGroup, PossibleClassMap] = {
     # abstract
-    (0, 0, 1): DataMap,
-    (0, 0, 2): DataMap,
-    (0, 0, 2, 1): ClassMap({0: impl.data.ActiveFirmwareId}),
-    (0, 0, 9): DataMap,
-    (0, 1, 0): ClockMap,
-    (0, 1, 1): DataMap,
-    (0, 1, 2): DataMap,
-    (0, 1, 3): DataMap,
-    (0, 1, 4): DataMap,
-    (0, 1, 5): DataMap,
-    (0, 1, 6): DataMap,
-    (0, 2, 0, 0): ModemConfigurationMap,
+    ACDgroup((0, 0, 1)): DataMap,
+    ACDgroup((0, 0, 2)): DataMap,
+    ACDEgroup((0, 0, 2, 1)): ClassMap(impl.data.ActiveFirmwareId),
+    ACDgroup((0, 0, 9)): DataMap,
+    ACDgroup((0, 1, 0)): ClockMap,
+    ACDgroup((0, 1, 1)): DataMap,
+    ACDgroup((0, 1, 2)): DataMap,
+    ACDgroup((0, 1, 3)): DataMap,
+    ACDgroup((0, 1, 4)): DataMap,
+    ACDgroup((0, 1, 5)): DataMap,
+    ACDgroup((0, 1, 6)): DataMap,
+    ACDEgroup((0, 2, 0, 0)): ModemConfigurationMap,
     #
-    (0, 10, 0, (0, 1, 125)+tuple(range(100, 112))): ScriptTableMap,
-    (0, 11, 0): SpecialDaysTableMap,
-    (0, 12, 0): ScheduleMap,
-    (0, 13, 0): ActivityCalendarMap,
-    (0, 14, 0): RegisterActivationMap,
-    (0, 15, 0, tuple(range(0, 8))): SingleActionScheduleMap,
-    (0, 16, 0): RegisterMonitorMap,
-    (0, 16, 1, tuple(range(0, 10))): RegisterMonitorMap,
+    ACDEEgroup((0, 10, 0, (0, 1, 125)+tuple(range(100, 112)))): ScriptTableMap,
+    ACDgroup((0, 11, 0)): SpecialDaysTableMap,
+    ACDgroup((0, 12, 0)): ScheduleMap,
+    ACDgroup((0, 13, 0)): ActivityCalendarMap,
+    ACDgroup((0, 14, 0)): RegisterActivationMap,
+    ACDEEgroup((0, 15, 0, tuple(range(0, 8)))): SingleActionScheduleMap,
+    ACDgroup((0, 16, 0)): RegisterMonitorMap,
+    ACDEEgroup((0, 16, 1, tuple(range(0, 10)))): RegisterMonitorMap,
     #
-    (0, 17, 0): LimiterMap,
+    ACDgroup((0, 17, 0)): LimiterMap,
     #
-    (0, 19, tuple(range(50, 60)), (1, 2)): DataMap,
+    ACDDEEgroup((0, 19, tuple(range(50, 60)), (1, 2))): DataMap,
     #
-    (0, 21, 0): (DataMap, ProfileGenericMap),
-    (0, 22, 0, 0): IECHDLCSetupMap,
+    ACDgroup((0, 21, 0)): (DataMap, ProfileGenericMap),
+    ACDEgroup((0, 22, 0, 0)): IECHDLCSetupMap,
     #
-    (0, 23, 2, 0): DataMap,
-    (0, 23, 3, tuple(range(0, 10))): (DataMap, ProfileGenericMap),
-    (0, 23, 3, tuple(range(10, 256))): DataMap,
+    ACDEgroup((0, 23, 2, 0)): DataMap,
+    ACDEEgroup((0, 23, 3, tuple(range(0, 10)))): (DataMap, ProfileGenericMap),
+    ACDEEgroup((0, 23, 3, tuple(range(10, 256)))): DataMap,
     #
-    (0, 24, 2): ExtendedRegisterMap,
-    (0, 24, 3): ProfileGenericMap,
-    (0, 24, 4, 0): DisconnectControlMap,
-    (0, 24, 5, 0): ProfileGenericMap,
+    ACDgroup((0, 24, 2)): ExtendedRegisterMap,
+    ACDgroup((0, 24, 3)): ProfileGenericMap,
+    ACDEgroup((0, 24, 4, 0)): DisconnectControlMap,
+    ACDEgroup((0, 24, 5, 0)): ProfileGenericMap,
     #
-    (0, 25, 0, 0): TCPUDPSetupMap,
-    (0, 25, 1, 0): IPv4SetupMap,
+    ACDEgroup((0, 25, 0, 0)): TCPUDPSetupMap,
+    ACDEgroup((0, 25, 1, 0)): IPv4SetupMap,
     #
-    (0, 25, 4, 0): GPRSModemSetupMap,
+    ACDEgroup((0, 25, 4, 0)): GPRSModemSetupMap,
     #
-    (0, 25, 6, 0): GSMDiagnosticMap,
+    ACDEgroup((0, 25, 6, 0)): GSMDiagnosticMap,
     #
-    (0, 25, 9, 0): PushSetupMap,
-    (0, 25, 10, 0): NTPSetupMap,
+    ACDEgroup((0, 25, 9, 0)): PushSetupMap,
+    ACDEgroup((0, 25, 10, 0)): NTPSetupMap,
     #
-    (0, 0, 40, 0, tuple(range(8))): (AssociationSNMap, AssociationLNMap),  # todo: now limit by 8 association, solve it
+    ABCDEEgroup((0, 0, 40, 0, tuple(range(8)))): (AssociationSNMap, AssociationLNMap),  # todo: now limit by 8 association, solve it
     #
-    (0, 0, 42, 0, 0): ClassMap({0: impl.data.LDN}),
-    (0, 0, 43, 0, tuple(range(256))): SecuritySetupMap,
-    (0, 43, 1): DataMap,
+    ABCDEgroup((0, 0, 42, 0, 0)): ClassMap(impl.data.LDN),
+    ABCDEEgroup((0, 0, 43, 0, tuple(range(256)))): SecuritySetupMap,
+    ACDgroup((0, 43, 1)): DataMap,
     #
-    (0, 0, 44, 0, tuple(range(256))): ImageTransferMap,
+    ABCDEEgroup((0, 0, 44, 0, tuple(range(256)))): ImageTransferMap,
     #
-    (0, 96, 1, tuple(range(0, 11))): ClassMap({0: impl.data.DLMSDeviceIDObject}),
-    (0, 96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
-    (0, 96, 2): DataDynamicMap,
-    (0, 96, 3, tuple(range(0, 4))): DataMap,  # todo: add StatusMapping
-    (0, 96, 3, 10): DisconnectControlMap,
-    (0, 96, 3, tuple(range(20, 29))): ArbitratorMap,
-    (0, 96, (4, 5), 0): (DataMap, ProfileGenericMap),  # todo: add RegisterTable, StatusMapping
-    (0, 96, (4, 5), (1, 2, 3, 4)): DataMap,  # todo: add StatusMapping
-    (0, 96, 6, tuple(range(0, 7))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 7, tuple(range(0, 22))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 8, tuple(range(0, 64))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 9, (0, 1, 2)): (RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 10, tuple(range(1, 10))): DataMap,  # todo: add StatusMapping
-    (0, 96, 11, tuple(range(100))): (DataDynamicMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 12, (0, 1, 2, 3, 5, 6)): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 12, 4): ClassMap({0: impl.data.CommunicationPortParameter}),
-    (0, 96, 13, (0, 1)): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 14, tuple(range(16))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 15, tuple(range(100))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 16, tuple(range(10))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 17, tuple(range(128))): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 96, 20): (DataMap, RegisterMap,  ExtendedRegisterMap),
-    (0, 97, 97, tuple(range(10))): DataMap,
-    (0, 97, (97, 98), 255): ProfileGenericMap,  # todo: add RegisterTable
-    (0, 97, 98, tuple(range(10))+tuple(range(10, 30))): DataMap,
-    (0, 98,): ProfileGenericMap,
-    (0, 99, 98): ProfileGenericMap,
+    ACDEEgroup((0, 96, 1, tuple(range(0, 11)))): ClassMap(impl.data.DLMSDeviceIDObject),
+    ACDEgroup((0, 96, 1, 255)): ProfileGenericMap,  # todo: add RegisterTable
+    ACDgroup((0, 96, 2)): DataDynamicMap,
+    ACDEEgroup((0, 96, 3, tuple(range(0, 4)))): DataMap,  # todo: add StatusMapping
+    ACDEgroup((0, 96, 3, 10)): DisconnectControlMap,
+    ACDEEgroup((0, 96, 3, tuple(range(20, 29)))): ArbitratorMap,
+    ACDDEgroup((0, 96, (4, 5), 0)): (DataMap, ProfileGenericMap),  # todo: add RegisterTable, StatusMapping
+    ACDDEEgroup((0, 96, (4, 5), (1, 2, 3, 4))): DataMap,  # todo: add StatusMapping
+    ACDEEgroup((0, 96, 6, tuple(range(0, 7)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 7, tuple(range(0, 22)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 8, tuple(range(0, 64)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 9, (0, 1, 2))): (RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 10, tuple(range(1, 10)))): DataMap,  # todo: add StatusMapping
+    ACDEEgroup((0, 96, 11, tuple(range(100)))): (DataDynamicMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 12, (0, 1, 2, 3, 5, 6))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEgroup((0, 96, 12, 4)): ClassMap(impl.data.CommunicationPortParameter),
+    ACDEEgroup((0, 96, 13, (0, 1))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 14, tuple(range(16)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 15, tuple(range(100)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 16, tuple(range(10)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 96, 17, tuple(range(128)))): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDgroup((0, 96, 20)): (DataMap, RegisterMap,  ExtendedRegisterMap),
+    ACDEEgroup((0, 97, 97, tuple(range(10)))): DataMap,
+    ACDDEgroup((0, 97, (97, 98), 255)): ProfileGenericMap,  # todo: add RegisterTable
+    ACDEEgroup((0, 97, 98, tuple(range(10))+tuple(range(10, 30)))): DataMap,
+    ACgroup((0, 98)): ProfileGenericMap,
+    ACDgroup((0, 99, 98)): ProfileGenericMap,
     # electricity
-    (1, 0, 0, tuple(range(10))): DataMap,
-    (1, 0, 0, 255): ProfileGenericMap,  # todo: add RegisterTable
-    (1, 0, 1): DataMap,
-    (1, 0, 2): DataStaticMap,
-    (1, 0, (3, 4, 7, 8, 9)): (DataStaticMap, RegisterMap, ExtendedRegisterMap),
-    (1, 0, (6, 10)): (RegisterMap, ExtendedRegisterMap),
-    (1, 0, 11, tuple(range(1, 8))): DataMap,
-    (1, 96, 1, tuple(range(10))): DataMap,
-    (1, 96, 1, 255): ProfileGenericMap,  # todo: add RegisterTable
-    (1, 96, 5, (0, 1, 2, 3, 4, 5)): DataMap,  # todo: add StatusMapping
-    (1, 96, 10, (0, 1, 2, 3)): DataMap,  # todo: add StatusMapping
-    (1, 98,): ProfileGenericMap,
-    (1, 99, (1, 2, 11, 12, 97, 98, 99)): ProfileGenericMap,
-    (1, 99, (3, 13, 14), 0): ProfileGenericMap,
-    (1, 99, 10, (1, 2, 3)): ProfileGenericMap,
-    (1, _CUMULATIVE, _RU_CHANGE_LIMIT_LEVEL): RegisterMap,
-    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, tuple(chain(_CUMULATIVE, _TIME_INTEGRAL_VALUES, _CONTRACTED_VALUES,
-                                                           _UNDER_OVER_LIMIT_THRESHOLDS, _UNDER_OVER_LIMIT_OCCURRENCE_COUNTERS,
-                                                           _UNDER_OVER_LIMIT_DURATIONS, _UNDER_OVER_LIMIT_MAGNITUDES))): (RegisterMap, ExtendedRegisterMap),
-    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _INSTANTANEOUS_VALUES): RegisterMap,
-    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _MAX_MIN_VALUES): (RegisterMap, ExtendedRegisterMap, ProfileGenericMap),
-    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _CURRENT_AND_LAST_AVERAGE_VALUES): (RegisterMap, DemandRegisterMap),
-    (1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, 40): (DataMap, RegisterMap),
+    ACDEEgroup((1, 0, 0, tuple(range(10)))): DataMap,
+    ACDEgroup((1, 0, 0, 255)): ProfileGenericMap,  # todo: add RegisterTable
+    ACDgroup((1, 0, 1)): DataMap,
+    ACDgroup((1, 0, 2)): DataStaticMap,
+    ACDDgroup((1, 0, (3, 4, 7, 8, 9))): (DataStaticMap, RegisterMap, ExtendedRegisterMap),
+    ACDDgroup((1, 0, (6, 10))): (RegisterMap, ExtendedRegisterMap),
+    ACDEEgroup((1, 0, 11, tuple(range(1, 8)))): DataMap,
+    ACDEEgroup((1, 96, 1, tuple(range(10)))): DataMap,
+    ACDEgroup((1, 96, 1, 255)): ProfileGenericMap,  # todo: add RegisterTable
+    ACDEEgroup((1, 96, 5, (0, 1, 2, 3, 4, 5))): DataMap,  # todo: add StatusMapping
+    ACDEEgroup((1, 96, 10, (0, 1, 2, 3))): DataMap,  # todo: add StatusMapping
+    ACgroup((1, 98)): ProfileGenericMap,
+    ACDDgroup((1, 99, (1, 2, 11, 12, 97, 98, 99))): ProfileGenericMap,
+    ACDDEgroup((1, 99, (3, 13, 14), 0)): ProfileGenericMap,
+    ACDEEgroup((1, 99, 10, (1, 2, 3))): ProfileGenericMap,
+    ACCDgroup((1, _CUMULATIVE, _RU_CHANGE_LIMIT_LEVEL)): RegisterMap,
+    ACCDDgroup((
+        1,
+        _NOT_PROCESSING_OF_MEASUREMENT_VALUES,
+        tuple(chain(
+            _CUMULATIVE,
+            _TIME_INTEGRAL_VALUES,
+            _CONTRACTED_VALUES,
+            _UNDER_OVER_LIMIT_THRESHOLDS,
+            _UNDER_OVER_LIMIT_OCCURRENCE_COUNTERS,
+            _UNDER_OVER_LIMIT_DURATIONS,
+            _UNDER_OVER_LIMIT_MAGNITUDES
+        )))): (RegisterMap, ExtendedRegisterMap),
+    ACCDDgroup((1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _INSTANTANEOUS_VALUES)): RegisterMap,
+    ACCDDgroup((1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _MAX_MIN_VALUES)): (RegisterMap, ExtendedRegisterMap, ProfileGenericMap),
+    ACCDDgroup((1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, _CURRENT_AND_LAST_AVERAGE_VALUES)): (RegisterMap, DemandRegisterMap),
+    ACCDgroup((1, _NOT_PROCESSING_OF_MEASUREMENT_VALUES, 40)): (DataMap, RegisterMap),
 }
 
 func_maps["DLMS_6"] = get_func_map(__func_map_for_create)
@@ -483,93 +492,101 @@ func_maps["DLMS_6"] = get_func_map(__func_map_for_create)
 
 # SPODES3 Update
 __func_map_for_create.update({
-    (0, 21, 0): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3DisplayReadout),
-    (0, 96, 1, (0, 2, 4, 5, 8, 9, 10)): ClassMap({0: impl.data.SPODES3IDNotSpecific}),
-    (0, 96, 1, 6): ClassMap({0: impl.data.SPODES3SPODESVersion}),
-    (0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12)): ClassMap({0: impl.data.AnyDateTime}),
-    (0, 96, 3, 20): ClassMap({0: impl.arbitrator.SPODES3Arbitrator}),
-    (0, 96, 4, 3): ClassMap({0: impl.data.SPODES3LoadLocker}),
-    (0, 96, 5, 1): ClassMap({0: impl.data.SPODES3PowerQuality2Event}),
-    (0, 96, 5, 4): ClassMap({0: impl.data.SPODES3PowerQuality1Event}),
-    (0, 96, 5, 132): ClassMap({0: impl.data.Unsigned}),  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
-    (0, 96, 11, 0): ClassMap({0: impl.data.SPODES3VoltageEvent}),
-    (0, 96, 11, 1): ClassMap({0: impl.data.SPODES3CurrentEvent}),
-    (0, 96, 11, 2): ClassMap({0: impl.data.SPODES3CommutationEvent}),
-    (0, 96, 11, 3): ClassMap({0: impl.data.SPODES3ProgrammingEvent}),
-    (0, 96, 11, 4): ClassMap({0: impl.data.SPODES3ExternalEvent}),
-    (0, 96, 11, 5): ClassMap({0: impl.data.SPODES3CommunicationEvent}),
-    (0, 96, 11, 6): ClassMap({0: impl.data.SPODES3AccessEvent}),
-    (0, 96, 11, 7): ClassMap({0: impl.data.SPODES3SelfDiagnosticEvent}),
-    (0, 96, 11, 8): ClassMap({0: impl.data.SPODES3ReactivePowerEvent}),
-    (0, 0, 96, 51, 0): ClassMap({0: impl.data.OpeningBody}),
-    (0, 0, 96, 51, 1): ClassMap({0: impl.data.OpeningCover}),
-    (0, 0, 96, 51, 3): ClassMap({0: impl.data.ExposureToMagnet}),
-    (0, 0, 96, 51, 4): ClassMap({0: impl.data.ExposureToHSField}),
-    (0, 0, 96, 51, 5): ClassMap({0: impl.data.SealStatus}),
-    (0, 0, 96, 51, (6, 7)): UnsignedDataMap,
-    (0, 0, 96, 51, (8, 9)): ClassMap({0: impl.data.OctetStringDateTime}),
-    (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.SPODES3Alarm1}),
-    (0, 0, 97, 98, (1, 11)): ClassMap({0: impl.data.SPODES3ControlAlarm1}),
+    ACDgroup((0, 21, 0)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3DisplayReadout),
+    ACDEEgroup((0, 96, 1, (0, 2, 4, 5, 8, 9, 10))): ClassMap(impl.data.SPODES3IDNotSpecific),
+    ACDEgroup((0, 96, 1, 6)): ClassMap(impl.data.SPODES3SPODESVersion),
+    ACDEEgroup((0, 96, 2, (1, 2, 3, 5, 6, 7, 11, 12))): ClassMap(impl.data.AnyDateTime),
+    ACDEgroup((0, 96, 3, 20)): ClassMap(impl.arbitrator.SPODES3Arbitrator),
+    ACDEgroup((0, 96, 4, 3)): ClassMap(impl.data.SPODES3LoadLocker),
+    ACDEgroup((0, 96, 5, 1)): ClassMap(impl.data.SPODES3PowerQuality2Event),
+    ACDEgroup((0, 96, 5, 4)): ClassMap(impl.data.SPODES3PowerQuality1Event),
+    ACDEgroup((0, 96, 5, 132)): ClassMap(impl.data.Unsigned),  # TODO: make according with СПОДЭС3 13.9. Контроль чередования фаз
+    ACDEgroup((0, 96, 11, 0)): ClassMap(impl.data.SPODES3VoltageEvent),
+    ACDEgroup((0, 96, 11, 1)): ClassMap(impl.data.SPODES3CurrentEvent),
+    ACDEgroup((0, 96, 11, 2)): ClassMap(impl.data.SPODES3CommutationEvent),
+    ACDEgroup((0, 96, 11, 3)): ClassMap(impl.data.SPODES3ProgrammingEvent),
+    ACDEgroup((0, 96, 11, 4)): ClassMap(impl.data.SPODES3ExternalEvent),
+    ACDEgroup((0, 96, 11, 5)): ClassMap(impl.data.SPODES3CommunicationEvent),
+    ACDEgroup((0, 96, 11, 6)): ClassMap(impl.data.SPODES3AccessEvent),
+    ACDEgroup((0, 96, 11, 7)): ClassMap(impl.data.SPODES3SelfDiagnosticEvent),
+    ACDEgroup((0, 96, 11, 8)): ClassMap(impl.data.SPODES3ReactivePowerEvent),
+    ABCDEgroup((0, 0, 96, 51, 0)): ClassMap(impl.data.OpeningBody),
+    ABCDEgroup((0, 0, 96, 51, 1)): ClassMap(impl.data.OpeningCover),
+    ABCDEgroup((0, 0, 96, 51, 3)): ClassMap(impl.data.ExposureToMagnet),
+    ABCDEgroup((0, 0, 96, 51, 4)): ClassMap(impl.data.ExposureToHSField),
+    ABCDEgroup((0, 0, 96, 51, 5)): ClassMap(impl.data.SealStatus),
+    ABCDEEgroup((0, 0, 96, 51, (6, 7))): UnsignedDataMap,
+    ABCDEEgroup((0, 0, 96, 51, (8, 9))): ClassMap(impl.data.OctetStringDateTime),
+    ABCDEEgroup((0, 0, 97, 98, (0, 10, 20))): ClassMap(impl.data.SPODES3Alarm1),
+    ABCDEEgroup((0, 0, 97, 98, (1, 11))): ClassMap({0: impl.data.SPODES3ControlAlarm1}),
     # electricity
-    (1, 0, 8, (4, 5)): ClassMap({0: impl.data.SPODES3MeasurementPeriod}),
-    (1, 98, 1): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3MonthProfile),
-    (1, 98, 2): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3DailyProfile),
-    (1, 99, (1, 2)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3LoadProfile),
-    (1, 0, 131, 35, 0): RegisterMap,
-    (1, 0, 133, 35, 0): RegisterMap,
-    (1, 0, 147, 133, 0): RegisterMap,
-    (1, 0, 148, 136, 0): RegisterMap,
-    (1, 94, 7, 0): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3CurrentProfile),
-    (1, 94, 7, (1, 2, 3, 4, 5, 6)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3ScalesProfile),  # Todo: RU. Scaler-profile With 1 entry and more
+    ACDEEgroup((1, 0, 8, (4, 5))): ClassMap(impl.data.SPODES3MeasurementPeriod),
+    ACDgroup((1, 98, 1)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3MonthProfile),
+    ACDgroup((1, 98, 2)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3DailyProfile),
+    ACDDgroup((1, 99, (1, 2))): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3LoadProfile),
+    ABCDEgroup((1, 0, 131, 35, 0)): RegisterMap,
+    ABCDEgroup((1, 0, 133, 35, 0)): RegisterMap,
+    ABCDEgroup((1, 0, 147, 133, 0)): RegisterMap,
+    ABCDEgroup((1, 0, 148, 136, 0)): RegisterMap,
+    ACDEgroup((1, 94, 7, 0)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3CurrentProfile),
+    ACDEEgroup((1, 94, 7, (1, 2, 3, 4, 5, 6))): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3ScalesProfile),  # Todo: RU. Scaler-profile With 1 entry and more
 })
 
 func_maps["SPODES_3"] = get_func_map(__func_map_for_create)
 
 # KPZ Update
 __func_map_for_create.update({
-    (0, 96, 11, 4): ClassMap({0: impl.data.KPZSPODES3ExternalEvent}),
-    (0, 0, 97, 98, (0, 10, 20)): ClassMap({0: impl.data.KPZAlarm1}),
-    (0, 128, 25, 6, 0): ClassMap({0: impl.data.DataStatic}),
-    (0, 128, 96, 2, (0, 1, 2)): ClassMap({0: impl.data.KPZAFEOffsets}),
-    (0, 128, 96, 13, 1): ClassMap({0: impl.data.ITEBitMap}),
-    (0, 128, 154, 0, 0): ClassMap({0: impl.data.KPZGSMPingIP}),
-    (0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170)): DataMap,
-    (128, 0, tuple(range(20)), 0, 0): RegisterMap
+    ACDEgroup((0, 96, 11, 4)): ClassMap(impl.data.KPZSPODES3ExternalEvent),
+    ABCDEEgroup((0, 0, 97, 98, (0, 10, 20))): ClassMap(impl.data.KPZAlarm1),
+    ABCDEgroup((0, 128, 25, 6, 0)): ClassMap(impl.data.DataStatic),
+    ABCDEEgroup((0, 128, 96, 2, (0, 1, 2))): ClassMap(impl.data.KPZAFEOffsets),
+    ABCDEgroup((0, 128, 96, 13, 1)): ClassMap(impl.data.ITEBitMap),
+    ABCDEgroup((0, 128, 154, 0, 0)): ClassMap(impl.data.KPZGSMPingIP),
+    ACDEEgroup((0, 0, 128, (100, 101, 102, 103, 150, 151, 152, 170))): DataMap,
+    ABCCDEgroup((128, 0, tuple(range(20)), 0, 0)): RegisterMap
 })
-func_maps["KPZ"]: FUNC_MAP = get_func_map(__func_map_for_create)
+func_maps["KPZ"] = get_func_map(__func_map_for_create)
 # KPZ1 with bag in log event profiles
 __func_map_for_create.update({
-    (0, 96, 11, 0): ClassMap({0: impl.data.KPZ1SPODES3VoltageEvent}),
-    (0, 96, 11, 1): ClassMap({0: impl.data.KPZ1SPODES3CurrentEvent}),
-    (0, 96, 11, 2): ClassMap({0: impl.data.KPZ1SPODES3CommutationEvent}),
-    (0, 96, 11, 3): ClassMap({0: impl.data.KPZ1SPODES3ProgrammingEvent}),
-    (0, 96, 11, 4): ClassMap({0: impl.data.KPZ1SPODES3ExternalEvent}),
-    (0, 96, 11, 5): ClassMap({0: impl.data.KPZ1SPODES3CommunicationEvent}),
-    (0, 96, 11, 6): ClassMap({0: impl.data.KPZ1SPODES3AccessEvent}),
-    (0, 96, 11, 7): ClassMap({0: impl.data.KPZ1SPODES3SelfDiagnosticEvent}),
-    (0, 96, 11, 8): ClassMap({0: impl.data.KPZ1SPODES3ReactivePowerEvent}),
+    ACDEgroup((0, 96, 11, 0)): ClassMap(impl.data.KPZ1SPODES3VoltageEvent),
+    ACDEgroup((0, 96, 11, 1)): ClassMap(impl.data.KPZ1SPODES3CurrentEvent),
+    ACDEgroup((0, 96, 11, 2)): ClassMap(impl.data.KPZ1SPODES3CommutationEvent),
+    ACDEgroup((0, 96, 11, 3)): ClassMap(impl.data.KPZ1SPODES3ProgrammingEvent),
+    ACDEgroup((0, 96, 11, 4)): ClassMap(impl.data.KPZ1SPODES3ExternalEvent),
+    ACDEgroup((0, 96, 11, 5)): ClassMap(impl.data.KPZ1SPODES3CommunicationEvent),
+    ACDEgroup((0, 96, 11, 6)): ClassMap(impl.data.KPZ1SPODES3AccessEvent),
+    ACDEgroup((0, 96, 11, 7)): ClassMap(impl.data.KPZ1SPODES3SelfDiagnosticEvent),
+    ACDEgroup((0, 96, 11, 8)): ClassMap(impl.data.KPZ1SPODES3ReactivePowerEvent),
 })
-func_maps["KPZ1"]: FUNC_MAP = get_func_map(__func_map_for_create)
+func_maps["KPZ1"] = get_func_map(__func_map_for_create)
 
 
 def get_type(class_id: ut.CosemClassId,
-             version: cdt.Unsigned | None,
+             version: cdt.Unsigned,
              ln: cst.LogicalName,
              func_map: FUNC_MAP) -> Type[InterfaceClass]:
     """use DLMS UA 1000-1 Ed. 14 Table 54"""
-    if (128 <= ln.b <= 199) or (128 <= ln.c <= 199) or ln.c == 240 or (128 <= ln.d <= 254) or (128 <= ln.e <= 254) or (128 <= ln.f <= 254):
+    c_m: Optional[dict[int, ClassMap]]
+    if (
+        (128 <= ln.b <= 199)
+        or (128 <= ln.c <= 199)
+        or ln.c == 240
+        or (128 <= ln.d <= 254)
+        or (128 <= ln.e <= 254)
+        or (128 <= ln.f <= 254)
+    ):
         # try search in ABCDE group for manufacture object before in CDE
         c_m = func_map.get(ln.contents[:5], common_interface_class_map)
     else:
         # try search in ABCDE group
         c_m = func_map.get(ln.contents[:5], None)
-        if not c_m:
+        if c_m is None:
             # try search in A-CDE group
             c_m = func_map.get(ln.contents[:1]+ln.contents[2:5], None)
-            if not c_m:
+            if c_m is None:
                 # try search in A-CD group
                 c_m = func_map.get(ln.contents[:1]+ln.contents[2:4], None)
-                if not c_m:
+                if c_m is None:
                     # try search in A-C group
                     c_m = func_map.get(ln.contents[:1]+ln.contents[3:4], common_interface_class_map)
     return get_interface_class(class_map=c_m,
@@ -634,17 +651,17 @@ class ParameterValue:
     par: bytes
     value: bytes
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F"{'.'.join(map(str, self.par[:6]))}:{self.par[6]} - {cdt.get_instance_and_pdu_from_value(self.value)[0].__repr__()}"
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         """par + 0x00 + value"""  # todo: 00 in future other parameters
         return self.par + b'\x00' + self.value
 
     @classmethod
     def parse(cls, value: bytes) -> Self:
         if value[7] != 0:
-            raise exc.ITEApplication(F"wrong {value} for {cls.__name__}")
+            raise exc.ITEApplication(F"wrong {value!r} for {cls.__name__}")
         return cls(
             par=value[:7],
             value=value[8:]
@@ -660,9 +677,9 @@ class ID:
 
 class Collection:
     __id: ID
-    __dlms_ver: int | None
-    __country: CountrySpecificIdentifiers | None
-    __country_ver: ParameterValue | None
+    __dlms_ver: int
+    __country: Optional[CountrySpecificIdentifiers]
+    __country_ver: Optional[ParameterValue]
     __objs: dict[o.OBIS, InterfaceClass]
     __const_objs: int
     spec_map: str
@@ -670,8 +687,8 @@ class Collection:
     def __init__(self,
                  id_: ID,
                  dlms_ver: int = 6,
-                 country: CountrySpecificIdentifiers = None,
-                 cntr_ver: ParameterValue = None):
+                 country: Optional[CountrySpecificIdentifiers] = None,
+                 cntr_ver: Optional[ParameterValue] = None):
         self.__id = id_
         self.__dlms_ver = dlms_ver
         self.__country = country
@@ -685,7 +702,7 @@ class Collection:
     def id(self) -> ID:
         return self.__id
 
-    def set_id(self, value: ID):
+    def set_id(self, value: ID) -> None:
         if not self.__id:
             self.__id = value
         else:
@@ -694,15 +711,19 @@ class Collection:
             else:
                 """success validation"""
 
-    def __eq__(self, other: Self):
-        return hash(self) == hash(other)
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Collection):
+            return hash(self) == hash(other)
+        raise NotImplementedError
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
-    def copy_object_values(self, target: ic.COSEMInterfaceClasses, association_id: int = 3):
+    def copy_object_values(self, target: ic.COSEMInterfaceClasses, association_id: int = 3) -> None:
         """copy object values according by association. only needed"""
-        source = self.get(target.logical_name.contents)
+        source = self.__objs.get(target.logical_name.contents, None)
+        if source is None:
+            raise RuntimeError(f"can't find {target}")
         for i, value in source.get_index_with_attributes():
             el = target.get_attr_element(i)
             if (
@@ -780,10 +801,10 @@ class Collection:
         return res
 
     @property
-    def dlms_ver(self):
+    def dlms_ver(self) -> int:
         return self.__dlms_ver
 
-    def set_dlms_ver(self, value: int):
+    def set_dlms_ver(self, value: int) -> None:
         if not self.__dlms_ver:
             self.__dlms_ver = value
         else:
@@ -793,7 +814,7 @@ class Collection:
                 """success validation"""
 
     @property
-    def country(self):
+    def country(self) -> Optional[CountrySpecificIdentifiers]:
         return self.__country
 
     def set_country(self, value: CountrySpecificIdentifiers):
@@ -819,7 +840,7 @@ class Collection:
             else:
                 """success validation"""
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F"[{len(self.__objs)}] DLMS version: {self.__dlms_ver}, country: {self.__country}, country specific version: {self.__country_ver}, " \
                F"id: {self.id}, uses specification: {self.spec_map}"
 
@@ -1303,12 +1324,12 @@ class Collection:
 
     def get_script_names(self, ln: cst.LogicalName, selector: cdt.LongUnsigned) -> str:
         """return name from script by selector"""
-        obj = self.par2obj(Parameter(ln.contents))
+        obj = self.par2obj(Parameter(ln.contents)).unwrap()
         if isinstance(obj, ScriptTable):
             for script in obj.scripts:
                 script: ScriptTable.scripts
                 if script.script_identifier == selector:
-                    names: list[str] = list()
+                    names: list[str] = []
                     for action in script.actions:
                         action_obj = self.par2obj(Parameter(action.logical_name.contents)).unwrap()
                         if int(action_obj.CLASS_ID) != int(action.class_id):
