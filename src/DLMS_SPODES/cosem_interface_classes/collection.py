@@ -274,7 +274,6 @@ class ACCDgroup(ACDgroup_, tuple[A, tuple[C, ...], D]):
 class ACDDgroup(ACDgroup_, tuple[A, C, tuple[D, ...]]):
     def get_key(self) -> Iterator[bytes]:
         a, c, _ = self
-        print(self)
         return (pack(self.fmt, a, c, d) for d in self[2])
 
 
@@ -518,7 +517,7 @@ __func_map_for_create.update({
     ABCDEEgroup((0, 0, 96, 51, (6, 7))): UnsignedDataMap,
     ABCDEEgroup((0, 0, 96, 51, (8, 9))): ClassMap(impl.data.OctetStringDateTime),
     ABCDEEgroup((0, 0, 97, 98, (0, 10, 20))): ClassMap(impl.data.SPODES3Alarm1),
-    ABCDEEgroup((0, 0, 97, 98, (1, 11))): ClassMap({0: impl.data.SPODES3ControlAlarm1}),
+    ABCDEEgroup((0, 0, 97, 98, (1, 11))): ClassMap(impl.data.SPODES3ControlAlarm1),
     # electricity
     ACDEEgroup((1, 0, 8, (4, 5))): ClassMap(impl.data.SPODES3MeasurementPeriod),
     ACDgroup((1, 98, 1)): ProfileGenericMap.renew(1, impl.profile_generic.SPODES3MonthProfile),
