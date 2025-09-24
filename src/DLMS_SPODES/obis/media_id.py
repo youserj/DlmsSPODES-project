@@ -1,15 +1,31 @@
 from abc import ABC, abstractmethod
+from typing import Protocol
 from itertools import count
 from ..config_parser import config
+from ..settings import settings
+from ..types import cdt
 
 
-_mid_names = config["DLMS"]["media_id_name"]
+_mid_names = config["DLMS"]["media_id_name"]  # todo: make with settings
 
 
-class MediaId(ABC):
+class MediaIdProto(Protocol):
+    _value: tuple[int]
+    _inst = None
+    TYPE: type[cdt.CommonDataType]
+
+    def __eq__(self, other: int) -> bool:
+        """with integer"""
+
+    def __hash__(self) -> int:
+        """for hashable"""
+
+
+class MediaId(MediaIdProto):
     """DLMS UA 1000-1 Ed 14. Table 53 – OBIS code structure and use of value groups. For Group A"""
     _value: tuple[int]
     _inst = None
+    TYPE: type[cdt.CommonDataType]
 
     @classmethod
     def from_int(cls, value: int):
@@ -24,15 +40,7 @@ class MediaId(ABC):
             case int(): return Reserved(value)
             case _:     raise ValueError(F"can't create {cls.__name__} from {value=}")
 
-    @abstractmethod
-    def __eq__(self, other: int):
-        """with integer"""
-
-    @abstractmethod
-    def __hash__(self):
-        """for hashable"""
-
-    def __str__(self):
+    def __str__(self) -> str:
         if _mid_names and (t := _mid_names.get(self.__class__.__name__)):
             return t
         else:
@@ -64,16 +72,6 @@ class TwoValueMixin:
 
     def __hash__(self):
         return self._value[0]
-
-
-class Singleton:
-    _inst: MediaId | None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._inst:
-            return cls._inst
-        else:
-            return super().__new__(cls)
 
 
 sub_group_hash = count()
@@ -289,6 +287,7 @@ class CompactDataObjects(Abstract):
 
 class DeviceIdObjects(Abstract):
     """6_2_42"""
+    TYPE = cdt.DoubleLongUnsigned | cdt.OctetString | cdt.VisibleString | cdt.Utf8String | cdt.Unsigned | cdt.LongUnsigned
 
 
 class MeteringPointIdObjects(Abstract):

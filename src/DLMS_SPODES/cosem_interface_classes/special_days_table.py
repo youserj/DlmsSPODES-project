@@ -52,8 +52,6 @@ class SpecialDaysTable(ic.COSEMInterfaceClasses):
                   ic.ICMElement("delete", cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)
 
     def characteristics_init(self):
-        self.cardinality = (0, 1)
-
         self._cbs_attr_post_init.update({2: self.__set_delete})
         self.set_attr(2, None)
 

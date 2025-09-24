@@ -18,6 +18,7 @@ class ActiveFirmwareIdentifier(Data):
         return cls.parse(f"0.{b}.0.2.0.255")
 
 
+LDN = Data.parse("0.0.42.0.0.255")
 ACTIVE_FIRMWARE_IDENTIFIER_0 = ActiveFirmwareIdentifier.from_b()
 
 

@@ -97,7 +97,6 @@ class TestType(unittest.TestCase):
         col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName.from_obis('1.0.3.29.0.255'))
         col.add(class_id=ut.CosemClassId(3), version=cdt.Unsigned(0), logical_name=cst.LogicalName.from_obis('1.0.4.29.0.255'))
         profile = col.add(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName.from_obis('1.0.94.7.4.255'))
-        profile.collection = col
         profile.set_attr(6, structs.CaptureObjectDefinition().encoding)
         profile.set_attr(3, bytes.fromhex('01 05 02 04 12 00 08 09 06 00 00 01 00 00 ff 0f 02 12 00 00 02 04 12 00 03 09 06 01 00 02 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 01 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 03 1d 00 ff 0f 03 12 00 00 02 04 12 00 03 09 06 01 00 04 1d 00 ff 0f 03 12 00 00'))
         profile.buffer.selective_access.access_selector.set_contents_from(2)

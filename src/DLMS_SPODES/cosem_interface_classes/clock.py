@@ -72,7 +72,7 @@ class Clock(ic.COSEMInterfaceClasses):
                   ic.ICMElement("shift_time", ShiftTime))
 
     def characteristics_init(self):
-        self.cardinality = (0, 1)
+        ...
 
     @property
     def time(self) -> cst.OctetStringDateTime:

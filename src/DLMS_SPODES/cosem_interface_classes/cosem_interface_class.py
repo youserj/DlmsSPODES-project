@@ -1,7 +1,7 @@
 """
 DLMS UA 1000-1 Ed 14
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from typing_extensions import deprecated
 from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional, Protocol, ClassVar
@@ -318,18 +318,26 @@ def ClassIDVer2Name(class_id: ClassID, ver: cdt.Unsigned) -> Name:
         case _: raise exc.ITEApplication(F"not find <Interface class name> with: {class_id=}, {ver=}")
 
 
+@dataclass
+class Cardinality:
+    """4.1.4 Class description notation"""
+    min: int = 0
+    max: int = -1
+    """default -1 as infinity"""
+
+
 class COSEMInterfaceClasses(Protocol):
     CLASS_ID: ClassVar[ut.CosemClassId]
     VERSION: ClassVar[cdt.Unsigned]
     """ Identification code of the version of the class. The version of each object is retrieved together with the logical name and the class_id by reading the object_list 
     attribute of an “Association LN” / ”Association SN” object. Within one logical device, all instances of a certain class must be of the same version."""
     A_ELEMENTS: tuple[ICAElement, ...]
+    cardinality: ClassVar[Cardinality] = field(default_factory=Cardinality)
     M_ELEMENTS: tuple[ICMElement, ...] = tuple()  # empty if class not has the methods
-    cardinality: tuple[int, int | None]
     __attributes: list[cdt.CommonDataType | None]
     __specific_methods: tuple[cdt.CommonDataType, ...] = None
     _cbs_attr_post_init: dict[int, Callable]
-    collection: Any | None  # Collection. todo: remove in future
+    # collection: Any | None  # Collection. todo: remove in future
     hash_: int
 
     def __init__(self, logical_name: cst.LogicalName | bytes | str):
@@ -534,15 +542,6 @@ class COSEMInterfaceClasses(Protocol):
     def get_attribute_descriptor(self, index: int) -> bytes:
         """ Cosem-Attribute-Descriptor IS/IEC 62056-53 : 2006, 8.3 Useful types """
         return self.CLASS_ID.contents + self.instance_id.contents + ut.CosemObjectAttributeId(index).contents
-
-    @property
-    def string_type_cardinality(self) -> str:
-        min_cardinality, max_cardinality = self.cardinality
-        if min_cardinality == max_cardinality:
-            return str(min_cardinality)
-        else:
-            max_cardinality = str(max_cardinality) if max_cardinality else 'n'
-            return F'{str(min_cardinality)}...{max_cardinality}'
 
     def reset_attribute(self, index: int):
         """ try set default to value """

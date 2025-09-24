@@ -888,7 +888,7 @@ class Collection:
         """return: DLMSObject"""
         return self.obis2obj(par.obis)
 
-    def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
+    def par2data(self, par: Parameter) -> result.Option[T] | result.Error:
         """:return CDT by Parameter, return None if data wasn't setting"""
         if isinstance((res1 := self.par2obj(par)), result.Error):
             return res1
