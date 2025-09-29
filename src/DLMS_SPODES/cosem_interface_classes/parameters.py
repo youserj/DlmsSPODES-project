@@ -48,14 +48,6 @@ class Clock(Parameter):
         return self.get_attr(4)
 
     @property
-    def time_zone(self) -> "Clock":
-        return self.get_attr(3)
-
-    @property
-    def status(self) -> "Clock":
-        return self.get_attr(4)
-
-    @property
     def daylight_savings_begin(self) -> "Clock":
         return self.get_attr(5)
 

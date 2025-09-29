@@ -62,7 +62,7 @@ class Parameter:
 
     @cached_property
     def logical_name(self) -> "Parameter":
-        return self.get_attr(2)
+        return self.get_attr(1)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Parameter):

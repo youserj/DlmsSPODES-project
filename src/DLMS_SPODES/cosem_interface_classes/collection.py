@@ -1234,7 +1234,7 @@ class Collection:
     def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[InterfaceClass]:
         if obj := self.__objs.get(obis):
             return result.Simple(obj)
-        return result.Error.from_e(exc.NoObject(obis))
+        return result.Error.from_e(ValueError(str(obis)), "no object")
 
     def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2obj(o.OBIS(ln.contents))
