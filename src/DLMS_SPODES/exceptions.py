@@ -92,9 +92,8 @@ class ResultError(ITEApplication):
     """ DLMS COSEMpdu_GB83.asn error """
     error = Application.RESULT_ERROR
 
-    def __init__(self, error: pdu.DataAccessResult | pdu.ActionResult, additional: str = ""):
-        Exception.__init__(self, F'{error.__class__.__name__}: {error.name} {additional}')
-        self.result = error
+    def __init__(self, error: pdu.DataAccessResult | pdu.ActionResult):
+        Exception.__init__(self, error)
 
 
 class UnknownError(DLMSException):
