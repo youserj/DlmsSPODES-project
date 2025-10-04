@@ -40,9 +40,6 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
     M_ELEMENTS = (ic.ICMElement("security_activate", SecurityPolicy),
                   ic.ICMElement("global_key_transfer", GlobalKeyTransfer))
 
-    def characteristics_init(self):
-        """nothing do it"""
-
     @property
     def security_policy(self) -> SecurityPolicy:
         return self.get_attr(2)
@@ -58,11 +55,3 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
     @property
     def server_system_title(self) -> cdt.OctetString:
         return self .get_attr(5)
-
-    @property
-    def security_activate(self) -> SecurityPolicy:
-        return self .get_meth(1)
-
-    @property
-    def global_key_transfer(self) -> GlobalKeyTransfer:
-        return self .get_meth(2)

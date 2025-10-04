@@ -150,16 +150,6 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
         NAME="activate_passive_calendar",
         DATA_TYPE=integers.Only0),
 
-    def characteristics_init(self):
-        # Attributes called …_active are currently active, attributes called …_passive will be activated by the specific
-        # method activate_passive_calendar.
-        self.set_attr(ai.DAY_PROFILE_TABLE_ACTIVE, None)
-        self.set_attr(ai.WEEK_PROFILE_TABLE_ACTIVE, None)
-        self.set_attr(ai.SEASON_PROFILE_ACTIVE, None)
-        self.set_attr(ai.DAY_PROFILE_TABLE_PASSIVE, None)
-        self.set_attr(ai.WEEK_PROFILE_TABLE_PASSIVE, None)
-        self.set_attr(ai.SEASON_PROFILE_PASSIVE, None)
-
     @property
     def calendar_name_active(self) -> octet_string.ID:
         return self.get_attr(2)
@@ -196,11 +186,6 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
     def activate_passive_calendar_time(self) -> cst.OctetStringDateTime:
         return self.get_attr(10)
 
-    @property
-    @deprecated("use ActivatePassiveCalendar")
-    def activate_passive_calendar(self) -> integers.Only0:
-        return self.get_meth(1)
-
     @classmethod
     def ActivatePassiveCalendar(cls, value=None) -> integers.Only0:
         return cls.M_ELEMENTS[0].DATA_TYPE
@@ -213,10 +198,10 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
                     raise ic.ObjectValidationError(
                         ln=self.logical_name,
                         i=index,
-                        message=F"find duplicate {name}: {', '.join(map(str, duplicates))} in {self.get_attr_element(index)}")
+                        message=F"find duplicate {name}: {', '.join(map(str, duplicates))} in {self.getAElement(index).unwrap()}")
                 index -= 1
 
-            days: list[DayProfile.day_id] = list()
+            days: list[DayProfile.day_id] = []
             duplicates: set[DayProfile.day_id] | set[WeekProfile.week_profile_name] | set[Season.season_profile_name] = set()
             for it in self.get_attr(index):
                 if it.day_id not in days:
@@ -224,7 +209,7 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
                 else:
                     duplicates.add(it.day_id)
             handle_duplicates("day_id")
-            weeks: list[WeekProfile.week_profile_name] = list()
+            weeks: list[WeekProfile.week_profile_name] = []
             for week_profile in self.get_attr(index):
                 if week_profile.week_profile_name not in weeks:
                     weeks.append(week_profile.week_profile_name)
@@ -235,9 +220,9 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
                         raise ic.ObjectValidationError(
                             ln=self.logical_name,
                             i=index,
-                            message=F"in {self.get_attr_element(index)} got {week_profile} with day_id: {week_profile[i]}; expected: {', '.join(map(str, days))}")
+                            message=F"in {self.getAElement(index).unwrap()} got {week_profile} with day_id: {week_profile[i]}; expected: {', '.join(map(str, days))}")
             handle_duplicates("week_profile_name")
-            seasons: list[Season.season_profile_name] = list()
+            seasons: list[Season.season_profile_name] = []
             for season in self.get_attr(index):
                 if season.season_profile_name not in seasons:
                     seasons.append(season.season_profile_name)

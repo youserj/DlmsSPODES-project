@@ -54,16 +54,9 @@ class Arbitrator(ic.COSEMInterfaceClasses):
                   ic.ICAElement("most_recent_requests_table", MostRecentRequestTable, classifier=ic.Classifier.DYNAMIC),
                   ic.ICAElement("last_outcome", cdt.Unsigned, min=0, default=0, classifier=ic.Classifier.DYNAMIC))  # TODO: max = n what it?
     M_ELEMENTS = (ic.ICMElement("request_action", RequestAction),
-                  ic.ICMElement("reset", integers.Only0))
+                  ic.ICMElement("reset", integers.INTEGER_0))
     actors: tuple[str] = tuple()
     """name actors container"""
-
-    def characteristics_init(self):
-        self.set_attr(2, None)
-        self.actions.register_cb_post_set(self.__check_permission_table)
-        self.set_attr(3, None)
-        self.set_attr(4, None)
-        self.set_attr(5, None)
 
     @property
     def actions(self) -> Actions:
@@ -84,14 +77,6 @@ class Arbitrator(ic.COSEMInterfaceClasses):
     @property
     def last_outcome(self) -> cdt.Unsigned:
         return self.get_attr(6)
-
-    @property
-    def request_action(self) -> RequestAction:
-        return self .get_meth(1)
-
-    @property
-    def reset(self) -> integers.Only0:
-        return self .get_meth(2)
 
     def __check_permission_table(self):
         """set length actor_permission be same as action array size if it not valid"""

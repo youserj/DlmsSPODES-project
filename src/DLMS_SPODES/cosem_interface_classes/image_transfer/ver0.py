@@ -79,22 +79,6 @@ class ImageTransfer(ic.COSEMInterfaceClasses):
         return self.get_attr(7)
 
     @property
-    def image_transfer_initiate(self) -> ImageTransferInitiate:
-        return self.get_meth(1)
-
-    @property
-    def image_block_transfer(self) -> ImageBlockTransfer:
-        return self.get_meth(2)
-
-    @property
-    def image_verify(self) -> integers.Only0:
-        return self.get_meth(3)
-
-    @property
-    def image_activate(self) -> integers.Only0:
-        return self.get_meth(4)
-
-    @property
     def current_block_transfer(self) -> int:
         return int(self.image_block_transfer.image_block_number)
 

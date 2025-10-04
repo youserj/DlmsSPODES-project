@@ -148,18 +148,6 @@ class Schedule(ic.COSEMInterfaceClasses):
     def entries(self) -> Entries:
         return self.get_attr(2)
 
-    @property
-    def enable_disable(self) -> DataED:
-        return self.get_meth(1)
-
-    @property
-    def insert(self) -> ScheduleTableEntry:
-        return self.get_meth(2)
-
-    @property
-    def delete(self) -> DataDelete:
-        return self.get_meth(3)
-
     def __set_index_cbs(self):
         """ set callbacks to methods """
         try:

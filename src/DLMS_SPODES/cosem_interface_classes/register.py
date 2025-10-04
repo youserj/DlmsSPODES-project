@@ -31,10 +31,6 @@ class Register(ic.COSEMInterfaceClasses):
     def scaler_unit(self) -> cdt.ScalUnitType:
         return self.get_attr(3)
 
-    @property
-    def reset(self) -> integers.Only0:
-        return self.get_meth(1)
-
     def __set_value_data_type(self):
         """ When instead of a “Data” object a “Register” object is used, (with the scaler_unit attribute not used or with scaler = 0, unit = 255) then the data types allowed for
         the value attribute of the “Data” interface class are allowed. """

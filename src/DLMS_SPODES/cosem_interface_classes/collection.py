@@ -866,7 +866,7 @@ class Collection:
                     raise exc.DLMSException("unknown specification")
 
     def add_if_missing(self, class_id: ut.CosemClassId,
-                       version: cdt.Unsigned | None,
+                       version: Optional[cdt.Unsigned],
                        logical_name: cst.LogicalName) -> InterfaceClass:
         """ like as add method with check for missing """
         if (res := self.__objs.get(logical_name.contents)) is None:
@@ -884,7 +884,7 @@ class Collection:
         """ get object, return None if it absence """
         return self.__objs.get(obis, None)
 
-    def par2obj(self, par: Parameter) -> result.SimpleOrError[InterfaceClass]:
+    def par2obj(self, par: Parameter) -> result.SimpleOrError[ic.COSEMInterfaceClasses]:
         """return: DLMSObject"""
         return self.obis2obj(par.obis)
 
@@ -1336,7 +1336,7 @@ class Collection:
                         match int(action.service_id):
                             case 1:  # for write
                                 if isinstance(action.parameter, cdt.NullData):
-                                    names.append(str(action_obj.get_attr_element(int(action.index))))
+                                    names.append(str(action_obj.getAElement(int(action.index)).unwrap()))
                                 else:
                                     raise TypeError(F"not support by framework")  # TODO: make it
                             case 2:  # for execute

@@ -117,11 +117,6 @@ class SecuritySetup(ver0.SecuritySetup):
                   ic.ICMElement("export_certificate", CertificateIdentification),
                   ic.ICMElement("remove_certificate", CertificateIdentification))
 
-    def characteristics_init(self):
-        self.set_attr(2, None)
-        self.set_attr(3, None)
-        self.set_attr(6, None)
-
     @property
     def security_policy(self) -> SecurityPolicyVer1:
         return self.get_attr(2)
@@ -133,26 +128,3 @@ class SecuritySetup(ver0.SecuritySetup):
     @property
     def certificates(self) -> Certificates:
         return self.get_attr(6)
-
-    @property
-    def security_activate(self) -> SecurityPolicyVer1:
-        return self.get_meth(1)
-
-    @property
-    def key_transfer(self) -> KeyTransferData:
-        return self .get_meth(2)
-
-    def key_agreement(self) -> KeyAgreement:
-        return self .get_meth(3)
-
-    def generate_certificate_request(self) -> KeyPair:
-        return self .get_meth(4)
-
-    def import_certificate(self) -> cdt.OctetString:
-        return self .get_meth(5)
-
-    def export_certificate(self) -> CertificateIdentification:
-        return self .get_meth(6)
-
-    def remove_certificate(self) -> CertificateIdentification:
-        return self .get_meth(7)

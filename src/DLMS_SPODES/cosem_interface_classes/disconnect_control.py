@@ -50,9 +50,6 @@ class DisconnectControl(ic.COSEMInterfaceClasses):
     M_ELEMENTS = (ic.ICMElement("remote_disconnect", integers.Only0),
                   ic.ICMElement("remote_reconnect", integers.Only0))
 
-    def characteristics_init(self):
-        """nothing do it"""
-
     @property
     def output_state(self) -> cdt.Boolean:
         return self.get_attr(2)
@@ -64,11 +61,3 @@ class DisconnectControl(ic.COSEMInterfaceClasses):
     @property
     def control_mode(self) -> ControlMode:
         return self.get_attr(4)
-
-    @property
-    def remote_disconnect(self) -> cdt.Integer:
-        return self.get_meth(1)
-
-    @property
-    def remote_reconnect(self) -> cdt.Integer:
-        return self.get_meth(2)

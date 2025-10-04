@@ -37,7 +37,7 @@ class TestType(unittest.TestCase):
                 print(F"skip {c}: {e}")
 
     def test_encode(self):
-        clock = collection.Clock("0.0.1.0.0.255")
+        clock = collection.Clock(b'\x00\x00\x01\x00\x00\xff')
         tz = clock.encode(3, 4)
         self.assertEqual(tz.encoding, b'\x10\x00\x04')
         data = collection.Data("0.0.96.1.1.255")

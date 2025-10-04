@@ -306,16 +306,6 @@ class AssociationLN(ic.COSEMInterfaceClasses):
                   ic.ICMElement("add_object", ObjectListElement),
                   ic.ICMElement("remove_object", ObjectListElement))
 
-    def characteristics_init(self):
-        # self.object_list.selective_access = SelectiveAccessDescriptor()
-        self.set_attr(4, None)
-        self.set_attr(5, None)
-        self.set_attr(8, None)
-        # init secret after set authentication_mechanism_name(6)
-        self._cbs_attr_post_init.update({
-            6: self.__init_secret,
-            7: self.__check_mechanism_id_existing})
-
     @property
     def object_list(self) -> ObjectListType:
         return self.get_attr(2)
@@ -343,22 +333,6 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     @property
     def association_status(self) -> AssociationStatus:
         return self.get_attr(8)
-
-    @property
-    def reply_to_HLS_authentication(self) -> method.ReplyToHLSAuthentication:
-        return self.get_meth(1)
-
-    @property
-    def change_HLS_secret(self) -> LLS_secret:
-        return self.get_meth(2)
-
-    @property
-    def add_object(self) -> ObjectListElement:
-        return self.get_meth(3)
-
-    @property
-    def remove_object(self) -> ObjectListElement:
-        return self.get_meth(4)
 
     def __check_mechanism_id_existing(self):
         """check for existing mechanism ID else ERASE setting"""

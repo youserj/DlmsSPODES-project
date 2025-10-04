@@ -36,12 +36,12 @@ class ActiveFirmwareId(Data):
 
 class Unsigned(DataDynamic):
     """ with value type: Unsigned """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cdt.Unsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=cdt.Unsigned),
 
 
 class OctetStringDateTime(DataDynamic):
     """ with value type: Unsigned """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cst.OctetStringDateTime),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=cst.OctetStringDateTime),
 
 
 class OpeningBodyUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum
@@ -58,7 +58,7 @@ class OpeningBodyUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.F
 
 class OpeningBody(DataDynamic):
     """ RU. 0.0.96.51.0.255. СТО_34.01-5.1-006-2019v3. E 12.1 """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=OpeningBodyUnsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=OpeningBodyUnsigned),
 
 
 class OpeningCoverUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum
@@ -75,7 +75,7 @@ class OpeningCoverUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.
 
 class OpeningCover(DataDynamic):
     """ RU. 0.0.96.51.1.255. СТО_34.01-5.1-006-2019v3. E 12.2 """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=OpeningCoverUnsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=OpeningCoverUnsigned),
 
 
 class ExposureToFieldUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum
@@ -93,12 +93,12 @@ class ExposureToFieldUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as c
 
 class ExposureToMagnet(DataDynamic):
     """ RU. 0.0.96.51.3.255. СТО_34.01-5.1-006-2019v3. E 12.3 """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExposureToFieldUnsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=ExposureToFieldUnsigned),
 
 
 class ExposureToHSField(DataDynamic):
     """ RU. 0.0.96.51.4.255. СТО_34.01-5.1-006-2019v3. E 12.3 """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=ExposureToFieldUnsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=ExposureToFieldUnsigned),
 
 
 class SealUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum??
@@ -122,7 +122,7 @@ class SealStatus(DataDynamic):
 
 class TerminalsCoverOpeningState(DataDynamic):
     """ RU. 0.0.96.51.1.255. СТО_34.01-5.1-006-2019v3. E 12.2 """
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=cdt.Unsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=cdt.Unsigned),
 
 
 class BitMapData(cdt.Structure):
@@ -133,7 +133,7 @@ class BitMapData(cdt.Structure):
 
 class ITEBitMap(DataStatic):
     """ITE 0.128.96.13.1.255. Use for send struct lcd screen bitmap(BMP) with start/stop period to server"""
-    A_ELEMENTS = Data.get_attr_element(2).get_change(data_type=BitMapData),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(data_type=BitMapData),
 
 
 class ChannelNumberValue(cdt.ReportMixin, cdt.Unsigned):
@@ -169,7 +169,7 @@ class CommunicationPortParameter(Data):
 
 class AnyDateTime(DataDynamic):
     """for a-anotation DLMS UA 1000-1 Ed. 14 Table 60"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=choices.any_date_time),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=choices.any_date_time),
 
 
 class SPODES3VoltageEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
@@ -178,23 +178,25 @@ class SPODES3VoltageEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
 
 class SPODES3VoltageEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3VoltageEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3VoltageEventValues),
 
 
 class SPODES3CurrentEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3CurrentEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3CurrentEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3CurrentEventValues),
 
 
 class SPODES3CommutationEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3CommutationEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3CommutationEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3CommutationEventValues),
 
 
 class SPODES3ProgrammingEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
@@ -203,7 +205,7 @@ class SPODES3ProgrammingEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
 
 class SPODES3ProgrammingEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3ProgrammingEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3ProgrammingEventValues),
 
 
 class SPODES3ExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
@@ -212,39 +214,43 @@ class SPODES3ExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
 
 class SPODES3ExternalEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3ExternalEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3ExternalEventValues),
 
 
 class SPODES3CommunicationEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3CommunicationEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3CommunicationEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3CommunicationEventValues),
 
 
 class SPODES3AccessEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3AccessEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3AccessEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3AccessEventValues),
 
 
 class SPODES3SelfDiagnosticEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3SelfDiagnosticEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3SelfDiagnosticEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3SelfDiagnosticEventValues),
 
 
 class SPODES3ReactivePowerEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
     pass
 
+
 class SPODES3ReactivePowerEvent(DataDynamic):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
-    A_ELEMENTS = DataDynamic.get_attr_element(2).get_change(data_type=SPODES3ReactivePowerEventValues),
+    A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=SPODES3ReactivePowerEventValues),
 
 
 class SPODES3PowerQuality2EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
@@ -253,7 +259,7 @@ class SPODES3PowerQuality2EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
 
 class SPODES3PowerQuality2Event(DataNotSpecific):
     """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
-    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=SPODES3PowerQuality2EventValues),
+    A_ELEMENTS = DataNotSpecific.getAElement(2).unwrap().get_change(data_type=SPODES3PowerQuality2EventValues),
 
 
 class LoadLockerValue(cdt.IntegerEnum, cdt.Unsigned):
@@ -278,7 +284,7 @@ class LoadLockerValue(cdt.IntegerEnum, cdt.Unsigned):
 
 class SPODES3LoadLocker(DataStatic):
     """СТО 34.01-5.1-006-2023 E7. Блокиратор реле нагрузки"""
-    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=LoadLockerValue),
+    A_ELEMENTS = DataNotSpecific.getAElement(2).unwrap().get_change(data_type=LoadLockerValue),
 
 
 class SPODES3PowerQuality1EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
@@ -291,7 +297,7 @@ class SPODES3Alarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
 
 class SPODES3Alarm1(DataStatic):
     """СТО_34.01-5.1-006-2019v3 9.8 Поддержка инициативного выхода"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=SPODES3Alarm1Values),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=SPODES3Alarm1Values),
 
 
 class KPZAlarm1Values(SPODES3Alarm1Values):
@@ -299,7 +305,7 @@ class KPZAlarm1Values(SPODES3Alarm1Values):
 
 
 class KPZAlarm1(DataStatic):
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZAlarm1Values),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZAlarm1Values),
 
 
 class SPODES3ControlAlarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
@@ -308,12 +314,12 @@ class SPODES3ControlAlarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
 
 class SPODES3ControlAlarm1(DataDynamic):
     """СТО 34.01-5.1-006-2023v4 Таблица 13.5 Распределение событий отключения реле нагрузки по битам"""
-    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=SPODES3ControlAlarm1Values),
+    A_ELEMENTS = DataNotSpecific.getAElement(2).unwrap().get_change(data_type=SPODES3ControlAlarm1Values),
 
 
 class SPODES3PowerQuality1Event(DataNotSpecific):
     """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
-    A_ELEMENTS = DataNotSpecific.get_attr_element(2).get_change(data_type=SPODES3PowerQuality1EventValues),
+    A_ELEMENTS = DataNotSpecific.getAElement(2).unwrap().get_change(data_type=SPODES3PowerQuality1EventValues),
 
 
 # KPZ implements
@@ -323,7 +329,7 @@ class KPZExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
 
 class KPZSPODES3ExternalEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZExternalEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZExternalEventValues),
 
 
 class KPZ1VoltageEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -332,7 +338,7 @@ class KPZ1VoltageEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3VoltageEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением with bag in value type"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1VoltageEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1VoltageEventValues),
 
 
 class KPZ1CurrentEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -341,7 +347,7 @@ class KPZ1CurrentEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3CurrentEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CurrentEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1CurrentEventValues),
 
 
 class KPZ1CommutationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -350,7 +356,7 @@ class KPZ1CommutationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3CommutationEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommutationEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1CommutationEventValues),
 
 
 class KPZ1ProgrammingEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -359,7 +365,7 @@ class KPZ1ProgrammingEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3ProgrammingEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ProgrammingEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1ProgrammingEventValues),
 
 
 class KPZ1ExternalEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -368,7 +374,7 @@ class KPZ1ExternalEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3ExternalEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ExternalEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1ExternalEventValues),
 
 
 class KPZ1CommunicationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -377,7 +383,7 @@ class KPZ1CommunicationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3CommunicationEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommunicationEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1CommunicationEventValues),
 
 
 class KPZ1AccessEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -386,7 +392,7 @@ class KPZ1AccessEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3AccessEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1AccessEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1AccessEventValues),
 
 
 class KPZ1SelfDiagnosticEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -395,7 +401,7 @@ class KPZ1SelfDiagnosticEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1SelfDiagnosticEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1SelfDiagnosticEventValues),
 
 
 class KPZ1ReactivePowerEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
@@ -404,7 +410,7 @@ class KPZ1ReactivePowerEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
 
 class KPZ1SPODES3ReactivePowerEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ReactivePowerEventValues),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZ1ReactivePowerEventValues),
 
 
 class SPODES3MeasurementPeriodValue(cdt.Unsigned):
@@ -417,12 +423,12 @@ class SPODES3MeasurementPeriodValue(cdt.Unsigned):
 
 class SPODES3MeasurementPeriod(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Г.2 Программируемые параметры и функции. Пункт 14"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=SPODES3MeasurementPeriodValue),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=SPODES3MeasurementPeriodValue),
 
 
 class DLMSDeviceIDObject(DataStatic):
     """DLMS UA 1000-1 Ed. 14. 6.2.42 Device ID objects"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=choices.device_id_object),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=choices.device_id_object),
 
 
 class SPODES3SPODESVersionValue(cdt.ReportMixin, cdt.OctetString):
@@ -449,12 +455,12 @@ class SPODES3SPODESVersionValue(cdt.ReportMixin, cdt.OctetString):
 
 class SPODES3SPODESVersion(DLMSDeviceIDObject):
     """СТО_34.01-5.1-006-2019v3 Г.1 Примечание 2"""
-    A_ELEMENTS = DLMSDeviceIDObject.get_attr_element(2).get_change(data_type=SPODES3SPODESVersionValue),
+    A_ELEMENTS = DLMSDeviceIDObject.getAElement(2).unwrap().get_change(data_type=SPODES3SPODESVersionValue),
 
 
 class SPODES3IDNotSpecific(DLMSDeviceIDObject):
     """СТО_34.01-5.1-006-2019v3 13.1. Чтение расширенных паспортных данных ПУ. Для специфических идентификаторов"""
-    A_ELEMENTS = DLMSDeviceIDObject.get_attr_element(2).get_change(classifier=ic.Classifier.NOT_SPECIFIC),
+    A_ELEMENTS = DLMSDeviceIDObject.getAElement(2).unwrap().get_change(classifier=ic.Classifier.NOT_SPECIFIC),
 
 
 class KPZGSMPingIPValue(cdt.Structure):
@@ -465,7 +471,7 @@ class KPZGSMPingIPValue(cdt.Structure):
 
 class KPZGSMPingIP(DataStatic):
     """Проприетарный объект"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZGSMPingIPValue),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=KPZGSMPingIPValue),
 
 
 class AFERegister(cdt.Structure):
@@ -484,4 +490,4 @@ class AFEOffsets(cdt.Structure):
 
 
 class KPZAFEOffsets(DataDynamic):
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=AFEOffsets),
+    A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=AFEOffsets),

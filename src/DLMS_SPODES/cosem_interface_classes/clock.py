@@ -71,9 +71,6 @@ class Clock(ic.COSEMInterfaceClasses):
                   ic.ICMElement("preset_adjusting_time", PresetAdjustingTime),
                   ic.ICMElement("shift_time", ShiftTime))
 
-    def characteristics_init(self):
-        ...
-
     @property
     def time(self) -> cst.OctetStringDateTime:
         return self.get_attr(2)
@@ -105,27 +102,3 @@ class Clock(ic.COSEMInterfaceClasses):
     @property
     def clock_base(self) -> ClockBase:
         return self.get_attr(9)
-
-    @property
-    def adjust_to_quarter(self) -> integers.Only0:
-        return self.get_meth(1)
-
-    @property
-    def adjust_to_measuring_period(self) -> integers.Only0:
-        return self.get_meth(2)
-
-    @property
-    def adjust_to_minute(self) -> integers.Only0:
-        return self.get_meth(3)
-
-    @property
-    def adjust_to_preset_time(self) -> integers.Only0:
-        return self.get_meth(4)
-
-    @property
-    def preset_adjusting_time(self) -> PresetAdjustingTime:
-        return self.get_meth(5)
-
-    @property
-    def shift_time(self) -> ShiftTime:
-        return self.get_meth(6)

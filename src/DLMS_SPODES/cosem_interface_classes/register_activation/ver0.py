@@ -66,15 +66,3 @@ class RegisterActivation(ic.COSEMInterfaceClasses):
     @property
     def active_mask(self) -> cdt.OctetString:
         return self.get_attr(4)
-
-    @property
-    def add_register(self) -> ObjectDefinition:
-        return self.get_meth(1)
-
-    @property
-    def add_mask(self) -> RegisterActMask:
-        return self.get_meth(2)
-
-    @property
-    def delete_mask(self) -> cdt.OctetString:
-        return self.get_meth(3)

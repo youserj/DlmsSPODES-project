@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ..types import choices
+from ..types import choices, cdt
 from . import cosem_interface_class as ic
 from .overview import ClassID
 from .overview import VERSION_0
@@ -11,9 +11,6 @@ class Data(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.DATA
     VERSION = VERSION_0
     A_ELEMENTS = ic.ICAElement("value", choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
-
-    def characteristics_init(self):
-        """nothing do it"""
 
     @property
     def value(self) -> cdt.CommonDataTypes:

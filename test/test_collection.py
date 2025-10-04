@@ -593,14 +593,6 @@ class TestType(unittest.TestCase):
         print(F"{collection.get_unit.cache_info()=}")
         print(F"{rep_count=}")
 
-    def test_par2rep(self):
-        col = self.create_collection()
-        par = Parameter.parse("0.0.13.0.0.255:9").extend(0, 0)
-        data = col.par2data(par).unwrap()
-        rep1 = col.par2rep(par, data)
-        print(str(col[par.obis].get_attr_element(1)))
-        print(rep1)
-
     def test_get_profile_s_u(self):
         col = collection.get_collection(
             manufacturer=b"KPZ",

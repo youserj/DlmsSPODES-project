@@ -18,9 +18,6 @@ class TCPUDPSetup(ic.COSEMInterfaceClasses):
                   ic.ICAElement("nb_of_sim_conn", cdt.Unsigned, 1),
                   ic.ICAElement("inactivity_time_out", cdt.LongUnsigned, default=180))
 
-    def characteristics_init(self):
-        """nothing do it"""
-
     @property
     def TCP_UDP_port(self) -> cdt.LongUnsigned:
         return self.get_attr(2)

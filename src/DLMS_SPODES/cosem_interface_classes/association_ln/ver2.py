@@ -8,14 +8,14 @@ class AssociationLN(ver1.AssociationLN):
     """5.4.7 Association LN"""
     VERSION = VERSION_2
     A_ELEMENTS = (
-        ver1.AssociationLN.get_attr_element(2),  # <object_list>
-        ver0.AssociationLN.get_attr_element(3),  # associated_partners_id
-        ver0.AssociationLN.get_attr_element(4),  # application_context_name
-        ver0.AssociationLN.get_attr_element(5),  # xDLMS_context_info
-        ver0.AssociationLN.get_attr_element(6),  # authentication_mechanism_name
-        ver1.AssociationLN.get_attr_element(7),  # secret
-        ver0.AssociationLN.get_attr_element(8),  # association_status
-        ver1.AssociationLN.get_attr_element(9),  # security_setup_reference
+        ver1.AssociationLN.getAElement(2).unwrap(),  # <object_list>
+        ver0.AssociationLN.getAElement(3).unwrap(),  # associated_partners_id
+        ver0.AssociationLN.getAElement(4).unwrap(),  # application_context_name
+        ver0.AssociationLN.getAElement(5).unwrap(),  # xDLMS_context_info
+        ver0.AssociationLN.getAElement(6).unwrap(),  # authentication_mechanism_name
+        ver1.AssociationLN.getAElement(7).unwrap(),  # secret
+        ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
+        ver1.AssociationLN.getAElement(9).unwrap(),  # security_setup_reference
         ic.ICAElement("user_list", arrays.UserList),
         ic.ICAElement("current_user", structs.UserListEntry),
     )
@@ -29,8 +29,3 @@ class AssociationLN(ver1.AssociationLN):
     )
     user_list: arrays.UserList
     current_user: structs.UserListEntry
-
-    def characteristics_init(self):
-        super(AssociationLN, self).characteristics_init()
-        # TODO: more 2 attribute
-        # TODO: more 2 methods

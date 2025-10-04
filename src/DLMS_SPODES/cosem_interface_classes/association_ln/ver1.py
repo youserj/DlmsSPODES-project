@@ -108,12 +108,12 @@ class AssociationLN(ver0.AssociationLN):
     """5.4.6 Association LN"""
     VERSION = VERSION_1
     A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
-                  ver0.AssociationLN.get_attr_element(3),  # associated_partners_id
+                  ver0.AssociationLN.getAElement(3).unwrap(),  # associated_partners_id
                   ic.ICAElement("application_context_name", ContextNameType),
-                  ver0.AssociationLN.get_attr_element(5),  # xDLMS_context_info
+                  ver0.AssociationLN.getAElement(5).unwrap(),  # xDLMS_context_info
                   ic.ICAElement("authentication_mechanism_name", MechanismNameType),
                   ic.ICAElement("secret", ver0.LLCSecret),  # TODO: make new class Secret(LLC_Secret)
-                  ver0.AssociationLN.get_attr_element(8),  # association_status
+                  ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
                   ic.ICAElement("security_setup_reference", cst.LogicalName))
     M_ELEMENTS = (ver0.AssociationLN.get_meth_element(1),
                   ver0.AssociationLN.get_meth_element(2),
@@ -125,9 +125,3 @@ class AssociationLN(ver0.AssociationLN):
     security_setup_reference: cst.LogicalName
     add_object: ObjectListElement
     remove_object: ObjectListElement
-
-    def characteristics_init(self):
-        super(AssociationLN, self).characteristics_init()
-        # References a "Security setup" object by its logical name. The referenced object manages security for a given "Association LN" object
-        # instance.
-        self.set_attr(9, None)

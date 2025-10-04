@@ -98,14 +98,6 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     def profile_entries(self) -> cdt.DoubleLongUnsigned:
         return self.get_attr(8)
 
-    @property
-    def reset(self) -> integers.Only0:
-        return self.get_meth(1)
-
-    @property
-    def capture(self) -> integers.Only0:
-        return self.get_meth(2)
-
     def __create_buffer_struct_type(self):
         """ TODO: more refactoring !!! """
         # rename ObjectDefinition's and adding object if it absense in collection

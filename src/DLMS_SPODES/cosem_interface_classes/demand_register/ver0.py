@@ -53,7 +53,3 @@ class DemandRegister(ic.COSEMInterfaceClasses):
     @property
     def number_of_periods(self) -> cdt.LongUnsigned:
         return self.get_attr(9)
-
-    def characteristics_init(self):
-        self.scaler_unit_not_settable = False
-        """ usability scaler unit flag. if True then it not used"""

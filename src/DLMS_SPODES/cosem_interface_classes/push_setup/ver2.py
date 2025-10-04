@@ -157,10 +157,3 @@ class PushSetup(ic.COSEMInterfaceClasses):
     def last_confirmation_date_time(self) -> cdt.DateTime:
         return self.get_attr(13)
 
-    @property
-    def push(self) -> integers.Only0:
-        return self.get_meth(1)
-
-    @property
-    def reset(self) -> integers.Only0:
-        return self.get_meth(2)

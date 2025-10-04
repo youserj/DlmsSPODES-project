@@ -326,66 +326,37 @@ class Cardinality:
     """default -1 as infinity"""
 
 
+type Encoding = bytes
+
+
 class COSEMInterfaceClasses(Protocol):
     CLASS_ID: ClassVar[ut.CosemClassId]
     VERSION: ClassVar[cdt.Unsigned]
     """ Identification code of the version of the class. The version of each object is retrieved together with the logical name and the class_id by reading the object_list 
     attribute of an “Association LN” / ”Association SN” object. Within one logical device, all instances of a certain class must be of the same version."""
-    A_ELEMENTS: tuple[ICAElement, ...]
+    A_ELEMENTS: ClassVar[tuple[ICAElement, ...]]
     cardinality: ClassVar[Cardinality] = field(default_factory=Cardinality)
-    M_ELEMENTS: tuple[ICMElement, ...] = tuple()  # empty if class not has the methods
-    __attributes: list[cdt.CommonDataType | None]
-    __specific_methods: tuple[cdt.CommonDataType, ...] = None
+    M_ELEMENTS: ClassVar[tuple[ICMElement, ...]] = tuple()  # empty if class not has the methods
+    _encodings: list[Encoding]
     _cbs_attr_post_init: dict[int, Callable]
     # collection: Any | None  # Collection. todo: remove in future
     hash_: int
 
-    def __init__(self, logical_name: cst.LogicalName | bytes | str):
+    def __init__(self, logical_name: cst.LogicalName | bytes):
         self.collection = None
         # """ TODO: """
-        self.cardinality = (0, None)
-        """ (min, max). default is (0, None) from 0 to infinity. If min == max then they are value.   
-        Specifies the number of instances of the class within a logical device. value The class shall be 
-        instantiated exactly “value” times. min...max. The class shall be instantiated at least “min.” times 
-        and at most “max.” times. If min. is zero (0) then the class is optional, otherwise (min. > 0) "min." 
-        instantiations of the class are mandatory. """
-
-        self.__attributes = [_LN_ELEMENT.DATA_TYPE(logical_name), *[None] * len(self.A_ELEMENTS)]
-        """ Attributes container """
-
-        if self.M_ELEMENTS is not None:
-            self.__specific_methods = tuple(el.DATA_TYPE() for el in self.M_ELEMENTS)
-            """Specific methods container"""
-
-        self._cbs_attr_post_init = dict()
-        """container with callbacks for post initial attribute by index"""
-
-        self._cbs_attr_before_init = dict()
-        """container with callbacks for before initial attribute by index"""
-
-        # init all attributes with default value
-        for i in range(2, len(self.A_ELEMENTS)+2):
-            default = self.get_attr_element(i).default
-            if default is not None:
-                self.set_attr(i, default)
-
-        self.characteristics_init()
+        self._encodings = [bytes(logical_name), *[b''] * len(self.A_ELEMENTS)]
+        """encoding or tag container. b"" is empty, bytes[1] is TAG, bytes[2..] is encoding"""
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.hash_ = next(_n_class)
-        # print(cls.__name__)
 
     @classmethod
     @deprecated("use <getAElement>")
     def get_attr_element(cls, i: int) -> ICAElement:
         """return element by order index. Override in each new class"""
-        if i == 1:
-            return _LN_ELEMENT
-        elif i > len(cls.A_ELEMENTS) + 1:
-            raise exc.DLMSException(F"got attribute index: {i}, expected 1..{len(cls.A_ELEMENTS) + 1}")
-        else:
-            return cls.A_ELEMENTS[i - 2]
+        raise RuntimeError()
 
     @classmethod
     def getAElement(cls, i: int) -> result.Simple[ICAElement] | result.Error:
@@ -402,37 +373,27 @@ class COSEMInterfaceClasses(Protocol):
         """ implement in subclasses with methods """
         return cls.M_ELEMENTS[i - 1]
 
-    def characteristics_init(self):
-        """ initiate all attributes and methods of class """
+    def get_attr(self, i: int) -> Optional[cdt.CommonDataType]:
+        aelement = self.getAElement(i).unwrap()
+        if self._encodings[i - 1] ==b'':
+            return None
+        return aelement.DATA_TYPE(bytearray(self._encodings[i - 1]))
 
-    def get_attr(self, index: int) -> Optional[cdt.CommonDataType]:
-        if index > (max_l := self.get_attr_length()):
-            raise IndexError(F"for {self} got attribute index: {index}, expected 0..{max_l}")
-        elif index >= 1:
-            return self.__attributes[index-1]
-        else:
-            raise IndexError(F"not support {index=} as attribute")
-
+    @deprecated("not used now")
     def set_attr_force(self,
                        index: int,
                        value: cdt.CommonDataType):
-        self.__attributes[index-1] = value
-        """use for change official types to custom(not valid)"""
+        raise RuntimeError()
 
+    @deprecated("use <parse_attr>")
     def encode(self,
                index: int,
                value: str | int) -> cdt.CommonDataType | None:
         """encode attribute value from string if possible, else return None(for CHOICE variant)"""
-        if (attr := self.get_attr(index)) is None:
-            data_type = self.get_attr_element(index).DATA_TYPE
-            if isinstance(data_type, ut.CHOICE):
-                return None
-            else:
-                return self.get_attr_element(index).DATA_TYPE(value)
-        else:
-            ret = attr.copy()
-            ret.set(value)
-            return ret
+        raise RuntimeError()
+
+    def set(self, i: int, data: Encoding):
+        self._encodings[i - 1] = data
 
     def set_attr(self,
                  index: int,
@@ -440,32 +401,33 @@ class COSEMInterfaceClasses(Protocol):
                  data_type: cdt.CommonDataType = None):
         value = self.get_attr_element(index).default if value is None else value
         data_type = self.get_attr_element(index).DATA_TYPE if data_type is None else data_type
-        if self.__attributes[index-1] is None:
+        if self._encodings[index - 1] is None:
             new_value = data_type(value)
             if cb_func := self._cbs_attr_before_init.get(index, None):
                 cb_func(new_value)
                 self._cbs_attr_before_init.pop(index)
-            self.__attributes[index-1] = new_value
+            self._encodings[index - 1] = new_value
             if cb_func := self._cbs_attr_post_init.get(index, None):
                 cb_func()
                 self._cbs_attr_post_init.pop(index)
             else:
                 """without callback post init"""
         else:
-            self.__attributes[index-1].set(value)
+            self._encodings[index - 1].set(value)
 
     def parse_attr(self, index: int, value: cdt.Transcript, data_type: cdt.CommonDataType = None):
         """set attribute value by Transcript"""
         dt = self.get_attr_element(index).DATA_TYPE if data_type is None else data_type
         if hasattr(dt, "TAG"):
-            self.__attributes[index - 1] = dt.parse(value)
+            self._encodings[index - 1] = dt.parse(value)
         else:  # maybe CHOICE
-            self.__attributes[index - 1] = self.get_attr(index).parse(value)
+            self._encodings[index - 1] = self.get_attr(index).parse(value)
 
+    @deprecated("not used now")
     def set_attr_link(self, index: int, link: cdt.CommonDataType):
         # self.__attributes[index - 1] = link  # TODO: without validate now for pass load_objects
         if isinstance(link, self.get_attr_element(index).DATA_TYPE):
-            self.__attributes[index-1] = link
+            self._encodings[index - 1] = link
         else:
             raise ValueError(F'get wrong link: {link} for {self} attr: {index}')
 
@@ -479,29 +441,16 @@ class COSEMInterfaceClasses(Protocol):
 
     def clear_attr(self, i: int):
         """use in template"""
-        if i > 1:
-            self.__attributes[i-1] = None
-        else:
-            raise ValueError(F'not support clear {self} attr: {i}')
-
-    @deprecated("use get_meth_element")
-    def get_meth(self, index: int) -> Any:
-        if index >= 1:
-            return self.__specific_methods[index-1]
-        else:
-            raise IndexError(F'not support {index=} as attribute')
+        self.getAElement(i).unwrap()  # check
+        self.set(i, b"")
 
     def get_index_with_attributes(self) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
         """ if by initiation order is True then need override method for concrete class"""
-        return iter(zip(range(1, self.get_attr_length()+1), self.__attributes))
+        return iter(zip(range(1, self.get_attr_length()+1), self._encodings))
 
     def get_attr_length(self) -> int:
         """common attributes amount"""
         return len(self.A_ELEMENTS)+1
-
-    @property
-    def it_index_with_meth(self) -> Iterator[tuple[int, cdt.CommonDataType]]:
-        return iter(zip(range(1, 20), self.__specific_methods))
 
     @property
     def logical_name(self) -> cst.LogicalName:
@@ -525,7 +474,7 @@ class COSEMInterfaceClasses(Protocol):
 
     def __iter__(self) -> Iterator[cdt.CommonDataType]:
         """ return attributes iterator"""
-        return iter(self.__attributes)
+        return iter(self._encodings)
 
     def __str__(self):
         return F"{self.logical_name.get_report()} {get_name(self.logical_name)}"
@@ -537,15 +486,6 @@ class COSEMInterfaceClasses(Protocol):
     @property
     def instance_id(self) -> cdt.OctetString:
         return self.logical_name
-
-    # TODO: rewrite this
-    def get_attribute_descriptor(self, index: int) -> bytes:
-        """ Cosem-Attribute-Descriptor IS/IEC 62056-53 : 2006, 8.3 Useful types """
-        return self.CLASS_ID.contents + self.instance_id.contents + ut.CosemObjectAttributeId(index).contents
-
-    def reset_attribute(self, index: int):
-        """ try set default to value """
-        self.set_attr(index, self.get_attr_element(index).default)
 
     def get_attr_descriptor(self,
                             value: int,

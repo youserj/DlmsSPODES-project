@@ -51,34 +51,6 @@ class SpecialDaysTable(ic.COSEMInterfaceClasses):
     M_ELEMENTS = (ic.ICMElement("insert", SpecDayEntry),
                   ic.ICMElement("delete", cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)
 
-    def characteristics_init(self):
-        self._cbs_attr_post_init.update({2: self.__set_delete})
-        self.set_attr(2, None)
-
     @property
     def entries(self) -> Entries:
         return self.get_attr(2)
-
-    @property
-    def insert(self) -> SpecDayEntry:
-        return self.get_meth(1)
-
-    @property
-    def delete(self) -> cdt.LongUnsigned:
-        return self.get_meth(2)
-
-    def __set_delete(self):
-        try:
-            self.delete.register_cb_preset(self.entries.validate_exist_index)
-            self.insert.index.register_cb_preset(self.entries.validate_exist_index)
-        except KeyError:  # At init time
-            print('set delete NO:')
-
-    def __delete_entry(self):
-        """remove one entry by according delete method index. Call after execute"""
-        for entry in self.entries.values:
-            if entry.index == self.delete:
-                self.entries.values.remove(entry)
-                return
-        else:
-            raise ValueError(F'not found entry with index {self.delete} for remove')
