@@ -26,9 +26,9 @@ class RegisterMonitor(ic.COSEMInterfaceClasses):
     It allows specifying thresholds, the value monitored, and a set of scripts (see 4.5.2) that are executed when the value monitored crosses a threshold """
     CLASS_ID = ClassID.REGISTER_MONITOR
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("thresholds", Thresholds),
-                  ic.ICAElement("monitored_value", structs.ValueDefinition),
-                  ic.ICAElement("actions", Actions))
+    A_ELEMENTS = (ic.ICAElement(2, "thresholds", Thresholds),
+                  ic.ICAElement(3, "monitored_value", structs.ValueDefinition),
+                  ic.ICAElement(4, "actions", Actions))
 
     def characteristics_init(self):
         ...

@@ -22,9 +22,9 @@ class ModemConfigurationVer1(ic.COSEMInterfaceClasses):
     """ This IC allow modelling the configuration and initialisation of modems used for data transfer from/to a device. Several modems can be configured."""
     ClassID = ut.CosemClassId(27)
     VERSION = VERSION_1
-    A_ELEMENTS = (ver0.PSTNModemConfiguration.get_attr_element(2),
-                  ic.ICAElement("initialization_string", InitializationString),
-                  ver0.PSTNModemConfiguration.get_attr_element(4))
+    A_ELEMENTS = (ver0.PSTNModemConfiguration.getAElement(2).unwrap(),
+                  ic.ICAElement(3, "initialization_string", InitializationString),
+                  ver0.PSTNModemConfiguration.getAElement(4).unwrap())
 
     def characteristics_init(self):
         """nothing do it"""

@@ -35,6 +35,7 @@ SelectiveAccessDescriptor: TypeAlias = ut.SelectiveAccessDescriptor  # TODO: mak
 
 @dataclass(frozen=True)
 class ICElement:
+    i: int
     NAME: str
 
     def __str__(self) -> str:
@@ -47,9 +48,9 @@ class ICElement:
 @dataclass(frozen=True)
 class ICAElement(ICElement):
     DATA_TYPE: Type[cdt.CommonDataType] | ut.CHOICE
-    min: int = None
-    max: int = None
-    default: int = None
+    min: Optional[int] = None
+    max: Optional[int] = None
+    default: Optional[int] = None
     classifier: Classifier = Classifier.STATIC
     selective_access: Type[SelectiveAccessDescriptor] | None = None
 
@@ -57,6 +58,7 @@ class ICAElement(ICElement):
                    data_type: Type[cdt.CommonDataType] | ut.CHOICE = None,
                    classifier: Classifier = None) -> Self:
         return ICAElement(
+            i=self.i,
             NAME=self.NAME,
             DATA_TYPE=self.DATA_TYPE if data_type is None else data_type,
             min=self.min,
@@ -71,9 +73,7 @@ class ICMElement(ICElement):
     DATA_TYPE: Type[cdt.CommonDataType]
 
 
-_LN_ELEMENT: ICAElement = ICAElement(
-    NAME="logical_name",
-    DATA_TYPE=cst.LogicalName)
+_LN_ELEMENT: ICAElement = ICAElement(1, "logical_name", cst.LogicalName)
 """" first element for each COSEM Interface Class"""
 
 
@@ -338,15 +338,18 @@ class COSEMInterfaceClasses(Protocol):
     cardinality: ClassVar[Cardinality] = field(default_factory=Cardinality)
     M_ELEMENTS: ClassVar[tuple[ICMElement, ...]] = tuple()  # empty if class not has the methods
     _encodings: list[Encoding]
+    _data: list[Optional[cdt.CommonDataType]]
     _cbs_attr_post_init: dict[int, Callable]
     # collection: Any | None  # Collection. todo: remove in future
     hash_: int
 
-    def __init__(self, logical_name: cst.LogicalName | bytes):
+    def __init__(self, logical_name: cst.LogicalName):
         self.collection = None
         # """ TODO: """
-        self._encodings = [bytes(logical_name), *[b''] * len(self.A_ELEMENTS)]
+        self._encodings = [*[b''] * (len(self.A_ELEMENTS) + 1)]
         """encoding or tag container. b"" is empty, bytes[1] is TAG, bytes[2..] is encoding"""
+        self._data = [logical_name, *[None] * len(self.A_ELEMENTS)]
+        """Common-Data-Type container"""
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -356,7 +359,7 @@ class COSEMInterfaceClasses(Protocol):
     @deprecated("use <getAElement>")
     def get_attr_element(cls, i: int) -> ICAElement:
         """return element by order index. Override in each new class"""
-        raise RuntimeError()
+        raise RuntimeError("get_attr_element")
 
     @classmethod
     def getAElement(cls, i: int) -> result.Simple[ICAElement] | result.Error:
@@ -375,53 +378,65 @@ class COSEMInterfaceClasses(Protocol):
 
     def get_attr(self, i: int) -> Optional[cdt.CommonDataType]:
         aelement = self.getAElement(i).unwrap()
-        if self._encodings[i - 1] ==b'':
-            return None
-        return aelement.DATA_TYPE(bytearray(self._encodings[i - 1]))
+        if len(self._encodings[i - 1]) < 2:
+            if (data := self._data[i - 1]) is None:
+                return None
+            return data
+        data = aelement.DATA_TYPE(self._encodings[i - 1])  # todo: make from_encoding
+        self._data[i - 1] = data
+        self._encodings[i - 1] = b""
+        return data
+
+    def get_encoding(self, i: int) -> result.SimpleOrError[bytes]:
+        if isinstance(res_ae := self.getAElement(i), result.Error):
+            return res_ae
+        if len(enc := self._encodings[i - 1]) > 1:
+            return result.Simple(enc)
+        if (data := self._data[i - 1]) is not None:
+            return result.Simple(data.encoding)
+        return result.Error(f"not find encoding for index={i}")
+
+    def get_tag(self, i: int) -> result.SimpleOrError[cdt.TAG]:
+        if isinstance(res_ae := self.getAElement(i), result.Error):
+            return res_ae
+        if (data := self._data[i - 1]) is not None:
+            return result.Simple(data.TAG)
+        if len(enc := self._encodings[i - 1]) > 0:
+            return result.Simple(cdt.TAG(enc[0:]))
+        return result.Error(f"not find TAG for index={i}")
 
     @deprecated("not used now")
     def set_attr_force(self,
                        index: int,
                        value: cdt.CommonDataType):
-        raise RuntimeError()
+        raise RuntimeError("set_attr_force")
 
     @deprecated("use <parse_attr>")
     def encode(self,
                index: int,
                value: str | int) -> cdt.CommonDataType | None:
         """encode attribute value from string if possible, else return None(for CHOICE variant)"""
-        raise RuntimeError()
+        raise RuntimeError("encode")
 
     def set(self, i: int, data: Encoding):
         self._encodings[i - 1] = data
 
-    def set_attr(self,
-                 index: int,
-                 value=None,
-                 data_type: cdt.CommonDataType = None):
-        value = self.get_attr_element(index).default if value is None else value
-        data_type = self.get_attr_element(index).DATA_TYPE if data_type is None else data_type
-        if self._encodings[index - 1] is None:
-            new_value = data_type(value)
-            if cb_func := self._cbs_attr_before_init.get(index, None):
-                cb_func(new_value)
-                self._cbs_attr_before_init.pop(index)
-            self._encodings[index - 1] = new_value
-            if cb_func := self._cbs_attr_post_init.get(index, None):
-                cb_func()
-                self._cbs_attr_post_init.pop(index)
-            else:
-                """without callback post init"""
+    def set_attr(self, i: int, value: cdt.CommonDataType):
+        aelement = self.getAElement(i).unwrap()
+        if self._data[i - 1] is None:
+            new_value = aelement.DATA_TYPE(value)
+            self._data[i - 1] = new_value
         else:
-            self._encodings[index - 1].set(value)
+            self._data[i - 1].set(value)
 
     def parse_attr(self, index: int, value: cdt.Transcript, data_type: cdt.CommonDataType = None):
         """set attribute value by Transcript"""
-        dt = self.get_attr_element(index).DATA_TYPE if data_type is None else data_type
+        aelement = self.getAElement(i).unwrap()
+        dt = aelement.DATA_TYPE if data_type is None else data_type
         if hasattr(dt, "TAG"):
-            self._encodings[index - 1] = dt.parse(value)
+            self._data[index - 1] = dt.parse(value)
         else:  # maybe CHOICE
-            self._encodings[index - 1] = self.get_attr(index).parse(value)
+            self._data[index - 1] = self.get_attr(index).parse(value)
 
     @deprecated("not used now")
     def set_attr_link(self, index: int, link: cdt.CommonDataType):
@@ -447,6 +462,10 @@ class COSEMInterfaceClasses(Protocol):
     def get_index_with_attributes(self) -> Iterator[tuple[int, cdt.CommonDataType | None]]:
         """ if by initiation order is True then need override method for concrete class"""
         return iter(zip(range(1, self.get_attr_length()+1), self._encodings))
+
+    def iter_ael_with_encoding(self) -> Iterator[tuple[ICAElement, Encoding]]:
+        """iterator of Attribute element with it encodings"""
+        return iter(zip(self.A_ELEMENTS, self._encodings[1:]))
 
     def get_attr_length(self) -> int:
         """common attributes amount"""

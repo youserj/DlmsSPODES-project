@@ -93,13 +93,13 @@ class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelec
 class ProfileGeneric(ver0.ProfileGeneric):
     """4.3.6 Profile generic"""
     VERSION = VERSION_1
-    A_ELEMENTS = (ic.ICAElement("buffer", arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("capture_objects", CaptureObjects),
-                  ver0.ProfileGeneric.get_attr_element(4),
-                  ver0.ProfileGeneric.get_attr_element(5),
-                  ic.ICAElement("sort_object", structs.CaptureObjectDefinition),
-                  ic.ICAElement("entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("profile_entries", cdt.DoubleLongUnsigned, 1, default=1))
+    A_ELEMENTS = (ic.ICAElement(2, "buffer", arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(3, "capture_objects", CaptureObjects),
+                  ver0.ProfileGeneric.getAElement(4).unwrap(),
+                  ver0.ProfileGeneric.getAElement(5).unwrap(),
+                  ic.ICAElement(6, "sort_object", structs.CaptureObjectDefinition),
+                  ic.ICAElement(7, "entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(8, "profile_entries", cdt.DoubleLongUnsigned, 1, default=1))
     M_ELEMENTS = (
         ver0.ProfileGeneric.get_meth_element(1),
         ver0.ProfileGeneric.get_meth_element(2)

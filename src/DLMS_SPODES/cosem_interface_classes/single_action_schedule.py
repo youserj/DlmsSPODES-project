@@ -24,9 +24,9 @@ class SingleActionSchedule(ic.COSEMInterfaceClasses):
     (see “Activity calendar” or “Schedule”).  """
     CLASS_ID = ClassID.SINGLE_ACTION_SCHEDULE
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("executed_script", structs.ActionItem),
-                  ic.ICAElement("type", TYPE),
-                  ic.ICAElement("execution_time", ExecutionTime))
+    A_ELEMENTS = (ic.ICAElement(2, "executed_script", structs.ActionItem),
+                  ic.ICAElement(3, "type", TYPE),
+                  ic.ICAElement(4, "execution_time", ExecutionTime))
 
     def characteristics_init(self):
         """nothing do it"""

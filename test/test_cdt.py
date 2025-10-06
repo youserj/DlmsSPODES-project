@@ -168,7 +168,7 @@ class TestType(unittest.TestCase):
             TYPE = cdt.Unsigned
 
         class TestIC(collection.Data):
-            A_ELEMENTS = (ic.ICAElement("name", TestArray),)
+            A_ELEMENTS = (ic.ICAElement(2, "name", TestArray),)
 
 
         obj = collection.Data("01 01 01 01 01 ff")

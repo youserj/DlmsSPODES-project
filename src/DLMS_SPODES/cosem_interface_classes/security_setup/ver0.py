@@ -32,13 +32,13 @@ class SecuritySetup(ic.COSEMInterfaceClasses):
      and certificates """
     CLASS_ID = ClassID.SECURITY_SETUP
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicy, 0, 3, 0),
-                  ic.ICAElement("security_suite", SecuritySuite, 0, 0, 0),
-                  ic.ICAElement("client_system_title", cdt.OctetString, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("server_system_title", cdt.OctetString))
+    A_ELEMENTS = (ic.ICAElement(2, "security_policy", SecurityPolicy, 0, 3, 0),
+                  ic.ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),
+                  ic.ICAElement(4, "client_system_title", cdt.OctetString, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(5, "server_system_title", cdt.OctetString))
 
-    M_ELEMENTS = (ic.ICMElement("security_activate", SecurityPolicy),
-                  ic.ICMElement("global_key_transfer", GlobalKeyTransfer))
+    M_ELEMENTS = (ic.ICMElement(1, "security_activate", SecurityPolicy),
+                  ic.ICMElement(2, "global_key_transfer", GlobalKeyTransfer))
 
     @property
     def security_policy(self) -> SecurityPolicy:

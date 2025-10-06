@@ -48,8 +48,8 @@ class ScriptTable(ic.COSEMInterfaceClasses):
     """Script table"""
     CLASS_ID = ClassID.SCRIPT_TABLE
     VERSION = VERSION_0
-    A_ELEMENTS = ic.ICAElement("scripts", Scripts),
-    M_ELEMENTS = ic.ICMElement("execute", cdt.LongUnsigned),
+    A_ELEMENTS = ic.ICAElement(2, "scripts", Scripts),
+    M_ELEMENTS = ic.ICMElement(1, "execute", cdt.LongUnsigned),
 
     def characteristics_init(self):
         ...

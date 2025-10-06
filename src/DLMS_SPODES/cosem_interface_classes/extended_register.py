@@ -10,10 +10,10 @@ class ExtendedRegister(register.Register, ic.COSEMInterfaceClasses):
     “logical name” using the OBIS identification system. """
     CLASS_ID = ClassID.EXT_REGISTER
     VERSION = VERSION_0
-    A_ELEMENTS = (register.Register.get_attr_element(2),
-                  register.Register.get_attr_element(3),
-                  ic.ICAElement("status", choices.extended_register, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("capture_time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC))
+    A_ELEMENTS = (register.Register.getAElement(2).unwrap(),
+                  register.Register.getAElement(3).unwrap(),
+                  ic.ICAElement(4, "status", choices.extended_register, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(5, "capture_time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC))
     M_ELEMENTS = register.Register.get_meth_element(1),
 
     @property

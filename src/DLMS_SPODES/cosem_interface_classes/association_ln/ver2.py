@@ -16,16 +16,16 @@ class AssociationLN(ver1.AssociationLN):
         ver1.AssociationLN.getAElement(7).unwrap(),  # secret
         ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
         ver1.AssociationLN.getAElement(9).unwrap(),  # security_setup_reference
-        ic.ICAElement("user_list", arrays.UserList),
-        ic.ICAElement("current_user", structs.UserListEntry),
+        ic.ICAElement(10, "user_list", arrays.UserList),
+        ic.ICAElement(11, "current_user", structs.UserListEntry),
     )
     M_ELEMENTS = (
         ver0.AssociationLN.get_meth_element(1),
         ver0.AssociationLN.get_meth_element(2),
         ver1.AssociationLN.get_meth_element(3),  # add_object
         ver1.AssociationLN.get_meth_element(4),  # remove_object
-        ic.ICMElement("add_user", structs.UserListEntry),
-        ic.ICMElement("remove_user", structs.UserListEntry),
+        ic.ICMElement(5, "add_user", structs.UserListEntry),
+        ic.ICMElement(6, "remove_user", structs.UserListEntry),
     )
     user_list: arrays.UserList
     current_user: structs.UserListEntry

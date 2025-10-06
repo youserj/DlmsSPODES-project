@@ -27,13 +27,13 @@ class AdjacentCells(cdt.Array):
 
 
 class GSMDiagnostic(ver0.GSMDiagnostic):
-    A_ELEMENTS = (ver0.GSMDiagnostic.get_attr_element(2),
-                  ver0.GSMDiagnostic.get_attr_element(3),
-                  ver0.GSMDiagnostic.get_attr_element(4),
-                  ic.ICAElement("ps_status", PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("cell_info", CellInfoType, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("adjacent_cell", AdjacentCells, classifier=ic.Classifier.DYNAMIC),
-                  ver0.GSMDiagnostic.get_attr_element(8))
+    A_ELEMENTS = (ver0.GSMDiagnostic.getAElement(2).unwrap(),
+                  ver0.GSMDiagnostic.getAElement(3).unwrap(),
+                  ver0.GSMDiagnostic.getAElement(4).unwrap(),
+                  ic.ICAElement(5, "ps_status", PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(6, "cell_info", CellInfoType, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(7, "adjacent_cell", AdjacentCells, classifier=ic.Classifier.DYNAMIC),
+                  ver0.GSMDiagnostic.getAElement(8).unwrap())
 
     # def __new__(cls, *args, **kwargs):
     #     raise ValueError(F"version: {__name__[-1]} of {cls.__class__.__name__} not support framework")

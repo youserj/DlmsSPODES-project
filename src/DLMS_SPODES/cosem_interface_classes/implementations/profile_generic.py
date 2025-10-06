@@ -7,6 +7,7 @@ class SPODES3ScalesProfile(ver1.ProfileGeneric):
     """Cosem3 Для профилей масштаба"""
     A_ELEMENTS = (
         ver1.ic.ICAElement(
+            i=2,
             NAME=ver1.ProfileGeneric.A_ELEMENTS[0].NAME,
             DATA_TYPE=ver1.ProfileGeneric.A_ELEMENTS[0].DATA_TYPE),
         *ver1.ProfileGeneric.A_ELEMENTS[1:])

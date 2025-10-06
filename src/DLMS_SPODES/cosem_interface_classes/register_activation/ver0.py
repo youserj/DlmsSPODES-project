@@ -32,25 +32,13 @@ class RegisterActivation(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.REGISTER_ACTIVATION
     VERSION = VERSION_0
     A_ELEMENTS = (
-        ic.ICAElement(
-            NAME="register_assignment",
-            DATA_TYPE=RegisterAssignment),
-        ic.ICAElement(
-            NAME="mask_list",
-            DATA_TYPE=MaskList),
-        ic.ICAElement(
-            NAME="active_mask",
-            DATA_TYPE=cdt.OctetString))
+        ic.ICAElement(2, "register_assignment", RegisterAssignment),
+        ic.ICAElement(3, "mask_list", MaskList),
+        ic.ICAElement(4, "active_mask", cdt.OctetString))
     M_ELEMENTS = (
-        ic.ICMElement(
-            NAME="add_register",
-            DATA_TYPE=ObjectDefinition),
-        ic.ICMElement(
-            NAME="add_mask",
-            DATA_TYPE=RegisterActMask),
-        ic.ICMElement(
-            NAME="delete_mask",
-            DATA_TYPE=cdt.OctetString))
+        ic.ICMElement(1, "add_register", ObjectDefinition),
+        ic.ICMElement(2, "add_mask", RegisterActMask),
+        ic.ICMElement(3, "delete_mask", cdt.OctetString))
 
     def characteristics_init(self):
         """nothing do"""

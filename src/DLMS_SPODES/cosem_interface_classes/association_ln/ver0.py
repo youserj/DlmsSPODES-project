@@ -294,17 +294,17 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     """5.4.5 Association LN"""
     CLASS_ID = ClassID.ASSOCIATION_LN
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
-                  ic.ICAElement("associated_partners_id", AssociatedPartnersType),
-                  ic.ICAElement("application_context_name", ApplicationContextName),
-                  ic.ICAElement("xDLMS_context_info", XDLMSContextType),
-                  ic.ICAElement("authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
-                  ic.ICAElement("LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
-                  ic.ICAElement("association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
-    M_ELEMENTS = (ic.ICMElement("reply_to_HLS_authentication", method.ReplyToHLSAuthentication),
-                  ic.ICMElement("change_HLS_secret", LLCSecret),
-                  ic.ICMElement("add_object", ObjectListElement),
-                  ic.ICMElement("remove_object", ObjectListElement))
+    A_ELEMENTS = (ic.ICAElement(2, "object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
+                  ic.ICAElement(3, "associated_partners_id", AssociatedPartnersType),
+                  ic.ICAElement(4, "application_context_name", ApplicationContextName),
+                  ic.ICAElement(5, "xDLMS_context_info", XDLMSContextType),
+                  ic.ICAElement(6, "authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
+                  ic.ICAElement(7, "LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
+                  ic.ICAElement(8, "association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
+    M_ELEMENTS = (ic.ICMElement(1, "reply_to_HLS_authentication", method.ReplyToHLSAuthentication),
+                  ic.ICMElement(2, "change_HLS_secret", LLCSecret),
+                  ic.ICMElement(3, "add_object", ObjectListElement),
+                  ic.ICMElement(4, "remove_object", ObjectListElement))
 
     @property
     def object_list(self) -> ObjectListType:

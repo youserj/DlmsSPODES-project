@@ -12,11 +12,11 @@ class TCPUDPSetup(ic.COSEMInterfaceClasses):
      When a COSEM physical device supports various data link layers - for example Ethernet and PPP - an instance of the TCP-UDP setup object is necessary for each of them. """
     CLASS_ID = ClassID.TCP_UDP_SETUP
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("TCP_UDP_port", cdt.LongUnsigned, default=4059),
-                  ic.ICAElement("IP_reference", cst.LogicalName),
-                  ic.ICAElement("MMS", cdt.LongUnsigned, 40, 535, 535),  # TODO: max, def not according by BlueBook
-                  ic.ICAElement("nb_of_sim_conn", cdt.Unsigned, 1),
-                  ic.ICAElement("inactivity_time_out", cdt.LongUnsigned, default=180))
+    A_ELEMENTS = (ic.ICAElement(2, "TCP_UDP_port", cdt.LongUnsigned, default=4059),
+                  ic.ICAElement(3, "IP_reference", cst.LogicalName),
+                  ic.ICAElement(4, "MMS", cdt.LongUnsigned, 40, 535, 535),  # TODO: max, def not according by BlueBook
+                  ic.ICAElement(5, "nb_of_sim_conn", cdt.Unsigned, 1),
+                  ic.ICAElement(6, "inactivity_time_out", cdt.LongUnsigned, default=180))
 
     @property
     def TCP_UDP_port(self) -> cdt.LongUnsigned:

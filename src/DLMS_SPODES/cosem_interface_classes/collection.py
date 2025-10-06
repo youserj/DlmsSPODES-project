@@ -679,7 +679,7 @@ class Collection:
     __dlms_ver: int
     __country: Optional[CountrySpecificIdentifiers]
     __country_ver: Optional[ParameterValue]
-    __objs: dict[o.OBIS, InterfaceClass]
+    __objs: dict[o.OBIS, ic.COSEMInterfaceClasses]
     __const_objs: int
     spec_map: str
 
@@ -720,46 +720,30 @@ class Collection:
 
     def copy_object_values(self, target: ic.COSEMInterfaceClasses, association_id: int = 3) -> None:
         """copy object values according by association. only needed"""
-        source = self.__objs.get(target.logical_name.contents, None)
+        source: ic.COSEMInterfaceClasses = self.__objs.get(target.logical_name.contents, None)
         if source is None:
             raise RuntimeError(f"can't find {target}")
-        for i, value in source.get_index_with_attributes():
-            el = target.get_attr_element(i)
+        for el, encoding in source.iter_ael_with_encoding():
             if (
-                i == 1
-                or value is None
+                encoding == b""
                 or (
                     not isinstance(el.DATA_TYPE, ut.CHOICE)
                     and el.classifier == ic.Classifier.DYNAMIC
                 )
             ):
                 continue
+            if (
+                el.classifier == ic.Classifier.STATIC
+                and not self.is_writable(
+                    ln=target.logical_name,
+                    index=el.i,
+                    association_id=association_id)
+            ):
+                target.set(el.i, encoding)
             else:
-                if (
-                    target.get_attr_element(i).classifier == ic.Classifier.STATIC
-                    and not self.is_writable(
-                        ln=target.logical_name,
-                        index=i,
-                        association_id=association_id)
-                ):
-                    # todo: may be callbacks inits remove?
-                    if cb_func := target._cbs_attr_before_init.get(i, None):
-                        cb_func(value)  # Todo: 'a' as 'new_value' in set_attr are can use?
-                        target._cbs_attr_before_init.pop(i)
-                    target.set_attr(i, value.encoding)
-                    if cb_func := target._cbs_attr_post_init.get(i, None):
-                        cb_func()
-                        target._cbs_attr_post_init.pop(i)
-                else:
-                    if isinstance(arr := target.get_attr(i), cdt.Array):
-                        arr.set_type(value.TYPE)
-                    try:
-                        target.set_attr(
-                            index=i,
-                            value=value.encoding,
-                            data_type=source.get_attr(i).__class__)
-                    except exc.EmptyObj as e:
-                        print(F"can't copy {target} attr={i}, skipped. {e}")
+                # if isinstance(arr := target.get_attr(i), cdt.Array):  maybe NEED!!!
+                #     arr.set_type(value.TYPE)
+                target.set(el.i, encoding[:1])  # set only TAG
 
     def copy(self) -> result.Simple["Collection"]:
         """copy collection with value by Association"""
@@ -880,7 +864,7 @@ class Collection:
     def __getitem__(self, item: o.OBIS) -> InterfaceClass:
         return self.__objs[item]
 
-    def get(self, obis: o.OBIS) -> InterfaceClass | None:
+    def get(self, obis: o.OBIS) -> Optional[ic.COSEMInterfaceClasses]:
         """ get object, return None if it absence """
         return self.__objs.get(obis, None)
 
@@ -896,7 +880,7 @@ class Collection:
         if res.value is None:
             return res
         for el in par.elements():
-            res.value = res.value.a_data[el]
+            res.value = res.value[el]
         return res
 
     def values(self) -> tuple[InterfaceClass]:
@@ -917,7 +901,6 @@ class Collection:
                 func_map=func_maps[self.spec_map])(logical_name)
             new_object.collection = self
             self.__objs[o.OBIS(logical_name.contents)] = new_object
-            print(F'Create {new_object}')
             return new_object
         except ValueError as e:
             raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
@@ -1146,7 +1129,7 @@ class Collection:
         return res
 
     def iter_classID_objects(self,
-                        class_id: ut.CosemClassId) -> Iterator[InterfaceClass]:
+                        class_id: ut.CosemClassId) -> Iterator[ic.COSEMInterfaceClasses]:
         return (obj for obj in self.__objs.values() if obj.CLASS_ID == class_id)
 
     def LNPattern2objects(self,
@@ -1213,7 +1196,7 @@ class Collection:
     def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:
         """ copy all attributes value from other and return bool result """
         try:
-            obj: InterfaceClass = self.par2obj(Parameter(other.logical_name.contents)).unwrap()
+            obj = self.par2obj(Parameter(other.logical_name.contents)).unwrap()
             for i, attr in other.get_index_with_attributes(in_init_order=True):
                 if i == 1:
                     continue
@@ -1231,7 +1214,7 @@ class Collection:
         else:
             return False
 
-    def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[InterfaceClass]:
+    def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[ic.COSEMInterfaceClasses]:
         if obj := self.__objs.get(obis):
             return result.Simple(obj)
         return result.Error.from_e(ValueError(str(obis)), "no object")
@@ -2023,7 +2006,7 @@ def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
             elif ln.d in chain(range(33, 42), range(52, 63), range(72, 81), range(90, 99)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
                 return media_id.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
         elif ln.c == 42 and ln.e == 0:
-            if ln.d in chain(0, 1, 2, 13, range(15, 19), range(19, 31), range(35, 51), range(55, 71)) and ln.f == 255:
+            if ln.d in chain((0, 1, 2, 13), range(15, 19), range(19, 31), range(35, 51), range(55, 71)) and ln.f == 255:
                 return media_id.MEASURED_VALUES_GAS_FLOW_RATE
             elif ln.d in chain(range(31, 35), range(51, 55)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
                 return media_id.MEASURED_VALUES_GAS_FLOW_RATE

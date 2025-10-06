@@ -56,20 +56,20 @@ class Clock(ic.COSEMInterfaceClasses):
     """4.5.1 Clock"""
     CLASS_ID = ClassID.CLOCK
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("time_zone", TimeZone, -720, 840),
-                  ic.ICAElement("status", ClockStatus, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("daylight_savings_begin", cst.OctetStringDateTime),
-                  ic.ICAElement("daylight_savings_end", cst.OctetStringDateTime),
-                  ic.ICAElement("daylight_savings_deviation", DaylightSavingsDeviation, -120, 120),
-                  ic.ICAElement("daylight_savings_enabled", cdt.Boolean),
-                  ic.ICAElement("clock_base", ClockBase))
-    M_ELEMENTS = (ic.ICMElement("adjust_to_quarter", integers.Only0),
-                  ic.ICMElement("adjust_to_measuring_period", integers.Only0),
-                  ic.ICMElement("adjust_to_minute", integers.Only0),
-                  ic.ICMElement("adjust_to_preset_time", integers.Only0),
-                  ic.ICMElement("preset_adjusting_time", PresetAdjustingTime),
-                  ic.ICMElement("shift_time", ShiftTime))
+    A_ELEMENTS = (ic.ICAElement(2, "time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(3, "time_zone", TimeZone, -720, 840),
+                  ic.ICAElement(4, "status", ClockStatus, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(5, "daylight_savings_begin", cst.OctetStringDateTime),
+                  ic.ICAElement(6, "daylight_savings_end", cst.OctetStringDateTime),
+                  ic.ICAElement(7, "daylight_savings_deviation", DaylightSavingsDeviation, -120, 120),
+                  ic.ICAElement(8, "daylight_savings_enabled", cdt.Boolean),
+                  ic.ICAElement(9, "clock_base", ClockBase))
+    M_ELEMENTS = (ic.ICMElement(1, "adjust_to_quarter", integers.Only0),
+                  ic.ICMElement(2, "adjust_to_measuring_period", integers.Only0),
+                  ic.ICMElement(3, "adjust_to_minute", integers.Only0),
+                  ic.ICMElement(4, "adjust_to_preset_time", integers.Only0),
+                  ic.ICMElement(5, "preset_adjusting_time", PresetAdjustingTime),
+                  ic.ICMElement(6, "shift_time", ShiftTime))
 
     @property
     def time(self) -> cst.OctetStringDateTime:

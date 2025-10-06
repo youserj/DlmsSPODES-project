@@ -101,21 +101,21 @@ class CertificateIdentification(choices.StructureMixin, cdt.Structure):
 
 class SecuritySetup(ver0.SecuritySetup):
     VERSION = VERSION_1
-    A_ELEMENTS = (ic.ICAElement("security_policy", SecurityPolicyVer1),
-                  ic.ICAElement("security_suite", SecuritySuite),
+    A_ELEMENTS = (ic.ICAElement(1, "security_policy", SecurityPolicyVer1),
+                  ic.ICAElement(2, "security_suite", SecuritySuite),
                   ver0.SecuritySetup.getAElement(3).unwrap(),
                   ver0.SecuritySetup.getAElement(4).unwrap(),
                   ver0.SecuritySetup.getAElement(5).unwrap(),
-                  ic.ICAElement("certificates", Certificates, classifier=ic.Classifier.DYNAMIC))
+                  ic.ICAElement(6, "certificates", Certificates, classifier=ic.Classifier.DYNAMIC))
 
-    M_ELEMENTS = (ic.ICMElement("security_activate", SecurityPolicyVer1),
-                  ic.ICMElement("key_transfer", KeyTransfer),
-                  ic.ICMElement("key_agreement", KeyAgreement),
-                  ic.ICMElement("generate_key_pair", KeyPair),
-                  ic.ICMElement("generate_certificate_request", KeyPair),
-                  ic.ICMElement("import_certificate", cdt.OctetString),
-                  ic.ICMElement("export_certificate", CertificateIdentification),
-                  ic.ICMElement("remove_certificate", CertificateIdentification))
+    M_ELEMENTS = (ic.ICMElement(1, "security_activate", SecurityPolicyVer1),
+                  ic.ICMElement(2, "key_transfer", KeyTransfer),
+                  ic.ICMElement(3, "key_agreement", KeyAgreement),
+                  ic.ICMElement(4, "generate_key_pair", KeyPair),
+                  ic.ICMElement(5, "generate_certificate_request", KeyPair),
+                  ic.ICMElement(6, "import_certificate", cdt.OctetString),
+                  ic.ICMElement(7, "export_certificate", CertificateIdentification),
+                  ic.ICMElement(8, "remove_certificate", CertificateIdentification))
 
     @property
     def security_policy(self) -> SecurityPolicyVer1:

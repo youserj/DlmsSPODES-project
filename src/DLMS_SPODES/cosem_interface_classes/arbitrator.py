@@ -48,13 +48,13 @@ class Arbitrator(ic.COSEMInterfaceClasses):
     """DLMS UA 1000-1 Ed. 14 4.5.12 Arbitrator"""
     CLASS_ID = ClassID.ARBITRATOR
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("actions", Actions),
-                  ic.ICAElement("permission_table", PermissionsTable),
-                  ic.ICAElement("weightings_table", WeightingsTable),
-                  ic.ICAElement("most_recent_requests_table", MostRecentRequestTable, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement("last_outcome", cdt.Unsigned, min=0, default=0, classifier=ic.Classifier.DYNAMIC))  # TODO: max = n what it?
-    M_ELEMENTS = (ic.ICMElement("request_action", RequestAction),
-                  ic.ICMElement("reset", integers.INTEGER_0))
+    A_ELEMENTS = (ic.ICAElement(2, "actions", Actions),
+                  ic.ICAElement(3, "permission_table", PermissionsTable),
+                  ic.ICAElement(4, "weightings_table", WeightingsTable),
+                  ic.ICAElement(5, "most_recent_requests_table", MostRecentRequestTable, classifier=ic.Classifier.DYNAMIC),
+                  ic.ICAElement(6, "last_outcome", cdt.Unsigned, min=0, default=0, classifier=ic.Classifier.DYNAMIC))  # TODO: max = n what it?
+    M_ELEMENTS = (ic.ICMElement(1, "request_action", RequestAction),
+                  ic.ICMElement(2, "reset", integers.INTEGER_0))
     actors: tuple[str] = tuple()
     """name actors container"""
 

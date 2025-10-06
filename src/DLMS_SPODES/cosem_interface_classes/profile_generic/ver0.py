@@ -45,17 +45,17 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     attr_descriptor_with_selection: Type[ut.CosemAttributeDescriptorWithSelection] = None
 
     A_ELEMENTS = (
-        ic.ICAElement("buffer", cdt.Array, classifier=ic.Classifier.DYNAMIC),
-        ic.ICAElement("capture_objects", CaptureObjects),
-        ic.ICAElement("capture_period", cdt.DoubleLongUnsigned),  # 5.3.1 Profile generic. capture_period
-        ic.ICAElement("sort_method", SortMethod),
-        ic.ICAElement("sort_object", ObjectDefinition),
-        ic.ICAElement("entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
-        ic.ICAElement("profile_entries", cdt.DoubleLongUnsigned, 1, default=1)
+        ic.ICAElement(2, "buffer", cdt.Array, classifier=ic.Classifier.DYNAMIC),
+        ic.ICAElement(3, "capture_objects", CaptureObjects),
+        ic.ICAElement(4, "capture_period", cdt.DoubleLongUnsigned),  # 5.3.1 Profile generic. capture_period
+        ic.ICAElement(5, "sort_method", SortMethod),
+        ic.ICAElement(6, "sort_object", ObjectDefinition),
+        ic.ICAElement(7, "entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
+        ic.ICAElement(8, "profile_entries", cdt.DoubleLongUnsigned, 1, default=1)
     )
     M_ELEMENTS = (
-        ic.ICMElement("reset", integers.Only0),
-        ic.ICMElement("capture", integers.Only0),
+        ic.ICMElement(1, "reset", integers.INTEGER_0),
+        ic.ICMElement(2, "capture", integers.INTEGER_0),
         # more 2 elements
     )
 

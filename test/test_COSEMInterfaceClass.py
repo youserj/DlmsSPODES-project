@@ -13,6 +13,7 @@ class TestType(unittest.TestCase):
 
     def test_ICAElement(self):
         el = ic.ICAElement(
+            i=1,
             NAME="name",
             DATA_TYPE=cdt.OctetString,
             min=1,

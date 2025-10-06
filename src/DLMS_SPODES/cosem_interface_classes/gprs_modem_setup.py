@@ -23,9 +23,9 @@ class GPRSModemSetup(ic.COSEMInterfaceClasses):
     """ This IC allow setting up GPRS modems, by handling all data necessary data for modem management. """
     CLASS_ID = ClassID.GPRS_MODEM_SETUP
     VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement("APN", cdt.OctetString),
-                  ic.ICAElement("PIN_code", cdt.LongUnsigned),
-                  ic.ICAElement("quality_of_service", QualityOfService))
+    A_ELEMENTS = (ic.ICAElement(2, "APN", cdt.OctetString),
+                  ic.ICAElement(3, "PIN_code", cdt.LongUnsigned),
+                  ic.ICAElement(4, "quality_of_service", QualityOfService))
 
     def characteristics_init(self):
         """nothing do it"""

@@ -107,18 +107,18 @@ class MechanismNameType(cdt.AXDR, authentication_mechanism_name.AuthenticationMe
 class AssociationLN(ver0.AssociationLN):
     """5.4.6 Association LN"""
     VERSION = VERSION_1
-    A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
+    A_ELEMENTS = (ic.ICAElement(2, "object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
                   ver0.AssociationLN.getAElement(3).unwrap(),  # associated_partners_id
-                  ic.ICAElement("application_context_name", ContextNameType),
+                  ic.ICAElement(4, "application_context_name", ContextNameType),
                   ver0.AssociationLN.getAElement(5).unwrap(),  # xDLMS_context_info
-                  ic.ICAElement("authentication_mechanism_name", MechanismNameType),
-                  ic.ICAElement("secret", ver0.LLCSecret),  # TODO: make new class Secret(LLC_Secret)
+                  ic.ICAElement(6, "authentication_mechanism_name", MechanismNameType),
+                  ic.ICAElement(7, "secret", ver0.LLCSecret),  # TODO: make new class Secret(LLC_Secret)
                   ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
-                  ic.ICAElement("security_setup_reference", cst.LogicalName))
+                  ic.ICAElement(9, "security_setup_reference", cst.LogicalName))
     M_ELEMENTS = (ver0.AssociationLN.get_meth_element(1),
                   ver0.AssociationLN.get_meth_element(2),
-                  ic.ICMElement("add_object", ObjectListElement),
-                  ic.ICMElement("remove_object", ObjectListElement))
+                  ic.ICMElement(3, "add_object", ObjectListElement),
+                  ic.ICMElement(4, "remove_object", ObjectListElement))
     object_list: ObjectListType
     application_context_name: ContextNameType
     authentication_mechanism_name: MechanismNameType

@@ -20,15 +20,15 @@ class IPv4Setup(ic.COSEMInterfaceClasses):
     CLASS_ID = ClassID.IPV4_SETUP
     VERSION = VERSION_0
     # TODO: more 7 attr and 3 methods
-    A_ELEMENTS = (ic.ICAElement("DL_reference", cst.LogicalName),
-                  ic.ICAElement("IP_address", double_long_usingneds.IPAddress),
-                  ic.ICAElement("multicast_IP_address", arrays.MulticastIPAddress),
-                  ic.ICAElement("IP_options", IPOptions),
-                  ic.ICAElement("subnet_mask", double_long_usingneds.IPAddress),
-                  ic.ICAElement("gateway_IP_address", double_long_usingneds.IPAddress),
-                  ic.ICAElement("use_DHCP_flag", cdt.Boolean),
-                  ic.ICAElement("primary_DNS_address", double_long_usingneds.IPAddress),
-                  ic.ICAElement("secondary_DNS_address", double_long_usingneds.IPAddress),
+    A_ELEMENTS = (ic.ICAElement(2, "DL_reference", cst.LogicalName),
+                  ic.ICAElement(3, "IP_address", double_long_usingneds.IPAddress),
+                  ic.ICAElement(4, "multicast_IP_address", arrays.MulticastIPAddress),
+                  ic.ICAElement(5, "IP_options", IPOptions),
+                  ic.ICAElement(6, "subnet_mask", double_long_usingneds.IPAddress),
+                  ic.ICAElement(7, "gateway_IP_address", double_long_usingneds.IPAddress),
+                  ic.ICAElement(8, "use_DHCP_flag", cdt.Boolean),
+                  ic.ICAElement(9, "primary_DNS_address", double_long_usingneds.IPAddress),
+                  ic.ICAElement(10, "secondary_DNS_address", double_long_usingneds.IPAddress),
                   # TODO: more 3 methods
                   )
 

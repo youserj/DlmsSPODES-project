@@ -10,7 +10,7 @@ class Data(ic.COSEMInterfaceClasses):
     The data type of the value is CHOICE. “Data” is typically used to store configuration data and parameters """
     CLASS_ID = ClassID.DATA
     VERSION = VERSION_0
-    A_ELEMENTS = ic.ICAElement("value", choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
+    A_ELEMENTS = ic.ICAElement(2, "value", choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
 
     @property
     def value(self) -> cdt.CommonDataTypes:

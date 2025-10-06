@@ -159,7 +159,7 @@ class ChannelNumberValue(cdt.ReportMixin, cdt.Unsigned):
 
 class CommunicationPortParameter(Data):
     """ RU. 0.0.96.12.4.255. СТО_34.01-5.1-006-2019v3. 13.10. Определение номера порта по которому установлено соединение"""
-    A_ELEMENTS = ic.ICAElement("value", ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = ic.ICAElement(2, "value", ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=ic.Classifier.DYNAMIC),
 
     @property
     def value(self) -> ChannelNumberValue:
