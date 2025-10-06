@@ -896,7 +896,7 @@ class Collection:
         if res.value is None:
             return res
         for el in par.elements():
-            res.value = res.value.a_data[el]
+            res.value = res.value[el]
         return res
 
     def values(self) -> tuple[InterfaceClass]:
