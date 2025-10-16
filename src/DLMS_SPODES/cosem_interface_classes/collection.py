@@ -2114,7 +2114,7 @@ class Template:
             for i in indexes:
                 if (attr := obj.get_attr(i)) is not None:
                     try:
-                        obj_col.parse_attr(i, attr.to_transcript())
+                        attr.validate()
                     except ValueError as e:
                         ret.append(ValueError(F"can't decode value {attr} for {ln}:{i}"))
                 else:
