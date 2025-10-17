@@ -1,41 +1,18 @@
-from .__class_init__ import *
-from ..types import choices
 from ..types.implementations import integers
-from .overview import VERSION_0
+from typing import Optional
+from ..types import choices, cdt
+from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier, Cardinality
+from .Overview import class_id
 
 
-class Register(ic.COSEMInterfaceClasses):
-    """ A “Register” object stores a process value or a status value with its associated unit. The register object knows
-    the nature of the process value or of the status value. The nature of the value is described by the attribute
-    “logical name” using the OBIS identification system. """
-    CLASS_ID = ClassID.REGISTER
-    VERSION = VERSION_0
-    scaler_unit_not_settable: bool
+class Register(ICAuto):
+    """4.3.2 Register"""
+    CLASS_ID = class_id.REGISTER
+    VERSION = 0
+    CARDINALITY = Cardinality()
     A_ELEMENTS = (
-        ic.ICAElement(2, "value", choices.register, classifier=ic.Classifier.NOT_SPECIFIC),
-        ic.ICAElement(3, "scaler_unit", cdt.ScalUnitType))
-    M_ELEMENTS = (
-        ic.ICMElement(1, "reset", integers.INTEGER_0),)
-
-    def characteristics_init(self):
-        self._cbs_attr_post_init.update({2: self.__set_value_data_type})
-
-        self.scaler_unit_not_settable = False
-        """ usability scaler unit flag. if True then it not used"""
-
-    @property
-    def value(self) -> choices.RegisterValues:
-        return self.get_attr(2)
-
-    @property
-    def scaler_unit(self) -> cdt.ScalUnitType:
-        return self.get_attr(3)
-
-    def __set_value_data_type(self):
-        """ When instead of a “Data” object a “Register” object is used, (with the scaler_unit attribute not used or with scaler = 0, unit = 255) then the data types allowed for
-        the value attribute of the “Data” interface class are allowed. """
-        match self.value:
-            case cdt.Array() | cdt.CompactArray() | cdt.Structure():
-                self.set_attr(3, cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\xff'))
-            case _:
-                """ nothing do it """
+        ICAElement(2, "value", choices.register, classifier=Classifier.NOT_SPECIFIC),
+        ICAElement(3, "scaler_unit", cdt.ScalUnitType))
+    M_ELEMENTS = ICMElement(1, "reset", integers.Only0),
+    value: Optional[choices.RegisterValues]
+    scaler_unit: Optional[cdt.ScalUnitType]

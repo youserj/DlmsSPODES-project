@@ -1,6 +1,7 @@
-from .__class_init__ import *
-from ..types import choices
-from .overview import VERSION_0
+from ..types import choices, cdt, cst
+from ..types.type_alias import Attr
+from .cosem_interface_class import ICAuto, ICAElement, ICMElement
+from .Overview import class_id
 
 
 class ServiceId(cdt.Enum, elements=(1, 2)):
@@ -44,16 +45,10 @@ class Scripts(cdt.Array):
         raise ValueError(F"in {self} all <script_identifier> is busy")
 
 
-class ScriptTable(ic.COSEMInterfaceClasses):
+class ScriptTable(ICAuto):
     """Script table"""
-    CLASS_ID = ClassID.SCRIPT_TABLE
-    VERSION = VERSION_0
-    A_ELEMENTS = ic.ICAElement(2, "scripts", Scripts),
-    M_ELEMENTS = ic.ICMElement(1, "execute", cdt.LongUnsigned),
-
-    def characteristics_init(self):
-        ...
-
-    @property
-    def scripts(self) -> Scripts:
-        return self.get_attr(2)
+    CLASS_ID = class_id.SCRIPT_TABLE
+    VERSION = 0
+    A_ELEMENTS = ICAElement(2, "scripts", Scripts),
+    M_ELEMENTS = ICMElement(1, "execute", cdt.LongUnsigned),
+    scripts: Attr

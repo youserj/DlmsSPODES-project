@@ -1,7 +1,10 @@
-from ..__class_init__ import *
+from ..cosem_interface_class import ICAuto, ICAElement, ICMElement
 from ...types import cst
 from ...types.implementations import long_unsigneds
-from ..overview import VERSION_0
+from typing import Optional
+from ...types import cdt
+from ..Overview import class_id
+
 
 class ObjectDefinition(cdt.Structure):
     class_id: long_unsigneds.ClassId
@@ -25,32 +28,18 @@ class MaskList(cdt.Array):
     TYPE = RegisterActMask
 
 
-class RegisterActivation(ic.COSEMInterfaceClasses):
-    """ A “Register” object stores a process value or a status value with its associated unit. The register object knows
-    the nature of the process value or of the status value. The nature of the value is described by the attribute
-    “logical name” using the OBIS identification system. """
-    CLASS_ID = ClassID.REGISTER_ACTIVATION
-    VERSION = VERSION_0
+class RegisterActivation(ICAuto):
+    """4.3.5 Register activation"""
+    CLASS_ID = class_id.REGISTER_ACTIVATION
+    VERSION = 0
     A_ELEMENTS = (
-        ic.ICAElement(2, "register_assignment", RegisterAssignment),
-        ic.ICAElement(3, "mask_list", MaskList),
-        ic.ICAElement(4, "active_mask", cdt.OctetString))
+        ICAElement(2, "register_assignment", RegisterAssignment),
+        ICAElement(3, "mask_list", MaskList),
+        ICAElement(4, "active_mask", cdt.OctetString))
     M_ELEMENTS = (
-        ic.ICMElement(1, "add_register", ObjectDefinition),
-        ic.ICMElement(2, "add_mask", RegisterActMask),
-        ic.ICMElement(3, "delete_mask", cdt.OctetString))
-
-    def characteristics_init(self):
-        """nothing do"""
-
-    @property
-    def register_assignment(self) -> RegisterAssignment:
-        return self.get_attr(2)
-
-    @property
-    def mask_list(self) -> MaskList:
-        return self.get_attr(3)
-
-    @property
-    def active_mask(self) -> cdt.OctetString:
-        return self.get_attr(4)
+        ICMElement(1, "add_register", ObjectDefinition),
+        ICMElement(2, "add_mask", RegisterActMask),
+        ICMElement(3, "delete_mask", cdt.OctetString))
+    register_assignment: Optional[RegisterAssignment]
+    mask_list: Optional[MaskList]
+    active_mask: Optional[cdt.OctetString]

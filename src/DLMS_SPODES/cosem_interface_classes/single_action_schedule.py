@@ -1,6 +1,8 @@
-from .__class_init__ import *
 from ..types.implementations import structs
-from .overview import VERSION_0
+from ..types import cdt, cst
+from ..types.type_alias import Attr
+from .cosem_interface_class import ICAuto, ICAElement
+from .Overview import class_id
 
 
 class TYPE(cdt.Enum, elements=(1, 2, 3, 4, 5)):
@@ -19,32 +21,14 @@ class ExecutionTime(cdt.Array):
     TYPE = ExecutionTimeDate
 
 
-class SingleActionSchedule(ic.COSEMInterfaceClasses):
+class SingleActionSchedule(ICAuto):
     """ This IC allows modelling the execution of periodic actions within a meter. Such actions are not necessarily linked to tariffication
     (see “Activity calendar” or “Schedule”).  """
-    CLASS_ID = ClassID.SINGLE_ACTION_SCHEDULE
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "executed_script", structs.ActionItem),
-                  ic.ICAElement(3, "type", TYPE),
-                  ic.ICAElement(4, "execution_time", ExecutionTime))
-
-    def characteristics_init(self):
-        """nothing do it"""
-
-    @property
-    def executed_script(self) -> structs.ActionItem:
-        return self.get_attr(2)
-
-    @property
-    def type_(self) -> TYPE:
-        return self.get_attr(3)
-
-    @property
-    def execution_time(self) -> ExecutionTime:
-        return self.get_attr(4)
-
-
-if __name__ == '__main__':
-    a = ExecutionTimeDate(b'\x02\x02\t\x04\x12\x007\x00\t\x05\x07\xe5\x05\x1f\x01')
-    a = SingleActionSchedule('0.0.15.0.0.255')
-    print(a)
+    CLASS_ID = class_id.SINGLE_ACTION_SCHEDULE
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "executed_script", structs.ActionItem),
+                  ICAElement(3, "type", TYPE),
+                  ICAElement(4, "execution_time", ExecutionTime))
+    executed_script: Attr
+    type_: Attr
+    execution_time: Attr

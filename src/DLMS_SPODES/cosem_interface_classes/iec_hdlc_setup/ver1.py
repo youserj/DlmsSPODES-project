@@ -1,53 +1,27 @@
-from collections import deque
-from ..__class_init__ import *
+from typing import Optional
+from ...types import cdt
 from ...types.implementations.enums import CommSpeed
-from ..overview import VERSION_0
+from ..cosem_interface_class import ICAElement, ICAuto
+from ..Overview import class_id
 
 
-class IECHDLCSetup(ic.COSEMInterfaceClasses):
-    """ This IC allows modelling and configuring communication channels according to Clause 8 of DLMS UA 1000-2 Ed. 8.0:2014. Several communication cnannels can be configured. """
-    CLASS_ID = ClassID.IEC_HDLC_SETUP
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "comm_speed", CommSpeed, 0, 9, 5),
-                  ic.ICAElement(3, "windows_size_transmit", cdt.Unsigned, 1, 7, 1),
-                  ic.ICAElement(4, "windows_size_receive", cdt.Unsigned, 1, 7, 1),
-                  ic.ICAElement(5, "max_info_field_length_transmit", cdt.LongUnsigned, 128, 32, 2030),
-                  ic.ICAElement(6, "max_info_field_length_receive", cdt.LongUnsigned, 128, 32, 2030),
-                  ic.ICAElement(7, "inter_octet_time_out", cdt.LongUnsigned, 20, 6000, 25),
-                  ic.ICAElement(8, "inactivity_time_out", cdt.LongUnsigned, 0, default=120),
-                  ic.ICAElement(9, "device_address", cdt.LongUnsigned, 0x0001, 0x3ffd, default=0x10))  # TODO: not according by BlueBook: need default, minimum is other
-
-    def characteristics_init(self):
-        """nothing do it"""
-
-    @property
-    def comm_speed(self) -> CommSpeed:
-        return self.get_attr(2)
-
-    @property
-    def windows_size_transmit(self) -> cdt.Unsigned:
-        return self.get_attr(3)
-
-    @property
-    def windows_size_receive(self) -> cdt.Unsigned:
-        return self.get_attr(4)
-
-    @property
-    def max_info_field_length_transmit(self) -> cdt.LongUnsigned:
-        return self.get_attr(5)
-
-    @property
-    def max_info_field_length_receive(self) -> cdt.LongUnsigned:
-        return self.get_attr(6)
-
-    @property
-    def inter_octet_time_out(self) -> cdt.LongUnsigned:
-        return self.get_attr(7)
-
-    @property
-    def inactivity_time_out(self) -> cdt.LongUnsigned:
-        return self.get_attr(8)
-
-    @property
-    def device_address(self) -> cdt.LongUnsigned:
-        return self.get_attr(9)
+class IECHDLCSetup(ICAuto):
+    """4.7.2 IEC HDLC setup"""
+    CLASS_ID = class_id.IEC_HDLC_SETUP
+    VERSION = 1
+    A_ELEMENTS = (ICAElement(2, "comm_speed", CommSpeed, 0, 9, 5),
+                  ICAElement(3, "windows_size_transmit", cdt.Unsigned, 1, 7, 1),
+                  ICAElement(4, "windows_size_receive", cdt.Unsigned, 1, 7, 1),
+                  ICAElement(5, "max_info_field_length_transmit", cdt.LongUnsigned, 128, 32, 2030),
+                  ICAElement(6, "max_info_field_length_receive", cdt.LongUnsigned, 128, 32, 2030),
+                  ICAElement(7, "inter_octet_time_out", cdt.LongUnsigned, 20, 6000, 25),
+                  ICAElement(8, "inactivity_time_out", cdt.LongUnsigned, 0, default=120),
+                  ICAElement(9, "device_address", cdt.LongUnsigned, 0x0001, 0x3ffd, default=0x10))  # TODO: not according by BlueBook: need default, minimum is other
+    comm_speed: Optional[CommSpeed]
+    windows_size_transmit: Optional[cdt.Unsigned]
+    windows_size_receive: Optional[cdt.Unsigned]
+    max_info_field_length_transmit: Optional[cdt.LongUnsigned]
+    max_info_field_length_receive: Optional[cdt.LongUnsigned]
+    inter_octet_time_out: Optional[cdt.LongUnsigned]
+    inactivity_time_out: Optional[cdt.LongUnsigned]
+    device_address: Optional[cdt.LongUnsigned]

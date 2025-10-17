@@ -1,11 +1,10 @@
 from . import ver0
-from ...types import choices
 from ... import exceptions as exc
-from ..__class_init__ import *
-from ...types.implementations import structs, arrays
+from ...types.implementations import structs
 from . import authentication_mechanism_name
 from . import abstract
-from ..overview import VERSION_1
+from ...types import choices, cdt, cst
+from ..cosem_interface_class import ICAElement, ICMElement
 
 
 class AccessMode(abstract.AccessMode, elements=tuple(range(7))):
@@ -106,19 +105,19 @@ class MechanismNameType(cdt.AXDR, authentication_mechanism_name.AuthenticationMe
 
 class AssociationLN(ver0.AssociationLN):
     """5.4.6 Association LN"""
-    VERSION = VERSION_1
-    A_ELEMENTS = (ic.ICAElement(2, "object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
+    VERSION = 1
+    A_ELEMENTS = (ICAElement(2, "object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
                   ver0.AssociationLN.getAElement(3).unwrap(),  # associated_partners_id
-                  ic.ICAElement(4, "application_context_name", ContextNameType),
+                  ICAElement(4, "application_context_name", ContextNameType),
                   ver0.AssociationLN.getAElement(5).unwrap(),  # xDLMS_context_info
-                  ic.ICAElement(6, "authentication_mechanism_name", MechanismNameType),
-                  ic.ICAElement(7, "secret", ver0.LLCSecret),  # TODO: make new class Secret(LLC_Secret)
+                  ICAElement(6, "authentication_mechanism_name", MechanismNameType),
+                  ICAElement(7, "secret", ver0.LLCSecret),  # TODO: make new class Secret(LLC_Secret)
                   ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
-                  ic.ICAElement(9, "security_setup_reference", cst.LogicalName))
-    M_ELEMENTS = (ver0.AssociationLN.get_meth_element(1),
-                  ver0.AssociationLN.get_meth_element(2),
-                  ic.ICMElement(3, "add_object", ObjectListElement),
-                  ic.ICMElement(4, "remove_object", ObjectListElement))
+                  ICAElement(9, "security_setup_reference", cst.LogicalName))
+    M_ELEMENTS = (ver0.AssociationLN.getMElement(1).unwrap(),
+                  ver0.AssociationLN.getMElement(2).unwrap(),
+                  ICMElement(3, "add_object", ObjectListElement),
+                  ICMElement(4, "remove_object", ObjectListElement))
     object_list: ObjectListType
     application_context_name: ContextNameType
     authentication_mechanism_name: MechanismNameType

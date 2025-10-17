@@ -333,3 +333,13 @@ class TestType(unittest.TestCase):
         x = cdt.Float32.parse("1.0")
         self.assertEqual(ta := TestArray.parse(["1", "2", "4"]), TestArray([cdt.Unsigned(1), cdt.Unsigned(2), cdt.Unsigned(4)]))
         self.assertEqual(TestStructure.parse(["1", "01 02 03", ["1", "2", "4"]]), TestStructure([u, os, ta]))
+
+    def test_ConfPar(self):
+        from src.DLMS_SPODES.cosem_interface_classes.push_setup.ver2 import ConfirmationParameters
+
+        new = ConfirmationParameters.from_encoding(b'\x02\x02\x19\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x00\x00\x06\x00\x00\x00\x00')
+        print(new)
+
+    def test_LogicalName(self):
+        new = cst.LogicalName.from_encoding(b'\x09\x00')
+        print(new)

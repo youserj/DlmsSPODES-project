@@ -1,5 +1,7 @@
-from ..__class_init__ import *
-from ..overview import VERSION_0
+from typing import Optional
+from ...types import cdt
+from ..cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
+from ..Overview import class_id
 
 
 class SecurityPolicy(cdt.Enum, elements=tuple(range(16))):
@@ -26,32 +28,18 @@ class GlobalKeyTransfer(cdt.Array):
     TYPE = KeyData
 
 
-class SecuritySetup(ic.COSEMInterfaceClasses):
-    """ Instances of the “Security setup” IC contain the necessary information on the security suite in use and the security policy applicable between the server and a client
-    and/or third party indentify by their respective system titles. They also provide methods to increase the level of security and to manage symmetric keys, asymmetric key pairs
-     and certificates """
-    CLASS_ID = ClassID.SECURITY_SETUP
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "security_policy", SecurityPolicy, 0, 3, 0),
-                  ic.ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),
-                  ic.ICAElement(4, "client_system_title", cdt.OctetString, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(5, "server_system_title", cdt.OctetString))
+class SecuritySetup(ICAuto):
+    """4.4.7 Security setup"""
+    CLASS_ID = class_id.SECURITY_SETUP
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "security_policy", SecurityPolicy, 0, 3, 0),
+                  ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),
+                  ICAElement(4, "client_system_title", cdt.OctetString, classifier=Classifier.DYNAMIC),
+                  ICAElement(5, "server_system_title", cdt.OctetString))
 
-    M_ELEMENTS = (ic.ICMElement(1, "security_activate", SecurityPolicy),
-                  ic.ICMElement(2, "global_key_transfer", GlobalKeyTransfer))
-
-    @property
-    def security_policy(self) -> SecurityPolicy:
-        return self.get_attr(2)
-
-    @property
-    def security_suite(self) -> SecuritySuite:
-        return self.get_attr(3)
-
-    @property
-    def client_system_title(self) -> cdt.OctetString:
-        return self .get_attr(4)
-
-    @property
-    def server_system_title(self) -> cdt.OctetString:
-        return self .get_attr(5)
+    M_ELEMENTS = (ICMElement(1, "security_activate", SecurityPolicy),
+                  ICMElement(2, "global_key_transfer", GlobalKeyTransfer))
+    security_policy: Optional[SecurityPolicy]
+    security_suite: Optional[SecuritySuite]
+    client_system_title: Optional[cdt.OctetString]
+    server_system_title: Optional[cdt.OctetString]

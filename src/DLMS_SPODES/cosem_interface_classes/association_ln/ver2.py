@@ -1,12 +1,11 @@
-from ..__class_init__ import *
 from . import ver0, ver1
-from ...types.implementations import structs, arrays
-from ..overview import VERSION_2
-
+from ...types.implementations import arrays, structs
+from ...types.type_alias import Attr
+from ..cosem_interface_class import ICAElement, ICMElement
 
 class AssociationLN(ver1.AssociationLN):
     """5.4.7 Association LN"""
-    VERSION = VERSION_2
+    VERSION = 2
     A_ELEMENTS = (
         ver1.AssociationLN.getAElement(2).unwrap(),  # <object_list>
         ver0.AssociationLN.getAElement(3).unwrap(),  # associated_partners_id
@@ -16,16 +15,16 @@ class AssociationLN(ver1.AssociationLN):
         ver1.AssociationLN.getAElement(7).unwrap(),  # secret
         ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
         ver1.AssociationLN.getAElement(9).unwrap(),  # security_setup_reference
-        ic.ICAElement(10, "user_list", arrays.UserList),
-        ic.ICAElement(11, "current_user", structs.UserListEntry),
+        ICAElement(10, "user_list", arrays.UserList),
+        ICAElement(11, "current_user", structs.UserListEntry),
     )
     M_ELEMENTS = (
-        ver0.AssociationLN.get_meth_element(1),
-        ver0.AssociationLN.get_meth_element(2),
-        ver1.AssociationLN.get_meth_element(3),  # add_object
-        ver1.AssociationLN.get_meth_element(4),  # remove_object
-        ic.ICMElement(5, "add_user", structs.UserListEntry),
-        ic.ICMElement(6, "remove_user", structs.UserListEntry),
+        ver0.AssociationLN.getMElement(1).unwrap(),
+        ver0.AssociationLN.getMElement(2).unwrap(),
+        ver1.AssociationLN.getMElement(3).unwrap(),  # add_object
+        ver1.AssociationLN.getMElement(4).unwrap(),  # remove_object
+        ICMElement(5, "add_user", structs.UserListEntry),
+        ICMElement(6, "remove_user", structs.UserListEntry),
     )
-    user_list: arrays.UserList
-    current_user: structs.UserListEntry
+    user_list: Attr
+    current_user: Attr

@@ -8,6 +8,7 @@ from ..types import ut, cdt
 
 
 @dataclass(frozen=True)
+@deprecated("use <cosem_interface_classes.overview.class_id>")
 class ClassID:
     DATA = ut.CosemClassId(1)
     REGISTER = ut.CosemClassId(3)

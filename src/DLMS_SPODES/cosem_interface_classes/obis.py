@@ -1,5 +1,10 @@
+from typing_extensions import deprecated
+
+
+@deprecated("use <bytes>")
 class OBIS(bytes):
     """bytes[6]"""
+    __slots__ = ()
 
     def validate(self):
         if (length := len(self)) != 6:

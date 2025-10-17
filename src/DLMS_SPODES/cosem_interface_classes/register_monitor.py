@@ -1,46 +1,33 @@
-from .__class_init__ import *
-from ..types import choices
 from ..types.implementations import structs
-from .overview import VERSION_0
-threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
+from typing import Optional
+from ..types import choices, cdt
+from .cosem_interface_class import ICAuto, ICAElement
+from .Overview import class_id
 
 
 class Thresholds(cdt.Array):
+    """thresholds attribute"""
     TYPE = choices.simple_dt
 
 
 class ActionSet(cdt.Structure):
-    """TODO:"""
+    """action_set"""
     action_up: structs.ActionItem
     action_down: structs.ActionItem
 
 
 class Actions(cdt.Array):
-    """Defines the scripts to be executed when the monitored attribute of the referenced object crosses the corresponding threshold. The attribute actions has exactly
-    the same number of elements as the attribute thresholds. The ordering of the action_items corresponds to the ordering of the thresholds (see above)."""
+    """actions attribute"""
     TYPE = ActionSet
 
 
-class RegisterMonitor(ic.COSEMInterfaceClasses):
-    """ DLMS UA 1000-1 Ed.14. 4.5.6. This IC allows modelling the function of monitoring of values modelled by “Data”, “Register”, “Extended register” or “Demand register” objects.
-    It allows specifying thresholds, the value monitored, and a set of scripts (see 4.5.2) that are executed when the value monitored crosses a threshold """
-    CLASS_ID = ClassID.REGISTER_MONITOR
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "thresholds", Thresholds),
-                  ic.ICAElement(3, "monitored_value", structs.ValueDefinition),
-                  ic.ICAElement(4, "actions", Actions))
-
-    def characteristics_init(self):
-        ...
-
-    @property
-    def thresholds(self) -> Thresholds:
-        return self.get_attr(2)
-
-    @property
-    def monitored_value(self) -> structs.ValueDefinition:
-        return self.get_attr(3)
-
-    @property
-    def threshold_normal(self) -> Actions:
-        return self.get_attr(4)
+class RegisterMonitor(ICAuto):
+    """4.5.6 Register monitor"""
+    CLASS_ID = class_id.REGISTER_MONITOR
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "thresholds", Thresholds),
+                  ICAElement(3, "monitored_value", structs.ValueDefinition),
+                  ICAElement(4, "actions", Actions))
+    thresholds: Optional[Thresholds]
+    monitored_value: Optional[structs.ValueDefinition]
+    threshold_normal: Optional[Actions]

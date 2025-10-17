@@ -1,11 +1,9 @@
-from ..cosem_interface_classes import cosem_interface_class as ic
-from .overview import ClassID, VERSION_1
+from .cosem_interface_class import ICAuto, Cardinality
+from .Overview import class_id
 
 
-class IECLocalPortSetup(ic.COSEMInterfaceClasses):
+class IECLocalPortSetup(ICAuto):
     """ This IC allows modelling the configuration of communication ports using the protocols specified in IEC 62056-21:2002. Several ports can be configured. """
-    CLASS_ID = ClassID.IEC_LOCAL_PORT_SETUP
-    VERSION = VERSION_1
-
-    def characteristics_init(self) -> None:
-        """# TODO: not released ... """
+    CLASS_ID = class_id.IEC_LOCAL_PORT_SETUP
+    VERSION = 1
+    CARDINALITY = Cardinality()

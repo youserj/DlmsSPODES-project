@@ -73,7 +73,7 @@ class TestType(unittest.TestCase):
         )
         pg4 = col.add_if_missing(
             class_id=overview.ClassID.PROFILE_GENERIC,
-            version=overview.VERSION_1,
+            version=1,
             logical_name=cst.LogicalName("00 00 15 00 01 ff")
         )
         ver = col.find_version(overview.ClassID.PROFILE_GENERIC)

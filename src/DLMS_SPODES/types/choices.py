@@ -14,14 +14,12 @@ class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
     TYPE = cdt.CommonDataType
 
     def __init_subclass__(cls, **kwargs):
-        cls.ELEMENTS = dict()
+        cls.ELEMENTS = {}
         for t in kwargs["types"]:
             if isinstance(t, dict):  # extended choice
                 cls.ELEMENTS[int.from_bytes(tuple(t.values())[0].TAG, "big")] = {k: ut.SequenceElement(str(v.TAG), v) for k, v in t.items()}
-            elif issubclass(t, cdt.CommonDataType):
-                cls.ELEMENTS[int.from_bytes(t.TAG, "big")] = ut.SequenceElement(str(t.TAG), t)
             else:
-                raise TypeError(F"got {t.__class__} expected cdt or dict")
+                cls.ELEMENTS[int.from_bytes(t.TAG, "big")] = ut.SequenceElement(str(t.TAG), t)
 
 
 class SimpleDataTypeChoice(CommonDataTypeChoiceBase, types=cdt.SimpleDataTypes):
@@ -114,11 +112,11 @@ class StructureMixin:
     values: list[cdt.Enum, cdt.CommonDataType]
     __len__: int
 
-    def __init__(self, value: bytes | tuple | list | None | bytearray | Self = None):
-        def raise_error(set_value):
-            raise RuntimeError(F"not can't be set {set_value} to {self}, available only set complex struct value")
-        super(StructureMixin, self).__init__(value)
-        self.values[0].register_cb_preset(raise_error)
+    # def __init__(self, value: bytes | tuple | list | None | bytearray | Self = None):
+    #     def raise_error(set_value):
+    #         raise RuntimeError(F"not can't be set {set_value} to {self}, available only set complex struct value")
+    #     super(StructureMixin, self).__init__(value)
+    #     self.values[0].register_cb_preset(raise_error)
 
     def from_sequence(self, sequence: tuple):
         if len(sequence) != len(self):

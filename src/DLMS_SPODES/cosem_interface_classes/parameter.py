@@ -6,6 +6,7 @@ from typing import Optional, cast, Iterator, Self
 import re
 from functools import cached_property
 from .. import exceptions as exc
+from ..types.type_alias import Obis
 from .obis import OBIS
 
 _pattern = re.compile("((?:\d{1,3}\.){5}\d{1,3})(?::(m?\d{1,3}))?")
@@ -66,7 +67,7 @@ class Parameter:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Parameter):
-            return cast("bool", self._value==other._value)
+            return cast("bool", self._value == other._value)
         return NotImplemented
 
     def __lt__(self, other: "Parameter") -> bool:
@@ -285,8 +286,8 @@ class Parameter:
         return Parameter(self._value[:6])
 
     @property
-    def obis(self) -> OBIS:
-        return OBIS(self._value[:6])
+    def obis(self) -> Obis:
+        return self._value[:6]
 
 
 RANGE64 = bytes(range(65))  # Предвычисленный диапазон 0-64

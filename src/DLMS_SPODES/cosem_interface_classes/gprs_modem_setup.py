@@ -1,5 +1,7 @@
-from . __class_init__ import *
-from .overview import VERSION_0
+from typing import Optional
+from ..types import cdt
+from .cosem_interface_class import ICAElement, ICAuto
+from .Overview import class_id
 
 
 class QoSElement(cdt.Structure):
@@ -19,25 +21,13 @@ class QualityOfService(cdt.Structure):
     requested: QoSElement
 
 
-class GPRSModemSetup(ic.COSEMInterfaceClasses):
+class GPRSModemSetup(ICAuto):
     """ This IC allow setting up GPRS modems, by handling all data necessary data for modem management. """
-    CLASS_ID = ClassID.GPRS_MODEM_SETUP
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "APN", cdt.OctetString),
-                  ic.ICAElement(3, "PIN_code", cdt.LongUnsigned),
-                  ic.ICAElement(4, "quality_of_service", QualityOfService))
-
-    def characteristics_init(self):
-        """nothing do it"""
-
-    @property
-    def APN(self) -> cdt.OctetString:
-        return self.get_attr(2)
-
-    @property
-    def PIN_code(self) -> cdt.LongUnsigned:
-        return self.get_attr(3)
-
-    @property
-    def quality_of_service(self) -> QualityOfService:
-        return self.get_attr(4)
+    CLASS_ID = class_id.GPRS_MODEM_SETUP
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "APN", cdt.OctetString),
+                  ICAElement(3, "PIN_code", cdt.LongUnsigned),
+                  ICAElement(4, "quality_of_service", QualityOfService))
+    APN: Optional[cdt.OctetString]
+    PIN_code: Optional[cdt.LongUnsigned]
+    quality_of_service: Optional[QualityOfService]

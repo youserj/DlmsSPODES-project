@@ -3,11 +3,11 @@ principles (see Clause 4 EN 62056-62:2007), the identification of real data item
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
 from functools import lru_cache
-from dataclasses import dataclass
 from . import settings
 from .types import cosem_service_types as cst
 from .cosem_interface_classes import overview
 from .obis import media_id
+from .types.type_alias import Obis
 
 
 match settings.get_current_language():

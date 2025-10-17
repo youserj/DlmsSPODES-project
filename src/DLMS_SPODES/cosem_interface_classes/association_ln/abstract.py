@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from ...types import cdt
+from typing import Protocol, runtime_checkable
+from ...types import cdt, cst, ut
+from ... import pdu_enums as pdu
+from ...types.type_alias import Obis
 
 
 class AccessMode(cdt.Enum, ABC):
@@ -32,3 +35,16 @@ class AttributeAccessDescriptor(cdt.Array, ABC):
     @abstractmethod
     def set_read_access(self, attribute_id: cdt.Integer):
         """by attribute_id"""
+
+
+@runtime_checkable
+class ObjectListType(cdt._Array, Protocol):
+    """ Array of object_list_element. The range for the client_SAP is 0…0x7F. The range for the server_SAP is 0x000…0x3FFF."""
+
+    def is_writable(self, obis: Obis, indexes: set[int]) -> bool:
+        """ index - DLMS object attribute index.
+         True: AccessRight is WriteOnly or ReadAndWrite """
+
+    def get_attr_access(self, obis: Obis, index: int) -> pdu.AttributeAccess: ...
+
+    def get_meth_access(self, obis: Obis, index: int) -> pdu.MethodAccess: ...

@@ -5,20 +5,18 @@ import inspect
 import re
 from dataclasses import dataclass, field
 from struct import pack, unpack
-from abc import ABC, abstractmethod
-from typing import Any, Callable, TypeAlias, Self, Optional, Iterator, Protocol
+from typing import Any, Callable, TypeAlias, Self, Optional, Iterator, Protocol, Never, runtime_checkable
 from typing_extensions import deprecated
 from collections import deque
 from math import log, ceil
 import datetime
 import logging
+from StructResult import result
 from semver import Version as SemVer
 from ..config_parser import config, get_values
 from .. import config_parser
 from .. import exceptions as exc
-
-
-Level: TypeAlias = logging.INFO | logging.WARN | logging.ERROR
+from ..types.type_alias import Encoding
 
 
 class CDTError(exc.DLMSException):
@@ -39,7 +37,7 @@ class ParseError(CDTError):
 
 @dataclass
 class Log:
-    lev: Level = logging.INFO
+    lev: int = logging.INFO
     msg: str | Exception = ""
 
 
@@ -58,9 +56,8 @@ INFO_LOG = Log(logging.INFO)
 EMPTY_VAL = Log(logging.WARN, "empty value")
 
 
-class ReportMixin(ABC):
+class ReportMixin:
     """mixin for cdt"""
-    @abstractmethod
     def get_report(self) -> Report:
         """custom string represent"""
 
@@ -69,11 +66,11 @@ type Message = str
 type Number = int
 
 
-class IntegerEnum(ReportMixin, ABC):
+class IntegerEnum(ReportMixin):
     """value with represent __int__ to string"""
     NAMES: dict[Number, Message] = None  # todo: make with ChainMap or more better
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """initiate NAMES name use config.toml"""
         # todo: copypast from IntegerFlag, make better with no copy(use parent dict), maybe ChainMap
         NAMES = {int(k): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "enum_name", F"{cls.__name__}")) else dict()
@@ -99,7 +96,7 @@ class IntegerEnum(ReportMixin, ABC):
 # TODO: rewrite with Cython
 def separate(value: str, pattern: str, max_sep: int) -> tuple[str, list[str]]:
     """ separating string to container by pattern. Use in Date and Time """
-    paths = list()
+    paths = []
     separators = path = ''
     while len(value) != 0:
         if value[0] in pattern:
@@ -159,7 +156,7 @@ _type_names = config["DLMS"]["type_name"]
 
 
 class TAG(bytes):
-    def __str__(self):
+    def __str__(self) -> str:
         name = str(int.from_bytes(self, "big"))
         if _type_names and (t := _type_names.get(name)):
             return t
@@ -167,7 +164,7 @@ class TAG(bytes):
             return F"{self.__class__.__name__}({name})"
 
 
-def call_wrong_tag_in_value(value: bytes, expected: TAG):
+def call_wrong_tag_in_value(value: bytes, expected: TAG) -> Never:
     raise ValueError(F"can't create {expected} with value {value}")
 
 
@@ -175,7 +172,8 @@ Transcript: TypeAlias = str | list[Self]
 """represent of CDT contents by string/list values"""
 
 
-class CommonDataType(ABC):
+@runtime_checkable
+class CommonDataType(Protocol):
     """ DLMS BlueBook(IEC 62056-6-2) 13.0 4.1.5 Common data types . X.690: OSI networking and system aspects – Abstract Syntax Notation One (ASN.1) """
     cb_post_set: Callable
     cb_preset: Callable
@@ -186,50 +184,38 @@ class CommonDataType(ABC):
     MIN: int
     MAX: int
 
-    @abstractmethod
-    def __init__(self, value=None):
+    def __init__(self, value=None) -> None:
         """ constructor """
 
-    @abstractmethod
-    def clear(self):
-        """set value to default"""
+    @classmethod
+    def from_encoding(cls, encoding: Encoding) -> result.SimpleOrError["CommonDataType"]:
+        try:
+            new = cls(encoding)
+        except Exception as e:
+            return result.Error.from_e(e)
+        return result.Simple(new)
 
     @property
-    def complex_data(self) -> bytes:
-        """ Provides an alternative, compact encoding of complex data. For CompactArray
-        TODO: remove it after all types value will be bytes"""
-        return self.contents
-
-    @property
-    @abstractmethod
     def encoding(self) -> bytes:
         """ The complete sequence of octets used to represent the data value. """
 
-    def __setattr__(self, key, value):
-        match key:
-            case 'TAG' | 'NAME' as prop: raise ValueError(F"Don't support set {prop}")
-            case _:                      super().__setattr__(key, value)
+    def __eq__(self, other: "CommonDataType") -> bool:
+        if not isinstance(other, CommonDataType):
+            return NotImplemented
+        return self.encoding == other.encoding
 
-    def __eq__(self, other) -> bool:
-        match other:
-            case bytes() if self.encoding == other:                   return True
-            case CommonDataType() if self.encoding == other.encoding: return True
-            case bytes() | CommonDataType() | None:                   return False
-            case _:                                                   raise ValueError(F'Unknown equal type <{other}>{other.__class__}')
-
-    @abstractmethod
-    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
+    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None) -> None:
         """ get new instance from value and set to content with validation """
 
-    def validate(self):
+    def validate(self) -> None:
         """override validation if need"""
 
     @classmethod
-    def get_types(cls):
+    def get_types(cls) -> Self:
         """ return DLMS type """
         return cls
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         return self.__class__(self.encoding)
 
     @deprecated("use __copy__")
@@ -243,46 +229,36 @@ class CommonDataType(ABC):
         new.set(value)
         return new
 
-    def register_cb_post_set(self, func: Callable):
-        """ register callback function for calling after <set>"""
-        self.__dict__['cb_post_set'] = func
-
-    def register_cb_preset(self, func: Callable):
-        """ register callback function for calling before <set>"""
-        self.__dict__['cb_preset'] = func
-
     def to_str(self) -> str:
         """ represent value as string """
         raise ValueError(F'to_str method not support for {self.TAG}')
 
-    def __int__(self):
+    def __int__(self) -> int:
         """ represent value as build-in integer """
         raise ValueError(F'to_int method not support for {self.TAG}')
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         """ represent value as string """
         raise ValueError(F'to_bytes method not support for {self.TAG}')
 
     # TODO: work not in all types. Solve it
-    def __repr__(self):
+    def __repr__(self) -> str:
         return F'{self.__class__.__name__}({self})'
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """initiate type.NAME use config.toml"""
         if isinstance(tag := kwargs.get("tag"), int):
             cls.TAG = TAG(tag.to_bytes(1, "big"))
         if size := kwargs.get("size"):
             cls.SIZE = size
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return int.from_bytes(self.encoding, "big")
 
     @classmethod
-    @abstractmethod
     def parse(cls, value: Transcript) -> Self:
         """new instance from from Transcript"""
 
-    @abstractmethod
     def to_transcript(self) -> Transcript:
         """inverse of parse"""
 
@@ -309,9 +285,9 @@ def get_common_data_type_from(tag: bytes) -> type[CommonDataType]:
         raise ValueError(F'type with tag:{tag[:1]} is absence in Common Data Type')
 
 
-def get_instance_and_pdu(meta: type[CommonDataType], value: bytes) -> tuple[CommonDataType, bytes]:
-    instance = meta(value)
-    return instance, value[len(instance.encoding):]
+def get_instance_and_pdu(meta: type[CommonDataType], value: Encoding) -> tuple[CommonDataType, Encoding]:
+    new = meta(value)
+    return new, value[len(new.encoding):]
 
 
 def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDataType, bytes]:
@@ -322,12 +298,13 @@ def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDat
         print(F'{e.args}')
 
 
-class SimpleDataType(CommonDataType, ABC):
+@runtime_checkable
+class SimpleDataType(CommonDataType, Protocol):
 
     def _new_instance(self, value) -> Self:
         return self.__class__(value)
 
-    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
+    def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None) -> None:
         new_value = self._new_instance(value)
         if hasattr(self, 'cb_preset'):
             self.cb_preset(new_value)
@@ -339,27 +316,26 @@ class SimpleDataType(CommonDataType, ABC):
     def to_transcript(self) -> str:
         return str(self)
 
-    @abstractmethod
-    def __str__(self):
+    def __str__(self) -> str:
         ...
 
 
 class ConstantMixin:
     """override set method for SimpleDataType"""
-    def set(self, *args, **kwargs):
+    def set(self, *args, **kwargs) -> None:
         raise AttributeError(F"not support <set> for {self.__class__.__name__} constant")
 
 
-class ComplexDataType(CommonDataType, ABC):
+@runtime_checkable
+class ComplexDataType(CommonDataType, Protocol):
     values: list[CommonDataType, ...]
 
     @property
     def contents(self) -> bytes:
         """ ITU-T Rec. X.690 8.1.1 Structure of an encoding """
-        return b''.join(map(lambda el: el.encoding, self.values))
+        return b"".join(map(lambda el: el.encoding, self.values))
 
-    @abstractmethod
-    def __len__(self):
+    def __len__(self) -> int:
         """ elements amount """
 
     @property
@@ -371,26 +347,28 @@ class ComplexDataType(CommonDataType, ABC):
         el: CommonDataType
         return [el.to_transcript() for el in self]
 
+    def __iter__(self) -> Iterator[Any]: ...
 
-class __Array(ABC):
+
+class _Array(Protocol):
     TYPE: type[CommonDataType]
     values: list[CommonDataType]
 
-    def remove(self, element: CommonDataType):
+    def remove(self, element: CommonDataType) -> None:
         if isinstance(element, self.TYPE):
             self.values.remove(element)
 
-    def insert(self, index: int, element: CommonDataType):
+    def insert(self, index: int, element: CommonDataType) -> None:
         if isinstance(element, self.TYPE):
             self.values.insert(index, element)
 
     def pop(self, index: int | None = None) -> CommonDataType:
         return self.values.pop(index)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.values)
 
-    def clear(self):
+    def clear(self) -> None:
         self.values.clear()
 
 
@@ -400,7 +378,7 @@ class _String(Protocol):
     DEFAULT: bytes = b''
     SIZE: Optional[int] = None
 
-    def __init__(self, value: bytes | bytearray | str | int | SimpleDataType = None):
+    def __init__(self, value: bytes | bytearray | str | int | SimpleDataType = None) -> None:
         match value:
             case None:                                                       self.contents = self.DEFAULT
             case bytes() as encoding:
@@ -419,26 +397,27 @@ class _String(Protocol):
             case _:                                                          raise ValueError(F'Error create {self.TAG} with value {value}')
         self.validation()
 
-    def validation(self):
+    def validation(self) -> None:
         """ do any thing """
         if self.SIZE and len(self.contents) != self.SIZE:
             raise ValueError(F'Length of {self.__class__.__name__} must be {self.SIZE}, but got {len(self.contents)}: {self.contents.hex()}')
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ define in subclasses """
 
     @property
     def encoding(self) -> bytes:
         return self.TAG + encode_length(len(self)) + self.contents
 
-    def clear(self):
+    def clear(self) -> None:
         self.__dict__['contents'] = self.DEFAULT
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         return self.contents
 
 
-class Digital(SimpleDataType, ABC):
+@runtime_checkable
+class Digital(SimpleDataType, Protocol):
     """ Default value is 0 """
     SIGNED: bool
     LENGTH: int
@@ -446,7 +425,7 @@ class Digital(SimpleDataType, ABC):
     VALUE: int | None = None
     """integer if is it constant value"""
 
-    def __init__(self, value: bytes | bytearray | str | int | float | Self = None):
+    def __init__(self, value: bytes | bytearray | str | int | float | Self = None) -> None:
         if value is None:
             value = self.DEFAULT
         match value:
@@ -466,7 +445,7 @@ class Digital(SimpleDataType, ABC):
             case _:                                                                    raise ValueError(F'Error create {self.TAG} with value: {value}')
         self.validate()
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """initiate type.VALUE from subclass arg"""
         cls.VALUE = kwargs.get("value")
         if isinstance(cls.VALUE, int):
@@ -480,7 +459,7 @@ class Digital(SimpleDataType, ABC):
             else:
                 pass
 
-    def validate(self):
+    def validate(self) -> None:
         """ receiving contents validate. override it if need """
         if isinstance(self.VALUE, int) and int(self) != self.VALUE:
             raise ValueError(F"for {self.TAG} got value: {int(self)}, expected {self.VALUE}")
@@ -510,7 +489,7 @@ class Digital(SimpleDataType, ABC):
     def from_str(self, value: str) -> bytes:
         return self.from_int(float(value))
 
-    def clear(self):
+    def clear(self) -> None:
         if self.DEFAULT:
             self.__dict__['contents'] = self.__class__(self.DEFAULT).contents
         else:
@@ -520,23 +499,23 @@ class Digital(SimpleDataType, ABC):
     def encoding(self) -> bytes:
         return self.TAG + self.contents
 
-    def __int__(self):
+    def __int__(self) -> int:
         return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
 
-    def __lshift__(self, other: int):
+    def __lshift__(self, other: int) -> None:
         for i in range(other):
             tmp = int.from_bytes(self.contents, "big")
             tmp <<= 1
             tmp &= 0x100**self.LENGTH - 1
             self.__dict__["contents"] = tmp.to_bytes(self.LENGTH, "big")
 
-    def __rshift__(self, other):
+    def __rshift__(self, other) -> None:
         for i in range(other):
             tmp = int.from_bytes(self.contents, "big")
             tmp >>= 1
             self.__dict__["contents"] = tmp.to_bytes(self.LENGTH, "big")
 
-    def __add__(self, other: int):
+    def __add__(self, other: int) -> Self:
         return self.__class__(int(self) + other)
 
     @classmethod
@@ -546,10 +525,10 @@ class Digital(SimpleDataType, ABC):
         else:
             return cls(bytearray(b'\xff'*cls.LENGTH))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(int(self))
 
-    def __gt__(self, other: Self | int):
+    def __gt__(self, other: Self | int) -> None:
         match other:
             case int():     return int(self) > other
             case Digital(): return int(self) > int(other)
@@ -558,19 +537,19 @@ class Digital(SimpleDataType, ABC):
     def __len__(self) -> int:
         return self.LENGTH
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return int(self)
 
 
 type BitNumber = int
 
 
-class IntegerFlag(ReportMixin, Digital, ABC):
+class IntegerFlag(ReportMixin, Digital):
     """value with represent __int__ to string"""
     NAMES: dict[BitNumber, Message] = None
     """bit number: name"""
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """initiate NAMES name use config.toml"""
         if cls.NAMES is None:
             cls.NAMES = {int(k): v for k, v in class_names.items()} if (class_names := get_values("DLMS", "flag_name", F"{cls.__name__}")) else dict()
@@ -583,7 +562,7 @@ class IntegerFlag(ReportMixin, Digital, ABC):
         msg = F"({self})"
         mask = 0b1
         val = int(self)
-        flags: list[Message] = list()
+        flags: list[Message] = []
         for i in range(8*self.LENGTH):
             if (mask & val) and (name := self.NAMES.get(i)):
                 flags.append(name)
@@ -591,7 +570,7 @@ class IntegerFlag(ReportMixin, Digital, ABC):
         msg += F" {" | ".join(flags)}"
         return Report(msg, log=l)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int]:
         def g():
             value = int(self)
             for _ in range(self.LENGTH * 8):
@@ -600,22 +579,23 @@ class IntegerFlag(ReportMixin, Digital, ABC):
 
         return g()
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> int:
         return tuple(self)[item]
 
-    def __setitem__(self, key: int, value: int | bool):
+    def __setitem__(self, key: int, value: int | bool) -> None:
         val = int(self) & ~(1 << key)
         value = (1 << key) if value else 0  # cust to INTEGER and move
         self.__dict__["contents"] = self.__class__(val | value).contents
 
-    def toggle(self, index: int):
+    def toggle(self, index: int) -> Self:
         self[index] = not self[index]
 
 
-class Float(SimpleDataType, ABC):
+@runtime_checkable
+class Float(SimpleDataType, Protocol):
     FORMAT: str
 
-    def __init__(self, value: bytes | bytearray | str | int | float | SimpleDataType = None):
+    def __init__(self, value: bytes | bytearray | str | int | float | SimpleDataType = None) -> None:
         match value:
             case None:                                                             self.clear()
             case bytes() as encoding:
@@ -666,28 +646,29 @@ class Float(SimpleDataType, ABC):
             raise OverflowError(F'Float overflow error')
         return pack(cls.FORMAT, value)
 
-    def __float__(self):
+    def __float__(self) -> float:
         """  return the build in float type IEEE 60559"""
         return unpack(self.FORMAT, self.contents)[0]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(float(self))
 
-    def clear(self):  # todo: remove this
+    def clear(self) -> None:  # todo: remove this
         self.contents = bytes(self.SIZE)
 
 
-class LIST(ABC):
+@runtime_checkable
+class LIST(Protocol):
     """ Special class flag for enumeration any type """
 
 
-class __DateTime(ABC):
+class __DateTime(Protocol):
     __len__: int
     _separators: tuple[str]
     contents: bytes
     TAG: TAG
 
-    def __init__(self, value: bytes | bytearray | str | int | bool | float | datetime.datetime | datetime.time | SimpleDataType):
+    def __init__(self, value: bytes | bytearray | str | int | bool | float | datetime.datetime | datetime.time | SimpleDataType) -> None:
         match value:  # TODO: replace priority case
             case bytes():
                 length_and_contents = value[1:]
@@ -711,7 +692,6 @@ class __DateTime(ABC):
     def encoding(self) -> bytes:
         return self.TAG + self.contents
 
-    @abstractmethod
     def from_str(self, value: str) -> bytes:
         """ typecast from string to bytes """
 
@@ -733,15 +713,14 @@ class __DateTime(ABC):
             amount += string.count(separator)
         return amount
 
-    @abstractmethod
-    def DEFAULT(self):
+    def DEFAULT(self) -> bytes:
         """"""
 
-    def clear(self):
+    def clear(self) -> None:
         self.contents = self.DEFAULT
 
 
-class __Date(ABC):
+class __Date(Protocol):
     """ years, month, day setters/getters for Date and DateTime """
     TAG: TAG
 
@@ -761,7 +740,7 @@ class __Date(ABC):
     def weekday(self) -> int:
         return self.contents[4]
 
-    def set_year(self, value: int):
+    def set_year(self, value: int) -> None:
         """ set day """
         if (
             9999 >= value > 1
@@ -773,7 +752,7 @@ class __Date(ABC):
         else:
             raise OutOfRange(F"in year: got {value}, expected 1..9999, 65535")
 
-    def set_month(self, value: int):
+    def set_month(self, value: int) -> None:
         """ set month """
         if (
             12 >= value >= 1
@@ -785,7 +764,7 @@ class __Date(ABC):
         else:
             raise OutOfRange(F"in Month: got {value}, expected 1..12, 253, 254, 255")
 
-    def set_day(self, value: int):
+    def set_day(self, value: int) -> None:
         """ set day """
         if (
             31 >= value >= 1
@@ -797,7 +776,7 @@ class __Date(ABC):
         else:
             raise OutOfRange(F"in Day: got {value}, expected 1..31, 253, 254, 255")
 
-    def set_weekday(self, value: int):
+    def set_weekday(self, value: int) -> None:
         """ set weekday """
         if (
             7 >= value >= 1
@@ -810,7 +789,7 @@ class __Date(ABC):
             raise OutOfRange(F"got <week day>: {value}, excpected 1..7 or 255")
 
     @staticmethod
-    def check_date(value: bytes):
+    def check_date(value: bytes) -> None:
         if len(value) != 5:
             raise ValidationError(F"In the Date type expected length 5, but got {len(value)}")
         year_highbyte, year_lowbyte, month, day_of_month, day_of_week = \
@@ -827,7 +806,7 @@ class __Date(ABC):
             raise ValidationError(F"in Date got <week day: {value[4]}, not corresponding with other data")
 
     @property
-    def strfdate(self):
+    def strfdate(self) -> str:
         """ get date in format d.m.Y-A or d.m.Y or d.m """
         match self.contents[2]:
             case 0xff:  month = '__'
@@ -913,7 +892,7 @@ class __Date(ABC):
             case _ as separate_result:        raise ValueError(F'Unknown date format: separators=<{separate_result[0]}>, values={", ".join(separate_result[1])}')
 
 
-class __Time(ABC):
+class __Time(Protocol):
     """ hour, minute, second, hundredths setters/getters for Time and DateTime """
     contents: bytes
     TAG: TAG
@@ -923,7 +902,7 @@ class __Time(ABC):
         """ return offset if type is DateTime """
         return 0 if len(self) == 4 else 5
 
-    def set_hour(self, value: int):
+    def set_hour(self, value: int) -> None:
         """ set hour """
         if (0 <= value <= 23) or value == 0xff:
             contents = bytearray(self.contents)
@@ -932,7 +911,7 @@ class __Time(ABC):
         else:
             raise OutOfRange(F"in Hour: got {value}, expected 0..23, 255")
 
-    def set_minute(self, value: int):
+    def set_minute(self, value: int) -> None:
         """ set minute """
         if (0 <= value <= 59) or value == 0xff:
             contents = bytearray(self.contents)
@@ -941,7 +920,7 @@ class __Time(ABC):
         else:
             raise OutOfRange(F"in Minute: got {value}, expected 0..59, 255")
 
-    def set_second(self, value: int):
+    def set_second(self, value: int) -> None:
         """ set minute """
         if (0 <= value <= 59) or value == 0xff:
             contents = bytearray(self.contents)
@@ -950,7 +929,7 @@ class __Time(ABC):
         else:
             raise OutOfRange(F"in second: got {value}, expected 0..59, 255")
 
-    def set_hundredths(self, value: int):
+    def set_hundredths(self, value: int) -> None:
         """ set hun """
         if (0 <= value <= 99) or value == 0xff:
             contents = bytearray(self.contents)
@@ -1053,7 +1032,7 @@ class NullData(SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """
     TAG = TAG(b'\x00')
 
-    def __init__(self, value: bytes | str | Self = None):
+    def __init__(self, value: bytes | str | Self = None) -> None:
         match value:
             case bytes() if value[:1] == self.TAG: pass
             case bytes():                          raise ValueError(F"got {TAG(value[:1])}, expected {self.TAG} type, ")
@@ -1065,29 +1044,30 @@ class NullData(SimpleDataType):
         return cls()
 
     @property
-    def contents(self) -> bytes: return b''
+    def contents(self) -> bytes:
+        return b''
 
-    def set(self, value):
+    def set(self, value) -> None:
         """override with no change"""
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'null-data'
 
     @property
     def encoding(self) -> bytes: return b'\x00'
 
-    def clear(self):
+    def clear(self) -> None:
         """ nothing do it"""
 
 
-class Array(__Array, ComplexDataType):
+class Array(_Array, ComplexDataType):
     """ The elements of the array are defined in the Attribute or Method description section of a COSEM IC
     specification """
     TYPE: type[CommonDataType] = None
     values: list[CommonDataType]
     TAG = TAG(b"\x01")
 
-    def __init__(self, value: list[CommonDataType | list] | bytes | None | Self = None, type_: type[CommonDataType] = None):
+    def __init__(self, value: list[CommonDataType | list] | bytes | None | Self = None, type_: type[CommonDataType] = None) -> None:
         self.__dict__['values'] = list()
         if type_:
             self.__dict__["TYPE"] = type_
@@ -1115,7 +1095,7 @@ class Array(__Array, ComplexDataType):
     def __str__(self):
         return F"{self.TAG}[{len(self.values)}]"
 
-    def append(self, element: CommonDataType | None | Any = None):
+    def append(self, element: CommonDataType | None | Any = None) -> None:
         """ append element to end """
         if element is None:
             element = self.new_element()
@@ -1133,7 +1113,7 @@ class Array(__Array, ComplexDataType):
     def parse(cls, value: list) -> Self:
         return cls([cls.TYPE.parse(val) for val in value])
 
-    def __setattr__(self, key, value: CommonDataType):
+    def __setattr__(self, key, value: CommonDataType) -> None:
         match key:
             case 'TYPE' | 'values' as prop:
                 raise ValueError(F"don't support set {prop}")
@@ -1150,12 +1130,12 @@ class Array(__Array, ComplexDataType):
     def get_type(self) -> type[CommonDataType]:
         return self.TYPE
 
-    def set_type(self, value: type[CommonDataType]):
+    def set_type(self, value: type[CommonDataType]) -> None:
         """ set new type with clear array"""
         self.clear()
         self.__dict__['TYPE'] = value
 
-    def set(self, value: bytes | bytearray | list | None):
+    def set(self, value: bytes | bytearray | list | None) -> None:
         self.clear()
         if hasattr(self, 'cb_preset'):
             self.cb_preset(value)
@@ -1178,7 +1158,7 @@ class StructElement:
     NAME: str
     TYPE: type[CommonDataType]
 
-    def __str__(self):
+    def __str__(self) -> str:
         if _struct_names and (t := _struct_names.get(self.NAME)):
             return t
         else:
@@ -1192,7 +1172,7 @@ class Structure(ComplexDataType):
     values: list[CommonDataType]
     DEFAULT: bytes = None
 
-    def __init__(self, value: list[CommonDataType | list] | bytes | tuple | None | bytearray | Self = None):
+    def __init__(self, value: list[CommonDataType | list] | bytes | tuple | None | bytearray | Self = None) -> None:
         if value is None:
             value = self.DEFAULT
         self.__dict__['values'] = list()
@@ -1378,7 +1358,7 @@ class Structure(ComplexDataType):
         return bytes(res)
 
 
-class AXDR(ABC):
+class AXDR:
     """ Use in structures for association LN objects """
     is_xdr: bool
     # NAME = Structure.NAME + " A-XDR"
@@ -1814,7 +1794,7 @@ class LongUnsigned(Digital, SimpleDataType):
     LENGTH = 2
 
 
-class CompactArray(__Array, ComplexDataType):
+class CompactArray(_Array, ComplexDataType):
     """ Provides an alternative, compact encoding of complex data. TODO: need test, may be don't work """
     TAG = TAG(b'\x13')
 
@@ -1853,7 +1833,7 @@ class Long64Unsigned(Digital, SimpleDataType):
 enum_rep = re.compile("\((?P<value>\d{1,3})\).+")
 
 
-class Enum(IntegerEnum, Unsigned, ABC):
+class Enum(IntegerEnum, Unsigned):
     """ The elements of the enumeration type are defined in the “Attribute description” section of a COSEM interface class specification """
     contents: bytes
     TAG = TAG(b'\x16')
@@ -2300,7 +2280,7 @@ def get_unit_scaler(unit_contents: bytes) -> int:
     return _SCALERS[unit_contents]
 
 
-class ScalUnitType(ReportMixin, Structure):
+class ScalUnitType(Structure, ReportMixin):
     """ DLMS UA 1000-1 Ed. 14 4.3.2 Register scaler_unit"""
     scaler: Integer
     unit: Unit

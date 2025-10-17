@@ -1,8 +1,9 @@
-from typing_extensions import deprecated
 from typing import Self
-from .overview import VERSION_0
-from .__class_init__ import *
 from ..types.implementations import integers, octet_string
+from typing import Optional
+from ..types import cdt, cst
+from .cosem_interface_class import ICAElement, ICMElement, ICAuto
+from .Overview import class_id
 
 
 class Season(cdt.Structure):
@@ -133,58 +134,30 @@ class DayProfileTable(cdt.Array):
         return res
 
 
-class ActivityCalendar(ic.COSEMInterfaceClasses):
+class ActivityCalendar(ICAuto):
     """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
-    CLASS_ID = ClassID.ACTIVITY_CALENDAR
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "calendar_name_active", octet_string.ID),
-                  ic.ICAElement(3, "season_profile_active", SeasonProfile),
-                  ic.ICAElement(4, "week_profile_table_active", WeekProfileTable),
-                  ic.ICAElement(5, "day_profile_table_active", DayProfileTable),
-                  ic.ICAElement(6, "calendar_name_passive", octet_string.ID),
-                  ic.ICAElement(7, "season_profile_passive", SeasonProfile),
-                  ic.ICAElement(8, "week_profile_table_passive", WeekProfileTable),
-                  ic.ICAElement(9, "day_profile_table_passive", DayProfileTable),
-                  ic.ICAElement(10, "activate_passive_calendar_time", cst.OctetStringDateTime))
-    M_ELEMENTS = ic.ICMElement(1, "activate_passive_calendar", integers.INTEGER_0),
+    CLASS_ID = class_id.ACTIVITY_CALENDAR
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "calendar_name_active", octet_string.ID),
+                  ICAElement(3, "season_profile_active", SeasonProfile),
+                  ICAElement(4, "week_profile_table_active", WeekProfileTable),
+                  ICAElement(5, "day_profile_table_active", DayProfileTable),
+                  ICAElement(6, "calendar_name_passive", octet_string.ID),
+                  ICAElement(7, "season_profile_passive", SeasonProfile),
+                  ICAElement(8, "week_profile_table_passive", WeekProfileTable),
+                  ICAElement(9, "day_profile_table_passive", DayProfileTable),
+                  ICAElement(10, "activate_passive_calendar_time", cst.OctetStringDateTime))
+    M_ELEMENTS = ICMElement(1, "activate_passive_calendar", integers.INTEGER_0),
+    calendar_name_active: Optional[octet_string.ID]
+    season_profile_active: Optional[SeasonProfile]
+    week_profile_table_active: Optional[WeekProfileTable]
+    day_profile_table_active: Optional[DayProfileTable]
+    calendar_name_passive: Optional[octet_string.ID]
+    season_profile_passive: Optional[SeasonProfile]
+    week_profile_table_passive: Optional[WeekProfileTable]
+    day_profile_table_passive: Optional[DayProfileTable]
+    activate_passive_calendar_time: Optional[cst.OctetStringDateTime]
 
-    @property
-    def calendar_name_active(self) -> octet_string.ID:
-        return self.get_attr(2)
-
-    @property
-    def season_profile_active(self) -> SeasonProfile:
-        return self.get_attr(3)
-
-    @property
-    def week_profile_table_active(self) -> WeekProfileTable:
-        return self.get_attr(4)
-
-    @property
-    def day_profile_table_active(self) -> DayProfileTable:
-        return self.get_attr(5)
-
-    @property
-    def calendar_name_passive(self) -> octet_string.ID:
-        return self.get_attr(6)
-
-    @property
-    def season_profile_passive(self) -> SeasonProfile:
-        return self.get_attr(7)
-
-    @property
-    def week_profile_table_passive(self) -> WeekProfileTable:
-        return self.get_attr(8)
-
-    @property
-    def day_profile_table_passive(self) -> DayProfileTable:
-        return self.get_attr(9)
-
-    @property
-    def activate_passive_calendar_time(self) -> cst.OctetStringDateTime:
-        return self.get_attr(10)
-
-    @classmethod
     def ActivatePassiveCalendar(cls, value=None) -> integers.Only0:
         return cls.M_ELEMENTS[0].DATA_TYPE
 
@@ -193,7 +166,7 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
             def handle_duplicates(name: str):
                 nonlocal index, duplicates
                 if len(duplicates) != 0:
-                    raise ic.ObjectValidationError(
+                    raise ObjectValidationError(
                         ln=self.logical_name,
                         i=index,
                         message=F"find duplicate {name}: {', '.join(map(str, duplicates))} in {self.getAElement(index).unwrap()}")
@@ -215,7 +188,7 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
                     duplicates.add(week_profile.week_profile_name)
                 for i in range(1, 7):
                     if week_profile[i] not in days:
-                        raise ic.ObjectValidationError(
+                        raise ObjectValidationError(
                             ln=self.logical_name,
                             i=index,
                             message=F"in {self.getAElement(index).unwrap()} got {week_profile} with day_id: {week_profile[i]}; expected: {', '.join(map(str, days))}")
@@ -227,7 +200,7 @@ class ActivityCalendar(ic.COSEMInterfaceClasses):
                 else:
                     duplicates.add(season.season_profile_name)
                 if season.week_name not in weeks:
-                    raise ic.ObjectValidationError(
+                    raise ObjectValidationError(
                         ln=self.logical_name,
                         i=index,
                         message=F"in {self.get_attr_element(index)} got {season} with: {season.week_name}, expected: {', '.join(map(str, weeks))}")

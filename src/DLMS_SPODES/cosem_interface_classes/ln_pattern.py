@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Self, Literal
 from ..types import cst
 from copy import copy
+from ..types.type_alias import Obis
 
 SKIP: int = 0
 RANGE256 = set(range(256))
@@ -132,16 +133,16 @@ class LNPattern:
         else:
             raise ValueError(F"got not valid element: {value} in pattern, expected 0..255")
 
-    def __eq__(self, other: "LNPattern") -> bool:
+    def __eq__(self, other: Obis) -> bool:
         ptr = 0
         for i in range(6):
             length = self.buffer[ptr]
             ptr += 1
             if length == 0:  # SKIP
                 continue
-            other_byte = other.contents[i]
+            other_byte = other[i]
             if length == 1:  # Single byte
-                if self.buffer[ptr]!=other_byte:
+                if self.buffer[ptr] != other_byte:
                     return False
             else:  # Multiple bytes
                 if other_byte not in self.buffer[ptr:ptr + length]:

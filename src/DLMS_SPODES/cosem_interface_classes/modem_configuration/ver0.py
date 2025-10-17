@@ -1,25 +1,23 @@
-from ..__class_init__ import *
 from ...types.implementations.enums import CommSpeed
-from ..overview import VERSION_0
+from typing import Optional
+from ...types import cdt
+from ..cosem_interface_class import ICAElement, ICAuto
+from ..Overview import class_id
 
 
 class InitializationStringElement(cdt.Structure):
-    """ Request - Response strings"""
+    """ initialization_string_element"""
     request: cdt.OctetString
     response: cdt.OctetString
 
 
 class InitializationString(cdt.Array):
-    """ This data contains all the necessary initialization commands to be sent to the modem in order to  configure it properly. This may include the configuration of special
-    modem features.
-    If the array contains more than one initialization string element, they are subsequently sent to the modem after receiving an answer matching the defined response.
-    It is assumed that the modem is pre-configured so that it accepts the initialization_string . If no initialization is needed, the initialization string is empty."""
-    TYPE=InitializationStringElement
+    """initialization_string attribute"""
+    TYPE = InitializationStringElement
 
 
 class ModemProfileElement(cdt.OctetString):
-    """ TODO: can be OK, CONNECT, RING, NO CARRIER, ERROR, CONNECT 1 200, NO DIAL TONE, BUSY, NO ANSWER, CONNECT 600, CONNECT 2 400, CONNECT 4 800, CONNECT 9 600, CONNECT 14 400,
-    CONNECT 28 800, CONNECT 36 600, CONNECT 56 000"""
+    """modem_profile_element"""
 
     def __init__(self, value: bytes = b'OK'.hex()):
         super(ModemProfileElement, self).__init__(value)
@@ -35,33 +33,19 @@ class ModemProfileElement(cdt.OctetString):
 
 
 class ModemProfile(cdt.Array):
-    """ This data defines the mapping from Hayes standard commands/responses to modem specific strings. Shall contain the corresponding stings for the modem used in following 
-    order"""
+    """modem_profile attribute"""
     TYPE = ModemProfileElement
 
 
-class PSTNModemConfiguration(ic.COSEMInterfaceClasses):
-    """ An  instance of the 'PSTN modem configuration' IC stores data related to the initialization of modems, which are used for data transfer from/to a device. Several modems
-    can be configured."""
-    CLASS_ID = ClassID.MODEM_CONFIGURATION
-    VERSION = VERSION_0
+class PSTNModemConfiguration(ICAuto):
+    """5.7.4 PSTN modem configuration"""
+    CLASS_ID = class_id.MODEM_CONFIGURATION
+    VERSION = 0
     A_ELEMENTS = (
-        ic.ICAElement(2, "comm_speed", CommSpeed, 0, 9, 5),
-        ic.ICAElement(3, "initialization_string", InitializationString),
-        ic.ICAElement(4, "modem_profile", ModemProfile)
+        ICAElement(2, "comm_speed", CommSpeed, 0, 9, 5),
+        ICAElement(3, "initialization_string", InitializationString),
+        ICAElement(4, "modem_profile", ModemProfile)
     )
-
-    def characteristics_init(self):
-        """nothing do it"""
-
-    @property
-    def comm_speed(self) -> CommSpeed:
-        return self.get_attr(2)
-
-    @property
-    def initialization_string(self) -> InitializationString:
-        return self.get_attr(3)
-
-    @property
-    def modem_profile(self) -> ModemProfile:
-        return self.get_attr(4)
+    comm_speed: Optional[CommSpeed]
+    initialization_string: Optional[InitializationString]
+    modem_profile: Optional[ModemProfile]

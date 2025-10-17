@@ -1,6 +1,9 @@
-from .__class_init__ import *
-from ..types.implementations import structs, integers
-from .overview import VERSION_0
+from ..types.implementations import structs
+from ..types.implementations import integers
+from typing import Optional
+from ..types import cdt
+from .cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
+from .Overview import class_id
 
 
 class Actions(cdt.Array):
@@ -44,39 +47,24 @@ class RequestAction(cdt.Structure):
     request_action_list: cdt.BitString
 
 
-class Arbitrator(ic.COSEMInterfaceClasses):
-    """DLMS UA 1000-1 Ed. 14 4.5.12 Arbitrator"""
-    CLASS_ID = ClassID.ARBITRATOR
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "actions", Actions),
-                  ic.ICAElement(3, "permission_table", PermissionsTable),
-                  ic.ICAElement(4, "weightings_table", WeightingsTable),
-                  ic.ICAElement(5, "most_recent_requests_table", MostRecentRequestTable, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(6, "last_outcome", cdt.Unsigned, min=0, default=0, classifier=ic.Classifier.DYNAMIC))  # TODO: max = n what it?
-    M_ELEMENTS = (ic.ICMElement(1, "request_action", RequestAction),
-                  ic.ICMElement(2, "reset", integers.INTEGER_0))
+class Arbitrator(ICAuto):
+    """4.5.12 Arbitrator"""
+    CLASS_ID = class_id.ARBITRATOR
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "actions", Actions),
+                  ICAElement(3, "permission_table", PermissionsTable),
+                  ICAElement(4, "weightings_table", WeightingsTable),
+                  ICAElement(5, "most_recent_requests_table", MostRecentRequestTable, classifier=Classifier.DYNAMIC),
+                  ICAElement(6, "last_outcome", cdt.Unsigned, min=0, default=0, classifier=Classifier.DYNAMIC))  # TODO: max = n what it?
+    M_ELEMENTS = (ICMElement(1, "request_action", RequestAction),
+                  ICMElement(2, "reset", integers.INTEGER_0))
     actors: tuple[str] = tuple()
     """name actors container"""
-
-    @property
-    def actions(self) -> Actions:
-        return self.get_attr(2)
-
-    @property
-    def permissions_table(self) -> PermissionsTable:
-        return self.get_attr(3)
-
-    @property
-    def weightings_table(self) -> WeightingsTable:
-        return self.get_attr(4)
-
-    @property
-    def most_recent_request_table(self) -> MostRecentRequestTable:
-        return self.get_attr(5)
-
-    @property
-    def last_outcome(self) -> cdt.Unsigned:
-        return self.get_attr(6)
+    actions: Optional[Actions]
+    permissions_table: Optional[PermissionsTable]
+    weightings_table: Optional[WeightingsTable]
+    most_recent_request_table: Optional[MostRecentRequestTable]
+    last_outcome: Optional[cdt.Unsigned]
 
     def __check_permission_table(self):
         """set length actor_permission be same as action array size if it not valid"""

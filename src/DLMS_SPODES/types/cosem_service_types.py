@@ -4,7 +4,7 @@ from ..types import common_data_types as cdt
 import datetime
 
 
-class LogicalName(cdt.ReportMixin, cdt.OctetString, size=6):
+class LogicalName(cdt.OctetString, cdt.ReportMixin, size=6):
     """ Logical Name type. Default is CLock#1 """
     __pattern = re.compile("(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})")
     __match_args__ = ('a', 'b', 'c', 'd', 'e', 'f')

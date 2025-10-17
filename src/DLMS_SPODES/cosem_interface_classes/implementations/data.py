@@ -1,22 +1,24 @@
 import re
+from typing import Optional
 import logging
 from ...types import cdt, cst
-from ..data import Data, ic, choices
+from ..cosem_interface_class import Classifier, ICAElement
+from ..data import Data, choices
 from ... import enums as enu
 from ...types import implementations as impl
 from ...config_parser import get_message
 
 
 class DataStatic(Data):
-    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=ic.Classifier.STATIC),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=Classifier.STATIC),
 
 
 class DataDynamic(Data):
-    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=ic.Classifier.DYNAMIC),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=Classifier.DYNAMIC),
 
 
 class DataNotSpecific(Data):
-    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=ic.Classifier.NOT_SPECIFIC),
+    A_ELEMENTS = Data.getAElement(2).unwrap().get_change(classifier=Classifier.NOT_SPECIFIC),
 
 
 class LDN(DataStatic):
@@ -44,7 +46,7 @@ class OctetStringDateTime(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=cst.OctetStringDateTime),
 
 
-class OpeningBodyUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum
+class OpeningBodyUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
     def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
@@ -61,7 +63,7 @@ class OpeningBody(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=OpeningBodyUnsigned),
 
 
-class OpeningCoverUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum
+class OpeningCoverUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
     def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
@@ -78,7 +80,7 @@ class OpeningCover(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=OpeningCoverUnsigned),
 
 
-class ExposureToFieldUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum
+class ExposureToFieldUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
     def get_report(self) -> cdt.Report:
         if (value := (int(self) & 0b101)) == 0:
             return cdt.Report(get_message("$normal$"), log=cdt.INFO_LOG)
@@ -101,7 +103,7 @@ class ExposureToHSField(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).unwrap().get_change(data_type=ExposureToFieldUnsigned),
 
 
-class SealUnsigned(cdt.ReportMixin, cdt.Unsigned):  # todo: make as cdt.FlagEnum??
+class SealUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum??
     def get_report(self) -> cdt.Report:
         def get_name(value: int):
             """ СПОДЭСv.3 Е.12.5"""
@@ -136,7 +138,7 @@ class ITEBitMap(DataStatic):
     A_ELEMENTS = Data.getAElement(2).unwrap().get_change(data_type=BitMapData),
 
 
-class ChannelNumberValue(cdt.ReportMixin, cdt.Unsigned):
+class ChannelNumberValue(cdt.Unsigned, cdt.ReportMixin):
     @property
     def channel(self) -> enu.ChannelNumber:
         return enu.ChannelNumber(int(self) & 0b0000_0111)
@@ -159,12 +161,8 @@ class ChannelNumberValue(cdt.ReportMixin, cdt.Unsigned):
 
 class CommunicationPortParameter(Data):
     """ RU. 0.0.96.12.4.255. СТО_34.01-5.1-006-2019v3. 13.10. Определение номера порта по которому установлено соединение"""
-    A_ELEMENTS = ic.ICAElement(2, "value", ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=ic.Classifier.DYNAMIC),
-
-    @property
-    def value(self) -> ChannelNumberValue:
-        """override returned type"""
-        return self.get_attr(2)
+    A_ELEMENTS = ICAElement(2, "value", ChannelNumberValue, default=enu.ChannelNumber.OPTO_P1 + (enu.Interface.OPTO << 3), classifier=Classifier.DYNAMIC),
+    value: Optional[ChannelNumberValue]
 
 
 class AnyDateTime(DataDynamic):
@@ -173,7 +171,7 @@ class AnyDateTime(DataDynamic):
 
 
 class SPODES3VoltageEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
-    pass
+    ...
 
 
 class SPODES3VoltageEvent(DataDynamic):
@@ -182,7 +180,7 @@ class SPODES3VoltageEvent(DataDynamic):
 
 
 class SPODES3CurrentEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
-    pass
+    ...
 
 
 class SPODES3CurrentEvent(DataDynamic):
@@ -431,7 +429,7 @@ class DLMSDeviceIDObject(DataStatic):
     A_ELEMENTS = DataStatic.getAElement(2).unwrap().get_change(data_type=choices.device_id_object),
 
 
-class SPODES3SPODESVersionValue(cdt.ReportMixin, cdt.OctetString):
+class SPODES3SPODESVersionValue(cdt.OctetString, cdt.ReportMixin):
     __pattern = re.compile(b"\\d{1,2}\\.\\d{1,2}")
 
     def get_report(self) -> cdt.Report:
@@ -460,7 +458,7 @@ class SPODES3SPODESVersion(DLMSDeviceIDObject):
 
 class SPODES3IDNotSpecific(DLMSDeviceIDObject):
     """СТО_34.01-5.1-006-2019v3 13.1. Чтение расширенных паспортных данных ПУ. Для специфических идентификаторов"""
-    A_ELEMENTS = DLMSDeviceIDObject.getAElement(2).unwrap().get_change(classifier=ic.Classifier.NOT_SPECIFIC),
+    A_ELEMENTS = DLMSDeviceIDObject.getAElement(2).unwrap().get_change(classifier=Classifier.NOT_SPECIFIC),
 
 
 class KPZGSMPingIPValue(cdt.Structure):

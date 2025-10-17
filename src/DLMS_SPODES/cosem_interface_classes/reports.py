@@ -10,7 +10,7 @@ from ..settings import settings
 
 def from_obj(
         col: collection.Collection,
-        obj: ic.COSEMInterfaceClasses,
+        obj: ic.IC,
         attr_index_par: tuple[int, ...]
 ) -> result.SimpleOrError[str]:
     if not hasattr(from_obj, "struct_pattern"):
@@ -21,11 +21,13 @@ def from_obj(
         if isinstance(res_data := col.par2data(par), result.Error):
             return res_data
         a_data = res_data.value
+        if isinstance(res_a_el := obj.getAElement(i), result.Error):
+            return res_a_el
         if isinstance(a_data, cdt.SimpleDataType):
             rep = col.par2rep(par, a_data)
-            ret += F"  {obj.get_attr_element(i)}: {rep.msg}{f" {rep.unit}" if rep.unit else ""}\n"
+            ret += F"  {res_a_el.value}: {rep.msg}{f" {rep.unit}" if rep.unit else ""}\n"
         elif isinstance(a_data, cdt.ComplexDataType):
-            ret += F"  [{obj.get_attr_element(i)}]\n"
+            ret += F"  [{res_a_el.value}]\n"
             stack: list[tuple[Any, Any]] = [("", iter(a_data))]
             while stack:
                 name, value_it = stack[-1]
@@ -58,7 +60,7 @@ def from_obj(
                                         result_ += symbol
                             ret += F"{indent}{result_}\n"
                         else:
-                            if name=="":
+                            if name == "":
                                 ret += "\n"
                             else:
                                 ret += F"{indent}[{name}]\n"

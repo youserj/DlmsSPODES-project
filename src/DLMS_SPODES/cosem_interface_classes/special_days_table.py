@@ -1,6 +1,7 @@
-import datetime
-from .__class_init__ import *
-from .overview import VERSION_0
+from ..types import cdt, cst
+from ..types.type_alias import Attr
+from .cosem_interface_class import ICAuto, ICAElement, ICMElement
+from .Overview import class_id
 
 
 class SpecDayEntry(cdt.Structure):
@@ -42,15 +43,12 @@ class Entries(cdt.Array):
         return [int(entries_element.index) for entries_element in self.values]
 
 
-class SpecialDaysTable(ic.COSEMInterfaceClasses):
+class SpecialDaysTable(ICAuto):
     """ The interface class allows defining dates, which will override normal switching behaviour for special days. The interface class works in
     conjunction with the class "Schedule" or "Activity calendar" and the linking data item is day_id """
-    CLASS_ID = ClassID.SPECIAL_DAYS_TABLE
-    VERSION = VERSION_0
-    A_ELEMENTS = ic.ICAElement(2, "entries", Entries),
-    M_ELEMENTS = (ic.ICMElement(1, "insert", SpecDayEntry),
-                  ic.ICMElement(2, "delete", cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)
-
-    @property
-    def entries(self) -> Entries:
-        return self.get_attr(2)
+    CLASS_ID = class_id.SPECIAL_DAYS_TABLE
+    VERSION = 0
+    A_ELEMENTS = ICAElement(2, "entries", Entries),
+    M_ELEMENTS = (ICMElement(1, "insert", SpecDayEntry),
+                  ICMElement(2, "delete", cdt.LongUnsigned))  # Todo: was Delete.with_cb(None, self.entries.get_indexes)
+    entries: Attr

@@ -1,13 +1,13 @@
 """DLMS UA 1000-1 Ed. 14"""
 from . import ver0
-from typing import Type, Iterator
+from typing import Iterator, Optional
 from ... import cosem_interface_classes
 from ...relation_to_OBIS import get_name
 from ... import exceptions as exc
-from ..__class_init__ import *
-from ...types.implementations import integers, arrays, structs
+from ...types.implementations import arrays, structs
 from ...types.choices import CommonDataTypeChoiceBase
-from ..overview import VERSION_1
+from ...types import cdt, ut
+from ..cosem_interface_class import ICAElement, Classifier
 
 
 class CaptureObjects(cdt.Array):
@@ -92,18 +92,21 @@ class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelec
 
 class ProfileGeneric(ver0.ProfileGeneric):
     """4.3.6 Profile generic"""
-    VERSION = VERSION_1
-    A_ELEMENTS = (ic.ICAElement(2, "buffer", arrays.SelectionAccess, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(3, "capture_objects", CaptureObjects),
+    VERSION = 1
+    A_ELEMENTS = (ICAElement(2, "buffer", arrays.SelectionAccess, classifier=Classifier.DYNAMIC),
+                  ICAElement(3, "capture_objects", CaptureObjects),
                   ver0.ProfileGeneric.getAElement(4).unwrap(),
                   ver0.ProfileGeneric.getAElement(5).unwrap(),
-                  ic.ICAElement(6, "sort_object", structs.CaptureObjectDefinition),
-                  ic.ICAElement(7, "entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(8, "profile_entries", cdt.DoubleLongUnsigned, 1, default=1))
+                  ICAElement(6, "sort_object", structs.CaptureObjectDefinition),
+                  ICAElement(7, "entries_in_use", cdt.DoubleLongUnsigned, 0, default=0, classifier=Classifier.DYNAMIC),
+                  ICAElement(8, "profile_entries", cdt.DoubleLongUnsigned, 1, default=1))
     M_ELEMENTS = (
-        ver0.ProfileGeneric.get_meth_element(1),
-        ver0.ProfileGeneric.get_meth_element(2)
-    )
+        ver0.ProfileGeneric.getMElement(1).unwrap(),
+        ver0.ProfileGeneric.getMElement(2).unwrap())
+    buffer: Optional[cdt.Array]
+    capture_objects: Optional[CaptureObjects]
+    sort_method: Optional[ver0.SortMethod]
+    sort_object: Optional[structs.CaptureObjectDefinition]
 
     def characteristics_init(self):
         self.set_attr(ver0.BUFFER, None)
@@ -117,29 +120,17 @@ class ProfileGeneric(ver0.ProfileGeneric):
         self.buffer_capture_objects = self.capture_objects
         """ objects for buffer. Change with access_selection """
 
-    @property
-    def buffer(self) -> arrays.SelectionAccess:
-        return self.get_attr(2)
-
-    @property
-    def capture_objects(self) -> CaptureObjects:
-        return self.get_attr(3)
-
-    @property
-    def sort_object(self) -> structs.CaptureObjectDefinition:
-        return self.get_attr(6)
-
-    def get_attr_descriptor(self,
-                            value: int,
-                            with_selection: bool = False) -> ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection:
-        """ with selection for object_list. TODO: Copypast AssociationLN"""
-        descriptor: ut.CosemAttributeDescriptor = super(ProfileGeneric, self).get_attr_descriptor(value)
-        if value == ver0.BUFFER and with_selection:
-            if self.attr_descriptor_with_selection is None:
-                self.__create_selective_access_descriptor()
-            return self.attr_descriptor_with_selection((descriptor.contents, self.buffer.selective_access.contents))
-        else:
-            return descriptor
+    # def get_attr_descriptor(self,
+    #                         i: int,
+    #                         with_selection: bool = False) -> ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection:
+    #     """ with selection for object_list. TODO: Copypast AssociationLN"""
+    #     descriptor: ut.CosemAttributeDescriptor = super(ProfileGeneric, self).get_attr_descriptor(i)
+    #     if value == ver0.BUFFER and with_selection:
+    #         if self.attr_descriptor_with_selection is None:
+    #             self.__create_selective_access_descriptor()
+    #         return self.attr_descriptor_with_selection((descriptor.contents, self.buffer.selective_access.contents))
+    #     else:
+    #         return descriptor
 
     def __create_buffer_struct_type(self):
         """ TODO: more refactoring !!! """
@@ -200,7 +191,7 @@ class ProfileGeneric(ver0.ProfileGeneric):
                 ret.append(get_name(definition.logical_name))
             return ret
 
-    def get_buffer_objects(self) -> list[cosem_interface_classes.cosem_interface_class.COSEMInterfaceClasses]:
+    def get_buffer_objects(self) -> list[cosem_interface_classes.cosem_interface_class.IC]:
         """ get objects of current buffer container """
         return [self.collection.get(obj_def.logical_name.contents) for obj_def in self.buffer_capture_objects]
 

@@ -1,9 +1,11 @@
-from __future__ import annotations
+from typing_extensions import deprecated
 from functools import lru_cache
 from abc import ABC, abstractmethod
-from typing import Type, Any, Callable
+from typing import Type, Any, Callable, Protocol, runtime_checkable
 from dataclasses import dataclass
+from StructResult import result
 from ..types import common_data_types as cdt
+from ..types.type_alias import Encoding
 from ..exceptions import DLMSException
 from ..settings import settings
 
@@ -12,7 +14,37 @@ class UserfulTypesException(DLMSException):
     """override DLMSException"""
 
 
-class _String(ABC):
+@runtime_checkable
+class UsefulType(Protocol):
+    """"""
+    contents: bytes
+    __match_args__ = ('contents',)
+    cb_post_set: Callable
+    cb_preset: Callable
+
+    def __init__(self, value):
+        """ constructor """
+
+    def __eq__(self, other: "UsefulType"):
+        match other:
+            case self.__class__(self.contents): return True
+            case _:                             return False
+
+    def set_contents_from(self, value: bytes | bytearray | str | int | bool | None):
+        new_value = self.__class__(value)
+        if hasattr(self, 'cb_preset'):
+            self.cb_preset(new_value)
+        self.__dict__['contents'] = new_value.contents
+        if hasattr(self, 'cb_post_set'):
+            self.cb_post_set()
+
+    def __setattr__(self, key, value):
+        match key:
+            case 'contents' as prop if hasattr(self, 'contents'): raise ValueError(F"Don't support set {prop}")
+            case _: super().__setattr__(key, value)
+
+
+class _String(Protocol):
     LENGTH: int | None
 
     def __init__(self, value: bytes | bytearray | str | int | tuple | UsefulType = None):
@@ -32,7 +64,6 @@ class _String(ABC):
             case UsefulType():                                                self.__dict__["contents"] = value.contents  # TODO: make right type
             case _:                                                           raise ValueError(F'Error create {self.__class__.__name__} with value {value}')
 
-    @abstractmethod
     def __len__(self):
         """ define in subclasses """
 
@@ -79,28 +110,28 @@ class OCTET_STRING(_String):
         return bytes(temp).decode(encoding)
 
 
-class CHOICE(ABC):
+@runtime_checkable
+class CHOICE(Protocol):
     """ TODO: with cdt.CHOICE """
-    ELEMENTS: dict[int, SequenceElement | dict[int, SequenceElement]]
+    ELEMENTS: "dict[int, SequenceElement | dict[int, SequenceElement]]"
 
     @property
-    @abstractmethod
     def TYPE(self) -> Any:
         """ return valid types """
 
-    def __init_subclass__(cls, **kwargs):
-        if hasattr(cls, 'ELEMENTS'):
-            for el in cls.ELEMENTS.values():
-                if isinstance(el, dict):
-                    """pass, maybe it is for cst.AnyTime"""
-                elif issubclass(el.TYPE, cls.TYPE):
-                    """ type in order """
-                else:
-                    raise ValueError(F'For {cls.__name__} got type {el.TYPE.__name__} with {el.NAME=}, expected {cls.TYPE.__name__}')
-        else:
-            """ subclass with type carry initiate """
+    # def __init_subclass__(cls, **kwargs):
+    #     if hasattr(cls, 'ELEMENTS'):
+    #         for el in cls.ELEMENTS.values():
+    #             if isinstance(el, dict):
+    #                 """pass, maybe it is for cst.AnyTime"""
+    #             elif issubclass(el.TYPE, cls.TYPE):
+    #                 """ type in order """
+    #             else:
+    #                 raise ValueError(F'For {cls.__name__} got type {el.TYPE.__name__} with {el.NAME=}, expected {cls.TYPE.__name__}')
+    #     else:
+    #         """ subclass with type carry initiate """
 
-    def __getitem__(self, item: int) -> SequenceElement:
+    def __getitem__(self, item: int) -> "SequenceElement":
         return self.ELEMENTS[item]
 
     @property
@@ -123,21 +154,27 @@ class CHOICE(ABC):
         else:
             return d_t.TYPE.parse(value)
 
+    @classmethod
+    def from_encoding(cls, encoding: Encoding) -> result.SimpleOrError[cdt.CommonDataType]:
+        match cls.ELEMENTS[encoding[0]]:
+            case SequenceElement() as el:
+                return el.TYPE.from_encoding(encoding)
+            case dict() as ch:
+                if encoding[1] in ch.keys():
+                    return ch[encoding[1]].TYPE.from_encoding(encoding)  # use for choice cst.Time | DateTime | Date as OctetString
+                else:
+                    return result.Error.from_e(ValueError(F"got type with tag: {encoding[0]} and length: {encoding[1]}, expected length {tuple(ch.keys())}"))
+            case err:
+                raise RuntimeError(F"got {err.__name__}, expected {SequenceElement.__name__} or {dict.__name__}")
+
+    @deprecated("use <from_encoding> and more")
     def __call__(self,
                  value: bytes | int = None,
                  force: bool = False) -> cdt.CommonDataType:
         """ get instance from encoding or tag(with default value). For CommonDataType only """
         try:
             match value:
-                case bytes() as encoding:
-                    match self.ELEMENTS[encoding[0]]:
-                        case SequenceElement() as el: return el.TYPE(encoding)
-                        case dict() as ch:
-                            if encoding[1] in ch.keys():
-                                return ch[encoding[1]].TYPE(encoding)  # use for choice cst.Time | DateTime | Date as OctetString
-                            else:
-                                raise ValueError(F"got type with tag: {encoding[0]} and length: {encoding[1]}, expected length {tuple(ch.keys())}")
-                        case err:                     raise ValueError(F"got {err.__name__}, expected {SequenceElement.__name__} or {dict.__name__}")
+                case bytes() as encoding:             return self.__class__.from_encoding(encoding).unwrap()
                 case int() if force:                  return cdt.get_common_data_type_from(value.to_bytes(1, "big"))()
                 case int() as tag:                    return self.ELEMENTS[tag].TYPE()
                 case None:                            return tuple(self.ELEMENTS.values())[0].TYPE()
@@ -145,9 +182,9 @@ class CHOICE(ABC):
         except KeyError as e:
             raise UserfulTypesException(F"for {self.__class__.__name__} got {cdt.CommonDataType.__name__}: {cdt.TAG(e.args[0].to_bytes(1))}; expected: {', '.join(map(lambda el: el.NAME, self.ELEMENTS.values()))}")
 
-    def __get_elements(self) -> list[SequenceElement]:
+    def __get_elements(self) -> "list[SequenceElement]":
         """all elements with nested values"""
-        elements = list()
+        elements = []
         for el in self.ELEMENTS.values():
             match el:
                 case SequenceElement():
@@ -166,26 +203,17 @@ class CHOICE(ABC):
         return F'{CHOICE}: {", ".join((el.NAME for el in self.__get_elements()))}'
 
 
-def get_instance_and_context(meta: Type[UsefulType], value: bytes) -> tuple[UsefulType, bytes]:
+def get_instance_and_context(meta: type[UsefulType], value: bytes) -> tuple[UsefulType, bytes]:
     instance = meta(value)
     return instance, value[len(instance.contents):]
 
 
-@dataclass(frozen=True)
-class SequenceElement:
-    NAME: str
-    TYPE: Type[UsefulType | SEQUENCE | CHOICE | cdt.CommonDataType]
-
-    def __str__(self):
-        return F'{self.NAME}: {self.TYPE.__name__}'
-
-
-class SEQUENCE(ABC):
+class SEQUENCE(Protocol):
     """ TODO: """
-    ELEMENTS: tuple[SequenceElement | SEQUENCE, ...]
+    ELEMENTS: "tuple[SequenceElement | SEQUENCE, ...]"
     values: list[UsefulType]
 
-    def __init__(self, value: bytes | tuple | list | None | SEQUENCE = None):
+    def __init__(self, value: "bytes | tuple | list | None | SEQUENCE" = None):
         self.__dict__['values'] = [None] * len(self.ELEMENTS)
         match value:
             case tuple() | list():
@@ -260,43 +288,23 @@ class SEQUENCE(ABC):
         return F'{self.__class__.__name__}[{len(self)}]'
 
 
-class UsefulType(ABC):
-    """"""
-    contents: bytes
-    __match_args__ = ('contents',)
-    cb_post_set: Callable
-    cb_preset: Callable
+@dataclass(frozen=True)
+class SequenceElement:
+    NAME: str
+    TYPE: Type[UsefulType | SEQUENCE | CHOICE | cdt.CommonDataType]
 
-    @abstractmethod
-    def __init__(self, value):
-        """ constructor """
-
-    def __eq__(self, other: UsefulType):
-        match other:
-            case self.__class__(self.contents): return True
-            case _:                             return False
-
-    def set_contents_from(self, value: UsefulType | bytes | bytearray | str | int | bool | None):
-        new_value = self.__class__(value)
-        if hasattr(self, 'cb_preset'):
-            self.cb_preset(new_value)
-        self.__dict__['contents'] = new_value.contents
-        if hasattr(self, 'cb_post_set'):
-            self.cb_post_set()
-
-    def __setattr__(self, key, value):
-        match key:
-            case 'contents' as prop if hasattr(self, 'contents'): raise ValueError(F"Don't support set {prop}")
-            case _: super().__setattr__(key, value)
+    def __str__(self):
+        return F'{self.NAME}: {self.TYPE.__name__}'
 
 
-class DigitalMixin(ABC):
+
+class DigitalMixin:
     """ Default value is 0 """
     SIGNED: bool
     LENGTH: int
     contents: bytes
 
-    def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = None):
+    def __init__(self, value: "bytes | bytearray | str | int | DigitalMixin" = None):
         match value:
             case bytes() if self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
             case bytes():            raise ValueError(F'Length of contents for {self.__class__.__name__} must be at least {self.LENGTH}, but got {len(value)}')
@@ -327,7 +335,7 @@ class DigitalMixin(ABC):
     def __repr__(self):
         return F'{self.__class__.__name__}({self})'
 
-    def __gt__(self, other: DigitalMixin):
+    def __gt__(self, other: "DigitalMixin"):
         match other:
             case DigitalMixin(): return int(self) > int(other)
             case _:          raise TypeError(F'Compare type is {other.__class__}, expected Digital')
@@ -503,11 +511,11 @@ class CosemMethodDescriptor(SEQUENCE):
         super(CosemMethodDescriptor, self).__init__(value)
 
 
-class Data(CHOICE, ABC):
+class Data(CHOICE, Protocol):
     TYPE = cdt.CommonDataType
 
 
-class SelectiveAccessDescriptor(SEQUENCE, ABC):
+class SelectiveAccessDescriptor(SEQUENCE):
     """ Selective access specification always starts with an access selector, followed by an access-specific access parameter list.
     Specified IS/IEC 62056-53 : 2006, 7.4.1.6 Selective access """
     access_selector: Unsigned8
@@ -519,7 +527,6 @@ class SelectiveAccessDescriptor(SEQUENCE, ABC):
         self.access_selector.cb_post_set = self.__validate_selector
 
     @property
-    @abstractmethod
     def ELEMENTS(self) -> tuple[SequenceElement, SequenceElement]:
         """ return elements """
 
@@ -560,7 +567,6 @@ class CosemAttributeDescriptorWithSelection(SEQUENCE):
         self.cosem_attribute_descriptor.access_selection_parameters.set_contents_from(1)
 
     @property
-    @abstractmethod
     def ELEMENTS(self) -> tuple[SequenceElement, SequenceElement]:
         """ return elements. Need initiate in subclass """
 
@@ -619,59 +625,3 @@ class InvokeIdAndPriority(Unsigned8):
         return F'priority: {"High" if self.contents[0] & 0b1000_0000 else "Normal"}, ' \
                F'service-class: {"Confirmed" if self.contents[0] & 0b0100_0000 else "Unconfirmed"}, ' \
                F'invoke-id: {self.invoke_id},'
-
-
-if __name__ == '__main__':
-    a = CosemObjectAttributeId(1)
-    b = CosemObjectAttributeId(2)
-    print(a > b)
-
-    a = CosemClassId(cdt.LongUnsigned(1).contents)
-    a = InvokeIdAndPriority()
-    c = a.invoke_id
-    d = a.service_class
-    f = a.priority
-    a.service_class = 1
-    a.invoke_id = 14
-    e = InvokeIdAndPriority.from_parameters(1, 1, 1)
-    class AccessSelector(Unsigned8):
-        """ Unsigned8 1..4 """
-        def __init__(self, value: int | str | Unsigned8 = 1):
-            super(AccessSelector, self).__init__(value)
-            if int(self) > 4 or int(self) < 1:
-                raise ValueError(F'The {self.__class__.__name__} got {self}, expected 1..4')
-
-
-    class MyData(Data):
-        ELEMENTS = {1: SequenceElement('0 a', cdt.NullData),
-                    2: SequenceElement('1 d', cdt.Integer),
-                    3: SequenceElement('second', cdt.ScalUnitType),
-                    4: SequenceElement('3', cdt.Integer)}
-
-    class My(SelectiveAccessDescriptor):
-        access_selector: AccessSelector
-        access_parameters: MyData
-        ELEMENTS = (SequenceElement('access_selector', AccessSelector),
-                    SequenceElement('access_parameters', MyData))
-
-    ba = My()
-    b = My((3, (10, 10)))
-    b2 = b.access_selector
-    b3 = b.access_parameters
-    b4 = b.access_parameters.unit
-    b_repr = My(b'\x03\x0f"')
-    b.set_selector(3, 34)
-    a = CosemAttributeDescriptor((1, '1.1.1.1.1.1', 1))
-    a_repr = CosemAttributeDescriptor(b'\x00\x01\x01\x01\x01\x01\x01\x01\x01\x00')
-
-    class MyWith(CosemAttributeDescriptorWithSelection):
-        access_selection: My
-        ELEMENTS = (SequenceElement('cosem_attribute_descriptor', CosemAttributeDescriptor),
-                    SequenceElement('access_selection', My))
-
-    c = MyWith()
-    c_from = MyWith((a, b))
-    c_repr = MyWith(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x00')
-    print(a)
-    c = CosemAttributeDescriptor(b'\x00\x01\x01\x01\x01\x01\x01\x01\x01\x00')
-    print(c)

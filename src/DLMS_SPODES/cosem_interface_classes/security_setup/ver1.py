@@ -1,10 +1,11 @@
 from . import ver0
-from ..__class_init__ import *
-from ..overview import VERSION_1
 from ...types import choices
+from typing import Optional
+from ...types import cdt, ut
+from ..cosem_interface_class import ICAElement, ICMElement, Classifier
 
 
-class SecurityPolicyVer1(cdt.IntegerFlag, cdt.Enum):
+class SecurityPolicy(cdt.Enum, cdt.IntegerFlag):
     """ security_policy"""
 
 
@@ -100,31 +101,22 @@ class CertificateIdentification(choices.StructureMixin, cdt.Structure):
 
 
 class SecuritySetup(ver0.SecuritySetup):
-    VERSION = VERSION_1
-    A_ELEMENTS = (ic.ICAElement(1, "security_policy", SecurityPolicyVer1),
-                  ic.ICAElement(2, "security_suite", SecuritySuite),
+    VERSION = 1
+    A_ELEMENTS = (ICAElement(1, "security_policy", SecurityPolicy),
+                  ICAElement(2, "security_suite", SecuritySuite),
                   ver0.SecuritySetup.getAElement(3).unwrap(),
                   ver0.SecuritySetup.getAElement(4).unwrap(),
                   ver0.SecuritySetup.getAElement(5).unwrap(),
-                  ic.ICAElement(6, "certificates", Certificates, classifier=ic.Classifier.DYNAMIC))
+                  ICAElement(6, "certificates", Certificates, classifier=Classifier.DYNAMIC))
 
-    M_ELEMENTS = (ic.ICMElement(1, "security_activate", SecurityPolicyVer1),
-                  ic.ICMElement(2, "key_transfer", KeyTransfer),
-                  ic.ICMElement(3, "key_agreement", KeyAgreement),
-                  ic.ICMElement(4, "generate_key_pair", KeyPair),
-                  ic.ICMElement(5, "generate_certificate_request", KeyPair),
-                  ic.ICMElement(6, "import_certificate", cdt.OctetString),
-                  ic.ICMElement(7, "export_certificate", CertificateIdentification),
-                  ic.ICMElement(8, "remove_certificate", CertificateIdentification))
-
-    @property
-    def security_policy(self) -> SecurityPolicyVer1:
-        return self.get_attr(2)
-
-    @property
-    def security_suite(self) -> SecuritySuite:
-        return self.get_attr(3)
-
-    @property
-    def certificates(self) -> Certificates:
-        return self.get_attr(6)
+    M_ELEMENTS = (ICMElement(1, "security_activate", SecurityPolicy),
+                  ICMElement(2, "key_transfer", KeyTransfer),
+                  ICMElement(3, "key_agreement", KeyAgreement),
+                  ICMElement(4, "generate_key_pair", KeyPair),
+                  ICMElement(5, "generate_certificate_request", KeyPair),
+                  ICMElement(6, "import_certificate", cdt.OctetString),
+                  ICMElement(7, "export_certificate", CertificateIdentification),
+                  ICMElement(8, "remove_certificate", CertificateIdentification))
+    security_policy: Optional[SecurityPolicy]
+    security_suite: Optional[SecuritySuite]
+    certificates: Optional[Certificates]

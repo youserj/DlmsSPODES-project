@@ -1,8 +1,10 @@
-from .__class_init__ import *
-from ..types.implementations import integers
 from itertools import chain
 from ..config_parser import get_message
-from .overview import VERSION_0
+from ..types.implementations import integers
+from typing import Optional
+from ..types import cdt
+from .cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
+from .Overview import class_id
 
 
 class ControlState(cdt.Enum, elements=(0, 1, 2)):
@@ -40,24 +42,15 @@ class OutputState(cdt.Boolean):
         return get_message("$disconnected$") if self.contents == b'\x00' else get_message("$connected$")
 
 
-class DisconnectControl(ic.COSEMInterfaceClasses):
-    """DLMS UA 1000-1 Ed. 14 4.5.8 Disconnect control"""
-    CLASS_ID = ClassID.DISCONNECT_CONTROL
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "output_state", OutputState, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(3, "control_state", ControlState, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(4, "control_mode", ControlMode))
-    M_ELEMENTS = (ic.ICMElement(1, "remote_disconnect", integers.Only0),
-                  ic.ICMElement(2, "remote_reconnect", integers.Only0))
-
-    @property
-    def output_state(self) -> cdt.Boolean:
-        return self.get_attr(2)
-
-    @property
-    def control_state(self) -> ControlState:
-        return self.get_attr(3)
-
-    @property
-    def control_mode(self) -> ControlMode:
-        return self.get_attr(4)
+class DisconnectControl(ICAuto):
+    """4.5.8 Disconnect control"""
+    CLASS_ID = class_id.DISCONNECT_CONTROL
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "output_state", OutputState, classifier=Classifier.DYNAMIC),
+                  ICAElement(3, "control_state", ControlState, classifier=Classifier.DYNAMIC),
+                  ICAElement(4, "control_mode", ControlMode))
+    M_ELEMENTS = (ICMElement(1, "remote_disconnect", integers.Only0),
+                  ICMElement(2, "remote_reconnect", integers.Only0))
+    output_state: Optional[cdt.Boolean]
+    control_state: Optional[ControlState]
+    control_mode: Optional[ControlMode]

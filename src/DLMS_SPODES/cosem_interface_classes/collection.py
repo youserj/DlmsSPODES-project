@@ -2,17 +2,19 @@
 principles (see Clause 4 EN 62056-62:2007), the identification of real data items is specified in IEC 62056-61. The following clauses define the
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
+import logging
 from struct import pack
 import inspect
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Type, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, cast, Annotated
+from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, cast, Annotated
+
+from DLMS_SPODES.types.type_alias import attr2d
 from semver import Version as SemVer
 from StructResult import result
 from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
 from ..types.implementations import structs, enums, octet_string
-from . import cosem_interface_class as ic
 from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
 from .arbitrator import Arbitrator
@@ -63,7 +65,10 @@ from ..config_parser import config, get_message
 from ..obis import media_id
 from .parameter import Parameter
 from typing_extensions import deprecated, override
+from .cosem_interface_class import IC, Classifier, _LN_ELEMENT
 from ..settings import settings
+from ..types.type_alias import Obis, Encoding, Attr, Tag, attr2i, attr2obis, attr2a, attr2b, attr2c, attr2e, attr2f, attr2d, Index, unpack_attr
+from .association_ln.abstract import ObjectListType
 
 
 class CollectionMapError(exc.DLMSException):
@@ -99,18 +104,18 @@ SortMode: TypeAlias = Literal["l", "n", "c", "cl", "cn"]
 # todo: make new class ClassMap(for field Collection.spec_map). fields: name, version, dict(current version ClassMap)
 class ClassMap:
 
-    def __init__(self, *values: type[InterfaceClass]):
+    def __init__(self, *values: type[IC]) -> None:
         self._values = values
 
     def __hash__(self) -> int:
-        return hash(it.hash_ for it in self._values)
+        return hash(id(it) for it in self._values)
 
-    def get(self, ver: int) -> type[InterfaceClass]:
+    def get(self, ver: int) -> type[IC]:
         if (ver := int(ver)) < len(self._values):
             return self._values[ver]
         raise RuntimeError(f"got {ver=}, expected maximal={len(self._values)}")
 
-    def renew(self, ver: int, cls_: type[InterfaceClass]) -> Self:
+    def renew(self, ver: int, cls_: type[IC]) -> Self:
         """return with one change"""
         if ver < (l := len(self._values)):
             tmp = list(self._values)
@@ -192,16 +197,15 @@ common_interface_class_map: dict[int, ClassMap] = {
 }
 
 
-def get_interface_class(class_map: dict[int, ClassMap], c_id: ut.CosemClassId, ver: cdt.Unsigned) -> type[InterfaceClass]:
+def get_interface_class(class_map: dict[int, ClassMap], c_id: ut.CosemClassId, ver: int) -> result.SimpleOrError[type[IC]]:
     """new version <get_type_from_class>"""
     ret = class_map.get(int(c_id), None)
     if isinstance(ret, ClassMap):
-        return ret.get(int(ver))
+        return result.Simple(ret.get(ver))
+    if int(c_id) not in common_interface_class_map:
+        return result.Error.from_e(ValueError(F"unknown {c_id=}"), "get interface class")
     else:
-        if int(c_id) not in common_interface_class_map.keys():
-            raise CollectionMapError(F"unknown {c_id=}")
-        else:
-            raise CollectionMapError(F"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")
+        return result.Error.from_e(ValueError((F"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")))
 
 
 _CUMULATIVE = (1, 2, 11, 12, 21, 22)
@@ -561,40 +565,40 @@ func_maps["KPZ1"] = get_func_map(__func_map_for_create)
 
 
 def get_type(class_id: ut.CosemClassId,
-             version: cdt.Unsigned,
-             ln: cst.LogicalName,
-             func_map: FUNC_MAP) -> Type[InterfaceClass]:
+             ver: int,
+             obis: Obis,
+             func_map: FUNC_MAP) -> result.SimpleOrError[type[IC]]:
     """use DLMS UA 1000-1 Ed. 14 Table 54"""
     c_m: Optional[dict[int, ClassMap]]
     if (
-        (128 <= ln.b <= 199)
-        or (128 <= ln.c <= 199)
-        or ln.c == 240
-        or (128 <= ln.d <= 254)
-        or (128 <= ln.e <= 254)
-        or (128 <= ln.f <= 254)
+        (128 <= attr2b(obis) <= 199)
+        or (128 <= attr2c(obis) <= 199)
+        or obis[2] == 240
+        or (128 <= attr2d(obis) <= 254)
+        or (128 <= attr2e(obis) <= 254)
+        or (128 <= attr2f(obis) <= 254)
     ):
         # try search in ABCDE group for manufacture object before in CDE
-        c_m = func_map.get(ln.contents[:5], common_interface_class_map)
+        c_m = func_map.get(obis[:5], common_interface_class_map)
     else:
         # try search in ABCDE group
-        c_m = func_map.get(ln.contents[:5], None)
+        c_m = func_map.get(obis[:5], None)
         if c_m is None:
             # try search in A-CDE group
-            c_m = func_map.get(ln.contents[:1]+ln.contents[2:5], None)
+            c_m = func_map.get(obis[:1] + obis[2:5], None)
             if c_m is None:
                 # try search in A-CD group
-                c_m = func_map.get(ln.contents[:1]+ln.contents[2:4], None)
+                c_m = func_map.get(obis[:1] + obis[2:4], None)
                 if c_m is None:
                     # try search in A-C group
-                    c_m = func_map.get(ln.contents[:1]+ln.contents[3:4], common_interface_class_map)
+                    c_m = func_map.get(obis[:1] + obis[3:4], common_interface_class_map)
     return get_interface_class(class_map=c_m,
                                c_id=class_id,
-                               ver=version)
+                               ver=ver)
 
 
 @lru_cache(20000)
-def get_unit(class_id: ClassID, elements: Iterable[int]) -> int | None:
+def get_unit(class_id: ClassID, elements: Iterable[int]) -> Optional[int]:
     match class_id, *elements:
         case (ClassID.LIMITER, 6 | 7) | (ClassID.LIMITER, 8, 2) | (ClassID.DEMAND_REGISTER, 8) | (ClassID.PROFILE_GENERIC, 4) | (ClassID.PUSH_SETUP, 5) |\
              (ClassID.PUSH_SETUP, 7, _) | (ClassID.PUSH_SETUP, 12, 1) | (ClassID.COMMUNICATION_PORT_PROTECTION, 4 | 6) | (ClassID.CHARGE, 8) | (ClassID.IEC_HDLC_SETUP, 8) \
@@ -617,10 +621,10 @@ def get_unit(class_id: ClassID, elements: Iterable[int]) -> int | None:
 type ObjFilteredKey = tuple[ClassID | LNPattern | LNPatterns | Channel, ...]
 
 
-def get_filtered(objects: Iterable[InterfaceClass],
-                 keys: ObjFilteredKey) -> list[InterfaceClass]:
-    c_ids: list[ut.CosemClassId] = list()
-    patterns: list[LNPattern] = list()
+def get_filtered(objects: Iterable[IC],
+                 keys: ObjFilteredKey) -> list[IC]:
+    c_ids: list[ut.CosemClassId] = []
+    patterns: list[LNPattern] = []
     ch: Optional[Channel] = None
     for k in keys:
         if isinstance(k, ut.CosemClassId):
@@ -631,15 +635,15 @@ def get_filtered(objects: Iterable[InterfaceClass],
             patterns.extend(k)
         elif isinstance(k, Channel):
             ch = k
-    new_list = list()
+    new_list = []
     for obj in objects:
         if obj.CLASS_ID in c_ids:
             pass
-        elif obj.logical_name in patterns:
+        elif obj.obis in patterns:
             pass
         else:
             continue
-        if ch and not ch.is_approve(obj.logical_name.b):
+        if ch and not ch.is_approve(obj.obis[1]):
             continue
         new_list.append(obj)
     return new_list
@@ -672,6 +676,17 @@ class ID:
     man: bytes
     f_id: ParameterValue
     f_ver: ParameterValue
+    sap: enums.ClientSAP
+
+
+class EmptyAttribute(exc.DLMSException):
+    """need read attribute"""
+    def __init__(self,
+                 ln: cst.LogicalName,
+                 i: int):
+        Exception.__init__(self, F"empty {ln}: {i}")
+        self.ln = ln
+        self.i = i
 
 
 class Collection:
@@ -679,7 +694,9 @@ class Collection:
     __dlms_ver: int
     __country: Optional[CountrySpecificIdentifiers]
     __country_ver: Optional[ParameterValue]
-    __objs: dict[o.OBIS, ic.COSEMInterfaceClasses]
+    __objs: dict[Obis, IC]
+    _data: dict[Attr, cdt.CommonDataType]
+    _t: dict[Attr, Tag]
     __const_objs: int
     spec_map: str
 
@@ -695,7 +712,23 @@ class Collection:
         """country version specification"""
         self.spec_map = "DLMS_6"
         self.__objs = {}
-        """ all DLMS objects container with obis key """
+        """all DLMS objects container with obis key"""
+        self._data = {}
+        """data of collection"""
+        self._t = {}
+        """expected Tags of Attributes"""
+
+    def getCDT(self, attr: Attr) -> result.SimpleOrError[cdt.CommonDataType]:
+        if (data := self._data.get(attr)) is None:
+            return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
+        return result.Simple(data)
+
+    def get[T: cdt.CommonDataType](self, attr: Attr, e_type: type[T]) -> result.SimpleOrError[T]:
+        if (data := self._data.get(attr)) is None:
+            return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
+        if isinstance(data, e_type):
+            return result.Simple(data)
+        return result.Error.from_e(TypeError(f"got {data.__class__}, expected {e_type}"))
 
     @property
     def id(self) -> ID:
@@ -710,6 +743,18 @@ class Collection:
             else:
                 """success validation"""
 
+    def add_from_object_list(self, obj_list: ObjectListType) -> result.StrictOk | result.Error:
+        res = result.StrictOk()
+        for o_l_el in obj_list:
+            o_l_el: structs.ObjectListElement
+            if isinstance(res_new := self.addIC(
+                    class_id=ut.CosemClassId(int(o_l_el.class_id)),
+                    version=int(o_l_el.version),
+                    obis=o_l_el.logical_name.contents
+            ), result.Error):
+                res.append_err(res_new.err)
+        return res
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Collection):
             return hash(self) == hash(other)
@@ -717,71 +762,6 @@ class Collection:
 
     def __hash__(self) -> int:
         return hash(self.id)
-
-    def copy_object_values(self, target: ic.COSEMInterfaceClasses, association_id: int = 3) -> None:
-        """copy object values according by association. only needed"""
-        source: ic.COSEMInterfaceClasses = self.__objs.get(target.logical_name.contents, None)
-        if source is None:
-            raise RuntimeError(f"can't find {target}")
-        for el, encoding in source.iter_ael_with_encoding():
-            if (
-                encoding == b""
-                or (
-                    not isinstance(el.DATA_TYPE, ut.CHOICE)
-                    and el.classifier == ic.Classifier.DYNAMIC
-                )
-            ):
-                continue
-            if (
-                el.classifier == ic.Classifier.STATIC
-                and not self.is_writable(
-                    ln=target.logical_name,
-                    index=el.i,
-                    association_id=association_id)
-            ):
-                target.set(el.i, encoding)
-            else:
-                # if isinstance(arr := target.get_attr(i), cdt.Array):  maybe NEED!!!
-                #     arr.set_type(value.TYPE)
-                target.set(el.i, encoding[:1])  # set only TAG
-
-    def copy(self) -> result.Simple["Collection"]:
-        """copy collection with value by Association"""
-        res = result.Simple(Collection(
-            id_=self.id,
-            dlms_ver=self.__dlms_ver,
-            country=self.__country,
-            cntr_ver=self.__country_ver)
-        )
-        res.value.spec_map = self.spec_map
-        max_ass: AssociationLN | None = None
-        """more full association"""  # todo: move to collection(from_xml)
-        for obj in self.__objs.values():
-            new_obj: InterfaceClass = obj.__class__(obj.logical_name)
-            res.value.__objs[obj.logical_name.contents] = new_obj
-            new_obj.collection = res.value  # todo: remove in future
-            if obj.CLASS_ID == ClassID.ASSOCIATION_LN:
-                obj: AssociationLN
-                if obj.object_list is not None:
-                    if (
-                        max_ass is None
-                        or len(max_ass.object_list) < len(obj.object_list)
-                    ):
-                        max_ass = obj
-        if max_ass is None:
-            raise exc.NoObject("collection not has the AssociationLN object")
-        ln_for_set = max_ass.get_lns()
-        ass_id: int = max_ass.logical_name.e
-        while len(ln_for_set) != 0:
-            ln = ln_for_set.pop(0)
-            try:
-                new_obj = res.value.get_object(ln.contents)
-                self.copy_object_values(
-                    target=new_obj,
-                    association_id=ass_id)
-            except Exception as e:
-                res.append_e(e, "copy object value")
-        return res
 
     @property
     def dlms_ver(self) -> int:
@@ -800,7 +780,7 @@ class Collection:
     def country(self) -> Optional[CountrySpecificIdentifiers]:
         return self.__country
 
-    def set_country(self, value: CountrySpecificIdentifiers):
+    def set_country(self, value: CountrySpecificIdentifiers) -> None:
         if not self.__country:
             self.__country = value
         else:
@@ -810,10 +790,10 @@ class Collection:
                 """success validation"""
 
     @property
-    def country_ver(self):
+    def country_ver(self) -> Optional[ParameterValue]:
         return self.__country_ver
 
-    def set_country_ver(self, value: ParameterValue):
+    def set_country_ver(self, value: ParameterValue) -> None:
         """country version specification"""
         if not self.__country_ver:
             self.__country_ver = value
@@ -827,7 +807,7 @@ class Collection:
         return F"[{len(self.__objs)}] DLMS version: {self.__dlms_ver}, country: {self.__country}, country specific version: {self.__country_ver}, " \
                F"id: {self.id}, uses specification: {self.spec_map}"
 
-    def __iter__(self) -> Iterator[ic.COSEMInterfaceClasses]:
+    def __iter__(self) -> Iterator[IC]:
         return iter(self.__objs.values())
 
     def get_spec(self) -> str:
@@ -838,78 +818,109 @@ class Collection:
             case b"101" | b"102" | b"103" | b"104":
                 return "KPZ1"
             case _:
-                if self.country == CountrySpecificIdentifiers.RUSSIA:
-                    if (
-                        self.country_ver.par == b'\x00\x00`\x01\x06\xff\x02' and
-                        SemVer.parse(bytes(cdt.OctetString(self.country_ver.value)), True) == SemVer(3, 0)
-                    ):
-                        return "SPODES_3"
+                if self.country_ver:
+                    if self.country == CountrySpecificIdentifiers.RUSSIA:
+                        if (
+                            self.country_ver.par == b'\x00\x00`\x01\x06\xff\x02'
+                            and SemVer.parse(bytes(cdt.OctetString(self.country_ver.value)), True) == SemVer(3, 0)
+                        ):
+                            return "SPODES_3"
                 if self.dlms_ver == 6:
                     return "DLMS_6"
                 else:
                     raise exc.DLMSException("unknown specification")
 
+    @deprecated("use <addIC>")
     def add_if_missing(self, class_id: ut.CosemClassId,
-                       version: Optional[cdt.Unsigned],
-                       logical_name: cst.LogicalName) -> InterfaceClass:
+                       version: int,
+                       obis: Obis) -> IC:
         """ like as add method with check for missing """
-        if (res := self.__objs.get(logical_name.contents)) is None:
+        if (res := self.__objs.get(obis)) is None:
             return self.add(
                 class_id=class_id,
                 version=version,
-                logical_name=logical_name)
+                obis=obis)
         else:
             return res
 
-    def __getitem__(self, item: o.OBIS) -> InterfaceClass:
+    def __getitem__(self, item: o.OBIS) -> IC:
         return self.__objs[item]
 
-    def get(self, obis: o.OBIS) -> Optional[ic.COSEMInterfaceClasses]:
-        """ get object, return None if it absence """
-        return self.__objs.get(obis, None)
-
-    def par2obj(self, par: Parameter) -> result.SimpleOrError[ic.COSEMInterfaceClasses]:
+    def par2obj(self, par: Parameter) -> result.SimpleOrError[IC]:
         """return: DLMSObject"""
-        return self.obis2obj(par.obis)
+        return self.obis2ic(par.obis)
 
     def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
         """:return CDT by Parameter, return None if data wasn't setting"""
-        if isinstance((res1 := self.par2obj(par)), result.Error):
-            return res1
-        res = result.Option(res1.value.get_attr(par.i))
+        if isinstance((res_obj := self.par2obj(par)), result.Error):
+            return res_obj
+        res = result.Option(res_obj.value.get_attr(par.i))
         if res.value is None:
             return res
-        for el in par.elements():
-            res.value = res.value[el]
+        for i, el in enumerate(par.elements()):
+            if isinstance(res.value, cdt.ComplexDataType):
+                res.value = res.value[el]
+            else:
+                return result.Error.from_e(ValueError(f"object with {par} not has element {i}"))
         return res
 
-    def values(self) -> tuple[InterfaceClass]:
+    def values(self) -> tuple[IC, ...]:
         return tuple(self.__objs.values())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__objs)
 
-    def add(self, class_id: ut.CosemClassId,
-            version: cdt.Unsigned | None,
-            logical_name: cst.LogicalName) -> InterfaceClass:
+    def setupCDT(self, attr: Attr, encoding: Encoding) -> result.Simple[cdt.CommonDataType] | result.Error:
+        if isinstance(res_obj := self.obis2ic(attr2obis(attr)), result.Error):
+            return res_obj
+        if isinstance(res_data := res_obj.value.getCDT(attr2i(attr), encoding), result.Error):
+            return res_data
+        return self.setup_data(attr, res_data.value)
+
+    def setup[T: cdt.CommonDataType](self, attr: Attr, encoding: Encoding, e_type: type[T]) -> result.Simple[T] | result.Error:
+        if isinstance(res_obj := self.obis2ic(attr2obis(attr)), result.Error):
+            return res_obj
+        if isinstance(res_data := res_obj.value.get(attr2i(attr), encoding, e_type), result.Error):
+            return res_data
+        return self.setup_data(attr, res_data.value)
+
+    def setup_data[T: cdt.CommonDataType](self, attr: Attr, data: T) -> result.Simple[T] | result.Error:
+        if data != self._data.setdefault(attr, data):
+            return result.Error.from_e(ValueError(f"collection already exist other <Encoding> for {attr=}"))
+        return result.Simple(data)
+
+    def setupTag(self, attr: Attr, encoding: Tag | Encoding) -> result.Simple[Tag] | result.Error:
+        tag = encoding[:1]  # use only 1 byte
+        obis, i = unpack_attr(attr)
+        if isinstance(res_obj := self.obis2ic(obis), result.Error):
+            return res_obj
+        if isinstance(res_el := res_obj.value.getAElement(i), result.Error):
+            return res_el
+        if not isinstance(d_t := res_el.value.DATA_TYPE, ut.CHOICE):
+            return result.Error.from_e(TypeError(f"for {attr=} can't setup TAG to not CHOICE element"))
+        expected = d_t.get_types()
+        if not any((t_.TAG == tag for t_ in expected)):
+            return result.Error.from_e(ValueError(f"got {tag=}, expected {tuple(t_.TAG for t_ in expected)}"))
+        if tag != self._t.setdefault(attr, tag):
+            return result.Error.from_e(ValueError(f"collection already exist oter <Tag> for {attr=}"))
+        return result.Simple(tag)
+
+    def addIC(self, class_id: ut.CosemClassId,
+              version: Optional[int],
+              obis: Obis) -> result.SimpleOrError[IC]:
         """ append new DLMS object to collection with return it"""
-        try:
-            new_object = get_type(
-                class_id=class_id,
-                version=self.find_version(class_id) if version is None else version,
-                ln=logical_name,
-                func_map=func_maps[self.spec_map])(logical_name)
-            new_object.collection = self
-            self.__objs[o.OBIS(logical_name.contents)] = new_object
-            return new_object
-        except ValueError as e:
-            raise ValueError(F"error getting DLMS object instance with {class_id=} {version=} {logical_name=}: {e}")
-        except StopIteration as e:
-            raise ValueError(F"not find class version for {class_id=} {logical_name=}: {e}")
+        if isinstance(res_ic_type := get_type(
+            class_id=class_id,
+            ver=self.find_version(class_id) if version is None else version,
+            obis=obis,
+            func_map=func_maps[self.spec_map]), result.Error):
+            return res_ic_type
+        new = res_ic_type.value(obis)
+        return result.Simple(self.__objs.setdefault(obis, new))
 
     def get_class_version(self) -> dict[ut.CosemClassId, cdt.Unsigned]:
         """use for check all class version by unique"""
-        ret: dict[ut.CosemClassId, cdt.Unsigned] = dict()
+        ret: dict[ut.CosemClassId, cdt.Unsigned] = {}
         for obj in self.__objs.values():
             if ver := ret.get(obj.CLASS_ID):
                 if obj.VERSION != ver:
@@ -921,8 +932,8 @@ class Collection:
     def get_n_phases(self) -> int:
         """search objects with L2 phase"""
         ret: int | None = None
-        for obj in filter(lambda obj: obj.logical_name.a == 1, self):
-            if 41 <= obj.logical_name.c <= 60:
+        for obj in filter(lambda obj: attr2a(obj.obis) == 1, self):
+            if 41 <= attr2c(obj.obis) <= 60:
                 return 3
             ret = 1
         if ret is None:
@@ -938,7 +949,7 @@ class Collection:
             return False
 
     @lru_cache(maxsize=100)  # amount of all ClassID
-    def find_version(self, class_id: ut.CosemClassId) -> cdt.Unsigned:
+    def find_version(self, class_id: ut.CosemClassId) -> int:
         """use for add new object from profile_generic if absence in object list"""
         return next(filter(lambda obj: obj.CLASS_ID == class_id, self.__objs.values())).VERSION
 
@@ -946,15 +957,15 @@ class Collection:
         obis = lnContents2obis(value)
         return False if self.__objs.get(obis) is None else True
 
-    def get_object(self, value: LNContaining) -> InterfaceClass:
+    def get_object(self, value: LNContaining) -> IC:
         """ return object from obis<string> or raise exception if it absence """
-        return self.obis2obj(lnContents2obis(value)).unwrap()
+        return self.obis2ic(lnContents2obis(value)).unwrap()
 
     @deprecated("use <par2rep>")
     def get_report(self,
-                   obj: ic.COSEMInterfaceClasses,
+                   obj: IC,
                    par: bytes,
-                   a_val: cdt.CommonDataType | None
+                   a_val: Optional[cdt.CommonDataType]
                    ) -> cdt.Report:
         """par: attribute_index, par1, par2, ..."""
         rep = cdt.Report(str(a_val))
@@ -966,12 +977,14 @@ class Collection:
                 rep = a_val.get_report()
             elif isinstance(a_val, DayProfileAction):
                 rep.msg = F"{get_message("$rate$")}-{a_val.script_selector}: {a_val.start_time}"
-                script_obj = self.get_object(a_val.script_logical_name)
-                for script in script_obj.scripts:
-                    if script.script_identifier == a_val.script_selector:
-                        break
+                if isinstance(script_obj := self.get_object(a_val.script_logical_name), ScriptTable):
+                    for script in script_obj.scripts:
+                        if script.script_identifier == a_val.script_selector:
+                            break
+                    else:
+                        rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {a_val.script_selector}")
                 else:
-                    rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {a_val.script_selector}")
+                    rep.log = cdt.Log(logging.ERROR, f"wrong script object with {a_val.script_logical_name}")
             else:
                 if unit := get_unit(obj.CLASS_ID, par):
                     rep.unit = cdt.Unit(unit).get_name()
@@ -1003,12 +1016,14 @@ class Collection:
                 rep = data.get_report()
             elif isinstance(data, DayProfileAction):
                 rep.msg = F"{get_message("$rate$")}-{data.script_selector}: {data.start_time}"
-                script_obj = self.get_object(data.script_logical_name)
-                for script in script_obj.scripts:
-                    if script.script_identifier == data.script_selector:
-                        break
+                if isinstance(script_obj := self.get_object(data.script_logical_name), ScriptTable):
+                    for script in script_obj.scripts:
+                        if script.script_identifier == data.script_selector:
+                            break
+                    else:
+                        rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {data.script_selector}")
                 else:
-                    rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {data.script_selector}")
+                    rep.log = cdt.Log(logging.ERROR, f"wrong script object with {data.script_logical_name}")
             else:
                 obj = self.par2obj(par).unwrap()
                 elements = tuple(par.elements())
@@ -1021,9 +1036,9 @@ class Collection:
                     else:
                         match obj.CLASS_ID, *elements:
                             case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
-                                data: structs.CaptureObjectDefinition
-                                obj = self.get_object(data.logical_name)
-                                rep.msg = F"{get_name(data.logical_name)}.{obj.get_attr_element(int(data.attribute_index))}"
+                                data_: structs.CaptureObjectDefinition
+                                obj = self.get_object(data_.logical_name)
+                                rep.msg = F"{get_name(data_.logical_name)}.{obj.get_attr_element(int(data_.attribute_index))}"
                             case _:
                                 pass
                 rep.log = cdt.Log(logging.INFO)
@@ -1034,17 +1049,17 @@ class Collection:
 
     @deprecated("use par2su")
     def get_scaler_unit(self,
-                        obj: ic.COSEMInterfaceClasses,
+                        obj: IC,
                         par: bytes
                         ) -> cdt.ScalUnitType | None:
         match obj.CLASS_ID, *par:
             case (ClassID.REGISTER | ClassID.EXT_REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
                 obj: Register | DemandRegister
                 if (s_u := obj.scaler_unit) is None:
-                    raise ic.EmptyAttribute(obj.logical_name, 3)
+                    raise EmptyAttribute(obj.logical_name, 3)
                 else:
                     if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                        s_u = s_u.copy()
+                        s_u = copy(s_u)
                         s_u.scaler.set(int(s_u.scaler)-s)
                     return s_u
             case ClassID.LIMITER, 3 | 4 | 5:
@@ -1054,11 +1069,11 @@ class Collection:
                         obj=self.get_object(m_v.logical_name),
                         par=m_v.attribute_index.contents)
                 else:
-                    raise ic.EmptyAttribute(obj.logical_name, 2)
+                    raise EmptyAttribute(obj.logical_name, 2)
             case ClassID.REGISTER_MONITOR, 2, _:
                 obj: RegisterMonitor
                 if (m_v := obj.monitored_value) is None:
-                    raise ic.EmptyAttribute(obj.logical_name, 3)
+                    raise EmptyAttribute(obj.logical_name, 3)
                 else:
                     return self.get_scaler_unit(  # recursion 1 level
                         obj=self.get_object(m_v.logical_name),
@@ -1071,16 +1086,16 @@ class Collection:
     def par2su(self, par: Parameter) -> Optional[cdt.ScalUnitType]:
         """convert Parameter -> Optional[ScalerUnit],
         raise: NoObject, EmptyAttribute"""
-        match (obj := self.par2obj(par).unwrap()).CLASS_ID, par.i:
+        match (obj := self.obis2ic(par.obis).unwrap()), par.i:
             case (exc.NoObject, _):
                 raise obj
             case (ClassID.REGISTER | ClassID.EXT_REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
                 obj: Register | DemandRegister
                 if (s_u := obj.scaler_unit) is None:
-                    raise ic.EmptyAttribute(obj.logical_name, 3)
+                    raise EmptyAttribute(obj.logical_name, 3)
                 else:
                     if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                        s_u = s_u.copy()
+                        s_u = copy(s_u)
                         s_u.scaler.set(int(s_u.scaler)-s)
                     return s_u
             case ClassID.LIMITER, 3 | 4 | 5:
@@ -1088,11 +1103,11 @@ class Collection:
                 if m_v := obj.monitored_value:
                     return self.par2su(Parameter(m_v.logical_name.contents).set_i(int(m_v.attribute_index)))  # recursion 1 level
                 else:
-                    raise ic.EmptyAttribute(obj.logical_name, 2)
+                    raise EmptyAttribute(obj.logical_name, 2)
             case ClassID.REGISTER_MONITOR, 2, _:
                 obj: RegisterMonitor
                 if (m_v := obj.monitored_value) is None:
-                    raise ic.EmptyAttribute(obj.logical_name, 3)
+                    raise EmptyAttribute(obj.logical_name, 3)
                 else:
                     return self.par2su(Parameter(m_v.logical_name.contents).set_i(int(m_v.attribute_index)))  # recursion 1 level
             case _:
@@ -1101,9 +1116,9 @@ class Collection:
     def par2float(self, par: Parameter) -> float:
         """try convert CDT value according with Parameter to build-in float"""
         data = self.par2data(par).unwrap()
-        if hasattr(data, "__int__"):
+        if isinstance(data, cdt.Digital):
             value = float(int(data))
-        elif hasattr(data, "__float__"):
+        elif isinstance(data, cdt.Float):
             value = float(data)
         else:
             raise TypeError("can't convert Parameter data to int or float")
@@ -1112,16 +1127,16 @@ class Collection:
         return value
 
 
-    def filter_by_ass(self, ass_id: int) -> list[InterfaceClass]:
+    def filter_by_ass(self, ass_id: int) -> list[IC]:
         """return only association objects"""
         ret = list()
         for olt in self.getASSOCIATION(ass_id).object_list:
             ret.append(self.par2obj(Parameter(olt.logical_name.contents)).unwrap())
         return ret
 
-    def sap2objects(self, value: enums.ClientSAP) -> result.List[ic.COSEMInterfaceClasses]:
+    def sap2objects(self, sap: enums.ClientSAP) -> result.List[IC]:
         res = result.List()
-        for par in self.sap2association(value).iter_pars():
+        for par in self.sap2association(sap).iter_pars():
             if isinstance(res1 := self.par2obj(par), result.Error):
                 res1.append_err(res.err)
             else:
@@ -1129,14 +1144,17 @@ class Collection:
         return res
 
     def iter_classID_objects(self,
-                        class_id: ut.CosemClassId) -> Iterator[ic.COSEMInterfaceClasses]:
+                        class_id: ut.CosemClassId) -> Iterator[IC]:
         return (obj for obj in self.__objs.values() if obj.CLASS_ID == class_id)
+
+    def iter_objects[T: IC](self, e_type: type[IC]) -> Iterator[IC]:
+        return (obj for obj in self.__objs.values() if isinstance(obj, e_type))
 
     def LNPattern2objects(self,
                           pat: LNPattern) -> list[InterfaceClass]:
         ret = []
         for obj in self.__objs.values():
-            if obj.logical_name in pat:
+            if obj.obis in pat:
                 ret.append(obj)
         return ret
 
@@ -1154,147 +1172,141 @@ class Collection:
     def get_objects_by_class_id(self, value: ut.CosemClassId) -> list[InterfaceClass]:
         return list(filter(lambda obj: obj.CLASS_ID == value, self.__objs.values()))
 
-    def get_writable_attr(self) -> UsedAttributes:
+    def get_writable_attr(self) -> result.SimpleOrError[UsedAttributes]:
         """return all writable {obj.ln: {attribute_index}}"""
-        ret: UsedAttributes = dict()
+        ret = {}
+        res = result.Simple(ret)
         for ass in self.iter_classID_objects(ClassID.ASSOCIATION_LN):
-            if (
-                ass.logical_name.e == 0
-                or ass.object_list is None
-            ):
-                continue
+            if attr2e(ass.obis) == 0:
+                """skip current association"""
+            elif isinstance(res_obj_list := self.get(AssociationLNVer0.object_list, ObjectListType, result.Error)):
+                res.append_e(TypeError(f"got {type(res_obj_list.value)} expected {ObjectListType.__name__}"))
             else:
-                for list_type in ass.object_list:
+                for list_type in res.value:
                     for attr_access in list_type.access_rights.attribute_access:
                         if attr_access.access_mode.is_writable():
                             if ret.get(list_type.logical_name, None) is None:
                                 ret[list_type.logical_name] = set()
                             ret[list_type.logical_name].add(int(attr_access.attribute_id))
-        return ret
+        if (
+            len(ret) == 0
+            and res.err is not None
+        ):
+            return res.result
+        return res
 
     def get_profile_s_u(self,
                         obj: ProfileGeneric,
-                        mask: set[int] = None
-                        ) -> list[cdt.ScalUnitType | None]:
+                        mask: Optional[set[int]] = None
+                        ) -> list[Optional[cdt.ScalUnitType]]:
         """return container of scaler_units if possible, mask: position number in capture_objects"""
-        res: list[cdt.ScalUnitType | None] = list()
+        res: list[cdt.ScalUnitType | None] = []
         for i, obj_def in enumerate(obj.capture_objects):
             obj_def: structs.CaptureObjectDefinition
-            if mask and i not in mask:
+            if (
+                mask
+                and i not in mask
+            ):
                 continue
             s_u = None
             try:
                 s_u = self.get_scaler_unit(
                     obj=self.get_object(obj_def.logical_name),
                     par=bytes([int(obj_def.attribute_index)]))
-            except ic.EmptyAttribute as e:
+            except EmptyAttribute as e:
                 print(F"Can't fill Scaler and Unit for {get_name(obj_def.logical_name)}: {e}")
             finally:
                 res.append(s_u)
         return res
 
-    def copy_obj_attr_values_from(self, other: InterfaceClass) -> bool:
-        """ copy all attributes value from other and return bool result """
-        try:
-            obj = self.par2obj(Parameter(other.logical_name.contents)).unwrap()
-            for i, attr in other.get_index_with_attributes(in_init_order=True):
-                if i == 1:
-                    continue
-                else:
-                    if attr is not None:
-                        obj.set_attr(i, attr.encoding)
-            return True
-        except exc.NoObject as e:
-            return False
-
-    def copy_objects_attr_values_from(self, other: Self) -> bool:
-        """ Copy collections values and return True if all was writen """
-        if len(other) != 0:
-            return bool(reduce(lambda a, b: a or b, map(self.copy_obj_attr_values_from, other.values())))
-        else:
-            return False
-
-    def obis2obj(self, obis: o.OBIS) -> result.SimpleOrError[ic.COSEMInterfaceClasses]:
-        if obj := self.__objs.get(obis):
+    def obis2ic(self, obis: Obis) -> result.SimpleOrError[IC]:
+        if obj := self.__objs.get(obis, None):
             return result.Simple(obj)
-        return result.Error.from_e(ValueError(str(obis)), "no object")
+        return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
+
+    def obis2obj[T: IC](self, obis: Obis, e_type: T) -> result.SimpleOrError[T]:
+        if obj := self.__objs.get(obis) is None:
+            return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
+        if isinstance(obj, e_type):
+            return result.Simple(obj)
+        return result.Error.from_e(TypeError(f"got {obj} expected {e_type}"))
 
     def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
-        return self.obis2obj(o.OBIS(ln.contents))
+        return self.obis2ic(ln.contents)
 
     @cached_property
     def LDN(self) -> impl.data.LDN:
-        return self.obis2obj(o.LDN).unwrap()
+        return self.obis2ic(b"\x00\x00\x2A\x00\x00\xff").unwrap()
 
     @cached_property
     def current_association(self) -> AssociationLN:
-        return self.obis2obj(o.CURRENT_ASSOCIATION).unwrap()
+        return self.obis2ic(o.CURRENT_ASSOCIATION).unwrap()
 
     def getASSOCIATION(self, instance: int) -> AssociationLN:
-        return self.obis2obj(o.AssociationLN(instance)).unwrap()
+        return self.obis2obj(bytes((0, 0, 40, 0, instance, 255)), AssociationLN).unwrap()
 
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
-        return self.obis2obj(o.PUBLIC_ASSOCIATION).unwrap()
+        return self.obis2ic(bytes(0, 0, 40, 0, 1, 255)).unwrap()
 
     @property
     def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
-        return self.obis2obj(bytes((0, 0, 96, 12, 4, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 96, 12, 4, 255))).unwrap()
 
     @property
     def clock(self) -> Clock:
-        return self.obis2obj(bytes((0, 0, 1, 0, 0, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 1, 0, 0, 255))).unwrap()
 
     @property
     def boot_image_transfer(self) -> ImageTransfer:
-        return self.obis2obj(bytes((0, 0, 44, 0, 128, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 44, 0, 128, 255))).unwrap()
 
     @property
     def firmware_image_transfer(self) -> ImageTransfer:
-        return self.obis2obj(bytes((0, 0, 44, 0, 0, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 44, 0, 0, 255))).unwrap()
 
     @property
     def firmwares_description(self) -> Data:
         """ Consist from boot_version, descriptor, ex.: 0005PWRM_M2M_3_F1_5ppm_Spvq. 0.0.128.100.0.255 """
-        return self.obis2obj(bytes((0, 0, 128, 100, 0, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 128, 100, 0, 255))).unwrap()
 
     @property
     def RU_CLOSE_ELECTRIC_SEAL(self) -> Data:
         """ Russian. СПОДЕС Г.2 """
-        return self.obis2obj(bytes((0, 0, 96, 51, 6, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 96, 51, 6, 255))).unwrap()
 
     @property
     def RU_ERASE_MAGNETIC_EVENTS(self) -> Data:
         """ Russian. СПОДЕС Г.2 """
-        return self.obis2obj(bytes((0, 0, 96, 51, 7, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 96, 51, 7, 255))).unwrap()
 
     @property
     def RU_FILTER_ALARM_2(self) -> Data:
         """ Russian. Filter of Alarm register relay"""
-        return self.obis2obj(bytes((0, 0, 97, 98, 11, 255))).unwrap()
+        return self.obis2ic(bytes((0, 0, 97, 98, 11, 255))).unwrap()
 
     @property
     def RU_DAILY_PROFILE(self) -> ProfileGeneric:
         """ Russian. Profile of daily values """
-        return self.obis2obj(bytes((1, 0, 98, 2, 0, 255))).unwrap()
+        return self.obis2ic(bytes((1, 0, 98, 2, 0, 255))).unwrap()
 
     @property
     def RU_MAXIMUM_CURRENT_EXCESS_LIMIT(self) -> Register:
         """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum current excess limit before the subscriber is disconnected, % of IMAX """
-        return self.obis2obj(bytes((1, 0, 11, 134, 0, 255))).unwrap()
+        return self.obis2ic(bytes((1, 0, 11, 134, 0, 255))).unwrap()
 
     @property
     def RU_MAXIMUM_VOLTAGE_EXCESS_LIMIT(self) -> Register:
         """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum voltage excess limit before the subscriber is disconnected, % of Unominal """
-        return self.obis2obj(bytes((1, 0, 12, 134, 0, 255))).unwrap()
+        return self.obis2ic(bytes((1, 0, 12, 134, 0, 255))).unwrap()
 
     def getDISCONNECT_CONTROL(self, ch: int = 0) -> DisconnectControl:
         """DLMS UA 1000-1 Ed 14 6.2.46 Disconnect control objects by channel"""
-        return self.obis2obj(bytes((0, ch, 96, 3, 10, 255))).unwrap()
+        return self.obis2ic(bytes((0, ch, 96, 3, 10, 255))).unwrap()
 
     def getARBITRATOR(self, ch: int = 0) -> Arbitrator:
         """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
-        return self.obis2obj(bytes((0, ch, 96, 3, 20, 255))).unwrap()
+        return self.obis2ic(bytes((0, ch, 96, 3, 20, 255))).unwrap()
 
     @property
     def boot_version(self) -> str:
@@ -1306,32 +1318,29 @@ class Collection:
 
     def get_script_names(self, ln: cst.LogicalName, selector: cdt.LongUnsigned) -> str:
         """return name from script by selector"""
-        obj = self.par2obj(Parameter(ln.contents)).unwrap()
-        if isinstance(obj, ScriptTable):
-            for script in obj.scripts:
-                script: ScriptTable.scripts
-                if script.script_identifier == selector:
-                    names: list[str] = []
-                    for action in script.actions:
-                        action_obj = self.par2obj(Parameter(action.logical_name.contents)).unwrap()
-                        if int(action_obj.CLASS_ID) != int(action.class_id):
-                            raise ValueError(F"got {action_obj.CLASS_ID}, expected {action.class_id}")
-                        match int(action.service_id):
-                            case 1:  # for write
-                                if isinstance(action.parameter, cdt.NullData):
-                                    names.append(str(action_obj.getAElement(int(action.index)).unwrap()))
-                                else:
-                                    raise TypeError(F"not support by framework")  # TODO: make it
-                            case 2:  # for execute
-                                if isinstance(action.parameter, cdt.NullData):
-                                    names.append(str(action_obj.get_meth_element(int(action.index))))
-                                else:
-                                    raise TypeError(F"not support by framework")  # TODO: make it
-                    return ", ".join(names)
-            else:
-                raise ValueError(F"not find {selector} in {obj}")
+        obj = self.obis2obj(ln.contents, ScriptTable).unwrap()
+        for script in obj.scripts:
+            script: ScriptTable.scripts
+            if script.script_identifier == selector:
+                names: list[str] = []
+                for action in script.actions:
+                    action_obj = self.obis2obj(action.logical_name.contents).unwrap()
+                    if int(action_obj.CLASS_ID) != int(action.class_id):
+                        raise ValueError(F"got {action_obj.CLASS_ID}, expected {action.class_id}")
+                    match int(action.service_id):
+                        case 1:  # for write
+                            if isinstance(action.parameter, cdt.NullData):
+                                names.append(str(action_obj.getAElement(int(action.index)).unwrap()))
+                            else:
+                                raise TypeError(F"not support by framework")  # TODO: make it
+                        case 2:  # for execute
+                            if isinstance(action.parameter, cdt.NullData):
+                                names.append(str(action_obj.get_meth_element(int(action.index))))
+                            else:
+                                raise TypeError(F"not support by framework")  # TODO: make it
+                return ", ".join(names)
         else:
-            raise ValueError(F"object with {ln} is not {ScriptTable.CLASS_ID}")
+            raise ValueError(F"not find {selector} in {obj}")
 
     @lru_cache(4)
     def get_association_id(self, client_sap: enums.ClientSAP) -> int:
@@ -1391,7 +1400,7 @@ class Collection:
             not self.is_writable(par.ln, par.i, association_id, security_policy, security_policy)
             and self.par2obj(par
                              ).unwrap().getAElement(par.i
-                                                    ).unwrap().classifier == ic.Classifier.STATIC
+                                                    ).unwrap().classifier == Classifier.STATIC
         ):
             return True
         return False
@@ -1411,14 +1420,14 @@ class Collection:
         )
 
     @lru_cache(maxsize=100)
-    def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], Type[cdt.CommonDataType]]:
+    def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], type[cdt.CommonDataType]]:
         """ return names and type of element from collection"""
-        names: list[str] = list()
-        obj = self.par2obj(Parameter(value.logical_name.contents)).unwrap()
+        names: list[str] = []
+        obj = self.obis2obj(value.logical_name.contents).unwrap()
         names.append(get_name(obj.logical_name))
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
-        data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
+        data_type: type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
         names.append(str(obj.get_attr_element(attr_index)))
         if data_index == 0:
             pass
@@ -1443,16 +1452,16 @@ class Collection:
                       sort_mode: SortMode = "",
                       af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw", "m", "mlrw", "mlr"] = "l",
                       oi_filter: tuple[tuple[ClassID, tuple[int, ...]], ...] = None  # todo: maybe ai_filter with LNPattern, indexes need?
-                      ) -> dict[ClassID | media_id.MediaId, dict[ic.COSEMInterfaceClasses, list[int]]] | dict[ic.COSEMInterfaceClasses, list[int]]:  # todo: not all ret annotation
+                      ) -> dict[ClassID | media_id.MediaId, dict[IC, list[int]]] | dict[IC, list[int]]:  # todo: not all ret annotation
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable,
         oi_filter(object attribute index filter), example: ((ClassID.REGISTER, (2,))) - is restricted for Register only Value attribute without logical_name and scaler_unit
         """
-        objects: dict[ic.COSEMInterfaceClasses, list[int]]
+        objects: dict[IC, list[int]]
         without_ln = True if "l" in af_mode else False
         only_read = True if "r" in af_mode else False
         only_write = True if "w" in af_mode else False
         with_methods = True if "m" in af_mode else False
-        oi_f = dict(oi_filter) if oi_filter else dict()
+        oi_f = dict(oi_filter) if oi_filter else {}
         """objects indexes filter"""
         filtered = self.filter_by_ass(ass_id)
         if obj_filter:
@@ -1472,21 +1481,21 @@ class Collection:
             if isinstance(v, list):
                 objects = dict()
                 for obj in v:
-                    obj: ic.COSEMInterfaceClasses
+                    obj: IC
                     f_i = oi_f.get(obj.CLASS_ID)
                     """filter indexes"""
                     indexes = list()
-                    for i, attr in obj.get_index_with_attributes():
-                        if without_ln and i == 1:
+                    elements = obj.A_ELEMENTS
+                    if not without_ln:
+                        elements = _LN_ELEMENT + elements
+                    for i, attr in elements:
+                        if only_read and not self.is_readable(obj.logical_name, i, ass_id):
                             continue
-                        elif only_read and not self.is_readable(obj.logical_name, i, ass_id):
+                        if only_write and not self.is_writable(obj.logical_name, i, ass_id):
                             continue
-                        elif only_write and not self.is_writable(obj.logical_name, i, ass_id):
+                        if f_i and i not in f_i:
                             continue
-                        elif f_i and i not in f_i:
-                            continue
-                        else:
-                            indexes.append(i)
+                        indexes.append(i)
                     if with_methods:
                         i_meth = count(1)
                         for i, m_el in zip(i_meth, obj.M_ELEMENTS):
@@ -1522,35 +1531,19 @@ if config is not None:
         raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
 
 
-@deprecated("use lnContents2obis")
-def get_ln_contents(value: LNContaining) -> bytes:
-    """return LN as bytes[6] for use in any searching"""
-    match value:
-        case bytes():                                                    return value
-        case cst.LogicalName() | ut.CosemObjectInstanceId():             return value.contents
-        case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return value.instance_id.contents
-        case ut.CosemAttributeDescriptorWithSelection():                 return value.cosem_attribute_descriptor.instance_id.contents
-        case cdt.Structure(logical_name=value.logical_name):             return value.logical_name.contents
-        case cdt.Structure() as s:
-            s: cdt.Structure
-            for it in s:
-                if isinstance(it, cst.LogicalName):
-                    return it.contents
-            raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
-        case str() if value.find('.') != -1:
-            return cst.LogicalName.from_obis(value).contents
-        case str():                                                      return cst.LogicalName(value).contents
-        case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
-
-
-def lnContents2obis(value: LNContaining) -> o.OBIS:
+def lnContents2obis(value: LNContaining) -> Obis:
     """return LN as OBIS for use in any searching"""
     match value:
-        case bytes():                                                    return o.OBIS(value)
-        case cst.LogicalName() | ut.CosemObjectInstanceId():             return o.OBIS(value.contents)
-        case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor(): return o.OBIS(value.instance_id.contents)
-        case ut.CosemAttributeDescriptorWithSelection():                 return o.OBIS(value.cosem_attribute_descriptor.instance_id.contents)
-        case cdt.Structure(logical_name=value.logical_name):             return o.OBIS(value.logical_name.contents)
+        case bytes():
+            return value
+        case cst.LogicalName() | ut.CosemObjectInstanceId():
+            return value.contents
+        case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor():
+            return value.instance_id.contents
+        case ut.CosemAttributeDescriptorWithSelection():
+            return value.cosem_attribute_descriptor.instance_id.contents
+        case cdt.Structure(logical_name=value.logical_name):
+            return value.logical_name.contents
         case cdt.Structure() as s:
             s: cdt.Structure
             for it in s:
@@ -1558,8 +1551,9 @@ def lnContents2obis(value: LNContaining) -> o.OBIS:
                     return o.OBIS(it.contents)
             raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
         case str() if value.find('.') != -1:
-            return o.OBIS(cst.LogicalName.from_obis(value).contents)
-        case str():                                                      return o.OBIS(cst.LogicalName(value).contents)
+            return cst.LogicalName.from_obis(value).contents
+        case str():
+            return cst.LogicalName(value).contents
         case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
 
 
@@ -1570,16 +1564,16 @@ class AttrDesc:
     SPODES_VERSION = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.96.1.6.255"), ut.CosemObjectAttributeId(2)))
 
 
-__range10_and_255: tuple = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
-__range63: tuple = tuple(range(0, 64))
-__range120_and_124_127: tuple = tuple(chain(range(0, 121), range(124, 128)))
-__range100_and_255: tuple = tuple(chain(range(0, 100), (255,)))
-__range100_and_101_125_and_255: tuple = tuple(chain(__range100_and_255, range(101, 126)))
-__c1: tuple = tuple(chain(range(1, 10), (13, 14, 33, 34, 53, 54, 73, 74, 82), range(16, 31), range(36, 51), range(56, 70), range(76, 81), range(84, 90)))
+__range10_and_255: tuple[int] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
+__range63: tuple[int] = tuple(range(0, 64))
+__range120_and_124_127: tuple[int] = tuple(chain(range(0, 121), range(124, 128)))
+__range100_and_255: tuple[int] = tuple(chain(range(0, 100), (255,)))
+__range100_and_101_125_and_255: tuple[int] = tuple(chain(__range100_and_255, range(101, 126)))
+__c1: tuple[int] = tuple(chain(range(1, 10), (13, 14, 33, 34, 53, 54, 73, 74, 82), range(16, 31), range(36, 51), range(56, 70), range(76, 81), range(84, 90)))
 """DLMS UA 1000-1 Ed 14. Table 45 c1"""
-__table44: tuple = (11, 12, 15, 31, 32, 35, 51, 52, 55, 71, 72, 75, 90, 91, 92)
+__table44: tuple[int] = (11, 12, 15, 31, 32, 35, 51, 52, 55, 71, 72, 75, 90, 91, 92)
 """DLMS UA 1000-1 Ed 14. Table 44 for active power"""
-__c2: tuple = tuple(chain(__table44, range(100, 108)))
+__c2: tuple[int] = tuple(chain(__table44, range(100, 108)))
 """DLMS UA 1000-1 Ed 14. Table 45 c2"""
 
 
@@ -1601,8 +1595,8 @@ def get_map_by_obj(objects: list[InterfaceClass] | tuple[InterfaceClass], key: C
     return ret
 
 
-def get_object_tree(objects: list[InterfaceClass] | tuple[InterfaceClass],
-                    mode: ObjectTreeMode) -> dict[media_id.MediaId | ClassID, list[InterfaceClass]]:
+def get_object_tree(objects: list[IC] | tuple[IC],
+                    mode: ObjectTreeMode) -> dict[media_id.MediaId | ClassID, list[IC]]:
     """mode: m-media_id, g-relation_group, c-class_id"""
     mode = list(mode)
     ret = objects
@@ -1632,8 +1626,8 @@ def get_object_tree(objects: list[InterfaceClass] | tuple[InterfaceClass],
     return ret
 
 
-def get_sorted(objects: list[InterfaceClass],
-               mode: SortMode) -> list[InterfaceClass]:
+def get_sorted(objects: list[IC],
+               mode: SortMode) -> list[IC]:
     """mode: l-logical_name, n-name, c-class_id
     """
     mode: list[str] = list(mode)
@@ -2074,7 +2068,7 @@ class Template:
 
     def get_not_contains(self, cols: Iterable[Collection]) -> list[Collection]:
         """return of collections not contains in template"""
-        ret = list()
+        ret = []
         for i, col in enumerate(cols):
             if col not in self.collections:
                 ret.append(col)
@@ -2083,7 +2077,7 @@ class Template:
     def get_not_valid(self, col: Collection) -> list[Exception]:
         """with update col"""
         attr: cdt.CommonDataType
-        ret = list()
+        ret = []
         use_col = self.collections[0]
         """temporary used first collection"""
         for ln, indexes in self.used.items():

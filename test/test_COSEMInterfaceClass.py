@@ -29,7 +29,7 @@ class TestType(unittest.TestCase):
         raise ic.ObjectValidationError(ln=cst.LogicalName.from_obis("1.1.1.1.1.1"), i=2, message="some error")
 
     def test_am_names(self):
-        for c in ic.COSEMInterfaceClasses.__subclasses__():
+        for c in ic.IC.__subclasses__():
             print(c)
             try:
                 for i in chain(c.A_ELEMENTS, c.M_ELEMENTS):
@@ -37,13 +37,15 @@ class TestType(unittest.TestCase):
             except AttributeError as e:
                 print(F"skip {c}: {e}")
 
-    def test_encode(self):
-        clock = collection.Clock(b'\x00\x00\x01\x00\x00\xff')
-        tz = clock.encode(3, 4)
+    def test_ICparse(self):
+        from src.DLMS_SPODES.cosem_interface_classes import clock
+
+        clock_ = collection.Clock(b'\x00\x00\x01\x00\x00\xff')
+        tz = clock_.parse(3, "4", clock.TimeZone).unwrap()
         self.assertEqual(tz.encoding, b'\x10\x00\x04')
-        data = collection.Data("0.0.96.1.1.255")
-        value = data.encode(2, "4")
-        self.assertEqual(value, None)
+        data = collection.Data(b"\x00\x00\x60\x01\x01\xff")
+        value = data.parse(2, "5:4", cdt.DoubleLong).unwrap()
+        self.assertEqual(value.encoding, b'\x05\x00\x00\x00\x04')
 
     def test_get_attr(self):
         data = collection.Data("0.0.96.1.1.255")

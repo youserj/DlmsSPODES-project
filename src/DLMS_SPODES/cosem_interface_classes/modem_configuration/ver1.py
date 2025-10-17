@@ -1,39 +1,27 @@
-from ..__class_init__ import *
 from . import ver0
-from ..overview import VERSION_1
+from typing import Optional
+from ...types import cdt
+from ..cosem_interface_class import ICAElement
+from ..Overview import class_id
 
 
 class InitializationStringElement(cdt.Structure):
-    """ Request - Response strings"""
+    """initialization_string_element"""
     request: cdt.OctetString
     response: cdt.OctetString
     delay_after_response: cdt.LongUnsigned
 
 
 class InitializationString(cdt.Array):
-    """ Contains all the necessary initialization commands to be sent to the modem in order to configure it properly. This may include the configuration of special modem
-    features. If the array contains more than one initialization_string_element, the requests are set in a sequence.The next request is sent after the expected response matching
-    the previous request and waiting a delay-after-response time [ms], to allow the modem toe execute teh request.
-    It is assumed that the modem is per-configured so that it accepts the initialization-string. If no initialization is needed, the initialization string is empty. """
+    """initialization_string attribute"""
     TYPE = InitializationStringElement
 
 
-class ModemConfigurationVer1(ic.COSEMInterfaceClasses):
-    """ This IC allow modelling the configuration and initialisation of modems used for data transfer from/to a device. Several modems can be configured."""
-    ClassID = ut.CosemClassId(27)
-    VERSION = VERSION_1
+class ModemConfigurationVer1(ver0.PSTNModemConfiguration):
+    """4.7.4 Modem configuration"""
+    ClassID = class_id.MODEM_CONFIGURATION
+    VERSION = 1
     A_ELEMENTS = (ver0.PSTNModemConfiguration.getAElement(2).unwrap(),
-                  ic.ICAElement(3, "initialization_string", InitializationString),
+                  ICAElement(3, "initialization_string", InitializationString),
                   ver0.PSTNModemConfiguration.getAElement(4).unwrap())
-
-    def characteristics_init(self):
-        """nothing do it"""
-
-    @property
-    def initialization_string(self) -> InitializationString:
-        return self.get_attr(3)
-
-
-if __name__ == '__main__':
-    a = ModemConfigurationVer1('0.0.2.0.0.255')
-    print(a)
+    initialization_string: Optional[InitializationString]

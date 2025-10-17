@@ -1,9 +1,11 @@
-from .. import cosem_interface_classes
 from .. import exceptions as exc
-from .__class_init__ import *
 from ..types import choices
-from ..types.implementations import structs, long_unsigneds, double_long_usingneds
-from .overview import VERSION_0
+from ..types.implementations import structs
+from ..types.implementations import double_long_usingneds
+from typing import Optional
+from ..types import cdt, cst
+from .cosem_interface_class import ICAElement, ICAuto, Classifier
+from .Overview import class_id
 
 
 threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
@@ -37,72 +39,36 @@ class ActionType(cdt.Structure):
     action_under_threshold: structs.ActionItem
 
 
-class Limiter(ic.COSEMInterfaceClasses):
-    """ Instances of the Limiter interface class allow defining a set of actions that are executed when the value of a value attribute of a monitored object “Data”, “Register”,
-    “Extended Register”, “Demand Register”, etc. crosses the threshold value for at least minimal duration time.
-        The threshold value can be normal or emergency threshold. The emergency threshold is activated via the emergency profile defined by emergency profile id, activation start
-    time, and duration. The emergency profile id element is matched to an emergency profile group id: this mechanism enables the activation of the emergency threshold only
-    for a specific emergency group. """
-    CLASS_ID = ClassID.LIMITER
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "monitored_value", structs.ValueDefinition),
-                  ic.ICAElement(3, "threshold_active", choices.simple_dt, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(4, "threshold_normal", choices.simple_dt),
-                  ic.ICAElement(5, "threshold_emergency", choices.simple_dt),
-                  ic.ICAElement(6, "min_over_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
-                  ic.ICAElement(7, "min_under_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
-                  ic.ICAElement(8, "emergency_profile", EmergencyProfileType),
-                  ic.ICAElement(9, "emergency_profile_group_id_list", EmergencyProfileGroupIdList),
-                  ic.ICAElement(10, "emergency_profile_active", cdt.Boolean, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(11, "actions", ActionType))
+class Limiter(ICAuto):
+    """4.5.9 Limiter"""
+    CLASS_ID = class_id.LIMITER
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "monitored_value", structs.ValueDefinition),
+                  ICAElement(3, "threshold_active", choices.simple_dt, classifier=Classifier.DYNAMIC),
+                  ICAElement(4, "threshold_normal", choices.simple_dt),
+                  ICAElement(5, "threshold_emergency", choices.simple_dt),
+                  ICAElement(6, "min_over_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
+                  ICAElement(7, "min_under_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
+                  ICAElement(8, "emergency_profile", EmergencyProfileType),
+                  ICAElement(9, "emergency_profile_group_id_list", EmergencyProfileGroupIdList),
+                  ICAElement(10, "emergency_profile_active", cdt.Boolean, classifier=Classifier.DYNAMIC),
+                  ICAElement(11, "actions", ActionType))
+    monitored_value: Optional[structs.ValueDefinition]
+    threshold_active: Optional[choices.simple_dt]
+    threshold_normal: Optional[choices.simple_dt]
+    threshold_emergency: Optional[choices.simple_dt]
+    min_over_threshold_duration: Optional[double_long_usingneds.DoubleLongUnsignedSecond]
+    min_under_threshold_duration: Optional[double_long_usingneds.DoubleLongUnsignedSecond]
+    emergency_profile: Optional[EmergencyProfileType]
+    emergency_profile_group_id_list: Optional[EmergencyProfileGroupIdList]
+    emergency_profile_active: Optional[cdt.Boolean]
+    actions: Optional[ActionType]
 
     def characteristics_init(self):
-        self.set_attr(6, None)
-        self.set_attr(7, None)
         self._cbs_attr_before_init.update({
             3: lambda value: self.__validate_threshold_scaler_unit(3, value),
             4: lambda value: self.__validate_threshold_scaler_unit(4, value),
             5: lambda value: self.__validate_threshold_scaler_unit(5, value)})
-
-    @property
-    def monitored_value(self) -> structs.ValueDefinition:
-        return self.get_attr(2)
-
-    @property
-    def threshold_active(self) -> choices.simple_dt:
-        return self.get_attr(3)
-
-    @property
-    def threshold_normal(self) -> choices.simple_dt:
-        return self.get_attr(4)
-
-    @property
-    def threshold_emergency(self) -> choices.simple_dt:
-        return self.get_attr(5)
-
-    @property
-    def min_over_threshold_duration(self) -> double_long_usingneds.DoubleLongUnsignedSecond:
-        return self.get_attr(6)
-
-    @property
-    def min_under_threshold_duration(self) -> double_long_usingneds.DoubleLongUnsignedSecond:
-        return self.get_attr(7)
-
-    @property
-    def emergency_profile(self) -> EmergencyProfileType:
-        return self.get_attr(8)
-
-    @property
-    def emergency_profile_group_id_list(self) -> EmergencyProfileGroupIdList:
-        return self.get_attr(9)
-
-    @property
-    def emergency_profile_active(self) -> cdt.Boolean:
-        return self.get_attr(10)
-
-    @property
-    def actions(self) -> ActionType:
-        return self.get_attr(11)
 
     def __validate_threshold_scaler_unit(self, index: int, value: cdt.CommonDataTypes):
         if self.monitored_value is not None:

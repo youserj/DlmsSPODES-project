@@ -1,8 +1,9 @@
 import logging
-
-from ..__class_init__ import *
 from ...config_parser import get_message
-from ..overview import VERSION_0
+from typing import Optional
+from ...types import cdt
+from ..cosem_interface_class import ICAuto, ICAElement, Classifier
+from ..Overview import class_id
 
 
 class Status(cdt.Enum, elements=tuple(range(6))):
@@ -57,47 +58,21 @@ class AdjacentCells(cdt.Array):
     TYPE = AdjacentCellInfo
 
 
-class GSMDiagnostic(ic.COSEMInterfaceClasses):
-    """ The GSM/GPRS network is undergoing constant changes in terms of registration status, signal quality etc. It is necessary to monitor and log the relevant parameters in order
-     to obtain diagnostic information that allows identifying communication problems in the network. An instance of the 'GSM diagnostic' class stores parameters of the GSM/GPRS
-     network necessary for analysing the operation of the network."""
-    CLASS_ID = ClassID.GSM_DIAGNOSTIC
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "operator", cdt.VisibleString, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(3, "status", Status, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(4, "cs_attachment", CSAttachment, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(5, "ps_status", PSStatus, 0, 255, 0, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(6, "cell_info", CellInfoType, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(7, "adjacent_cell", AdjacentCells, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(8, "capture_time", cdt.DateTime, classifier=ic.Classifier.DYNAMIC))
-
-    def characteristics_init(self):
-        """nothing do it"""
-
-    @property
-    def operator(self) -> cdt.VisibleString:
-        return self.get_attr(2)
-
-    @property
-    def status(self) -> Status:
-        return self.get_attr(3)
-
-    @property
-    def cs_attachment(self) -> CSAttachment:
-        return self.get_attr(4)
-
-    @property
-    def ps_status(self) -> PSStatus:
-        return self.get_attr(5)
-
-    @property
-    def cell_info(self) -> CellInfoType:
-        return self.get_attr(6)
-
-    @property
-    def adjacent_cell(self) -> AdjacentCells:
-        return self.get_attr(7)
-
-    @property
-    def capture_time(self) -> cdt.DateTime:
-        return self.get_attr(8)
+class GSMDiagnostic(ICAuto):
+    """4.7.8 GSM diagnostic"""
+    CLASS_ID = class_id.GSM_DIAGNOSTIC
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "operator", cdt.VisibleString, classifier=Classifier.DYNAMIC),
+                  ICAElement(3, "status", Status, 0, 255, 0, classifier=Classifier.DYNAMIC),
+                  ICAElement(4, "cs_attachment", CSAttachment, 0, 255, 0, classifier=Classifier.DYNAMIC),
+                  ICAElement(5, "ps_status", PSStatus, 0, 255, 0, classifier=Classifier.DYNAMIC),
+                  ICAElement(6, "cell_info", CellInfoType, classifier=Classifier.DYNAMIC),
+                  ICAElement(7, "adjacent_cell", AdjacentCells, classifier=Classifier.DYNAMIC),
+                  ICAElement(8, "capture_time", cdt.DateTime, classifier=Classifier.DYNAMIC))
+    operator: Optional[cdt.VisibleString]
+    status: Optional[Status]
+    cs_attachment: Optional[CSAttachment]
+    ps_status: Optional[PSStatus]
+    cell_info: Optional[CellInfoType]
+    adjacent_cell: Optional[AdjacentCells]
+    capture_time: Optional[cdt.DateTime]

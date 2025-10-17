@@ -1,15 +1,17 @@
-from typing import Iterator
+from typing import Iterator, Optional
 from enum import IntFlag, auto
 from ..parameters import Parameter
 from ... import exceptions as exc
-from ..__class_init__ import *
-from ...types import choices
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
+from ...types.type_alias import Attr
 from ... import pdu_enums as pdu
 from . import mechanism_id, authentication_mechanism_name
 from . import method
 from . import abstract
-from ..overview import VERSION_0
+from ...types import choices, cdt, cst, ut
+from ..cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
+from ..Overview import class_id
+from ...types.type_alias import Obis
 
 
 class AccessMode(abstract.AccessMode, elements=(0, 1, 2, 3)):
@@ -67,17 +69,17 @@ class ObjectListElement(structs.ObjectListElement, access_rights=AccessRight):
     """ Visible COSEM objects with their class_id, version, logical name and the access rights to their attributes and methods within the given application association"""
 
 
-class ObjectListType(arrays.SelectionAccess):
+class ObjectListType(arrays.SelectionAccess, abstract.ObjectListType):
     """ Array of object_list_element. The range for the client_SAP is 0…0x7F. The range for the server_SAP is 0x000…0x3FFF."""
     TYPE = ObjectListElement
     __getitem__: ObjectListElement
 
-    def is_writable(self, ln: cst.LogicalName, indexes: set[int]) -> bool:
+    def is_writable(self, obis: Obis, indexes: set[int]) -> bool:
         """ index - DLMS object attribute index.
          True: AccessRight is WriteOnly or ReadAndWrite """
-        el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
+        el: ObjectListElement = next(filter(lambda it: it.logical_name.contents == obis, self), None)
         if el is None:
-            raise exc.NoObject(F"not find {ln} in object_list")
+            raise exc.NoObject(F"not find {obis=} in object_list")
         item: AttributeAccessItem
         for index in indexes:
             for item in el.access_rights.attribute_access:
@@ -89,49 +91,49 @@ class ObjectListType(arrays.SelectionAccess):
                 else:
                     continue
             else:
-                raise ValueError(F"not find in {ln} attribute index: {index}")
+                raise ValueError(F"not find in {obis=} attribute index: {index}")
         return True
 
-    def __get_access_right(self, ln: cst.LogicalName | ut.CosemObjectInstanceId) -> AccessRight:
+    def __get_access_right(self, obis: Obis) -> AccessRight:
         """return object_list_element of object_list AssociationLN"""
-        el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
+        el: ObjectListElement = next(filter(lambda it: it.logical_name.contents == obis, self), None)
         if el is None:
-            raise exc.NoObject(F"not find {ln} in object_list")
+            raise exc.NoObject(F"not find {obis=} in object_list")
         else:
             return el.access_rights
 
-    def get_attr_access(self, ln: cst.LogicalName, index: int) -> pdu.AttributeAccess:
+    def get_attr_access(self, obis: Obis, index: int) -> pdu.AttributeAccess:
         """ index - DLMS object attribute index """
-        for item in self.__get_access_right(ln).attribute_access:  # item: AttributeAccessItem
+        for item in self.__get_access_right(obis).attribute_access:  # item: AttributeAccessItem
             item: AttributeAccessItem
             if int(item.attribute_id) == index:
                 return pdu.AttributeAccess(int(item.access_mode))
             else:
                 continue
         else:
-            raise ValueError(F"access for {ln}: {index} is absense")
+            raise ValueError(F"access for {obis}: {index} is absense")
 
-    def get_access_mode(self, ln: cst.LogicalName, i: int) -> AccessMode:
+    def get_access_mode(self, obis: Obis, i: int) -> AccessMode:
         """ index - DLMS object attribute index """
-        for item in self.__get_access_right(ln).attribute_access:  # item: AttributeAccessItem
+        for item in self.__get_access_right(obis).attribute_access:  # item: AttributeAccessItem
             item: AttributeAccessItem
             if int(item.attribute_id) == i:
                 return item.access_mode
             else:
                 continue
         else:
-            raise ValueError(F"access for {ln}: {i} is absense")
+            raise ValueError(F"access for {obis=}: {i} is absense")
 
-    def get_meth_access(self, ln: cst.LogicalName | ut.CosemObjectInstanceId, index: int) -> pdu.MethodAccess:
+    def get_meth_access(self, obis: Obis, index: int) -> pdu.MethodAccess:
         """ index - DLMS object method index """
-        for item in self.__get_access_right(ln).method_access:  # item: MethodAccessItem
+        for item in self.__get_access_right(obis).method_access:  # item: MethodAccessItem
             item: MethodAccessItem
             if int(item.method_id) == index:
                 return pdu.MethodAccess(int(item.access_mode))
             else:
                 continue
         else:
-            raise exc.ITEApplication(F"not find method access rules in object_list for {ln.get_report()}:{index}")  # todo: make custom error
+            raise exc.ITEApplication(F"not find method access rules in object_list for {obis=}:{index}")  # todo: make custom error
 
 
 class AssociatedPartnersType(cdt.Structure):
@@ -290,49 +292,28 @@ class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelec
                 ut.SequenceElement('access_selection', SelectiveAccessDescriptor))
 
 
-class AssociationLN(ic.COSEMInterfaceClasses):
+class AssociationLN(ICAuto):
     """5.4.5 Association LN"""
-    CLASS_ID = ClassID.ASSOCIATION_LN
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
-                  ic.ICAElement(3, "associated_partners_id", AssociatedPartnersType),
-                  ic.ICAElement(4, "application_context_name", ApplicationContextName),
-                  ic.ICAElement(5, "xDLMS_context_info", XDLMSContextType),
-                  ic.ICAElement(6, "authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
-                  ic.ICAElement(7, "LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
-                  ic.ICAElement(8, "association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
-    M_ELEMENTS = (ic.ICMElement(1, "reply_to_HLS_authentication", method.ReplyToHLSAuthentication),
-                  ic.ICMElement(2, "change_HLS_secret", LLCSecret),
-                  ic.ICMElement(3, "add_object", ObjectListElement),
-                  ic.ICMElement(4, "remove_object", ObjectListElement))
-
-    @property
-    def object_list(self) -> ObjectListType:
-        return self.get_attr(2)
-
-    @property
-    def associated_partners_id(self) -> AssociatedPartnersType:
-        return self.get_attr(3)
-
-    @property
-    def application_context_name(self) -> ApplicationContextName:
-        return self.get_attr(4)
-
-    @property
-    def xDLMS_context_info(self) -> XDLMSContextType:
-        return self.get_attr(5)
-
-    @property
-    def authentication_mechanism_name(self) -> authentication_mechanism_name.AuthenticationMechanismName:
-        return self.get_attr(6)
-
-    @property
-    def LLS_secret(self) -> LLCSecret:
-        return self.get_attr(7)
-
-    @property
-    def association_status(self) -> AssociationStatus:
-        return self.get_attr(8)
+    CLASS_ID = class_id.ASSOCIATION_LN
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
+                  ICAElement(3, "associated_partners_id", AssociatedPartnersType),
+                  ICAElement(4, "application_context_name", ApplicationContextName),
+                  ICAElement(5, "xDLMS_context_info", XDLMSContextType),
+                  ICAElement(6, "authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
+                  ICAElement(7, "LLS_secret", LLCSecret, classifier=Classifier.NOT_SPECIFIC),
+                  ICAElement(8, "association_status", AssociationStatus, classifier=Classifier.DYNAMIC))
+    M_ELEMENTS = (ICMElement(1, "reply_to_HLS_authentication", method.ReplyToHLSAuthentication),
+                  ICMElement(2, "change_HLS_secret", LLCSecret),
+                  ICMElement(3, "add_object", ObjectListElement),
+                  ICMElement(4, "remove_object", ObjectListElement))
+    object_list: Attr
+    associated_partners_id: Attr
+    application_context_name: Attr
+    xDLMS_context_info: Attr
+    authentication_mechanism_name: Attr
+    LLS_secret: Attr
+    association_status: Attr
 
     def __check_mechanism_id_existing(self):
         """check for existing mechanism ID else ERASE setting"""
@@ -351,16 +332,16 @@ class AssociationLN(ic.COSEMInterfaceClasses):
             case mechanism_id.HIGH, _:                                        self.set_attr_link(7, LLCSecretHigh())
             case unknown, _:                                                            raise ValueError(F'Not support Secret with {unknown}')
 
-    def get_attr_descriptor(self,
-                            value: int,
-                            with_selection: bool = False) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
-        """ with selection for object_list. TODO: Copypast ProfileGeneric"""
-        descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(value)
-        if value == 2 and with_selection and self.object_list:
-            return CosemAttributeDescriptorWithSelection((descriptor, self.object_list.selective_access))
-        else:
-            return descriptor
-
+    # def get_attr_descriptor(self,
+    #                         i: int,
+    #                         with_selection: bool = False) -> ut.CosemAttributeDescriptor | CosemAttributeDescriptorWithSelection:
+    #     """ with selection for object_list. TODO: Copypast ProfileGeneric"""
+    #     descriptor: ut.CosemAttributeDescriptor = super(AssociationLN, self).get_attr_descriptor(i)
+    #     if i == 2 and with_selection and self.object_list:
+    #         return CosemAttributeDescriptorWithSelection((descriptor, self.object_list.selective_access))
+    #     else:
+    #         return descriptor
+    #
     def get_lns(self) -> list[cst.LogicalName]:
         """return all LogicalNames"""
         el: ObjectListElement

@@ -1,18 +1,12 @@
-from __future__ import annotations
+from typing import Optional
 from ..types import choices, cdt
-from . import cosem_interface_class as ic
-from .overview import ClassID
-from .overview import VERSION_0
+from .cosem_interface_class import ICAuto, ICAElement, Classifier
+from .Overview import class_id
 
 
-class Data(ic.COSEMInterfaceClasses):
-    """ Object stores data related to internal meter object(s). The meaning of the value is identified by the logical_name.
-    The data type of the value is CHOICE. “Data” is typically used to store configuration data and parameters """
-    CLASS_ID = ClassID.DATA
-    VERSION = VERSION_0
-    A_ELEMENTS = ic.ICAElement(2, "value", choices.common_dt, classifier=ic.Classifier.NOT_SPECIFIC),
-
-    @property
-    def value(self) -> cdt.CommonDataTypes:
-        """Contains the data"""
-        return self.get_attr(2)
+class Data(ICAuto):
+    """4.3.1 Data"""
+    CLASS_ID = class_id.DATA
+    VERSION = 0
+    A_ELEMENTS = ICAElement(2, "value", choices.common_dt, classifier=Classifier.NOT_SPECIFIC),
+    value: Optional[cdt.CommonDataTypes]

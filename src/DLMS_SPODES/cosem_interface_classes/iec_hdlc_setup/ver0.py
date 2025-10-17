@@ -1,11 +1,11 @@
-from ..__class_init__ import *
+from ..cosem_interface_class import ICAElement, Classifier, ICAuto
+from ..Overview import class_id
 
 
-class IECHDLCSetup(ic.COSEMInterfaceClasses):
-    CLASS_ID = ClassID.IEC_HDLC_SETUP
+class IECHDLCSetup(ICAuto):
+    CLASS_ID = class_id.IEC_HDLC_SETUP
+    A_ELEMENTS = ()
+    M_ELEMENTS = ()
 
     def __new__(cls, *args, **kwargs):
         raise ValueError(F"version: {__name__[-1]} of {cls.__class__.__name__} not support framework")
-
-    def characteristics_init(self):
-        """ initiate all attributes and methods of class """

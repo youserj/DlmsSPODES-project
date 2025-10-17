@@ -1,14 +1,15 @@
-import datetime
-from .__class_init__ import *
+from typing import Optional
+from ..types import cdt, cst
 from ..types.implementations import integers
-from .overview import VERSION_0
+from .Overview import class_id
+from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
 class ClockStatus(cdt.Unsigned):
     """ interpreted as 8 bit string """
 
     # TODO: finish write as bit_string
-    def __str__(self):
+    def __str__(self) -> str:
         value = int.from_bytes(self.contents, 'big')
         ret = ''
         if bool(value & 0b1):
@@ -52,53 +53,29 @@ class TimeZone(cdt.Long):
     """"""
 
 
-class Clock(ic.COSEMInterfaceClasses):
+class Clock(ICAuto):
     """4.5.1 Clock"""
-    CLASS_ID = ClassID.CLOCK
-    VERSION = VERSION_0
-    A_ELEMENTS = (ic.ICAElement(2, "time", cst.OctetStringDateTime, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(3, "time_zone", TimeZone, -720, 840),
-                  ic.ICAElement(4, "status", ClockStatus, classifier=ic.Classifier.DYNAMIC),
-                  ic.ICAElement(5, "daylight_savings_begin", cst.OctetStringDateTime),
-                  ic.ICAElement(6, "daylight_savings_end", cst.OctetStringDateTime),
-                  ic.ICAElement(7, "daylight_savings_deviation", DaylightSavingsDeviation, -120, 120),
-                  ic.ICAElement(8, "daylight_savings_enabled", cdt.Boolean),
-                  ic.ICAElement(9, "clock_base", ClockBase))
-    M_ELEMENTS = (ic.ICMElement(1, "adjust_to_quarter", integers.Only0),
-                  ic.ICMElement(2, "adjust_to_measuring_period", integers.Only0),
-                  ic.ICMElement(3, "adjust_to_minute", integers.Only0),
-                  ic.ICMElement(4, "adjust_to_preset_time", integers.Only0),
-                  ic.ICMElement(5, "preset_adjusting_time", PresetAdjustingTime),
-                  ic.ICMElement(6, "shift_time", ShiftTime))
-
-    @property
-    def time(self) -> cst.OctetStringDateTime:
-        return self.get_attr(2)
-
-    @property
-    def time_zone(self) -> cdt.Long:
-        return self.get_attr(3)
-
-    @property
-    def status(self) -> ClockStatus:
-        return self.get_attr(4)
-
-    @property
-    def daylight_savings_begin(self) -> cst.OctetStringDateTime:
-        return self.get_attr(5)
-
-    @property
-    def daylight_savings_end(self) -> cst.OctetStringDateTime:
-        return self.get_attr(6)
-
-    @property
-    def daylight_savings_deviation(self) -> DaylightSavingsDeviation:
-        return self.get_attr(7)
-
-    @property
-    def daylight_savings_enabled(self) -> cdt.Boolean:
-        return self.get_attr(8)
-
-    @property
-    def clock_base(self) -> ClockBase:
-        return self.get_attr(9)
+    CLASS_ID = class_id.CLOCK
+    VERSION = 0
+    A_ELEMENTS = (ICAElement(2, "time", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
+                  ICAElement(3, "time_zone", TimeZone, -720, 840),
+                  ICAElement(4, "status", ClockStatus, classifier=Classifier.DYNAMIC),
+                  ICAElement(5, "daylight_savings_begin", cst.OctetStringDateTime),
+                  ICAElement(6, "daylight_savings_end", cst.OctetStringDateTime),
+                  ICAElement(7, "daylight_savings_deviation", DaylightSavingsDeviation, -120, 120),
+                  ICAElement(8, "daylight_savings_enabled", cdt.Boolean),
+                  ICAElement(9, "clock_base", ClockBase))
+    M_ELEMENTS = (ICMElement(1, "adjust_to_quarter", integers.Only0),
+                  ICMElement(2, "adjust_to_measuring_period", integers.Only0),
+                  ICMElement(3, "adjust_to_minute", integers.Only0),
+                  ICMElement(4, "adjust_to_preset_time", integers.Only0),
+                  ICMElement(5, "preset_adjusting_time", PresetAdjustingTime),
+                  ICMElement(6, "shift_time", ShiftTime))
+    time: Optional[cst.OctetStringDateTime]
+    time_zone: Optional[TimeZone]
+    status: Optional[ClockStatus]
+    daylight_savings_begin: Optional[cst.OctetStringDateTime]
+    daylight_savings_end: Optional[cst.OctetStringDateTime]
+    daylight_savings_deviation: Optional[DaylightSavingsDeviation]
+    daylight_savings_enabled: Optional[cdt.Boolean]
+    clock_base: Optional[ClockBase]
