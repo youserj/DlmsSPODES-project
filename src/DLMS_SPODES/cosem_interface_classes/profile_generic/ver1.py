@@ -63,6 +63,27 @@ class RangeDescriptor(cdt.Structure):
     to_value: RangeDescriptorValueChoice
     selected_values: CaptureObjects
 
+    def __setattr__(self, key, value):
+        """Allow setting from_value and to_value with a CommonDataType of allowed types.
+        Other attributes remain immutable as per base Structure behavior."""
+        if key in ("from_value", "to_value"):
+            index = 1 if key == "from_value" else 2
+            # Accept only CommonDataType instances of allowed types
+            if isinstance(value, cdt.CommonDataType):
+                # Build allowed types tuple from Choice definition
+                allowed_types = tuple(el.TYPE if isinstance(el, ut.SequenceElement) else None for el in RangeDescriptorValueChoice.ELEMENTS.values())
+                allowed_types = tuple(t for t in allowed_types if t is not None)
+                if isinstance(value, allowed_types):
+                    self.values[index] = value
+                    return
+                else:
+                    raise ValueError(F"Type got {value.__class__.__name__}, expected one of: "
+                                     + ", ".join(t.__name__ for t in allowed_types))
+            else:
+                raise TypeError(F"Unsupported value type for {key}: {value.__class__.__name__}. Provide a CommonDataType instance.")
+        else:
+            super().__setattr__(key, value)
+
 
 class Data(ut.Data):
     restricting_object: structs.CaptureObjectDefinition
