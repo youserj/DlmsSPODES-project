@@ -8,28 +8,27 @@ from src.DLMS_SPODES.cosem_interface_classes.implementations import data
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS_SPODES.obis import media_id
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
-from test.collection_init import col as col_
 
 
-server_1_4_0 = collection.ParameterValue(
-        par=bytes.fromhex("0000000201ff02"),
-        value=cdt.OctetString(bytearray(b"1.4.0")).encoding)
+server_1_4_0 = collection.AttrData(
+        bytes.fromhex("0000000201ff02"),
+        cdt.OctetString(bytearray(b"1.4.0")).encoding)
 
-server_1_5_15 = collection.ParameterValue(
-        par=bytes.fromhex("0000000201ff02"),
-        value=cdt.OctetString(bytearray(b"1.5.15")).encoding)
+server_1_5_15 = collection.AttrData(
+        bytes.fromhex("0000000201ff02"),
+        cdt.OctetString(bytearray(b"1.5.15")).encoding)
 
-server_1_6_2 = collection.ParameterValue(
-        par=bytes.fromhex("0000000201ff02"),
-        value=cdt.OctetString(bytearray(b"1.6.2")).encoding)
+server_1_6_2 = collection.AttrData(
+        bytes.fromhex("0000000201ff02"),
+        cdt.OctetString(bytearray(b"1.6.2")).encoding)
 
-firID_M2M_1 = collection.ParameterValue(
-        par=bytes.fromhex("0000600101ff02"),
-        value=cdt.OctetString(bytearray(b'M2M_1')).encoding)
+firID_M2M_1 = collection.AttrData(
+        bytes.fromhex("0000600101ff02"),
+        cdt.OctetString(bytearray(b'M2M_1')).encoding)
 
-firID_M2M_3 = collection.ParameterValue(
-        par=bytes.fromhex("0000600101ff02"),
-        value=cdt.OctetString(bytearray(b'M2M_3')).encoding)
+firID_M2M_3 = collection.AttrData(
+        bytes.fromhex("0000600101ff02"),
+        cdt.OctetString(bytearray(b'M2M_3')).encoding)
 
 # col_M2M1_1_5_15 = collection.get_collection(
 #     manufacturer=b"KPZ",

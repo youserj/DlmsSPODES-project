@@ -6,7 +6,7 @@ from StructResult import result
 type Obis = bytes  # bytes[6]
 type Index = int    # 0..
 type GruoupI = int  # group index of Obis 0..
-type Attr = bytes  # bytes[8]
+type Attr = bytes  # bytes[7]
 type Encoding = bytes  # bytes[1..]
 type LN = str  # logical name as "a.b.c.d.e.f"
 type Tag = bytes  # bytes[1] CDT tag
@@ -41,10 +41,10 @@ def attr2f(attr: Attr | Obis) -> GruoupI:
 
 
 def attr2i(attr: Attr) -> Index:
-    return attr[7]
+    return attr[6]
 
 
-obis2attr_pat = Struct(">6sH")
+obis2attr_pat = Struct(">6sB")
 
 
 def unpack_attr(attr: Attr) -> tuple[Obis, Index]:

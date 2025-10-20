@@ -4,17 +4,17 @@ from src.DLMS_SPODES.cosem_interface_classes import collection, overview
 from src.DLMS_SPODES import cosem_interface_classes
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
 from src.DLMS_SPODES.cosem_interface_classes import reports
-from .init_collection import col
 
 
 class TestType(unittest.TestCase):
+    def setUp(self):
+        self.col = None
 
     def test_report(self):
         # col = collection.get_collection(
         #     manufacturer=b"KPZ",
         #     server_type=cdt.OctetString("4d324d5f33"),
         #     server_ver=AppVersion.from_str("1.4.15"))
-        print(col)
         obj = col.get_object("0.0.1.0.0.255")
         obj.set_attr(2, "01.09.2023")
         obj.set_attr(3, 180)

@@ -4,11 +4,11 @@ import time
 import unittest
 
 from DLMS_SPODES.cosem_interface_classes import Parameter
+from DLMS_SPODES.types.implementations.enums import ClientSAP
 from src.DLMS_SPODES.types import cdt, cst, ut
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS_SPODES.obis import media_id
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
-from test.collection_init import col as col_
 
 
 server_1_4_0 = collection.ParameterValue(
@@ -47,18 +47,15 @@ class TestType(unittest.TestCase):
     def setUp(self) -> collection.Collection:
         col = collection.Collection(collection.ID(
             man=b'KPZ',
-            f_id=collection.ParameterValue(
-                par=b'',
-                value=cdt.OctetString("4d324d5f33").encoding),
-            f_ver=collection.ParameterValue(
-                par=b'',
-                value=cdt.OctetString(bytearray(b'1.3.0')).encoding)
+            f_id=collection.AttrData(b'abcdef2', cdt.OctetString("4d324d5f33").encoding),
+            f_ver=collection.AttrData(b'abcdef3', cdt.OctetString(bytearray(b'1.3.0')).encoding),
+            sap=ClientSAP(48)
         ))
         col.spec_map = "SPODES_3"
-        reg = col.add(
+        reg = col.addIC(
             class_id=overview.ClassID.REGISTER,
             version=overview.VERSION_0,
-            logical_name=cst.LogicalName("01 00 01 07 00 ff")
+            obis=bytes.fromhex("01 00 01 07 00 ff")
         )
         col.add(
             class_id=overview.ClassID.PROFILE_GENERIC,

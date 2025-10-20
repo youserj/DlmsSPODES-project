@@ -649,6 +649,7 @@ def get_filtered(objects: Iterable[IC],
     return new_list
 
 
+@deprecated("use <AttrData>")
 @dataclass(unsafe_hash=True, frozen=True)
 class ParameterValue:
     par: bytes
@@ -671,12 +672,31 @@ class ParameterValue:
         )
 
 
+@dataclass(unsafe_hash=True, frozen=True)
+class AttrData:
+    attr: Attr
+    data: Encoding
+
+    def __str__(self) -> str:
+        return f"{".".join(map(str, attr2obis(self.attr)))}:{attr2i(self.attr)} - {cdt.get_instance_and_pdu_from_value(self.data)[0].__repr__()}"
+
+    def __bytes__(self) -> bytes:
+        return self.attr + self.data
+
+    @classmethod
+    def parse(cls, value: bytes) -> Self:
+        return cls(value[:7], value[7:])
+
+
 @dataclass(frozen=True, unsafe_hash=True)
 class ID:
     man: bytes
-    f_id: ParameterValue
-    f_ver: ParameterValue
+    f_id: AttrData
+    f_ver: AttrData
     sap: enums.ClientSAP
+
+    def __bytes__(self) -> bytes:
+        return self.man + self.sap.contents + bytes(self.f_id) + bytes(self.f_ver)
 
 
 class EmptyAttribute(exc.DLMSException):
@@ -693,7 +713,7 @@ class Collection:
     __id: ID
     __dlms_ver: int
     __country: Optional[CountrySpecificIdentifiers]
-    __country_ver: Optional[ParameterValue]
+    __country_ver: Optional[AttrData]
     __objs: dict[Obis, IC]
     _data: dict[Attr, cdt.CommonDataType]
     _t: dict[Attr, Tag]
@@ -704,7 +724,7 @@ class Collection:
                  id_: ID,
                  dlms_ver: int = 6,
                  country: Optional[CountrySpecificIdentifiers] = None,
-                 cntr_ver: Optional[ParameterValue] = None):
+                 cntr_ver: Optional[AttrData] = None):
         self.__id = id_
         self.__dlms_ver = dlms_ver
         self.__country = country
@@ -767,41 +787,35 @@ class Collection:
     def dlms_ver(self) -> int:
         return self.__dlms_ver
 
-    def set_dlms_ver(self, value: int) -> None:
+    def set_dlms_ver(self, value: int) -> result.Ok | result.Error:
         if not self.__dlms_ver:
             self.__dlms_ver = value
-        else:
-            if value != self.__dlms_ver:
-                raise ValueError(F"got dlms_version: {value}, expected {self.__dlms_ver}")
-            else:
-                """success validation"""
+        elif value != self.__dlms_ver:
+            return result.Error.from_e(ValueError(F"got dlms_version: {value}, expected {self.__dlms_ver}"))
+        return result.OK
 
     @property
     def country(self) -> Optional[CountrySpecificIdentifiers]:
         return self.__country
 
-    def set_country(self, value: CountrySpecificIdentifiers) -> None:
+    def set_country(self, value: CountrySpecificIdentifiers) -> result.Ok | result.Error:
         if not self.__country:
             self.__country = value
-        else:
-            if value != self.__country:
-                raise ValueError(F"got country: {value}, expected {self.__country}")
-            else:
-                """success validation"""
+        elif value != self.__country:
+            return result.Error.from_e(ValueError(F"got country: {value}, expected {self.__country}"))
+        return result.OK
 
     @property
-    def country_ver(self) -> Optional[ParameterValue]:
+    def country_ver(self) -> Optional[AttrData]:
         return self.__country_ver
 
-    def set_country_ver(self, value: ParameterValue) -> None:
+    def set_country_ver(self, value: AttrData) -> result.Ok | result.Error:
         """country version specification"""
         if not self.__country_ver:
             self.__country_ver = value
-        else:
-            if value != self.__country_ver:
-                raise ValueError(F"got country version: {value}, expected {self.__country_ver}")
-            else:
-                """success validation"""
+        elif value != self.__country_ver:
+            return result.Error.from_e(ValueError(F"got country version: {value}, expected {self.__country_ver}"))
+        return result.OK
 
     def __str__(self) -> str:
         return F"[{len(self.__objs)}] DLMS version: {self.__dlms_ver}, country: {self.__country}, country specific version: {self.__country_ver}, " \
@@ -940,13 +954,6 @@ class Collection:
             raise exc.NoObject("no one electricity object was find")
         else:
             return ret
-
-    def has_sap(self, value: enums.ClientSAP) -> bool:
-        try:
-            self.sap2association(value)
-            return True
-        except exc.NoObject:
-            return False
 
     @lru_cache(maxsize=100)  # amount of all ClassID
     def find_version(self, class_id: ut.CosemClassId) -> int:
