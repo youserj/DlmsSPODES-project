@@ -57,37 +57,58 @@ class RangeDescriptorValueChoice(CommonDataTypeChoiceBase, types=(
     """Types of range_descriptor.from_value/to_value"""
 
 
-class RangeDescriptor(cdt.Structure):
-    restricting_object: structs.CaptureObjectDefinition
-    from_value: RangeDescriptorValueChoice
-    to_value: RangeDescriptorValueChoice
-    selected_values: CaptureObjects
-
-
-class Data(ut.Data):
-    restricting_object: structs.CaptureObjectDefinition
-    from_value: cdt.SimpleDataType
-    to_value: cdt.SimpleDataType
-    selected_values: CaptureObjects
-    from_entry: FromEntry
-    to_entry: cdt.DoubleLongUnsigned
-    from_selected_value: cdt.LongUnsigned
-    to_selected_value: cdt.LongUnsigned
-    ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptor),
-                2: ut.SequenceElement('entry_descriptor', EntryDescriptor)}
-
-
-class SelectiveAccessDescriptor(ut.SelectiveAccessDescriptor):
-    access_selector: AccessSelector
-    access_parameters: Data
-    ELEMENTS = (ut.SequenceElement('access_selector', AccessSelector),
-                ut.SequenceElement('access_parameters', Data))
-
-
-class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelection):
-    access_selection: SelectiveAccessDescriptor
-    ELEMENTS = (ut.SequenceElement('cosem_attribute_descriptor', ut.CosemAttributeDescriptor),
-                ut.SequenceElement('access_selection', SelectiveAccessDescriptor))
+# class RangeDescriptor(cdt.Structure):
+#     restricting_object: structs.CaptureObjectDefinition
+#     from_value: RangeDescriptorValueChoice
+#     to_value: RangeDescriptorValueChoice
+#     selected_values: CaptureObjects
+#
+#     def __setattr__(self, key, value):
+#         """Allow setting from_value and to_value with a CommonDataType of allowed types.
+#         Other attributes remain immutable as per base Structure behavior."""
+#         if key in ("from_value", "to_value"):
+#             index = 1 if key == "from_value" else 2
+#             # Accept only CommonDataType instances of allowed types
+#             if isinstance(value, cdt.CommonDataType):
+#                 # Build allowed types tuple from Choice definition
+#                 allowed_types = tuple(el.TYPE if isinstance(el, ut.SequenceElement) else None for el in RangeDescriptorValueChoice.ELEMENTS.values())
+#                 allowed_types = tuple(t for t in allowed_types if t is not None)
+#                 if isinstance(value, allowed_types):
+#                     self.values[index] = value
+#                     return
+#                 else:
+#                     raise ValueError(F"Type got {value.__class__.__name__}, expected one of: "
+#                                      + ", ".join(t.__name__ for t in allowed_types))
+#             else:
+#                 raise TypeError(F"Unsupported value type for {key}: {value.__class__.__name__}. Provide a CommonDataType instance.")
+#         else:
+#             super().__setattr__(key, value)
+#
+#
+# class Data(ut.Data):
+#     restricting_object: structs.CaptureObjectDefinition
+#     from_value: cdt.SimpleDataType
+#     to_value: cdt.SimpleDataType
+#     selected_values: CaptureObjects
+#     from_entry: FromEntry
+#     to_entry: cdt.DoubleLongUnsigned
+#     from_selected_value: cdt.LongUnsigned
+#     to_selected_value: cdt.LongUnsigned
+#     ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptor),
+#                 2: ut.SequenceElement('entry_descriptor', EntryDescriptor)}
+#
+#
+# class SelectiveAccessDescriptor(ut.SelectiveAccessDescriptor):
+#     access_selector: AccessSelector
+#     access_parameters: Data
+#     ELEMENTS = (ut.SequenceElement('access_selector', AccessSelector),
+#                 ut.SequenceElement('access_parameters', Data))
+#
+#
+# class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelection):
+#     access_selection: SelectiveAccessDescriptor
+#     ELEMENTS = (ut.SequenceElement('cosem_attribute_descriptor', ut.CosemAttributeDescriptor),
+#                 ut.SequenceElement('access_selection', SelectiveAccessDescriptor))
 
 
 class ProfileGeneric(ver0.ProfileGeneric):
@@ -186,6 +207,45 @@ class ProfileGeneric(ver0.ProfileGeneric):
         """ Available after got sort object. TODO: need rewrite. maybe replace to collection level. Wrong used sort_obj, it can be any element from capture_objects"""
         if self.sort_object is None:
             raise exc.EmptyObj(F"<sort object> is empty")
+        sort_obj: ic.COSEMInterfaceClasses = self.collection.get_object(self.sort_object.logical_name)
+        if sort_obj.CLASS_ID.contents == self.sort_object.class_id.contents:
+            value_type: Type[cdt.CommonDataType] = sort_obj.get_attr_data_type(int(self.sort_object.attribute_index))
+        else:
+            exc.NoObject(F"got {self.sort_object.class_id=}, expected {sort_obj.CLASS_ID=} from collection")
+
+        class RangeDescriptor(cdt.Structure):
+            # cb_preset = TODO: make check 'selected_values' from self.capture_objects or
+            # cb_post_set = TODO: make check 'selected_values' from self.capture_objects
+            DEFAULT = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
+                      b'\x09\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00'
+            restricting_object: structs.CaptureObjectDefinition
+            from_value: value_type
+            to_value: value_type
+            selected_values: CaptureObjects
+
+        class Data(ut.Data):
+            restricting_object: structs.CaptureObjectDefinition
+            from_value: cdt.SimpleDataType
+            to_value: cdt.SimpleDataType
+            selected_values: CaptureObjects
+            from_entry: FromEntry
+            to_entry: cdt.DoubleLongUnsigned
+            from_selected_value: cdt.LongUnsigned
+            to_selected_value: cdt.LongUnsigned
+            ELEMENTS = {1: ut.SequenceElement('range_descriptor', RangeDescriptor),
+                        2: ut.SequenceElement('entry_descriptor', EntryDescriptor)}
+
+        class SelectiveAccessDescriptor(ut.SelectiveAccessDescriptor):
+            access_selector: AccessSelector
+            access_parameters: Data
+            ELEMENTS = (ut.SequenceElement('access_selector', AccessSelector),
+                        ut.SequenceElement('access_parameters', Data))
+
+        class CosemAttributeDescriptorWithSelection(ut.CosemAttributeDescriptorWithSelection):
+            access_selection: SelectiveAccessDescriptor
+            ELEMENTS = (ut.SequenceElement('cosem_attribute_descriptor', ut.CosemAttributeDescriptor),
+                        ut.SequenceElement('access_selection', SelectiveAccessDescriptor))
+
         self.attr_descriptor_with_selection = CosemAttributeDescriptorWithSelection
         self.buffer.selective_access = SelectiveAccessDescriptor()
 
