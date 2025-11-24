@@ -735,6 +735,7 @@ class Frame:
         """ return SA, DA for reusing """
         return self.__destination_address, self.__source_address
 
+    # todo: make <parse> with Result
     @classmethod
     def try_from(cls, value: bytearray) -> Frame | None:
         """ Search of HDLC start flag and return Frame and value remains for next searching. If wrong frame when return value with out start flag for parsing """
@@ -749,7 +750,7 @@ class Frame:
                 print(F'Wrong Frame: {e.args[0]}')
                 return None
             except NotEnoughDataError as e:
-                print(F'Frame Error: {e.args[0]}')
+                # print(F'Frame Error: {e.args[0]}')
                 return None
             except FormatDataError as e:
                 print(F'Frame Error: {e.args[0]}')
