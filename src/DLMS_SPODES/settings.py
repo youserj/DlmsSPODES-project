@@ -515,7 +515,7 @@ class Settings(BaseModel):
 
 if not os.path.isfile(path := ".//config.toml"):
     path = F"{os.path.dirname(__file__)}{path}"
-elif os.path.isfile(path):
+if os.path.isfile(path):
     with open(path, "rb") as f:
         toml_data = tomllib.load(f)
         data = toml_data.get("DLMS", {})
