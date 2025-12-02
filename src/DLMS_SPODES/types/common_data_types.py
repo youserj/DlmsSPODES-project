@@ -2270,6 +2270,7 @@ __types: dict[bytes, type[CommonDataType]] = {
     b'\x10': Long,
     b'\x11': Unsigned,
     b'\x12': LongUnsigned,
+    b'\x13': CompactArray,
     b'\x14': Long64,
     b'\x15': Long64Unsigned,
     b'\x16': Enum,
