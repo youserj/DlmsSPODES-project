@@ -8,6 +8,7 @@ from src.DLMS_SPODES.cosem_interface_classes.implementations import data
 from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS_SPODES.obis import media_id
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
+from src.DLMS_SPODES.cosem_interface_classes.association_ln import client_sap
 
 
 server_1_4_0 = collection.AttrData(
@@ -106,7 +107,7 @@ class TestType(unittest.TestCase):
 
     def test_has_association(self):
         col = collection.Collection()
-        sap = collection.enums.ClientSAP(0x10)
+        sap = client_sap.PUBLIC
         self.assertRaises(NoObject, col.sap2association, (sap,))
         self.assertEqual(col.has_sap(sap), False)
         col = col_
@@ -148,7 +149,7 @@ class TestType(unittest.TestCase):
             server_type=firID_M2M_1,
             server_ver=server_1_5_15)
         print(col)
-        a = col.get_objects_list(collection.enums.ClientSAP(48))
+        a = col.get_objects_list(client_sap.CONFIGURATOR)
         print(a)
         for i in range(10):
             col_new = collection.get_collection(

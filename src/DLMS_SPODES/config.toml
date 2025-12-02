@@ -1,0 +1,2168 @@
+# DLMS configuration
+
+[DLMS.collection]
+path = "./Types/"
+
+[DLMS.Conformance]
+reserved-zero = "Зарезервированый-0"
+general-protection = "Основной защита"
+general-block-transfer = "Основная передача блока"
+read = "Чтение"
+write = "Запись"
+unconfirmed-write = "Неподтвержденная запись"
+reserved-six = "Зарезервированый-6"
+reserved-seven = "Зарезервированый-7"
+attribute0-supported-with-set = "Поддерживается установка 0 атрибута"
+priority-mgmt-supported = "Поддерживается приоритет MGMT"
+attribute0-supported-with-get = "Поддерживается чтение 0 атрибута"
+block-transfer-with-get-or-read = "Запрос или чтение через передачу блоков"
+block-transfer-with-set-or-write = "Установка или запись через передачу блоков"
+block-transfer-with-action = "Активация через передачу блоков"
+multiple-references = "Несколько ссылок"
+information-report = "Информационный отчет"
+data-notification = "Данные-уведомление"
+access = "Доступ"
+parameterized-access = "Параметризованный доступ"
+get = "Извлечение"
+set = "Установка"
+selective-access = "Выборочный доступ"
+event-notification = "Событие-уведомление"
+action = "Активация"
+
+[DLMS.class_name]
+1 = "Данные"
+3 = "Регистр"
+4 = "Расширенный регистр"
+5 = "Регистр усреднения"
+6 = "Активируемый регистр"
+7 = "Профиль универсальный"
+8 = "Часы"
+9 = "Таблица сценариев"
+10 = "Расписание"
+11 = "Таблица особых дней"
+12 = "Соединение по короткому имени"
+15 = "Соединение по логическому имени"
+17 = "SAP присвоение"
+18 = "Передача двоичных блоков"
+19 = "Настройки оптопорта"
+20 = "Календарь активности"
+21 = "Регистр контроля"
+22 = "Расписание одного действия"
+23 = "Настройки HDLC"
+24 = "Настройки витой пары"
+25 = "Настройки M-BUS ведомого порта"
+26 = "Таблица утилит"
+27 = "Конфигурация модема"
+28 = "Автоответ"
+29 = "Автосоединение"
+30 = "Защита данных"
+40 = "Настройки инициативного выхода"
+41 = "Настройки TCP-UDP"
+42 = "Настройки IPv4"
+43 = "Настройки MAC(Ethernet)"
+44 = "Настройки PPP"
+45 = "Настройки GPRS модема"
+46 = "Настройки SMTP"
+47 = "Диагностика GSM"
+48 = "Настройки IPv6"
+50 = "Настройки S-FSK Phy&MAC"
+51 = "Активный инициатор S-FSK"
+52 = "Таймауты синхронизации S-FSK MAC"
+53 = "Счетчики S-FSK MAC"
+55 = "Настройки LLC"
+56 = "Список системы отчетности S-FSK"
+57 = "Настройки LLC Type 1"
+58 = "Настройки LLC Type 2"
+59 = "Настройки LLC Type 3"
+61 = "Табличный регистр"
+62 = "Упаковка данных"
+63 = "Расшифровка статуса"
+64 = "Настройки безопасности"
+65 = "Монитор параметров"
+67 = "Менеджер датчиков"
+68 = "Арбитр"
+70 = "Управление отключением"
+71 = "Ограничитель"
+72 = "Клиент M-Bus"
+73 = "Беспроводной режим Q канал"
+74 = "Настройка мастер-порта M-BUS"
+76 = "Настройка порта MMS/Cosem сервера M-BUS"
+77 = "Диагностика M-Bus"
+80 = "Настройка LLC SSCS"
+81 = "Физический слой счетчиков PRIME NB OFDM PLC"
+82 = "Настройка PRIME NB OFDM PLC MAC"
+83 = "Функциональные параметры PRIME NB OFDM PLC MAC"
+84 = "Счетчики PRIME NB OFDM PLC MAC"
+85 = "Данные сетевого администрирования PRIME NB OFDM PLC MAC"
+86 = "Идентификация приложения PRIME NB OFDM PLC"
+90 = "Слой счетчиков G3-PLC MAC"
+91 = "Настройка G3-PLC MAC"
+92 = "Настройка адаптационного слоя G3-PLC 6LoWPAN"
+95 = "Настройка Wi-SUN"
+96 = "Диагностика Wi-SUN"
+97 = "Диагностика RPL"
+98 = "Диагностика MPL"
+100 = "Настройка NTP"
+101 = "Запуск ZigBee® SAS"
+102 = "Присоединение ZigBee® SAS"
+103 = "Фрагментация ZigBee® SAS APS"
+104 = "Контроль сети ZigBee®"
+105 = "Настройка тунеля ZigBee®"
+111 = "Счет"
+112 = "Кредит"
+113 = "Заряд"
+115 = "Токен шлюз"
+122 = "Функция управления"
+123 = "Массив менеджер"
+124 = "Защита порта коммуникации"
+126 = "Настройка SCHC-LPWAN"
+127 = "Диагностика SCHC-LPWAN"
+128 = "Настройка LoRaWAN"
+129 = "Диагностика LoRaWAN"
+130 = "Идентификация ISO/IEC14908"
+131 = "Настройка протокола ISO/IEC 14908"
+132 = "Статус протокола ISO/IEC 14908"
+133 = "Диагностика ISO/IEC 14908"
+140 = "Настройка HS-PLC ISO/IEC 12139-1 MAC"
+141 = "Настройка HS-PLC ISO/IEC 12139-1 CPAS"
+142 = "Настройка HS-PLC ISO/IEC 12139-1 IP SSAS"
+143 = "Настройка HS-PLC ISO/IEC 12139-1 HDLC SSAS"
+151 = "Мониторинг LTE"
+
+[DLMS.type_name]
+SimpleDataType = "Простой тип данных"
+0 = "Отсутствие данных"
+1 = "Массив"
+2 = "Структура"
+3 = "Логические данные"
+4 = "Последовательность битов"
+5 = "32-разр целое со знаком"
+6 = "32-разр целое без знака"
+9 = "Последовательность байтов"
+10 = "Последовательность ASCII символов"
+12 = "Последовательность символов UTF-8"
+13 = "Двоично-десятичная кодировка байта"
+15 = "8-разр целое число со знаком"
+16 = "16-разр целое число со знаком"
+17 = "8-разр целое число без знака"
+18 = "16-разр целое число без знака"
+19 = "Массив упакованных данных"
+20 = "64-разрядное целое со знаком"
+21 = "64-разрядное целое без знака"
+22 = "Перечисление"
+23 = "4-байтовая строка - число с плавающей запятой"
+24 = "8-байтовая строка - число с плавающей запятой"
+25 = "Дата-время"
+26 = "Дата"
+27 = "Время"
+ComplexDataType = "Составной тип данных"
+
+[DLMS.media_id_name]
+# RU СТО 34.01-5.1-006-2023 Таблица 7.34
+Abstract = "Абстрактные объекты"
+Electricity = "Электроэнергия"
+Hca = "Расчеты за тепловую энергию"
+Thermal = "Тепловая энергия"
+Gas = "Газ"
+Water = "Вода"
+Other = "Другие среды (виды энергии)"
+Reserved = "Резерв"
+# abstract
+AbstractDataProfileObjects = "Абстрактные профили данных"
+AbstractManufacturerSpecific = "Абстракции специфичные для производителя"
+ActivityCalendarObjects = "Календари активности"
+AlarmRegisterFilterDescriptorObjects = "Регистры, фильтры, дескрипторы тревоги"
+ArbitratorObjects = "Арбитры"
+ArrayManagerObjects = "Менеджеры массивов"
+AssociationObjects = "Ассоциации"
+BatteryEntriesObjects = "Записи баттарей питания"
+BillingPeriodValuesResetCounterEntries = "Счетные периоды/счетчики сброса"
+ClockObjects = "Объекты времени"
+CommunicationPortLogParameterObjects = "Параметры журналов комуникации"
+CommunicationPortProtectionObjects = "Защиты портов связи"
+CompactDataObjects = "Компактные данные"
+ConsumerMessageObjects = "Сообщения потребителям"
+CosemLogicalDeviceNameObject = "COSEM логическое имя устройства"
+CurrentlyActiveTariffObjects = "Текущие активные тарифы"
+DeviceIdObjects = "Идентификаторы устройства"
+DisconnectControlObjects = "Управления отключением"
+EnvironmentRelatedParametersObjects = "Параметры, связанные с окружением"
+ErrorRegisterObjects = "Регистры ошибок"
+EventCodeObjects = "Коды событий"
+EventCounterObjects = "Счетчики событий"
+EventLogObjects = "Журналы событий"
+FunctionControlObjects = "Объекты функционального контроля"
+GeneralListObjects = "Основой список"
+IOControlSignalObjects = "Контрольные сигналы ввода/вывода"
+IecHdlcSetupObjects = "Настройки IEC HDLC"
+IecLocalPortSetupObjects = "Настройки локального порта"
+IecTwistedPair1SetupObjects = "Настройки IEC витой пары"
+ImageTransferObjects = "Передачи образов"
+InactiveObjects = "Объекты неактивности"
+InformationSecurityRelatedObjects = "Объекты связанные с информационной безопасностью"
+InternalOperatingStatusObjects = "Внутренние рабочие статусы"
+LimiterObjects = "Ограничители"
+MeterTamperEventRelatedObjects = "События связанные с внешним воздействием"
+MeteringPointIdObjects = "Данные точки учета"
+ModemConfigurationAndRelatedObjects = "Конфигурации модема и связи"
+ObjectsForDataExchangeUsingHsPlcIsoIec121391IsoEc121391Networks = "Для обмена по HS-PLC/IEC 12139-1"
+ObjectsForDataExchangeUsingNarrowBandOfdmPlcForG3PlcNetworks = "Для обмена по OFDM-G3-PLC"
+ObjectsForDataExchangeUsingNarrowbandOfdmPlcForPrimeNetworks = "Для обмена по OFDM-G3-PRIME"
+ObjectsForDataExchangeUsingWiSunNetworks = "Для обмена по Wi-SUN"
+ObjectsForSettingUpAndManagingDataExchangeUsingIsoIec14908PlcNetworks = "Для настройки и контроля по IEC 14908 PLC"
+ObjectsForSettingUpDataExchangeUsingSFskPlc = "Для настройки обмена по S-FSK PLC"
+ObjectsForSettingUpTheIsoIec88022LlcLayer = "Для настройки IEC 8802-2 LLC слоя"
+ObjectsRelatedToDataExchangeOverMBus = "Объекты связанные с обменом по M-BUS"
+ObjectsToSetUpDataExchangeOverTheInternet = "Настройки обмена данными по интернет"
+ObjectsToSetUpPushSetup = "Настройки инициативных выходов"
+OperatingTimeObjects = "Операции со временем"
+OtherAbstractGeneralPurposeObisCodes = "Другие Абстрактные основные объекты общего назначения"
+ParameterChangesAndCalibrationObjects = "Параметры изменения и калибровки"
+ParameterMonitorObjects = "Мониторинг параметров устройства"
+PaymentMeteringRelatedObjects = "Объекты связанные с оплатой"
+PowerFailureMonitoringObjects = "Мониторинг сбоя энергии"
+ProfileEntryCounterObjects = "Счетчики записей профилей"
+ProfileEntryDigitalSignatureObjects = "Цифровые подписи профилей записи"
+RegisterActivationObjects = "Регистры активации"
+RegisterObjectsMonitor = "Мониторинг регистры"
+SapAssignmentObject = "Адреса доступа"
+ScheduleObjects = "Расписания"
+ScriptTableObjects = "Скрипт таблицы"
+SingleActionScheduleObjects = "Скрипты одного действия"
+SpecialDaysTableObjects = "Таблицы специальных дней"
+StandardReadoutProfileObjects = "Стандартные объекты профиля считывания"
+StatusOfInternalControlSignalsObjects = "Статусы внутренних контрольных сигналов"
+StatusRegisterObjects = "Регистры статусов"
+UtilityTableObjects = "Объекты таблицы утилиты"
+ZigbeeSetupObjects = "Настройки ZigBee"
+# electricity
+ActivePowerDiff = "Сетевая мощность (abs(QI+QIV)-abs(QII+QIII))"
+ActivePowerMinus = "Отрицательная активная мощность (QII+QIII)"
+ActivePowerPlus = "Положительная активная мощность (QI+QIV)"
+ActivePowerQi = "Активная мощность QI"
+ActivePowerQii = "Активная мощность QII"
+ActivePowerQiii = "Активная мощность QIII"
+ActivePowerQiv = "Активная мощность QIV"
+ActivePowerSum = "Модуль активной мощности для измерения гармоник(abs(QI+QIV)+abs(QII+QIII))"
+AllCurrent = "Суммарный ток всех фаз"
+AllPowerFactor = "Фактор мощности по всем фазам"
+AmpereSquaredHours = "Удельные потери в ЛЭП"
+Angels = "Угловые измерения"
+ApparentPowerMinus = "Положительная полная мощность (QI+QIV)"
+ApparentPowerPlus = "Отрицательная полная мощность (QII+QIII)"
+BillingPeriodValuesResetCounterEntriesEl = "Значения счетного периода"
+ConsortiaSpecificIdentifiers = "Специфические идентификаторы Консорциума"
+CountrySpecificIdentifiers = "Специфические идентификаторы страны"
+Current = "Ток"
+ElectricityDataProfileObjects = "Электрические профили данных"
+ElectricityErrorRegisterObjects = "Электрические регистры ошибок"
+ElectricityGeneralAndServiceEntryObjects = "Электрические общие и сервисные объекты ввода"
+ElectricityManufacturerSpecific = "Электрические. Специфичные для производителя"
+ElectricityRelatedStatusObjects = "Объекты статуса, связанные с электричеством"
+ElectricityReserved = "Электрические. Зарезервированно"
+IdNumbersElectricity = "Идентификационные номера электроэнергии"
+L0Current = "Ток нейтрали"
+L0Voltage = "Напряжение нейтрали"
+L1L2LineVoltage = "Линейное напряжение L1-L2"
+L1PowerFactor = "Фактор мощности A"
+L2L3LineVoltage = "Линейное напряжение L2-L3"
+L2PowerFactor = "Фактор мощности B"
+L3L1LineVoltage = "Линейное напряжение L3-L1"
+L3PowerFactor = "Фактор мощности C"
+ListObjectsElectricity = "Электрические. Список объектов"
+MeasurementAlgorithm = "Алгоритм вычисления"
+MeteringPointId = "Идентификаторы для измерительной части"
+OtherElectricityRelatedGeneralPurposeObjects = "Другие Электрические объекты общего назначения"
+PowerFactor = "Фактор мощности"
+ReactivePowerCapacitive = "Емкостная Реактивная мощность QII+QIV"
+ReactivePowerInductive = "Индуктивная Реактивная мощность QI+QIII"
+ReactivePowerMinus = "Отрицательная активная мощность (QII+QIII)"
+ReactivePowerPlus = "Положительная реактивная мощность (QI+QII)"
+ReactivePowerQi = "Реактивная мощность QI"
+ReactivePowerQii = "Реактивная мощность QII"
+ReactivePowerQiii = "Реактивная мощность QIII"
+ReactivePowerQiv = "Реактивная мощность QIV"
+RegisterMonitorObjects = "Регистры контроля"
+SupplyFrequency = "Частота сети"
+ThresholdValues = "Пороговые значения"
+TransformerAndLineLossQuantities = "Потери в силовых трансформаторах и ЛЭП"
+UnitlessQuantity = "Безразмерные величины (счет импульсов)"
+VoltSquaredHours = "Удельные потери в силовых трансформаторах"
+Voltage = "Напряжение"
+
+[DLMS.report]
+empty = "--"
+
+[DLMS.report.struct]
+# Patterns. Use for function get_obj_report. Only for struct. Generate custom struct report instead standart. Where %nxx: n - name of struct element, xx - index of struct element; %vxx: v - value of struct element, xx - index of struct element
+DayProfileAction = "%n00: %v00 - Тариф: %v02"
+
+
+[DLMS.struct_name]
+# todo: join wiht am_names ?
+scaler = "Масштаб"
+unit = "Ед. измерения"
+day_id = "Идентификатор дня"
+day_schedule = "Расписание дня"
+start_time = "Время старта"
+stop_time = "Время окончания"
+end_time = "Время окончания"
+script_logical_name = "Логическое имя скрипта"
+script_selector = "Селектор скрипта"
+season_profile_name = "Имя профиля сезона"
+season_start = "Начало сезона"
+week_name = "Имя недели"
+week_profile_name = "Имя профиля недели"
+monday = "понедельник"
+tuesday = "вторник"
+wednesday = "среда"
+thursday = "четверг"
+friday = "пятница"
+saturday = "суббота"
+sunday = "воскресенье"
+optical_port_name = "Имя оптопорта"
+rs485_name = "Имя RS-485"
+preset_time = "Заданное время"
+validity_interval_start = "Начало интервала действия"
+validity_interval_end = "Конец интервала действия"
+precedence = "Приоритет"
+delay = "Задержка"
+reliability = "Надежность"
+peak_throughput = "Пиковая пропускная способность"
+mean_throughput = "Средняя пропускная способность"
+default = "По умолчанию"
+requested = "По запросу"
+cell_ID = "Идентификатор звонка"
+signal_quality = "Качество сигнала"
+location_ID = "Идентификатор местоположения"
+ber = "Ошибка битов"
+mcc = "МСС"
+mnc = "ММС"
+channel_number = "Номер канала"
+image_block_number = "Номер блока"
+image_block_value = "Данные блока"
+image_to_activate_size = "Размер данных"
+image_to_activate_identification = "Идентификация данных"
+image_to_activate_signature = "Подпись данных"
+image_identifier = "Идентификатор образа"
+image_size = "размер образа"
+action_over_threshold = "Действие выше порога"
+action_under_threshold = "Действие ниже порога"
+emergency_profile_id = "Идентификатор аварийного профиля"
+emergency_activation_time = "Аварийное время активации"
+emergency_duration = "Продолжительность аварии"
+class_id = "ИК"
+logical_name = "Логическое имя объекта"
+attribute_index = "Индекс атрибута"
+data_index = "Индекс данных"
+from_date = "С даты"
+to_date = "До даты"
+from_entry = "С записи"
+to_entry = "До записи"
+from_selected_value = "От выбранного значения"
+to_selected_value = "До выбранного значения"
+restricting_object = "Ограничивающий объект"
+from_value = "От значения"
+to_value = "До значения"
+selected_values = "Выбранные объекты"
+firstIndex = "Первый индекс"
+lastIndex = "Последний индекс"
+firstIndexA = "Первый индекс A"
+lastIndexA = "Последний индекс A"
+firstIndexB = "Первый индекс B"
+lastIndexB = "Последний индекс B"
+index = "Индекс"
+enable = "Включено"
+switch_time = "Время переключения"
+validity_window = "Окно валидности"
+exec_weekdays = "Дни недели"
+exec_specdays = "Спец дни"
+begin_date = "Дата начала"
+end_date = "Дата окончания"
+service_id = "Тип сервиса"
+parameter = "Параметр"
+script_identifier = "Идентификатор сценария"
+actions = "Действия"
+time = "Время"
+date = "Дата"
+specialday_date = "Дата спец дня"
+request = "Запрос"
+response = "Ответ"
+delay_after_response = "Задержка после ответа"
+attribute_access = "Доступ к атрибуту"
+method_access = "Доступ к методу"
+joint_iso_ctt_element = "Совместный элемент ISO CTT"
+country_element = "Элемент страны"
+country_name_element = "Элемент названия страны"
+identified_organization_element = "Идентифицированный элемент организации"
+DLMS_UA_element = "Элемент DLMS UA"
+application_context_element = "Элемент контекста приложения"
+context_id_element = "Элемент идентификатора контекста"
+client_SAP = "клиент SAP"
+server_SAP = "сервер SAP"
+attribute_id = "Индекс атрибута"
+access_mode = "Режим доступа"
+access_selectors = "Селекторы доступа"
+authentication_mechanism_name_element = "Элемент контекста приложения"
+mechanism_id_element = "Идентификационный элемент механизма"
+method_id = "Индекс метода"
+version = "Версия"
+access_rights = "Права доступа"
+conformance = "Согласование"
+max_receive_pdu_size = "Максимальный размер приемного блока pdu"
+max_send_pdu_size = "Максимальный размер отправки pdu"
+dlms_version_number = "Номер версии DLMS"
+quality_of_service = "Качество обслуживания"
+cyphering_info = "Информация о шифровании"
+key_id = "Идентификатор ключа"
+key_wrapped = "Обертка ключа"
+key_data = "Данные ключа"
+key = "Ключ"
+certificate_entity = "Объект сертификата"
+certificate_type = "Тип сертификата"
+serial_number = "Серийный номер"
+issuer = "Издатель"
+subject = "Субъект"
+subject_alt_name = "Альтернативное имя субъекта"
+system_title = "Системное название"
+certificate_identification_type = "Тип идентификации сертификата"
+certification_identification_options = "Вариант идентификации сертификата"
+request_actor = "Запрос актуатора"
+request_action_list = "Список запросов действий"
+action_up = "Действие вверх"
+action_down = "Действие вниз"
+bitmap_data = "BitMap данные"
+restriction = "Oграничениe"
+restriction_type = "Тип ограничения"
+restriction_value = "Значение ограничения"
+column = "Столбец"
+transport_service = "транспортный сервис"
+destination = "адресат"
+message = "сообщение"
+repetition_delay_min = "задержка повтора мин"
+repetition_delay_exponent = "задержка повтора экспонента"
+repetition_delay_max = "задержка повтора макс"
+confirmation_start_date = "Дата начала подтверждения"
+confirmation_interval = "Интервал подтверждения"
+kek_id = "kek идентификатор"
+key_parameters = "параметры ключа"
+key_ciphered_data = "Ключ зашифрованных данных"
+key_info_type = "тип ключa"
+key_info_options = "опции ключа"
+key_info = "информация о ключе"
+transaction_id = "ID транзакции"
+originator_system_title = "Название системы создателя"
+recipient_system_title = "Название системы получателя"
+other_information = "Дополнительная информация"
+protection_type = "Тип защиты"
+protection_options = "Опции защиты"
+IP_Option_Type = "тип IP опции"
+IP_Option_Length = "длина IP опции"
+IP_Option_Data = "данные IP опции"
+mask_name = "имя маски"
+index_list = "индекс списка"
+multicast_IP_address = "Группа IP адресов" # todo: temporary copypast with am_names
+
+[DLMS.am_names]
+# all names for attribute and method of DLMS classes
+logical_name = "Логическое имя объекта"
+# Data
+value = "Значение"
+# Register
+scaler_unit = "Масштаб и ед. измерения"
+reset = "Сброс"
+# Extended register
+status = "Статус"
+capture_time = "Время захвата"
+# Demand register
+current_average_value = "Текущее среднее значение"
+last_average_value = "Последнее среднее значение"
+start_time_current = "Время старта"
+period = "Период"
+number_of_periods = "Количество периодов"
+next_period = "Следующий период"
+# Register activation
+register_assignment = "Назначенные регистры"
+mask_list = "Список масок"
+active_mask = "Активная маска"
+add_register = "Добавить регистр"
+add_mask = "Добавить маску"
+delete_mask = "Удалить маску"
+# Profile generic
+buffer = "Буфер данных"
+capture_objects = "Список захватываемых объектов"
+capture_period = "Период захвата"
+sort_method = "Метод сортировки"
+sort_object = "Объект сортировки"
+entries_in_use = "Занятых записей"
+profile_entries = "Всего записей"
+capture = "Захват"
+# Utility tables
+table_ID = "Идентификатор таблицы"
+length = "Длина"
+# Register table
+table_cell_values = "Значения ячеeк таблицы"
+table_cell_definition = "Определение ячеeк таблицы"
+# Status mapping
+status_word = "Слово состояния"
+mapping_table = "Картирование таблицы"
+# Compact data
+compact_buffer = "Компактный буфер"
+template_id = "Идентификатор шаблона"
+template_description = "Описание шаблона"
+capture_method = "Метод захвата"
+# AssociationSN
+object_list = "Список объектов"
+access_rights_list = "Список прав доступа"
+security_setup_reference = "OBIS-код настройки безопасности"
+user_list = "Список пользователей"
+current_user = "Текущий пользователь"
+read_by_logicalname = "Чтение по логическому имени"
+change_secret = "Сменить секрет"
+reply_to_HLS_authentication = "Ответ на проверку подлинности"
+add_user = "Добавить пользователя"
+remove_user = "Удалить пользователя"
+# Association LN
+associated_partners_id = "Идентификатор партнера"
+application_context_name = "Имя контекста приложения"
+xDLMS_context_info = "xDLMS информация"
+authentication_mechanism_name = "Имя алгоритма проверки подлинности"
+LLS_secret = "LLS Секрет(пароль)"
+secret = "Секрет(пароль)"
+association_status = "Статус соединения"
+change_HLS_secret = "Изменение пароля"
+add_object = "Добавление объекта"
+remove_object = "Удаление объекта"
+# SAP assignment
+SAP_assignment_list = "SAP список назначений"
+connect_logical_device = "Подключить логическое устройство"
+# Image transfer
+image_block_size = "Размер блока данных"
+image_transferred_blocks_status = "Статус передачи блоков данных"
+image_first_not_transferred_block_number = "Номер первого непереданного блока"
+image_transfer_enabled = "Разрешение передачи данных"
+image_transfer_status = "Статус блока данных"
+image_to_activate_info = "Информация для активации"
+image_transfer_initiate = "Инициализация передачи"
+image_block_transfer = "Передача блока данных"
+image_verify = "Проверка файла"
+image_activate = "Активирование файла"
+# Security setup
+security_policy = "Политика безопасности"
+security_suite = "Комплект безопасности"
+client_system_title = "Название клиента"
+server_system_title = "Название сервера"
+certificates = "Сертификаты"
+security_activate = "Усиление безопасности"
+global_key_transfer = "Передача общего ключа"
+key_transfer = "Передача ключа"
+key_agreement = "Ключевые соглашения"
+generate_key_pair = "Генерация пары для ключа"
+generate_certificate_request = "Запрос генерации сертификата"
+import_certificate = "Импорт сертификата"
+export_certificate = "Экспорт сертификата"
+remove_certificate = "Удаление сертификата"
+# Push setup
+push_object_list = "Список передаваемых объектов"
+send_destination_and_method = "Метод доставки и адресат"
+communication_window = "Окна связи"
+randomisation_start_interval = "Интервал псевдослучайной задержки выхода"
+number_of_retries = "Количество повторов"
+repetition_delay = "Задержка повтора"
+port_reference = "Ссылка на порт"
+push_client_sap = "Номер клиента SAP"
+push_protection_parameters = "Параметры защиты"
+push_operation_method = "Метод работы"
+confirmation_parameters = "Параметры подтверждения"
+last_confirmation_date_time = "Время последнего подтверждения"
+push = "Протолнуть"
+# Data protection interface class specification
+protection_buffer = "Защитный буфер"
+protection_object_list = "Защитный лист объектов"
+protection_parameters_get = "Параметры защиты для чтения"
+protection_parameters_set = "Параметры защиты для установки"
+required_protection = "Требуемая защита"
+get_protected_attributes = "Получить защищенные атрибуты"
+set_protected_attributes = "Установить защищенные атрибуты"
+invoke_protected_method = "Вызвать метод защиты"
+# Function control
+activation_status = "Статус активации"
+function_list = "Лист функций"
+set_function_status = "Установить статус функции"
+add_function = "Добавить функцию"
+remove_function = "Удалить функцию"
+# Array manager
+array_object_list = "Массив списка объектов"
+retrieve_number_of_entries = "Получить количество записей"
+retrieve_entries = "Получить записи"
+insert_entry = "Вставить запись"
+update_entry = "Обновить запись"
+remove_entries = "Удалить запись"
+# Communication port protection
+protection_mode = "Режим защиты"
+allowed_failed_attempts = "Разрешенные неудачные попытки"
+initial_lockout_time = "Начальное время блокировки"
+steepness_factor = "Фактор шага"
+max_lockout_time = "Максимальное время блокировки"
+protection_status = "Статус защиты"
+failed_attempts = "Проваленые попытки"
+cumulative_failed_attempts = "Совокупные неудачные попытки"
+# Clock
+time = "Время"
+time_zone = "Часовой пояс"
+daylight_savings_begin = "Дата перехода на летнее время"
+daylight_savings_end = "Дата перехода на зимнее время"
+daylight_savings_deviation = "Сдвиг летнего времени"
+daylight_savings_enabled = "Разрешение перевода на летнее время"
+clock_base = "Источник времени"
+adjust_to_quarter = "Подстройка к ¼ часа"
+adjust_to_measuring_period = "Подстройка к измерительному периоду"
+adjust_to_minute = "Подстройка к минуте"
+adjust_to_preset_time = "Подстройка к уставке времени"
+preset_adjusting_time = "Задание уставки времени"
+shift_time = "Сдвиг времени"
+# Script table
+scripts = "Сценарий"
+execute = "Применить"
+# Schedule
+entries = "Записи"
+enable_disable = "Разрешить/запретить (номера)"
+insert = "Ввести (номер)"
+delete = "Стереть (номер)"
+# Special days table
+# Activity calendar
+calendar_name_active = "Имя активного календаря"
+season_profile_active = "Таблица активных сезонных профилей"
+week_profile_table_active = "Таблица активных недельных профилей"
+day_profile_table_active = "Таблица активных суточных профилей"
+calendar_name_passive = "Имя пассивного календаря"
+season_profile_passive = "Таблица пассивных сезонных профилей"
+week_profile_table_passive = "Таблица пассивных недельных профилей"
+day_profile_table_passive = "Таблица пассивных суточных профилей"
+activate_passive_calendar_time = "Дата активирования пассивного календаря"
+activate_passive_calendar = "Активировать пассивный календарь"
+# Register monitor
+thresholds = "Пороги"
+monitored_value = "Контролируемая величина"
+actions = "Действия"
+# Single action schedule
+executed_script = "Выполненный сценарий"
+type = "Тип"
+execution_time = "Время исполнения"
+# Disconnect control
+output_state = "Состояние выключателя"
+control_state = "Статус управления"
+control_mode = "Режим управления"
+remote_disconnect = "Отключение"  # in origin "Удаленное отключение"
+remote_reconnect = "Подключение"  # in origin "Удаленное включение"
+# Limiter
+threshold_active = "Активный порог"
+threshold_normal = "Нормальный порог"
+threshold_emergency = "Аварийный порог"
+min_over_threshold_duration = "Мин. длительность превышения порога"
+min_under_threshold_duration = "Мин. длительность снижения ниже порога"
+emergency_profile = "Аварийный профиль"
+emergency_profile_group_id_list = "Список аварийных профилей"
+emergency_profile_active = "Активный аварийный профиль"
+# Parameter monitor
+changed_parameter = "Смена параметров"
+parameter_list = "Список параметров"
+parameter_list_name = "Список имен параметров"
+hash_algorithm_id = "Идентификатор алгоритма hash"
+parameter_value_digest = "Значение подписи"
+parameter_values = "Значения параметров"
+add_parameter = "Добавить параметр"
+delete_parameter = "Удалить параметр"
+# Sensor manager interface class specification
+serial_number = "Серийный номер"
+metrological_identification = "Метрологическая идентификация"
+output_type = "Тип выхода"
+adjustment_method = "Метод корректировки"
+sealing_method = "Метод герметизации"
+raw_value = "Физические данные"
+raw_value_thresholds = "Пороги физических данных"
+raw_value_actions = "Действия физических данных"
+processed_value = "Обработанные значения"
+processed_value_thresholds = "Обработанные пороговые значения"
+processed_value_actions = "Обработанные действия значений"
+# Arbitrator
+permission_table = "Таблица разрешений"
+weightings_table = "Таблица весов"
+most_recent_requests_table = "Таблица последних запросов"
+last_outcome = "Последний результат"
+request_action = "Запрос действия"
+# Account
+account_mode_and_status = "Режим и статус учетной записи"
+current_credit_in_use = "Текущий счет в использовании"
+current_credit_status = "Статус текущего счета"
+available_credit = "Доступный счет"
+amount_to_clear = "Сумма до обнуления"
+clearance_threshold = "Порог обнуления"
+aggregated_debt = "агрегированный долг"
+credit_reference_list = "Список счетов"
+charge_reference_list = "Список ссылок для зарядки"
+credit_charge_configuration = "Конфигурация счета зарядки"
+token_gateway_configuration = "Конфигурация шлюза токена"
+account_activation_time = "Время активации учетной записи"
+account_closure_time = "Время закрытия учетной записи"
+currency = "Валюта"
+low_credit_threshold = "Низкий кредитный порог"
+next_credit_available_threshold = "Следующий возможный кредитный порок"
+max_provision = "Максимальное обеспечение"
+max_provision_period = "Максимальный период обеспечения"
+activate_account = "Активировать учетную запись"
+close_account = "Закрыть учетную запись"
+reset_account = "Сбросить учетную запись"
+# Credit interface
+current_credit_amount = "Сумма текущего счета"
+credit_type = "Тип счета"
+priority = "Приоритет"
+warning_threshold = "Порог предупреждения"
+limit = "Ограничение"
+credit_configuration = "Конфигурация счета"
+credit_status = "Статус счета"
+preset_credit_amount = "Предустановленая сумма счета"
+credit_available_threshold = "Возможный порог счета"
+update_amount = "Обновить сумму"
+set_amount_to_value = "Установить сумму в стоимость"
+invoke_credit = "Запросить кредит"
+# Charge
+total_amount_paid = "Общая уплаченая сумма"
+charge_type = "Тип зарядки"
+unit_charge_active = "Активная единица заряда"
+unit_charge_passive = "Пассивная единица заряда"
+unit_charge_activation_time = "Время активации единицы заряда"
+charge_configuration = "Конфигурация зарядки"
+last_collection_time = "Последнее время отбора"
+last_collection_amount = "Последняя сумма отбора"
+total_amount_remaining = "Остаток общей суммы"
+proportion = "Доля"
+update_unit_charge = "Обновить единицу заряда"
+activate_passive_unit_charge = "Активировать пассивную единица заряда"
+collect = "Отбор"
+update_total_amount_remaining = "Обновить общую сумму остатка"
+set_total_amount_remaining = "Установить общую сумму остатка"
+# Token gateway
+token = "Талон"
+token_time = "Время талона"
+token_description = "Описание талона"
+token_delivery_method  = "Метод доставки талона"
+token_status = "Статус талона"
+enter = "Вход"
+# IEC local port setup
+default_mode = "Режим по умолчанию"
+default_baud = "Скорость по умолчанию"
+prop_baud = "Предложенная скорость"
+response_time = "Время отклика"
+device_addr = "Адрес устройства"
+pass_p1 = "Пароль 1"
+pass_p2 = "Пароль 2"
+pass_w5 = "Пароль W5"
+# IEC HDLC setup
+comm_speed = "Скорость обмена"
+windows_size_transmit = "Размер окна передачи"
+windows_size_receive = "Размер окна приема"
+max_info_field_length_transmit = "Максимальная длина поля данных при передаче"
+max_info_field_length_receive = "Максимальная длина поля данных при приеме"
+inter_octet_time_out = "Межсимвольный таймаут"
+inactivity_time_out = "Межкадровый таймаут"
+device_address = "Адрес устройства"
+# IEC twisted pair (1) setup
+mode = "Режим"
+primary_address_list = "Список основных адресов"
+tabi_list = "Список TAB(i)"
+# Modem configuration
+initialization_string = "Инициализационые строки"
+modem_profile = "Профиль модема"
+# Auto answer
+listening_window = "окна для прослушивания"
+number_of_calls = "количество вызовов"
+number_of_rings = "количество звонков"
+list_of_allowed_callers = "список возможных вызывыющих"
+# Auto connect
+repetitions = "Повторения"
+calling_window = "Окно вызова"
+destination_list = "Список назначения"
+connect = "Соединение"
+# GPRS modem setup
+APN = "APN"
+PIN_code = "ПИН код"
+quality_of_service = "Качество обслуживания"
+# GSM diagnostic
+operator = "Оператор"
+cs_attachment = "Вложения схем переключения"
+ps_status = "Статус переключаемых пакетов"
+cell_info = "Информация о соединении"
+adjacent_cell = "Соседние соединения"
+# LTE monitoring
+LTE_network_parameters = "Параметры сети LTE"
+LTE_quality_of_service = "Качество LTE"
+# M-Bus slave port setup
+avail_baud = "Выгодная скорость"
+addr_state = "Статус адреса"
+bus_address = "Адрес шины"
+# M-Bus client
+mbus_port_reference = "Ссылка на порт MBUS"
+capture_definition = "Описание захвата"
+primary_address = "Основной адрес"
+identification_number = "Идентификационный номер"
+manufacturer_id = "Идентификация производителя"
+version = "Версия"
+device_type = "Тип устройства"
+access_number = "Номер доступа"
+alarm = "Тревога"
+configuration = "Конфигурация"
+encryption_key_status = "Статус ключа шифрования"
+slave_install = "Установить подчиненого"
+slave_deinstall = "Удалить подчиненого"
+reset_alarm = "Сброс тревоги"
+synchronize_clock = "Синхронизировать часы"
+data_send = "Посылка данных"
+set_encryption_key = "Установить ключ шифрования"
+transfer_key = "Послать ключ"
+# Wireless Mode Q channel
+address_mask = "Маска адреса"
+# DLMS/COSEM server M-Bus port setup
+M_Bus_profile_selection = "Выбраный профиль M-Bus"
+M_Bus_port_communication_state = "Статус порта связи M-Bus"
+M-Bus_Data_Header_Type = "Тип загаловка данных M-Bus"
+max_pdu_size = "Максимальный размер pdu"
+# M-Bus diagnostic
+received_signal_strength  = "Сила приемного сигнала"
+channel_Id = "Идентификатор канала"
+link_status = "Статус соединения"
+broadcast_frames_counter = "Широковещательный счетчик кадров"
+transmissions_counter = "Счетчик передачи"
+FCS_OK_frames_counter = "FCS OK счетчик кадров"
+FCS_NOK_frames_counter = "FCS NOK счетчик кадров"
+# TCP-UDP setup
+TCP_UDP_port = "TCP_UDP_порт"
+IP_reference = "IP ссылка"
+MMS = "Максимальный размер сегмента"
+nb_of_sim_conn = "Кол-во одновременных соединений"
+# IPv4 setup
+DL_reference = "Ссылка на данные"
+IP_address = "IP адрес"
+multicast_IP_address = "Группа IP адресов"
+IP_options = "IP опции"
+subnet_mask = "Маска подсети"
+gateway_IP_address = "IP адрес шлюза"
+use_DHCP_flag = "Использовать DHCP"
+primary_DNS_address = "Первичный DNS адрес"
+secondary_DNS_address = "Вторичный DNS адрес"
+add_mc_IP_address = "Добавить мульти адрес"
+delete_mc_IP_address = "Удалить мульти адрес"
+get_nbof_mc_IP_addresses = "Получить кол-во мульти адресов"
+# IPv6 setup
+address_config_mode = "Режим конфигурации адреса"
+unicast_IPv6_addresses = "Адреса одноадресные IPv6"
+multicast_IPv6_addresses = "Aдреса мультиадресные IPv6"
+gateway_IPv6_addresses = "Шлюзы IPv6"
+traffic_class = "Класс трафика"
+neighbor_discovery_setup = "Настройка обноружения соседей"
+add_IPv6_address = "Добавить IPv6 адрес"
+remove_IPv6_address = "Удалить IPv6 адрес"
+# MAC address setup
+MAC_address = "MAC адрес"
+# PPP setup
+PHY_reference = "Ссылка на объект физического уровня"
+LCP_options = "Параметры LCP"
+IPCP_options = "Параметры IPCP"
+PPP_authentication = "Аунтификация PPP"
+# SMTP setup
+server_port = "Порт сервера"
+user_name = "Имя пользователя"
+login_password = "Логин пароль"
+server_address = "Адрес сервера"
+sender_address = "Адрес отправителя"
+# NTP setup
+activated = "Активировано"
+authentication_method = "Метод аутентификации"
+authentication_keys = "Ключ аутентификации"
+client_key = "Клиентский ключ"
+synchronize = "Синхронизация"
+add_authentication_key = "Добавить ключ аутентификации"
+delete_authentication_key = "Удалить ключ аутентификации"
+# S-FSK Phy&MAC set-up
+initiator_electrical_phase = "Электрическая фаза инициатора"
+delta_electrical_phase = "Дельта - электрическая фаза "
+max_receiving_gain = "Максимально полученный уровень"
+max_transmitting_gain = "Максимально переданный уровень"
+search_initiator_threshold = "Поиск порога инициатора"
+frequencies = "Частоты"
+mac_address = "mac адрес"
+mac_group_addresses = "группа mac адресов"
+repeater = "Ретранслятор"
+repeater_status = "Статус ретранслятора"
+min_delta_credit = "Минимальная дельта счета"
+initiator_mac_address = "mac адрес инициатора"
+synchronization_locked  = "Синхронизация закрыта"
+transmission_speed = "Скорость передачи"
+# S-FSK Active initiator
+active_initiator = "Активный инициатор"
+reset_NEW_not_synchronized = "Сброс новой не сихронизированный"
+# S-FSK MAC synchronization timeouts
+search_initiator_timeout = "Таймаут поиска инициатора"
+synchronization_confirmation_timeout = "Таймаут синхронизации подтверждение"
+time_out_not_addressed = "Таймаут не адресный"
+time_out_frame_not_OK = "Таймаут кадра не OK"
+# S-FSK MAC counters
+synchronization_register = "Регистр синхронизации"
+desynchronization_listing = "Список десинхронизации"
+repetitions_counter = "Счетчик повторов"
+CRC_OK_frames_counter = "Счетчик кадров с CRC OK"
+CRC_NOK_frames_counter = "Счетчик кадров с CRC NOK"
+# IEC 61334-4-32 LLC setup
+max_frame_length = "Максимальная длина кадра"
+reply_status_list = "Список статусов ответа"
+# S-FSK Reporting system list
+reporting_system_list = "Список системных отчетов"
+# ISO/IEC 8802-2 LLC Type 1 setup
+max_octets_ui_pdu = "Максимальная длина UI PDU"
+# ISO/IEC 8802-2 LLC Type 2 setup
+transmit_window_size_k = "Размер окна передачи k"
+receive_window_size_rw = "Размер окна приема rw"
+max_octets_i_pdu_n1 = "Максимальная длина I PDU N1"
+max_number_transmissions_n2 = "Максимальное кол-во раз передачи N2"
+acknowledgement_timer = "Таймер подтверждения"
+p_bit_timer = "Таймер P-bit"
+reject_timer = "Таймер отклонения"
+busy_state_timer = "Таймер занятого состояния"
+# ISO/IEC 8802-2 LLC Type 3 setup
+max_octets_acn_pdu_n3 = "Максимальная длина ACn PDU N3"
+max_number_transmissions_n4 = "Максимальное кол-во раз передачи N4"
+acknowledgement_time_t1 = "Таймер подтверждения T1"
+receive_lifetime_var_t2 = "Время жизни таймеров приема T2"
+transmit_lifetime_var_t3 = "Время жизни  таймеров передачи T3"
+# 61334-4-32 LLC SSCS setup
+service_node_address = "Адрес сервисного узла"
+base_node_address = "Адрес базового узла"
+# PRIME NB OFDM PLC Physical layer counters
+phy_stats_crc_incorrect_count = "Счетчик не корректных CRC"
+phy_stats_crc_fail_count = "Счетчик плохих данных с верной CRC"
+phy_stats_tx_drop_count = "Счетчик отброшенных данных передачи"
+phy_stats_rx_drop_count = "Счетчик отброшенных данных приема"
+# PRIME NB OFDM PLC MAC setup
+mac_min_switch_search_time = "Минимальное время поиска"
+mac_max_promotion_pdu = "Максимальное кол-во PNDDU за период"
+mac_promotion_pdu_tx_period = "Период для передачи PNDPU"
+mac_beacons_per_frame = "Кол-во сигнальных слотов"
+mac_scp_max_tx_attempts = "Кол-во попыток передачи"
+mac_ctl_re_tx_timer = "Таймер ожидания ответа"
+mac_max_ctl_re_tx = "Максимальное кол-во повторов неподтвержденных пакетов"
+# PRIME NB OFDM PLC MAC functional parameters
+mac_LNID = "MAC LNID"
+mac_LSID = "MAC LSID"
+mac_SID = "MAC SID"
+mac_SNA = "MAC SNA"
+mac_state = "MAC состояние"
+mac_scp_length = "MAC длина SCP"
+mac_node_hierarchy_level = "MAC уровень узла"
+mac_beacon_slot_count = "Счетчик сигнальных слотов MAC"
+mac_beacon_rx_slot = "Слот для передачи сигналов MAC"
+mac_beacon_tx_slot = "Слот для приема сигналов MAC"
+mac_beacon_rx_frequency = "Частота приема сигналов MAC"
+mac_beacon_tx_frequency = "Частота передачи сигналов MAC"
+mac_capabilities = "Возможности MAC"
+# PRIME NB OFDM PLC MAC counters
+mac_tx_data_pkt_count = "Счетчик переданых MSDU"
+mac_rx_data_pkt_count = "Счетчик принятых MSDU"
+mac_tx_ctrl_pkt_count = "Счетчик переданых MAC контролных пакетов"
+mac_rx_ctrl_pkt_count = "Счетчик принятых MAC контролных пакетов"
+mac_csma_fail_count = "Счетчик неудачных CSMA попыток передачи"
+mac_csma_ch_busy_count = "Счетчик занятаго канала SCP"
+# todo: next 4.12.9 PRIME NB OFDM PLC MAC network administration data
+
+[DLMS.messages]
+# use for config_parser.get_message
+or = "или"
+less = "меньше"
+greater = "больше"
+not_known_or_not_detectable = "не известно или не сдетектированно"
+undefined = "не определено"
+contentions = "oбжата"
+breaked_open = "взломана"
+subsequent_autopsy = "последующие вскрытия"
+electronic_seals = "Электронные пломбы"
+for_cover = "корпуса"
+for_terminals_cover = "крышки клеммников"
+disconnected = "разъединено"
+connected = "соединено"
+normal = "норма"
+case_is_opened = "Вскрыт корпус"
+cover_is_opened = "Вскрыта крышка клеммников"
+fixed_field = "Зафиксировано поле со значением более допустимого"
+exist_field = "Присутствует поле со значением более допустимого"
+turn_off = "выключен(a)"
+turn_on = "включен(a)"
+lock = "блокировка"
+rate = "Тариф"
+
+[DLMS.enum_name.Unit]
+    1="год"
+    2="мес"
+    3="нед"
+    4="дн"
+    5="ч"
+    6="мин"
+    7="с"
+    8="°"
+    9="°c"
+    10="валюта"
+    11="м"
+    12="м/с"
+    13="м³"
+    14="м³*"
+    15="м³/ч"
+    16="м³/ч*"
+    17="м³/дн"
+    18="м³/дн*"
+    19="л"
+    20="кг"
+    21="Н"
+    22="Нм"
+    23="Па"
+    24="100000 Н/м²"
+    25="Дж"
+    26="Дж/ч"
+    27="Вт"
+    28="В*А"
+    29="ВАР"
+    30="Вт*ч"
+    31="В*А*ч"
+    32="ВАР*ч"
+    33="А"
+    34="к"
+    35="В"
+    36="В/м"
+    37="ф"
+    38="Ом"
+    39="Ом*м"
+    40="Вб"
+    41="Тл"
+    42="А/м"
+    43="Гн"
+    44="Гц"
+    45="1/(Вт*ч)"
+    46="1/(ВАР*ч)"
+    47="1/(В*А*ч)"
+    48="В²*ч"
+    49="А²*ч"
+    50="кг/с"
+    51="см"
+    52="К"
+    53="1/(В²*ч)"
+    54="1/(А²*ч)"
+    55="1/м³"
+    56="%"
+    57="А*ч"
+    60="3600 Дж/м³"
+    61="Дж/м³"
+    62="моль %"
+    63="г/м³"
+    64="Па*с"
+    65="Дж/кг"
+    66="г/см²"
+    67="атм"
+    70="дБм"
+    71="дБмкВ"
+    72="дБ"
+    128="in"
+    129="ft"
+    130="lb"
+    131="°f"
+    132="°r"
+    133="sq. in"
+    134="sq ft"
+    135="ac"
+    136="cu in"
+    137="cu ft"
+    138="ac ft"
+    139="gal(imp)"
+    140="gal(us)"
+    141="lbf"
+    142="psi"
+    143="lb/cu ft"
+    144="lb/(ft .s)"
+    145="sq ft/s"
+    146="btu"
+    147="thm(ec)"
+    148="thm(us)"
+    149="btu/lb"
+    150="btu/cu ft"
+    151="cu ft rv"
+    152="ft/s"
+    153="cu ft/s"
+    154="cu ft/min"
+    155="cu ft/h"
+    156="cu ft/d"
+    157="ac ft/s"
+    158="ac ft/min"
+    159="ac ft/h"
+    160="ac ft/d"
+    161="gal(imp) rv"
+    162="gal(imp)/s"
+    163="gal(imp)/min"
+    164="gal(imp)/h"
+    165="gal(imp)/d"
+    166="gal(us) rv"
+    167="gal(us)/s"
+    168="gal(us)/min"
+    169="gal(us)/h"
+    170="gal(us)/d"
+    171="btu/s"
+    172="btu/min"
+    173="btu/h"
+    174="btu/d"
+    253="расширенная"
+    254="другое"
+    255="ед"
+[DLMS.enum_name.CommSpeed]
+    0="300 бод"
+    1="600 бод"
+    2="1200 бод"
+    3="2400 бод"
+    4="4800 бод"
+    5="9600 бод"
+    6="19200 бод"
+    7="38400 бод"
+    8="57600 бод"
+    9="115200 бод"
+[DLMS.enum_name.RestrictionType]
+    0="Без ограничений"
+    1="Ограничение по дате"
+    2="Ограничение по входу"
+[DLMS.enum_name.KeyInfoType]
+    0="Идентификационный ключ"
+    1="Обернутый ключ"
+    2="Согласованный ключ"
+[DLMS.enum_name.ProtectionType]
+    0="Аутентификация"
+    1="Зашифрованный запрос"
+    2="Обернутый ключ"
+    3="Согласованный ключ"
+[DLMS.enum_name.AccessMode]
+    0="нет доступа"
+    1="только чтение"
+    2="только запись"
+    3="чтение и запись"
+    4="только чтение с проверкой подлинности"
+    5="только запись с проверкой подлинности"
+    6="чтение и запись с проверкой подлинности"
+[DLMS.enum_name.ClientSAP]
+    0="Отсутствует"
+    1="Процесс управления клиентами"
+    16="Публичный клиент"
+    32="Считыватель показаний"
+    48="Конфигуратор"
+    64="Инициативный"
+    80="Обновление ПО"
+    96="Домашний дисплей"
+[DLMS.enum_name.AuthenticationMethod]
+    0="Нет безопасности"
+    1="Общие секреты"
+    2="Авто ключ IFF"
+[DLMS.enum_name.MechanismIdElement]
+    0="Низший, без секретности"
+    1="Низкий, без шифрования с паролем"
+    2="Высокий"
+    3="Высокий, MD5"
+    4="Высокий, SHA1"
+    5="Высокий, GMAC"
+    6="Высокий, SHA256"
+    7="Высокий, ECDSAL"
+[DLMS.enum_name.AssociationStatus]
+    0="нет соединения"
+    1="ожидание соединения"
+    2="соединение установлено"
+[DLMS.enum_name.AccessModeMeth]
+    0="нет доступа"
+    1="доступно"
+    2="доступ с проверкой подлинности"
+[DLMS.enum_name.TransportServiceType]
+    0="TCP"
+    1="UDP"
+    2="зарезервированно для FTP"
+    3="зарезервированно для SMTP"
+    4="SMS"
+    5="HDLC"
+    6="M_BUS"
+    7="зарезервированно для ZIGBEE"
+    8="DLMS Gateway"
+[DLMS.enum_name.MessageType]
+    0="A-XDR кодировка xDLMS APDU"
+    1="XML кодировка xDLMS APDU"
+[DLMS.enum_name.PushOperationMethod]
+    0="Неподтвержденная, повторение при поддержке сбоя на уровне протокола"
+    1="Неподтверждено, повторение пропущенного подтверждения протокола"
+    2="подтверждено, повторите пропущенное подтверждение"
+[DLMS.enum_name.IdentifiedKeyInfoOptions]
+    0="Глобальный ключ шифрования одноадресный"
+    1="Глобальный ключ шифрования широковещательный"
+[DLMS.enum_name.KEKId]
+    0="мастер ключ"
+[DLMS.enum_name.CommunicationChannel]
+    0="Оптический порт"
+    1="RS-485"
+    2="TCP/IP"
+    3="BLE"
+[DLMS.enum_name.ClockBase]
+    0="не определен"
+    1="внутренний кварцевый генератор"
+    2="от сети 50 Гц"
+    3="от сети 60 Гц"
+    4="от системы GPS (GLONASS)"
+    5="от радиосигналов точного времени"
+[DLMS.enum_name.ControlState]
+    0="отключено"
+    1="включено"
+    2="Готово к переподключению"
+[DLMS.enum_name.ControlMode]
+    0="Отсутствует. Объект управления разъединением всегда находится в состоянии «подключено»"
+    1="Отключение: удаленные(B, C), ручной(F), локальный(G) Переподключение: удаленный(D), ручной(E)"
+    2="Отключение: удаленные(B, C), ручной(F), локальный(G) Переподключение: удаленный(A), ручной(E)"
+    3="Отключение: удаленные(B, C), локальный(G) Переподключение: удаленный(D), ручной(E)"
+    4="Отключение: удаленные(B, C), локальный(G) Переподключение: удаленный(A), ручной(E)"
+    5="Отключение: удаленные(B, C), ручной(F), локальный(G) Переподключение: удаленный(D), ручной(E), локальный(H)"
+    6="Отключение: удаленные(B, C), локальный(G) Переподключение: удаленный(D), ручной(E), локальный(H)"
+    129="Отключение: удаленные(B, C), ручной(F), локальный(M) Переподключение: удаленный(D), ручной(E)"
+    130="Отключение: удаленные(B, C), ручной(F), локальный(M) Переподключение: удаленный(A), ручной(E)"
+    131="Отключение: удаленные(B, C), локальный(M) Переподключение: удаленный(D), ручной(E)"
+    132="Отключение: удаленные(B, C), локальный(M) Переподключение: удаленный(A)"
+    133="Отключение: удаленные(B, C), локальный(M) Переподключение: удаленный(A), локальный(K)"
+    134="Отключение: удаленные(B, C), локальный(M, S) Переподключение: удаленный(D), ручной(E), локальный(P)"
+[DLMS.enum_name.Status]
+    0="не зарегистрирован"
+    1="зарегистрирован, домашняя сеть"
+    2="не зарегистрирован, но MT в настоящее время ищет нового оператора для регистрации в"
+    3="регистрация отвергнута"
+    4="неизвестно"
+    5="зарегистрирован, роуминг"
+[DLMS.enum_name.CSAttachment]
+    0="не aктивно"
+    1="входящий звонок"
+    2="активно"
+[DLMS.enum_name.PSStatus]
+    0="не aктивно"
+    1="GPRS"
+    2="EDGE"
+    3="UMTS"
+    4="HSDPA"
+    5="LTE"
+[DLMS.enum_name.ImageTransferStatus]
+    0="Передача данных не инициированна"
+    1="Передача данных инициированна"
+    2="Проверка данных инициированна"
+    3="Проверка данных пройдена"
+    4="Проверка данных неудачна"
+    5="Активация данных инициированна"
+    6="Активация данных пройдена"
+    7="Активация данных неудачна"
+[DLMS.enum_name.SortMethod]
+    1="FIFO(первый пришел первый ушел)"
+    2="LIFO(последний пришел первый ушел)"
+    3="наибольший"
+    4="наименьший"
+    5="ближайший к нулю"
+    6="дальний от нуля"
+[DLMS.enum_name.SecurityPolicy]
+    0="ничего не делать"
+    1="Все сообщения должны быть аутентифицированы"
+    2="Все сообщения должны быть зашифрованы"
+    3="Все сообщения должны быть аутентифицированы и зашифрованы"
+[DLMS.enum_name.SecuritySuite]
+    0="AES-GSM-128 аутентификация, шифрование и упаковка ключей"
+    1="AES-GSM-128 аутентификация, шифрование, цифровая подпись, согласование ключей, хеширование, V.44 сжатие и упаковка ключей"
+    2="AES-GSM-256 аутентификация, шифрование, цифровая подпись, согласование ключей, хеширование, V.44 сжатие и упаковка ключей"
+[DLMS.enum_name.KeyID]
+    0="Глобальный одноадресный ключ шифрования"
+    1="Глобальный широковещательный ключ шифрования"
+    2="Ключ аутентификации"
+    3="Мастер ключ"
+[DLMS.enum_name.SecurityPolicyVer1]
+    0="не используется, всегда 0"
+    1="не используется, всегда 0"
+    2="запрос с аутентификацией"
+    3="зашифрованный запрос"
+    4="запрос с цифровой подписью"
+    5="ответ с аутентификацией"
+    6="зашифрованный ответ"
+    7="ответ с цифровой подписью"
+[DLMS.enum_name.CertificateEntity]
+    0="Сервер"
+    1="Клиент"
+    2="Администратор"
+    3="Прочее"
+[DLMS.enum_name.CertificateType]
+    0="Цифровая подпись"
+    1="Соглосование ключей"
+    2="TLS"
+    3="Прочее"
+[DLMS.enum_name.KeyPair]
+    0="Цифровая подпись пары ключей"
+    1="Соглосование пары ключей"
+    2="TLS пары ключей"
+[DLMS.enum_name.CertificateIdentificationType]
+    0="Идентификация сертификата по объекту"
+    1="Идентификация сертификата по серийному номеру"
+[DLMS.enum_name.ServiceId]
+1="Запись в атрибут"
+2="Выполнить конкретный метод"
+[DLMS.enum_name.SPODES3VoltageEventValues] # 0.0.96.11.0.255 События связанные с напряжением СТО 34.01-5.1-006-2021 таблица Д.1
+1 = "Фаза А - пропадание напряжения"
+2 = "Фаза А - восстановление напряжения"
+3 = "Фаза В - пропадание напряжения"
+4 = "Фаза В - восстановление напряжения"
+5 = "Фаза С - пропадание напряжения"
+6 = "Фаза С - восстановление напряжения"
+7 = "Превышение напряжения любой фазы"
+8 = "Окончание перенапряжения любой фазы"
+9 = "Низкое напряжение любой фазы - начало"
+10 = "Низкое напряжение любой фазы - окончание"
+11 = "Превышение коэффициента несимметрии напряжений по обратной последовательности - начало"
+12 = "Превышение коэффициента несимметрии напряжений по обратной последовательности - окончание"
+13 = "Фаза А - перенапряжение начало"
+14 = "Фаза А - перенапряжение окончание"
+15 = "Фаза В - перенапряжение начало"
+16 = "Фаза В - перенапряжение окончание"
+17 = "Фаза С - перенапряжение начало"
+18 = "Фаза С - перенапряжение окончание"
+19 = "Фаза А - провал начало"
+20 = "Фаза А - провал окончание"
+21 = "Фаза В - провал начало"
+22 = "Фаза В - провал окончание"
+23 = "Фаза С - провал начало"
+24 = "Фаза С - провал окончание"
+25 = "Неправильная последовательность фаз начало"
+26 = "Неправильная последовательность фаз окончание"
+27 = "Прерывание напряжения"
+28 = "Восстановление напряжения"
+[DLMS.enum_name.SPODES3CurrentEventValues] # current_events События связанные с током СТО 34.01-5.1-006-2021 таблица Д.2
+1 = "Фаза А - экспорт начало"
+2 = "Фаза А - экспорт окончание"
+3 = "Фаза В - экспорт начало"
+4 = "Фаза В - экспорт окончание"
+5 = "Фаза С - экспорт начало"
+6 = "Фаза С - экспорт окончание"
+7 = "Обрыв трансформатора тока фазы А"
+8 = "Восстановление трансформатора тока фазы А"
+9 = "Обрыв трансформатора тока фазы В"
+10 = "Восстановление трансформатора тока фазы В"
+11 = "Обрыв трансформатора тока фазы С"
+12 = "Восстановление трансформатора тока фазы С"
+13 = "Разбаланс токов - начало"
+14 = "Разбаланс токов - окончание"
+15 = "Замыкание трансформатора тока — начало"
+16 = "Окончание замыкания трансформатора тока"
+17 = "Превышение тока любой фазы - начало"
+18 = "Окончание превышения тока любой фазы"
+19 = "Фаза А-наличие тока при отсутствии напряжения начало"
+20 = "Фаза А-наличие тока при отсутствии напряжения окончание"
+21 = "Фаза В - наличие тока при отсутствии напряжения начало"
+22 = "Фаза В - наличие тока при отсутствии напряжения окончание"
+23 = "Фаза С - наличие тока при отсутствии напряжения начало"
+24 = "Фаза С - наличие тока при отсутствии напряжения окончание"
+25 = "Фаза А - превышение максимального тока начало"
+26 = "Фаза А - превышение максимального тока окончание"
+27 = "Фаза В - превышение максимального тока начало"
+28 = "Фаза В - превышение максимального тока окончание"
+29 = "Фаза С - превышение максимального тока начало"
+30 = "Фаза С - превышение максимального тока окончание"
+31 = "Наличие тока при отсутствии напряжения обрыв нейтрали – начало"
+32 = "Наличие тока при отсутствии напряжения обрыв нейтрали - окончание"
+33 = "Обратный поток мощности экспорт тока в однонаправленном счётчике - начало"
+34 = "Обратный поток мощности экспорт тока в однонаправленном счётчике - конец"
+35 = "Разнонаправленная мощность по фазам в трёхфазном и однофазном двухэлементном счётчике - начало"
+36 = "Разнонаправленная мощность по фазам в трёхфазном и однофазном двухэлементном счётчике - окончание"
+37 = "Наличие тока при выключенном реле нагрузки – начало"
+38 = "Наличие тока при выключенном реле нагрузки – окончание"
+[DLMS.enum_name.SPODES3CommutationEventValues] # 0.0.96.11.2.255 События связанные с включением/выключением ПУ. коммутации реле нагрузки СТО 34.01-5.1-006-2021 таблица Д.3
+1 = "Выключение питания ПУ"
+2 = "Включение питания ПУ"
+3 = "Выключение абонента дистанционное"
+4 = "Включение абонента дистанционное"
+5 = "Получение разрешения на включение абоненту"
+6 = "Выключение реле нагрузки абонентом"
+7 = "Включение реле нагрузки абонентом"
+8 = "Выключение локальное по превышению лимита мощности"
+9 = "Выключение локальное по превышению максимального тока"
+10 = "Выключение локальное при воздействии магнитного поля"
+11 = "Выключение локальное по превышению напряжения"
+12 = "Включение локальное при возвращение напряжения в норму"
+13 = "Выключение локальное по наличию тока при отсутствии напряжения"
+14 = "Выключение локальное по разбалансу токов"
+15 = "Выключение локальное по температуре"
+16 = "Включение резервного питания"
+17 = "Отключение резервного питания"
+18 = "Выключение локальное при вскрытии клеммной крышки или корпуса"
+19 = "Выключение реле при превышении лимитов энергии по тарифам"
+20 = "Включение реле после выключения по причине превышения активной мощности"
+21 = "Включение реле после выключения по причине превышения тока"
+22 = "Включение реле после выключения по причине превышения небаланса токов"
+23 = "Включение реле после возвращения температуры в норму"
+24 = "Включение реле после возвращения магнитного поля в норму"
+25 = "Выключение реле через арбитр"
+26 = "Включение реле через арбитр"
+27 = "Включение реле через физический блокиратор"
+28 = "Выключение реле через физический блокиратор"
+29 = "Полное пропадание питания ПУ"
+[DLMS.enum_name.SPODES3ProgrammingEventValues] # 0.0.96.11.3.255 События программирования параметров ПУ СТО 34.01-5.1-006-2021 таблица Д.4
+1 = "Изменение адреса или скорости обмена RS-485-1"
+2 = "Изменение адреса или скорости обмена RS-485-2"
+3 = "Установка времени"
+4 = "Изменение параметров перехода на летнее время"
+5 = "Изменение сезонного профиля тарифного расписания ТР"
+6 = "Изменение недельного профиля ТР"
+7 = "Изменение суточного профиля ТР"
+8 = "Изменение даты активации ТР"
+9 = "Активация ТР"
+10 = "Изменение расчетного дня-часа РДЧ"
+11 = "Изменение режима индикации параметры"
+12 = "Изменение режима индикации автопереключение"
+13 = "Изменение пароля низкой секретности на чтение"
+14 = "Изменение пароля высокой секретности на запись"
+15 = "Изменение данных точки учета"
+16 = "Изменение коэффициента трансформации по току"
+17 = "Изменение коэффициента трансформации по напряжению"
+18 = "Изменение параметров линии для вычисления потерь в ЛЭП"
+19 = "Изменение лимита мощности для отключения"
+20 = "Изменение интервала времени на отключение по мощности"
+21 = "Изменение интервала времени на отключение по превышению максимального тока"
+22 = "Изменение интервала времени на отключение по максимальному напряжению"
+23 = "Изменение интервала времени на отключение по воздействию магнитного поля"
+24 = "Изменение порога для фиксации перерыва в питании"
+25 = "Изменение порога для фиксации перенапряжения"
+26 = "Изменение порога для фиксации провала напряжения"
+27 = "Изменение порога для фиксации превышения тангенса"
+28 = "Изменение порога для фиксации коэффициента несимметрии напряжений"
+29 = "Изменение согласованного напряжения"
+30 = "Изменение интервала интегрирования пиковой мощности"
+31 = "Изменение периода захвата профиля 1 ="
+32 = "Изменение периода захвата профиля 2"
+33 = "Изменение режима подсветки LCD"
+34 = "Изменение режима телеметрии 1"
+35 = "Очистка месячного журнала"
+36 = "Очистка суточного журнала"
+37 = "Очистка журнала напряжения"
+38 = "Очистка журнала тока"
+39 = "Очистка журнала вкл/выкл"
+40 = "Очистка журнала внешних воздействий"
+41 = "Очистка журнала соединений"
+42 = "Очистка журнала несанкционированного доступа"
+43 = "Очистка журнала качества сети"
+44 = "Очистка журнала тангенса"
+45 = "Очистка журнала входов/выходов"
+46 = "Очистка профиля 1"
+47 = "Очистка профиля 2"
+48 = "Очистка профиля 3"
+49 = "Изменение таблицы специальных дней"
+50 = "Изменение режима управления реле"
+51 = "Фиксация показаний в месячном журнале"
+52 = "Изменение режима инициативного выхода"
+53 = "Изменение одноадресного ключа для низкой секретности"
+54 = "Изменение широковещательного ключа шифрования для низкой секретности"
+55 = "Изменение одноадресного ключа для высокой секретности"
+56 = "Изменение широковещательного ключа для высокой секретности"
+57 = "Изменение ключа аутентификации для высокой секретности"
+58 = "Изменение мэстер-ключа"
+59 = "Изменение уровня преобразования для низкой секретности"
+60 = "Изменение уровня преобразования для высокой секретности"
+61 = "Изменение номера дистанционного дисплея"
+62 = "Изменение режима учета активной энергии по модулю или раздельно в двух направлениях"
+63 = "Установка времени по GPS/ГЛОНАСС"
+64 = "Изменение режима отключения по обрыву нейтрали"
+65 = "Обновление ПО"
+66 = "Изменение режима отключения по разбалансу токов"
+67 = "Изменение режима отключения по температуре"
+68 = "Коррекция времени"
+69 = "Изменение ключа аутентификации для низкой секретности"
+70 = "Очистка флагов инициативного выхода"
+71 = "Изменение таймаута для HDLC-соединения"
+72 = "Изменение часов болъших нагрузок"
+73 = "Изменение часов контроля максимума"
+74 = "Изменение схемы подключения"
+75 = "Изменение режима телеметрии 2"
+76 = "Изменение режима телеметрии 3"
+77 = "Изменение режима телеметрии 4"
+78 = "Изменение режима отключения при вскрытии клеммной крышки или корпуса"
+79 = "Изменение настройки активного коммуникационного профиля для портов связи"
+80 = "Очистка журнала качества сети на месячном интервале"
+81 = "Изменение интервала интегрирования параметров сети"
+82 = "Изменение порогового значения по времени. Коэффициент реактивной мощности tg <р средний по всем фазам"
+83 = "Изменение порогового значения по времени. Дифференциальньм ток. % от величины наибольшего ток"
+84 = "Изменение порогового значения по времени. Коэффициент несимметрии по обратной последовательности"
+85 = "Изменение адреса или скорости обмена Оптопорт Р1"
+86 = "Изменение адреса или скорости обмена Порт Р4"
+87 = "Изменение фильтра событий отключения реле нагрузки"
+88 = "Изменение монитора событий реле нагрузки"
+89 = "Изменение настройки учёта энергии"
+90 = "Изменение порогового значения отклонения частоты"
+91 = "Изменение порогового значения контроля активной мощности на интервале интегрирования"
+92 = "Изменение порогового значения контроля активной мощности на интервале интегрирования в часы пиковых нагрузок"
+93 = "Изменение времени фиксации стоп кадра. Фиксация стоп кадра"
+94 = "Монитор событий реле нагрузки"
+95 = "Монитор событий реле сигнализации 1"
+96 = "Монитор событий реле сигнализации 2"
+97 = "Монитор событий реле сигнализации 3"
+98 = "Монитор событий реле сигнализации 4"
+99 = "Изменение параметров арбитра реле нагрузки"
+100 = "Изменение параметров арбитра реле сигнализации 1"
+101 = "Изменение параметров арбитра реле сигнализации 2"
+102 = "Изменение параметров арбитра реле сигнализации 3"
+103 = "Изменение параметров арбитра реле сигнализации 4"
+104 = "Изменение фильтра событий реле сигнализации 1"
+105 = "Изменение фильтра событий реле сигнализации 2"
+106 = "Изменение фильтра событий реле сигнализации 3 "
+107 = "Изменение фильтра событий реле сигнализации 4"
+108 = "Изменение режима управления реле сигнализации 1"
+109 = "Изменение режима управления реле сигнализации 2"
+110 = "Изменение режима управления реле сигнализации 3"
+111 = "Изменение режима управления реле сигнализации 4"
+112 = "Изменение типа контакта реле сигнализации"
+113 = "Изменение таймаута для TCP/UDP соединения (Оптопорт P1)"
+114 = "Изменение таймаута для TCP/UDP соединения (Порт P2)"
+115 = "Изменение таймаута для TCP/UDP соединения (Порт P3)"
+116 = "Изменение таймаута для TCP/UDP соединения (Порт P4)"
+117 = "Очистка журнала «выхода тангенса за порог на интервале интегрирования»"
+118 = "Очистка журнала «коррекции времени»"
+119 = "Очистка журнала «На начало года»"
+120 = "Резерв"
+121 = "Очистка журнала «Контроля мощности»"
+122 = "Очистка журнала «Батареи»"
+123 = "Очистка журнала «Контроль блокиратора реле нагрузки»"
+124 = "Очистка журнала «Контроль температуры»"
+125 = "Очистка журнала «Отклонение напряжения фазы А»"
+126 = "Очистка журнала «Отклонение напряжения фазы B»"
+127 = "Очистка журнала «Отклонение напряжения фазы C»"
+128 = "Очистка журнала «Отклонение линейного напряжения AB»"
+129 = "Очистка журнала «Отклонение линейного напряжения BC»"
+130 = "Очистка журнала «Отклонение линейного напряжения CA»"
+131 = "Очистка журнала «Превышение напряжения»"
+132 = "Очистка журнала «Прерывание напряжения»"
+133 = "Очистка журнала «Телесигнализация»"
+134 = "Очистка журнала «Нештатная ситуация сети»"
+135 = "Изменение порога напряжения по нулевой последовательности, время до срабатывания события, с (нештатная ситуация сети)"
+136 = "Изменение порога напряжения по нулевой последовательности, время задержки установки события PUSH, с (нештатная ситуация сети)"
+137 = "Изменение порога напряжения, минимальное значение, В(нештатная ситуация сети)"
+138 = "Изменение порога напряжения, время до срабатывания события, с(нештатная ситуация сети)"
+139 = "Изменение порога напряжения, время задержки установки события PUSH, с (нештатная ситуация сети)"
+140 = "Изменение порога напряжения по обратной последовательности, максимальное значение, В (нештатная ситуация сети)"
+141 = "Изменение порога напряжения по обратной последовательности, время до срабатывания события, с (нештатная ситуация сети)"
+142 = "Изменение порога напряжения по обратной последовательности, время задержки установки события PUSH, с (нештатная ситуация сети)"
+143 = "Обжатие электронных пломб"
+144 = "Очистка фиксации событий воздействия магнитного и/или ВЧ поля"
+145 = "Изменение часового пояса"
+146 = "Изменение последовательности вывода на ЖКИ в режиме «Автопрокрутка»"
+147 = "Изменение последовательности вывода на ЖКИ в режиме «По кнопке»"
+148 = "Изменение уровня лимита по току"
+149 = "Изменение уровня лимита по напряжению"
+150 = "Номер аварийного тарифа"
+1024 = "КПЗ. Изменение конфигурации ПУ"
+[DLMS.enum_name.SPODES3ExternalEventValues] # 0.0.96.11.4.255 События внешних воздействий СТО 34.01-5.1-006-2021 таблица Д.5
+1 = "Магнитное поле - начало"
+2 = "Магнитное поле - окончание"
+3 = "Срабатывание электронной пломбы крышки клеммников"
+4 = "Срабатывание электронной пломбы корпуса"
+5 = "Срабатывание электронной пломбы внешнего датчика"
+6 = "Воздействие ВЧ поля - начало"
+7 = "Воздействие ВЧ поля- окончание"
+[DLMS.enum_name.KPZExternalEventValues] # Расширение над SPODES3ExternalEventValues
+129 = "Магнитное поле - начало"
+[DLMS.enum_name.SPODES3CommunicationEventValues] # 0.0.96.11.5.255 Коммуникационные события СТО 34.01-5.1-006-2021 таблица Д.6
+1 = "Разорвано соединение интерфейс"
+2 = "Установлено соединение интерфейс"
+[DLMS.enum_name.SPODES3AccessEventValues] # for 0.0.96.11.6.255 События контроля доступа СТО 34.01-5.1-006-2021 таблица Д.7
+1 = "Попытка несанкционированного доступа интерфейс"
+2 = "Нарушение требований протокола"
+3 = "Блокировка по превышению количества неправильных паролей"
+4 = "Ошибка верификации прошивки"
+[DLMS.enum_name.SPODES3SelfDiagnosticEventValues] # 0.0.96.11.7.255 Коды событий для журнала самодиагностики СТО 34.01-5.1-006-2021 таблица Д.8
+1 = "Инициализация ПУ"
+2 = "Измерительный блок — ошибка"
+3 = "Измерительный блок — норма"
+4 = "Вычислительный блок — ошибка"
+5 = "Часы реального времени — ошибка"
+6 = "Часы реального времени — норма"
+7 = "Блок питания — ошибка"
+8 = "Блок питания — норма"
+9 = "Дисплей — ошибка"
+10 = "Дисплей — норма"
+11 = "Блок памяти — ошибка"
+12 = "Блок памяти — норма"
+13 = "Блок памяти программ — ошибка"
+14 = "Блок памяти программ — норма"
+15 = "Система тактирования ядра — ошибка"
+16 = "Система тактирования ядра — норма"
+17 = "Система тактирования часов — ошибка"
+18 = "Система тактирования часов — норма"
+19 = "Вычислительный блок — норма"
+[DLMS.enum_name.SPODES3ReactivePowerEventValues] # 0.0.96.11.8.255 События по превышению реактивной мощности tg ф тангенс сети СТО 34.01-5.1-006-2021 таблица Д.9
+1 = "Превышение установленного порога — начало"
+2 = "Превышение установленного порога — окончание"
+[DLMS.flag_name.SecurityPolicyVer1]
+2="запрос с аутентификацией"
+3="зашифрованный запрос"
+4="запрос с цифровой подписью"
+5="ответ с аутентификацией"
+6="зашифрованный ответ"
+7="ответ с цифровой подписью"
+[DLMS.flag_name.SPODES3PowerQuality2EventValues] # 0.0.96.5.1.255 Статус качества сети профиль суточных показаний
+0 = "Отклонение напряжения более чем на 10% от номинала"
+1 = "Отклонение частоты более чем на 0,4 Гц от номинала"
+[DLMS.flag_name.SPODES3PowerQuality1EventValues] # for 0.0.96.5.4.255 Статус качества сети журнал качества сети
+0 = "Снижение напряжения более чем на 10%"
+3 = "Повышение напряжения более чем на 10%"
+4 = "Снижение частоты более чем на 0,4 Гц"
+5 = "Снижение частоты более чем на 0,2 Гц"
+6 = "Увеличение частоты более чем на 0,2 Гц"
+7 = "Увеличение частоты более чем на 0,4 Гц"
+14 = "Снижение частоты более, чем на заданный порог"
+15 = "Увеличение частоты более, чем на заданный порог"
+[DLMS.flag_name.SPODES3Alarm1Values] # Пояснения к таблице Г.2: 4. Объект 0.0.97.98.0.255 отражает текущее состояние инициативного выхода
+0 = "Cобытие в журнале самодиагностики"
+1 = "Прерывание напряжения"
+2 = "Событие в журнале параметров качества сети"
+3 = "Воздействие магнитного поля"
+4 = "Вскрытие клеммной крышки"
+5 = "Вскрытие корпуса"
+6 = "Превышение лимита активной мощности"
+7 = "Сработка реле по максимальному току"
+8 = "Сработка реле по магнитному полю"
+9 = "Сработка реле по максимальному напряжению"
+10 = "Сработка реле по небалансу токов"
+11 = "Сработка реле по превышению температуры"
+12 = "Изменение состояние дискретных входов"
+13 = "Событие в журнале программирования"
+14 = "Превышение лимита небаланса токов"
+15 = "Сработка реле по матрице событий"
+16 = "Возврат реле в замкнутое состояние"
+[DLMS.flag_name.KPZAlarm1Values] # Расширение над SPODES3Alarm1Values
+30 = "Превышение максимального тока"
+31 = "Период неопроса"
+
+[DLMS]
+scaler_prefix = [
+    {name = "к", value = 3}
+]
+
+Unit = [
+    {e=1, v="год"},
+    {e=2, v="мес"},
+    {e=3, v="нед"},
+    {e=4, v="дн"},
+    {e=5, v="ч"},
+    {e=6, v="мин"},
+    {e=7, v="с"},
+    {e=8, v="°"},
+    {e=9, v="°c"},
+    {e=10, v="валюта"},
+    {e=11, v="м"},
+    {e=12, v="м/с"},
+    {e=13, v="м³"},
+    {e=14, v="м³*"},
+    {e=15, v="м³/ч"},
+    {e=16, v="м³/ч*"},
+    {e=17, v="м³/дн"},
+    {e=18, v="м³/дн*"},
+    {e=19, v="л"},
+    {e=20, v="кг"},
+    {e=21, v="Н"},
+    {e=22, v="Нм"},
+    {e=23, v="Па"},
+    {e=24, v="100000 Н/м²"},
+    {e=25, v="Дж"},
+    {e=26, v="Дж/ч"},
+    {e=27, v="Вт", scaler=3},
+    {e=28, v="В*А", scaler=3},
+    {e=29, v="ВАР", scaler=3},
+    {e=30, v="Вт*ч", scaler=3},
+    {e=31, v="В*А*ч", scaler=3},
+    {e=32, v="ВАР*ч", scaler=3},
+    {e=33, v="А"},
+    {e=34, v="к"},
+    {e=35, v="В"},
+    {e=36, v="В/м"},
+    {e=37, v="ф"},
+    {e=38, v="Ом"},
+    {e=39, v="Ом*м"},
+    {e=40, v="Вб"},
+    {e=41, v="Тл"},
+    {e=42, v="А/м"},
+    {e=43, v="Гн"},
+    {e=44, v="Гц"},
+    {e=45, v="1/(Вт*ч)"},
+    {e=46, v="1/(ВАР*ч)"},
+    {e=47, v="1/(В*А*ч)"},
+    {e=48, v="В²*ч"},
+    {e=49, v="А²*ч"},
+    {e=50, v="кг/с"},
+    {e=51, v="см"},
+    {e=52, v="К"},
+    {e=53, v="1/(В²*ч)"},
+    {e=54, v="1/(А²*ч)"},
+    {e=55, v="1/м³"},
+    {e=56, v="%"},
+    {e=57, v="А*ч"},
+    {e=58, v="зарезервировано"},
+    {e=59, v="зарезервировано"},
+    {e=60, v="3600 Дж/м³"},
+    {e=61, v="Дж/м³"},
+    {e=62, v="моль %"},
+    {e=63, v="г/м³"},
+    {e=64, v="Па*с"},
+    {e=65, v="Дж/кг"},
+    {e=66, v="г/см²"},
+    {e=67, v="атм"},
+    {e=68, v="зарезервировано"},
+    {e=69, v="зарезервировано"},
+    {e=70, v="дБм"},
+    {e=71, v="дБмкВ"},
+    {e=72, v="дБ"},
+    {e=73, v="зарезервировано"},
+    {e=74, v="зарезервировано"},
+    {e=75, v="зарезервировано"},
+    {e=76, v="зарезервировано"},
+    {e=77, v="зарезервировано"},
+    {e=78, v="зарезервировано"},
+    {e=79, v="зарезервировано"},
+    {e=80, v="зарезервировано"},
+    {e=81, v="зарезервировано"},
+    {e=82, v="зарезервировано"},
+    {e=83, v="зарезервировано"},
+    {e=84, v="зарезервировано"},
+    {e=85, v="зарезервировано"},
+    {e=86, v="зарезервировано"},
+    {e=87, v="зарезервировано"},
+    {e=88, v="зарезервировано"},
+    {e=89, v="зарезервировано"},
+    {e=90, v="зарезервировано"},
+    {e=91, v="зарезервировано"},
+    {e=92, v="зарезервировано"},
+    {e=93, v="зарезервировано"},
+    {e=94, v="зарезервировано"},
+    {e=95, v="зарезервировано"},
+    {e=96, v="зарезервировано"},
+    {e=97, v="зарезервировано"},
+    {e=98, v="зарезервировано"},
+    {e=99, v="зарезервировано"},
+    {e=100, v="зарезервировано"},
+    {e=101, v="зарезервировано"},
+    {e=102, v="зарезервировано"},
+    {e=103, v="зарезервировано"},
+    {e=104, v="зарезервировано"},
+    {e=105, v="зарезервировано"},
+    {e=106, v="зарезервировано"},
+    {e=107, v="зарезервировано"},
+    {e=108, v="зарезервировано"},
+    {e=109, v="зарезервировано"},
+    {e=110, v="зарезервировано"},
+    {e=111, v="зарезервировано"},
+    {e=112, v="зарезервировано"},
+    {e=113, v="зарезервировано"},
+    {e=114, v="зарезервировано"},
+    {e=115, v="зарезервировано"},
+    {e=116, v="зарезервировано"},
+    {e=117, v="зарезервировано"},
+    {e=118, v="зарезервировано"},
+    {e=119, v="зарезервировано"},
+    {e=120, v="зарезервировано"},
+    {e=121, v="зарезервировано"},
+    {e=122, v="зарезервировано"},
+    {e=123, v="зарезервировано"},
+    {e=124, v="зарезервировано"},
+    {e=125, v="зарезервировано"},
+    {e=126, v="зарезервировано"},
+    {e=127, v="зарезервировано"},
+    {e=128, v="in"},
+    {e=129, v="ft"},
+    {e=130, v="lb"},
+    {e=131, v="°f"},
+    {e=132, v="°r"},
+    {e=133, v="sq. in"},
+    {e=134, v="sq ft"},
+    {e=135, v="ac"},
+    {e=136, v="cu in"},
+    {e=137, v="cu ft"},
+    {e=138, v="ac ft"},
+    {e=139, v="gal(imp)"},
+    {e=140, v="gal(us)"},
+    {e=141, v="lbf"},
+    {e=142, v="psi"},
+    {e=143, v="lb/cu ft"},
+    {e=144, v="lb/(ft .s)"},
+    {e=145, v="sq ft/s"},
+    {e=146, v="btu"},
+    {e=147, v="thm(ec)"},
+    {e=148, v="thm(us)"},
+    {e=149, v="btu/lb"},
+    {e=150, v="btu/cu ft"},
+    {e=151, v="cu ft rv"},
+    {e=152, v="ft/s"},
+    {e=153, v="cu ft/s"},
+    {e=154, v="cu ft/min"},
+    {e=155, v="cu ft/h"},
+    {e=156, v="cu ft/d"},
+    {e=157, v="ac ft/s"},
+    {e=158, v="ac ft/min"},
+    {e=159, v="ac ft/h"},
+    {e=160, v="ac ft/d"},
+    {e=161, v="gal(imp) rv"},
+    {e=162, v="gal(imp)/s"},
+    {e=163, v="gal(imp)/min"},
+    {e=164, v="gal(imp)/h"},
+    {e=165, v="gal(imp)/d"},
+    {e=166, v="gal(us) rv"},
+    {e=167, v="gal(us)/s"},
+    {e=168, v="gal(us)/min"},
+    {e=169, v="gal(us)/h"},
+    {e=170, v="gal(us)/d"},
+    {e=171, v="btu/s"},
+    {e=172, v="btu/min"},
+    {e=173, v="btu/h"},
+    {e=174, v="btu/d"},
+    {e=175, v="зарезервировано"},
+    {e=176, v="зарезервировано"},
+    {e=177, v="зарезервировано"},
+    {e=178, v="зарезервировано"},
+    {e=179, v="зарезервировано"},
+    {e=180, v="зарезервировано"},
+    {e=181, v="зарезервировано"},
+    {e=182, v="зарезервировано"},
+    {e=183, v="зарезервировано"},
+    {e=184, v="зарезервировано"},
+    {e=185, v="зарезервировано"},
+    {e=186, v="зарезервировано"},
+    {e=187, v="зарезервировано"},
+    {e=188, v="зарезервировано"},
+    {e=189, v="зарезервировано"},
+    {e=190, v="зарезервировано"},
+    {e=191, v="зарезервировано"},
+    {e=192, v="зарезервировано"},
+    {e=193, v="зарезервировано"},
+    {e=194, v="зарезервировано"},
+    {e=195, v="зарезервировано"},
+    {e=196, v="зарезервировано"},
+    {e=197, v="зарезервировано"},
+    {e=198, v="зарезервировано"},
+    {e=199, v="зарезервировано"},
+    {e=200, v="зарезервировано"},
+    {e=201, v="зарезервировано"},
+    {e=202, v="зарезервировано"},
+    {e=203, v="зарезервировано"},
+    {e=204, v="зарезервировано"},
+    {e=205, v="зарезервировано"},
+    {e=206, v="зарезервировано"},
+    {e=207, v="зарезервировано"},
+    {e=208, v="зарезервировано"},
+    {e=209, v="зарезервировано"},
+    {e=210, v="зарезервировано"},
+    {e=211, v="зарезервировано"},
+    {e=212, v="зарезервировано"},
+    {e=213, v="зарезервировано"},
+    {e=214, v="зарезервировано"},
+    {e=215, v="зарезервировано"},
+    {e=216, v="зарезервировано"},
+    {e=217, v="зарезервировано"},
+    {e=218, v="зарезервировано"},
+    {e=219, v="зарезервировано"},
+    {e=220, v="зарезервировано"},
+    {e=221, v="зарезервировано"},
+    {e=222, v="зарезервировано"},
+    {e=223, v="зарезервировано"},
+    {e=224, v="зарезервировано"},
+    {e=225, v="зарезервировано"},
+    {e=226, v="зарезервировано"},
+    {e=227, v="зарезервировано"},
+    {e=228, v="зарезервировано"},
+    {e=229, v="зарезервировано"},
+    {e=230, v="зарезервировано"},
+    {e=231, v="зарезервировано"},
+    {e=232, v="зарезервировано"},
+    {e=233, v="зарезервировано"},
+    {e=234, v="зарезервировано"},
+    {e=235, v="зарезервировано"},
+    {e=236, v="зарезервировано"},
+    {e=237, v="зарезервировано"},
+    {e=238, v="зарезервировано"},
+    {e=239, v="зарезервировано"},
+    {e=240, v="зарезервировано"},
+    {e=241, v="зарезервировано"},
+    {e=242, v="зарезервировано"},
+    {e=243, v="зарезервировано"},
+    {e=244, v="зарезервировано"},
+    {e=245, v="зарезервировано"},
+    {e=246, v="зарезервировано"},
+    {e=247, v="зарезервировано"},
+    {e=248, v="зарезервировано"},
+    {e=249, v="зарезервировано"},
+    {e=250, v="зарезервировано"},
+    {e=251, v="зарезервировано"},
+    {e=252, v="зарезервировано"},
+    {e=253, v="расширенная"},
+    {e=254, v="другое"},
+    {e=255, v="ед"}]
+
+AccessMode = [
+    {e=0, v="нет доступа"},
+    {e=1, v="только чтение"},
+    {e=2, v="только запись"},
+    {e=3, v="чтение и запись"},
+    {e=4, v="только чтение с проверкой подлинности"},
+    {e=5, v="только запись с проверкой подлинности"},
+    {e=6, v="чтение и запись с проверкой подлинности"},
+]
+
+ClientSAP = [
+    {e=0, v="Отсутствует"},
+    {e=1, v="Процесс управления клиентами"},
+    {e=0x10, v="Публичный клиент"},
+    {e=0x20, v="Считыватель показаний"},
+    {e=0x30, v="Конфигуратор"},
+    {e=0x40, v="Инициативный"},
+    {e=0x50, v="Обновление ПО"},
+    {e=0x60, v="Домашний дисплей"},
+]
+
+AuthenticationMethod = [
+    {e=0, v="Нет безопасности"},
+    {e=1, v="Общие секреты"},
+    {e=2, v="Авто ключ IFF"}
+]
+
+MechanismIdElement = [
+    {e=0, v="Низший, без секретности"},
+    {e=1, v="Низкий, без шифрования с паролем"},
+    {e=2, v="Высокий"},
+    {e=3, v="Высокий, MD5"},
+    {e=4, v="Высокий, SHA1"},
+    {e=5, v="Высокий, GMAC"},
+    {e=6, v="Высокий, SHA256"},
+    {e=7, v="Высокий, ECDSAL"},
+]
+
+AssociationStatus = [
+    {e=0, v="нет соединения"},
+    {e=1, v="ожидание соединения"},
+    {e=2, v="соединение установлено"},
+]
+
+AccessModeMeth = [
+    {e=0, v="нет доступа"},
+    {e=1, v="доступно"},
+    {e=2, v="доступ с проверкой подлинности"},
+]
+
+CommSpeed = [
+    {e=0, v="300 бод"},
+    {e=1, v="600 бод"},
+    {e=2, v="1200 бод"},
+    {e=3, v="2400 бод"},
+    {e=4, v="4800 бод"},
+    {e=5, v="9600 бод"},
+    {e=6, v="19200 бод"},
+    {e=7, v="38400 бод"},
+    {e=8, v="57600 бод"},
+    {e=9, v="115200 бод"},
+]
+
+RestrictionType = [
+    {e=0, v="Без ограничений"},
+    {e=1, v="Ограничение по дате"},
+    {e=2, v="Ограничение по входу"},
+]
+
+KeyInfoType = [
+    {e=0, v="Идентификационный ключ"},
+    {e=1, v="Обернутый ключ"},
+    {e=2, v="Согласованный ключ"},
+]
+
+ProtectionType = [
+    {e=0, v="Аутентификация"},
+    {e=1, v="Зашифрованный запрос"},
+    {e=2, v="Обернутый ключ"},
+    {e=3, v="Согласованный ключ"},
+]
+
+TransportServiceType = [
+    {e=0, v="TCP"},
+    {e=1, v="UDP"},
+    {e=2, v="зарезервированно для FTP"},
+    {e=3, v="зарезервированно для SMTP"},
+    {e=4, v="SMS"},
+    {e=5, v="HDLC"},
+    {e=6, v="M_BUS"},
+    {e=7, v="зарезервированно для ZIGBEE"},
+    {e=8, v="DLMS Gateway"},
+]
+
+MessageType = [
+    {e=0, v="A-XDR кодировка xDLMS APDU"},
+    {e=1, v="XML кодировка xDLMS APDU"},
+]
+
+PushOperationMethod = [
+    {e=0, v="Неподтвержденная, повторение при поддержке сбоя на уровне протокола"},
+    {e=1, v="Неподтверждено, повторение пропущенного подтверждения протокола"},
+    {e=2, v="подтверждено, повторите пропущенное подтверждение"},
+]
+IdentifiedKeyInfoOptions = [
+    {e=0, v="Глобальный ключ шифрования одноадресный"},
+    {e=1, v="Глобальный ключ шифрования широковещательный"},
+]
+KEKId = [
+    {e=0, v="мастер ключ"},
+]
+
+CommunicationChannel = [
+    {e=0, v="Оптический порт"},
+    {e=1, v="RS-485"},
+    {e=2, v="TCP/IP"},
+    {e=3, v="BLE"},
+]
+ClockBase = [
+    {e=0, v="не определен"},
+    {e=1, v="внутренний кварцевый генератор"},
+    {e=2, v="от сети 50 Гц"},
+    {e=3, v="от сети 60 Гц"},
+    {e=4, v="от системы GPS (GLONASS)"},
+    {e=5, v="от радиосигналов точного времени"},
+]
+ControlState = [
+    {e=0, v="отключено"},
+    {e=1, v="включено"},
+    {e=2, v="Готово к переподключению"},
+]
+ControlMode = [
+    {e=0, v="Отсутствует. Объект управления разъединением всегда находится в состоянии «подключено»"},
+    {e=1, v="Отключение: удаленные(B, C), ручной(F), локальный(G) Переподключение: удаленный(D), ручной(E)"},
+    {e=2, v="Отключение: удаленные(B, C), ручной(F), локальный(G) Переподключение: удаленный(A), ручной(E)"},
+    {e=3, v="Отключение: удаленные(B, C), локальный(G) Переподключение: удаленный(D), ручной(E)"},
+    {e=4, v="Отключение: удаленные(B, C), локальный(G) Переподключение: удаленный(A), ручной(E)"},
+    {e=5, v="Отключение: удаленные(B, C), ручной(F), локальный(G) Переподключение: удаленный(D), ручной(E), локальный(H)"},
+    {e=6, v="Отключение: удаленные(B, C), локальный(G) Переподключение: удаленный(D), ручной(E), локальный(H)"},
+    {e=129, v="Отключение: удаленные(B, C), ручной(F), локальный(M) Переподключение: удаленный(D), ручной(E)"},
+    {e=130, v="Отключение: удаленные(B, C), ручной(F), локальный(M) Переподключение: удаленный(A), ручной(E)"},
+    {e=131, v="Отключение: удаленные(B, C), локальный(M) Переподключение: удаленный(D), ручной(E)"},
+    {e=132, v="Отключение: удаленные(B, C), локальный(M) Переподключение: удаленный(A)"},
+    {e=133, v="Отключение: удаленные(B, C), локальный(M) Переподключение: удаленный(A), локальный(K)"},
+    {e=134, v="Отключение: удаленные(B, C), локальный(M, S) Переподключение: удаленный(D), ручной(E), локальный(P)"},
+]
+Status = [
+    {e=0, v="не зарегистрирован"},
+    {e=1, v="зарегистрирован, домашняя сеть"},
+    {e=2, v="не зарегистрирован, но MT в настоящее время ищет нового оператора для регистрации в"},
+    {e=3, v="регистрация отвергнута"},
+    {e=4, v="неизвестно"},
+    {e=5, v="зарегистрирован, роуминг"},
+]
+CSAttachment = [
+    {e=0, v="не aктивно"},
+    {e=1, v="входящий звонок"},
+    {e=2, v="активно"},
+]
+PSStatus = [
+    {e=0, v="не aктивно"},
+    {e=1, v="GPRS"},
+    {e=2, v="EDGE"},
+    {e=3, v="UMTS"},
+    {e=4, v="HSDPA"},
+    {e=5, v="LTE"},
+    {e=6, v="CDMA"},
+]
+ImageTransferStatus = [
+    {e=0, v="Передача данных не инициированна"},
+    {e=1, v="Передача данных инициированна"},
+    {e=2, v="Проверка данных инициированна"},
+    {e=3, v="Проверка данных пройдена"},
+    {e=4, v="Проверка данных неудачна"},
+    {e=5, v="Активация данных инициированна"},
+    {e=6, v="Активация данных пройдена"},
+    {e=7, v="Активация данных неудачна"},
+]
+SortMethod = [
+    {e=1, v="FIFO(первый пришел первый ушел)"},
+    {e=2, v="LIFO(последний пришел первый ушел)"},
+    {e=3, v="наибольший"},
+    {e=4, v="наименьший"},
+    {e=5, v="ближайший к нулю"},
+    {e=6, v="дальний от нуля"},
+]
+SecurityPolicy = [
+    {e=0, v="ничего не делать"},
+    {e=1, v="Все сообщения должны быть аутентифицированы"},
+    {e=2, v="Все сообщения должны быть зашифрованы"},
+    {e=3, v="Все сообщения должны быть аутентифицированы и зашифрованы"},
+]
+SecuritySuite = [
+    {e=0, v="AES-GSM-128 аутентификация, шифрование и упаковка ключей"},
+    {e=1, v="AES-GSM-128 аутентификация, шифрование, цифровая подпись, согласование ключей, хеширование, V.44 сжатие и упаковка ключей"},
+    {e=2, v="AES-GSM-256 аутентификация, шифрование, цифровая подпись, согласование ключей, хеширование, V.44 сжатие и упаковка ключей"},
+]
+KeyID = [
+    {e=0, v="Глобальный одноадресный ключ шифрования"},
+    {e=1, v="Глобальный широковещательный ключ шифрования"},
+    {e=2, v="Ключ аутентификации"},
+    {e=3, v="Мастер ключ"},
+]
+SecurityPolicyVer1 = [
+    {e=0, v="не используется, всегда 0"},
+    {e=1, v="не используется, всегда 0"},
+    {e=2, v="запрос с аутентификацией"},
+    {e=3, v="зашифрованный запрос"},
+    {e=4, v="запрос с цифровой подписью"},
+    {e=5, v="ответ с аутентификацией"},
+    {e=6, v="зашифрованный ответ"},
+    {e=7, v="ответ с цифровой подписью"},
+]
+
+CertificateEntity = [
+    {e=0, v="Сервер"},
+    {e=1, v="Клиент"},
+    {e=2, v="Администратор"},
+    {e=3, v="Прочее"},
+]
+
+CertificateType = [
+    {e=0, v="Цифровая подпись"},
+    {e=1, v="Соглосование ключей"},
+    {e=2, v="TLS"},
+    {e=3, v="Прочее"},
+]
+
+KeyPair = [
+    {e=0, v="Цифровая подпись пары ключей"},
+    {e=1, v="Соглосование пары ключей"},
+    {e=2, v="TLS пары ключей"},
+]
+
+CertificateIdentificationType = [
+    {e=0, v="Идентификация сертификата по объекту"},
+    {e=1, v="Идентификация сертификата по серийному номеру"},
+]
+
+ServiceId = [
+    {e=0, v="Запись в атрибут"},
+    {e=1, v="Выполнить конкретный метод"},
+]
+TYPE = [
+    {e=1, v="Размер времени выполнения = 1; Подстановочный знак в дате разрешен"},
+    {e=2, v="Размер времени выполнения = N; Все значения времени одинаковы, подстановочный знак на дате не допускается"},
+    {e=3, v="Размер времени выполнения = N; Все значения времени одинаковы, подстановочный знак в дате разрешены"},
+    {e=4, v="Размер времени выполнения = N; Значения времени могут быть разными, подстановочный знак даты не допускается"},
+    {e=5, v="Размер времени выполнения = N; Значения времени могут быть разными, подстановочные знаки в дате разрешены"},
+]
+
+[[DLMS.firmwares]]
+man="KPZ"
+path="./Firmwares/firmwares.dat"
+[DLMS.firmwares.key]
+codec="ascii"
+value="00000000password"
+
+[[DLMS.firmwares]]
+man="101"
+path="./Firmwares/firmwares.dat"
+[DLMS.firmwares.key]
+codec="ascii"
+value="00000000password"

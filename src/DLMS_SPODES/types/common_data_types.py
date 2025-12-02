@@ -298,6 +298,12 @@ def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDat
         print(F'{e.args}')
 
 
+class Constant(CommonDataType, Protocol):
+    """override raise for set"""
+    def set(self, *args, **kwargs):
+        raise AttributeError(F"not support <set> for {self.__class__.__name__} constant")
+
+
 @runtime_checkable
 class SimpleDataType(CommonDataType, Protocol):
 

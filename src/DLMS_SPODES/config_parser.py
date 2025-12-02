@@ -23,8 +23,8 @@ def get_values(*args: str) -> dict | None:
 
 if not os.path.isfile(path := ".//config.toml"):
     path = F"{os.path.dirname(__file__)}{path}"
-elif not os.path.isfile(path):
-    print("NOT FIND CONFIGURATION: <config.toml>")
+if not os.path.isfile(path):
+    raise RuntimeError("NOT FIND CONFIGURATION: <config.toml>")
 with open(path, "rb") as f:
     config = tomllib.load(f)
     print(F"Find configuration <config.toml> with path: {f}")

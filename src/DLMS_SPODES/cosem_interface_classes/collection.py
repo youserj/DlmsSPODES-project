@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
 from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, cast, Annotated
-
 from DLMS_SPODES.types.type_alias import attr2d
 from semver import Version as SemVer
 from StructResult import result
@@ -18,7 +17,7 @@ from ..types.implementations import structs, enums, octet_string
 from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
 from .arbitrator import Arbitrator
-from .association_ln import mechanism_id
+from .association_ln import mechanism_id, client_sap
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
 from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ObjectListElement
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
@@ -693,7 +692,7 @@ class ID:
     man: bytes
     f_id: AttrData
     f_ver: AttrData
-    sap: enums.ClientSAP
+    sap: client_sap.ClientSAP
 
     def __bytes__(self) -> bytes:
         return self.man + self.sap.contents + bytes(self.f_id) + bytes(self.f_ver)
@@ -1141,7 +1140,7 @@ class Collection:
             ret.append(self.par2obj(Parameter(olt.logical_name.contents)).unwrap())
         return ret
 
-    def sap2objects(self, sap: enums.ClientSAP) -> result.List[IC]:
+    def sap2objects(self, sap: client_sap.ClientSAP) -> result.List[IC]:
         res = result.List()
         for par in self.sap2association(sap).iter_pars():
             if isinstance(res1 := self.par2obj(par), result.Error):
@@ -1350,7 +1349,7 @@ class Collection:
             raise ValueError(F"not find {selector} in {obj}")
 
     @lru_cache(4)
-    def get_association_id(self, client_sap: enums.ClientSAP) -> int:
+    def get_association_id(self, client_sap: client_sap.ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
         for ass in get_filtered(iter(self), (ln_pattern.NON_CURRENT_ASSOCIATION,)):
             if ass.associated_partners_id.client_SAP == client_sap:
@@ -1360,7 +1359,7 @@ class Collection:
         else:
             raise ValueError(F"absent association with {client_sap}")
 
-    def sap2association(self, sap: enums.ClientSAP) -> AssociationLN:
+    def sap2association(self, sap: client_sap.ClientSAP) -> AssociationLN:
         for ass in self.iter_classID_objects(ClassID.ASSOCIATION_LN):
             if (
                 ass.associated_partners_id is not None

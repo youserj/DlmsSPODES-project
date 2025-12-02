@@ -5,7 +5,7 @@ from ... import exceptions as exc
 from ...types.implementations import arrays, enums, bitstrings, long_unsigneds, structs
 from ...types.type_alias import Attr
 from ... import pdu_enums as pdu
-from . import mechanism_id, authentication_mechanism_name
+from . import mechanism_id, authentication_mechanism_name, client_sap
 from . import method
 from . import abstract
 from ...types import choices, cdt, cst, ut
@@ -137,10 +137,9 @@ class ObjectListType(arrays.SelectionAccess, abstract.ObjectListType):
 
 
 class AssociatedPartnersType(cdt.Structure):
-    """ Contains the identifiers of the COSEM client and the COSEM server (logical device) application processes within the physical devices
-    hosting these processes, which belong to the application association modelled by the “Association LN” object. """
+    """associated_partners_type"""
     DEFAULT = (0x10, 1)
-    client_SAP: enums.ClientSAP
+    client_SAP: client_sap.ClientSAP
     server_SAP: long_unsigneds.ServerSAP
 
 
