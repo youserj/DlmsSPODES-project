@@ -2263,6 +2263,7 @@ __types: dict[bytes, type[CommonDataType]] = {
     b'\x05': DoubleLong,
     b'\x06': DoubleLongUnsigned,
     b'\x09': OctetString,
+    b'\x0A': VisibleString,
     b'\x0C': Utf8String,
     b'\x0D': Bcd,
     b'\x0F': Integer,
