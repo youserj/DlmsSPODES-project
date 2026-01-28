@@ -18,8 +18,9 @@ from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
 from .arbitrator import Arbitrator
 from .association_ln import mechanism_id, client_sap
+from .association_ln.abstract import ObjectListElement
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
-from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ObjectListElement
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ObjectListElement, AssociatedPartnersType
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver0 import PushSetup as PushSetupVer0
@@ -55,8 +56,9 @@ from .single_action_schedule import SingleActionSchedule
 from .special_days_table import SpecialDaysTable
 from .tcp_udp_setup import TCPUDPSetup
 from .. import exceptions as exc
-from ..relation_to_OBIS import get_name
+from ..relation_to_OBIS import obis2name
 from ..cosem_interface_classes import implementations as impl
+from ..cosem_interface_classes.Overview import class_id
 from ..cosem_interface_classes.overview import ClassID, CountrySpecificIdentifiers
 from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
@@ -64,7 +66,7 @@ from ..config_parser import config, get_message
 from ..obis import media_id
 from .parameter import Parameter
 from typing_extensions import deprecated, override
-from .cosem_interface_class import IC, Classifier, _LN_ELEMENT
+from .cosem_interface_class import IC, Classifier, _LN_ELEMENT, ICAElement
 from ..settings import settings
 from ..types.type_alias import Obis, Encoding, Attr, Tag, attr2i, attr2obis, attr2a, attr2b, attr2c, attr2e, attr2f, attr2d, Index, unpack_attr
 from .association_ln.abstract import ObjectListType
@@ -716,7 +718,6 @@ class Collection:
     __objs: dict[Obis, IC]
     _data: dict[Attr, cdt.CommonDataType]
     _t: dict[Attr, Tag]
-    __const_objs: int
     spec_map: str
 
     def __init__(self,
@@ -753,19 +754,15 @@ class Collection:
     def id(self) -> ID:
         return self.__id
 
-    def set_id(self, value: ID) -> None:
-        if not self.__id:
-            self.__id = value
-        else:
-            if value != self.__id:
-                raise ValueError(F"got id: {value}, expected {self.__id}")
-            else:
-                """success validation"""
+    def validate_id(self, value: ID) -> result.Ok | result.Error:
+        if value != self.__id:
+            return result.Error.from_e(ValueError(F"can't set ID: {value}, find {self.__id}"))
+        return result.OK
 
     def add_from_object_list(self, obj_list: ObjectListType) -> result.StrictOk | result.Error:
         res = result.StrictOk()
         for o_l_el in obj_list:
-            o_l_el: structs.ObjectListElement
+            o_l_el: ObjectListElement
             if isinstance(res_new := self.addIC(
                     class_id=ut.CosemClassId(int(o_l_el.class_id)),
                     version=int(o_l_el.version),
@@ -859,6 +856,12 @@ class Collection:
     def __getitem__(self, item: o.OBIS) -> IC:
         return self.__objs[item]
 
+    def attr2ICAElement(self, obis: Obis, i: Index) -> result.SimpleOrError[ICAElement]:
+        if isinstance(r_ic := self.obis2ic(obis), result.Error):
+            return r_ic
+        return r_ic.value.getAElement(i)
+
+    @deprecated("use <obis2ic> or <obis2obj>")
     def par2obj(self, par: Parameter) -> result.SimpleOrError[IC]:
         """return: DLMSObject"""
         return self.obis2ic(par.obis)
@@ -922,13 +925,13 @@ class Collection:
               version: Optional[int],
               obis: Obis) -> result.SimpleOrError[IC]:
         """ append new DLMS object to collection with return it"""
-        if isinstance(res_ic_type := get_type(
+        if isinstance(r_ic_type := get_type(
             class_id=class_id,
             ver=self.find_version(class_id) if version is None else version,
             obis=obis,
             func_map=func_maps[self.spec_map]), result.Error):
-            return res_ic_type
-        new = res_ic_type.value(obis)
+            return r_ic_type
+        new = r_ic_type.value(obis)
         return result.Simple(self.__objs.setdefault(obis, new))
 
     def get_class_version(self) -> dict[ut.CosemClassId, cdt.Unsigned]:
@@ -1003,7 +1006,7 @@ class Collection:
                             case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
                                 a_val: structs.CaptureObjectDefinition
                                 obj = self.get_object(a_val.logical_name)
-                                rep.msg = F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
+                                rep.msg = F"{obis2name(obj.obis)}.{obj.get_attr_element(int(a_val.attribute_index))}"
                             case _:
                                 pass
                 rep.log = cdt.Log(logging.INFO)
@@ -1044,7 +1047,7 @@ class Collection:
                             case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
                                 data_: structs.CaptureObjectDefinition
                                 obj = self.get_object(data_.logical_name)
-                                rep.msg = F"{get_name(data_.logical_name)}.{obj.get_attr_element(int(data_.attribute_index))}"
+                                rep.msg = F"{obis2name(obj.obis)}.{obj.get_attr_element(int(data_.attribute_index))}"
                             case _:
                                 pass
                 rep.log = cdt.Log(logging.INFO)
@@ -1135,9 +1138,9 @@ class Collection:
 
     def filter_by_ass(self, ass_id: int) -> list[IC]:
         """return only association objects"""
-        ret = list()
-        for olt in self.getASSOCIATION(ass_id).object_list:
-            ret.append(self.par2obj(Parameter(olt.logical_name.contents)).unwrap())
+        ret = []
+        for olt in self.get(self.getASSOCIATION(ass_id).object_list, ObjectListType).unwrap():
+            ret.append(self.obis2ic(olt.logical_name.contents).unwrap())
         return ret
 
     def sap2objects(self, sap: client_sap.ClientSAP) -> result.List[IC]:
@@ -1220,7 +1223,7 @@ class Collection:
                     obj=self.get_object(obj_def.logical_name),
                     par=bytes([int(obj_def.attribute_index)]))
             except EmptyAttribute as e:
-                print(F"Can't fill Scaler and Unit for {get_name(obj_def.logical_name)}: {e}")
+                print(F"Can't fill Scaler and Unit for {obis2name(obj_def.logical_name.contents)}: {e}")
             finally:
                 res.append(s_u)
         return res
@@ -1230,8 +1233,8 @@ class Collection:
             return result.Simple(obj)
         return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
 
-    def obis2obj[T: IC](self, obis: Obis, e_type: T) -> result.SimpleOrError[T]:
-        if obj := self.__objs.get(obis) is None:
+    def obis2obj[T: IC](self, obis: Obis, e_type: type[T]) -> result.SimpleOrError[T]:
+        if (obj := self.__objs.get(obis)) is None:
             return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
         if isinstance(obj, e_type):
             return result.Simple(obj)
@@ -1241,6 +1244,7 @@ class Collection:
         return self.obis2ic(ln.contents)
 
     @cached_property
+    @deprecated("use <c.ldn>")
     def LDN(self) -> impl.data.LDN:
         return self.obis2ic(b"\x00\x00\x2A\x00\x00\xff").unwrap()
 
@@ -1250,6 +1254,9 @@ class Collection:
 
     def getASSOCIATION(self, instance: int) -> AssociationLN:
         return self.obis2obj(bytes((0, 0, 40, 0, instance, 255)), AssociationLN).unwrap()
+
+    def getObjectList(self, instance: int) -> ObjectListType:
+        return self.get(self.getASSOCIATION(instance).object_list, ObjectListType).unwrap()
 
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
@@ -1353,47 +1360,37 @@ class Collection:
         """return id(association instance) from it client address without current"""
         for ass in get_filtered(iter(self), (ln_pattern.NON_CURRENT_ASSOCIATION,)):
             if ass.associated_partners_id.client_SAP == client_sap:
-                return ass.logical_name.e
+                return attr2e(ass.logical_name)
             else:
                 continue
         else:
             raise ValueError(F"absent association with {client_sap}")
 
-    def sap2association(self, sap: client_sap.ClientSAP) -> AssociationLN:
-        for ass in self.iter_classID_objects(ClassID.ASSOCIATION_LN):
-            if (
-                ass.associated_partners_id is not None
-                and ass.associated_partners_id.client_SAP == sap
-            ):
-                return ass
-            else:
+    def sap2association(self, sap: client_sap.ClientSAP) -> result.SimpleOrError[AssociationLN]:
+        acc = result.ErrorAccumulator()
+        for ass in self.iter_classID_objects(class_id.ASSOCIATION_LN):
+            if isinstance(r_par_type := acc.merge_err(self.get(ass.associated_partners_id, AssociatedPartnersType)), result.Error):
                 continue
+            if r_par_type.value.client_SAP == sap:
+                return result.Simple(ass)
         else:
-            raise exc.NoObject(F"hasn't association with {sap}")
+            return acc.as_error(msg=F"hasn't association with {sap}")
 
     @lru_cache(maxsize=1000)
-    def is_readable(self, ln: cst.LogicalName,
-                    index: int,
-                    association_id: int,
+    def is_readable(self, obis: Obis,
+                    i: int,
+                    ass_id: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
-        return self.getASSOCIATION(association_id).is_readable(
-            ln=ln,
-            index=index,
-            security_policy=security_policy
-        )
+        return self.getObjectList(ass_id).is_readable(obis, i, security_policy)
 
     @lru_cache(maxsize=1000)
-    def is_writable(self, ln: cst.LogicalName,
-                    index: int,
-                    association_id: int,
+    def is_writable(self, obis: Obis,
+                    i: int,
+                    ass_id: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
-        return self.getASSOCIATION(association_id).is_writable(
-            ln=ln,
-            index=index,
-            security_policy=security_policy
-        )
+        return self.getObjectList(ass_id).is_writable(obis, i, security_policy)
 
     @lru_cache(maxsize=1000)
     def isnt_mutable(self,
@@ -1412,25 +1409,21 @@ class Collection:
         return False
 
     @lru_cache(maxsize=1000)
-    def is_accessible(self, ln: cst.LogicalName,
-                      index: int,
-                      association_id: int,
+    def is_accessible(self, 
+                      obis: Obis,
+                      i: int,
+                      ass_id: int,
                       m_id: mechanism_id.MechanismIdElement = None
                       ) -> bool:
         """for ver 0 and 1 only"""
-
-        return self.getASSOCIATION(association_id).is_accessible(
-            ln=ln,
-            index=index,
-            m_id=m_id
-        )
+        return self.getObjectList(ass_id).is_accessible(obis, i, m_id)
 
     @lru_cache(maxsize=100)
     def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], type[cdt.CommonDataType]]:
         """ return names and type of element from collection"""
         names: list[str] = []
-        obj = self.obis2obj(value.logical_name.contents).unwrap()
-        names.append(get_name(obj.logical_name))
+        obj = self.obis2ic(value.logical_name.contents).unwrap()
+        names.append(obis2name(obj.obis))
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
         data_type: type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
@@ -1485,19 +1478,20 @@ class Collection:
                     if len(v_) == 0:
                         d.pop(k_)
             if isinstance(v, list):
-                objects = dict()
+                objects = {}
                 for obj in v:
                     obj: IC
                     f_i = oi_f.get(obj.CLASS_ID)
                     """filter indexes"""
-                    indexes = list()
+                    indexes = []
                     elements = obj.A_ELEMENTS
                     if not without_ln:
                         elements = _LN_ELEMENT + elements
-                    for i, attr in elements:
-                        if only_read and not self.is_readable(obj.logical_name, i, ass_id):
+                    for el in elements:
+                        i = el.i
+                        if only_read and not self.is_readable(obj.obis, i, ass_id):
                             continue
-                        if only_write and not self.is_writable(obj.logical_name, i, ass_id):
+                        if only_write and not self.is_writable(obj.obis, i, ass_id):
                             continue
                         if f_i and i not in f_i:
                             continue
@@ -1506,7 +1500,7 @@ class Collection:
                         i_meth = count(1)
                         for i, m_el in zip(i_meth, obj.M_ELEMENTS):
                             try:
-                                if not self.is_accessible(obj.logical_name, i, ass_id, mechanism_id.LOW):
+                                if not self.is_accessible(obj.obis, i, ass_id, mechanism_id.LOW):
                                     continue
                                 elif f_i and -i not in f_i:
                                     continue
@@ -1551,7 +1545,6 @@ def lnContents2obis(value: LNContaining) -> Obis:
         case cdt.Structure(logical_name=value.logical_name):
             return value.logical_name.contents
         case cdt.Structure() as s:
-            s: cdt.Structure
             for it in s:
                 if isinstance(it, cst.LogicalName):
                     return o.OBIS(it.contents)
@@ -1570,29 +1563,29 @@ class AttrDesc:
     SPODES_VERSION = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.96.1.6.255"), ut.CosemObjectAttributeId(2)))
 
 
-__range10_and_255: tuple[int] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
-__range63: tuple[int] = tuple(range(0, 64))
-__range120_and_124_127: tuple[int] = tuple(chain(range(0, 121), range(124, 128)))
-__range100_and_255: tuple[int] = tuple(chain(range(0, 100), (255,)))
-__range100_and_101_125_and_255: tuple[int] = tuple(chain(__range100_and_255, range(101, 126)))
-__c1: tuple[int] = tuple(chain(range(1, 10), (13, 14, 33, 34, 53, 54, 73, 74, 82), range(16, 31), range(36, 51), range(56, 70), range(76, 81), range(84, 90)))
+__range10_and_255: tuple[int, ...] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
+__range63: tuple[int, ...] = tuple(range(0, 64))
+__range120_and_124_127: tuple[int, ...] = tuple(chain(range(0, 121), range(124, 128)))
+__range100_and_255: tuple[int, ...] = tuple(chain(range(0, 100), (255,)))
+__range100_and_101_125_and_255: tuple[int, ...] = tuple(chain(__range100_and_255, range(101, 126)))
+__c1: tuple[int, ...] = tuple(chain(range(1, 10), (13, 14, 33, 34, 53, 54, 73, 74, 82), range(16, 31), range(36, 51), range(56, 70), range(76, 81), range(84, 90)))
 """DLMS UA 1000-1 Ed 14. Table 45 c1"""
-__table44: tuple[int] = (11, 12, 15, 31, 32, 35, 51, 52, 55, 71, 72, 75, 90, 91, 92)
+__table44: tuple[int, ...] = (11, 12, 15, 31, 32, 35, 51, 52, 55, 71, 72, 75, 90, 91, 92)
 """DLMS UA 1000-1 Ed 14. Table 44 for active power"""
-__c2: tuple[int] = tuple(chain(__table44, range(100, 108)))
+__c2: tuple[int, ...] = tuple(chain(__table44, range(100, 108)))
 """DLMS UA 1000-1 Ed 14. Table 45 c2"""
 
 
-def get_media_id(ln: cst.LogicalName) -> media_id.MediaId:
-    return media_id.MediaId.from_int(ln.a)
+def obis2mediaId(obis: Obis) -> media_id.MediaId:
+    return media_id.MediaId.from_int(attr2a(obis))
 
 
 def get_class_id(obj: InterfaceClass) -> ClassID:
     return obj.CLASS_ID
 
 
-def get_map_by_obj(objects: list[InterfaceClass] | tuple[InterfaceClass], key: Callable[[InterfaceClass], ...]) -> dict[media_id.MediaId, list[InterfaceClass]]:
-    ret = dict()
+def get_map_by_obj(objects: list[InterfaceClass] | tuple[InterfaceClass, ...], key: Callable[[InterfaceClass], None]) -> dict[media_id.MediaId, list[InterfaceClass]]:
+    ret = {}
     for obj in objects:
         if ret.get(new_key := key(obj)):
             ret[new_key].append(obj)
@@ -1609,9 +1602,9 @@ def get_object_tree(objects: list[IC] | tuple[IC],
     while mode:
         match mode.pop():
             case "m":
-                key = lambda obj: get_media_id(obj.logical_name)
+                key = lambda obj: obis2mediaId(obj.obis)
             case "g":
-                key = lambda obj: get_relation_group(obj.logical_name)
+                key = lambda obj: obis2relationGroup(obj.obis)
             case "c":
                 key = get_class_id
             case _:
@@ -1642,7 +1635,7 @@ def get_sorted(objects: list[IC],
             case "l":
                 key = None
             case "n":
-                key = lambda obj: get_name(obj.logical_name)
+                key = lambda obj: get_name(obj.obis)
             case "c":
                 key = lambda obj: obj.CLASS_ID
             case _:
@@ -1675,386 +1668,387 @@ RelationGroups: tuple[media_id.MediaId, ...] = (media_id.ABSTRACT, media_id.ELEC
 
 
 @lru_cache(maxsize=1000)
-def get_relation_group(ln: cst.LogicalName) -> RelationGroup:
-    if ln.a == media_id.ABSTRACT:
-        if ln.c == 0:
-            if ln.d == 1:
+def obis2relationGroup(obis: Obis) -> RelationGroup:
+    a, b, c, d, e, f = obis
+    if a == media_id.ABSTRACT:
+        if c == 0:
+            if d == 1:
                 return media_id.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES
-            elif ln.d in (2, 9):
+            if d in (2, 9):
                 return media_id.OTHER_ABSTRACT_GENERAL_PURPOSE_OBIS_CODES
-        elif ln.c == 1:
-            if ln.d in (0, 1, 2, 3, 4, 5, 6):
+        if c == 1:
+            if d in (0, 1, 2, 3, 4, 5, 6):
                 return media_id.CLOCK_OBJECTS
-        elif ln.c == 2:
-            if ln.d in (0, 1, 2):
+        if c == 2:
+            if d in (0, 1, 2):
                 return media_id.MODEM_CONFIGURATION_AND_RELATED_OBJECTS
-        elif ln.c == 10 and ln.d == 0 and ln.e in (0, 1, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 125):
+        if c == 10 and d == 0 and e in (0, 1, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 125):
             return media_id.SCRIPT_TABLE_OBJECTS
-        elif ln.c == 11 and ln.d == 0:
+        if c == 11 and d == 0:
             return media_id.SPECIAL_DAYS_TABLE_OBJECTS
-        elif ln.c == 12 and ln.d == 0:
+        if c == 12 and d == 0:
             return media_id.SCHEDULE_OBJECTS
-        elif ln.c == 13 and ln.d == 0:
+        if c == 13 and d == 0:
             return media_id.ACTIVITY_CALENDAR_OBJECTS
-        elif ln.c == 14 and ln.d == 0:
+        if c == 14 and d == 0:
             return media_id.REGISTER_ACTIVATION_OBJECTS
-        elif ln.c == 15 and ln.d == 0 and ln.e in (0, 1, 2, 3, 4, 5, 6, 7):
+        if c == 15 and d == 0 and e in (0, 1, 2, 3, 4, 5, 6, 7):
             return media_id.SINGLE_ACTION_SCHEDULE_OBJECTS
-        elif ln.c == 16:
-            if ln.d == 0 or (ln.d == 1 and ln.e in range(0, 10)):
+        if c == 16:
+            if d == 0 or (d == 1 and e in range(0, 10)):
                 return media_id.REGISTER_OBJECTS_MONITOR
-            elif ln.d == 2:
+            if d == 2:
                 return media_id.PARAMETER_MONITOR_OBJECTS
-        elif ln.c == 17 and ln.d == 0:
+        if c == 17 and d == 0:
             return media_id.LIMITER_OBJECTS
-        elif ln.c == 18 and ln.d == 0:
+        if c == 18 and d == 0:
             return media_id.ARRAY_MANAGER_OBJECT
-        elif ln.c == 19:
-            if (ln.d in range(0, 10) and ln.e == 0) or ln.d in range(10, 50) or ln.d in (range(50, 60) and ln.e in (1, 2)):
+        if c == 19:
+            if (d in range(0, 10) and e == 0) or d in range(10, 50) or d in (range(50, 60) and e in (1, 2)):
                 return media_id.PAYMENT_METERING_RELATED_OBJECTS
-        elif ln.c == 20 and ln.d == 0 and ln.e in (0, 1):
+        if c == 20 and d == 0 and e in (0, 1):
             return media_id.IEC_LOCAL_PORT_SETUP_OBJECTS
-        elif ln.c == 21 and ln.d == 0:
+        if c == 21 and d == 0:
             return media_id.STANDARD_READOUT_PROFILE_OBJECTS
-        elif ln.c == 22 and ln.d == 0 and ln.e == 0:
+        if c == 22 and d == 0 and e == 0:
             return media_id.IEC_HDLC_SETUP_OBJECTS
-        elif ln.c == 23:
-            if (ln.d in 0, 1, 2 and ln.e == 0) or ln.d == 3:
+        if c == 23:
+            if (d in 0, 1, 2 and e == 0) or d == 3:
                 return media_id.IEC_TWISTED_PAIR_1_SETUP_OBJECTS
-        elif ln.c == 24:
-            if (ln.d in (0, 1, 4, 5, 6) and ln.e == 0) or (ln.d in (2, 8, 9)):
+        if c == 24:
+            if (d in (0, 1, 4, 5, 6) and e == 0) or (d in (2, 8, 9)):
                 return media_id.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
-        elif ln.c == 31 and ln.d == 0 and ln.e == 0:
+        if c == 31 and d == 0 and e == 0:
             return media_id.OBJECTS_RELATED_TO_DATA_EXCHANGE_OVER_M_BUS
-        elif ln.c == 25:
-            if ln.d in (0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15) and ln.e == 0:
+        if c == 25:
+            if d in (0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15) and e == 0:
                 return media_id.OBJECTS_TO_SET_UP_DATA_EXCHANGE_OVER_THE_INTERNET
-            elif ln.d == 9 and ln.e == 0:
+            if d == 9 and e == 0:
                 return media_id.OBJECTS_TO_SET_UP_PUSH_SETUP
-        elif ln.c == 26 and ln.d in (0, 1, 2, 3, 5, 6) and ln.e == 0:
+        if c == 26 and d in (0, 1, 2, 3, 5, 6) and e == 0:
             return media_id.OBJECTS_FOR_SETTING_UP_DATA_EXCHANGE_USING_S_FSK_PLC
-        elif ln.c == 27 and ln.d in (0, 1, 2) and ln.e == 0:
+        if c == 27 and d in (0, 1, 2) and e == 0:
             return media_id.OBJECTS_FOR_SETTING_UP_THE_ISO_IEC_8802_2_LLC_LAYER
-        elif ln.c == 28 and ln.d in (0, 1, 2, 3, 4, 5, 6, 7) and ln.e == 0:
+        if c == 28 and d in (0, 1, 2, 3, 4, 5, 6, 7) and e == 0:
             return media_id.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROWBAND_OFDM_PLC_FOR_PRIME_NETWORKS
-        elif ln.c == 29 and ln.d in (0, 1, 2) and ln.e == 0:
+        if c == 29 and d in (0, 1, 2) and e == 0:
             return media_id.OBJECTS_FOR_DATA_EXCHANGE_USING_NARROW_BAND_OFDM_PLC_FOR_G3_PLC_NETWORKS
-        elif ln.c == 30 and ln.d in (0, 1, 2, 3, 4):
+        if c == 30 and d in (0, 1, 2, 3, 4):
             return media_id.ZIGBEE_SETUP_OBJECTS
-        elif ln.c == 32 and ln.d in (0, 1, 2, 3) and ln.e == 0:
+        if c == 32 and d in (0, 1, 2, 3) and e == 0:
             return media_id.OBJECTS_FOR_SETTING_UP_AND_MANAGING_DATA_EXCHANGE_USING_ISO_IEC_14908_PLC_NETWORKS
-        elif ln.c == 33 and ln.d in (0, 1, 2, 3) and ln.e == 0:
+        if c == 33 and d in (0, 1, 2, 3) and e == 0:
             return media_id.OBJECTS_FOR_DATA_EXCHANGE_USING_HS_PLC_ISO_IEC_12139_1_ISO_EC_12139_1_NETWORKS
-        elif ln.c == 34 and ln.d in (0, 1, 2, 3) and ln.e == 0:
+        if c == 34 and d in (0, 1, 2, 3) and e == 0:
             return media_id.OBJECTS_FOR_DATA_EXCHANGE_USING_WI_SUN_NETWORKS
-        elif ln.c == 40 and ln.b == 0 and ln.d == 0:
+        if c == 40 and b == 0 and d == 0:
             return media_id.ASSOCIATION_OBJECTS
-        elif ln.c == 41 and ln.b == 0 and ln.d == 0 and ln.e == 0:
+        if c == 41 and b == 0 and d == 0 and e == 0:
             return media_id.SAP_ASSIGNMENT_OBJECT
-        elif ln.c == 42 and ln.b == 0 and ln.d == 0 and ln.e == 0:
+        if c == 42 and b == 0 and d == 0 and e == 0:
             return media_id.COSEM_LOGICAL_DEVICE_NAME_OBJECT
-        elif ln.c == 43:
-            if (ln.b == 0 and ln.d == 0) or ln.d in (1, 2):
+        if c == 43:
+            if (b == 0 and d == 0) or d in (1, 2):
                 return media_id.INFORMATION_SECURITY_RELATED_OBJECTS
-        elif ln.c == 44:
-            if ln.b == 0:
-                if ln.d == 0:
+        if c == 44:
+            if b == 0:
+                if d == 0:
                     return media_id.IMAGE_TRANSFER_OBJECTS
-                elif ln.d == 1:
+                if d == 1:
                     return media_id.FUNCTION_CONTROL_OBJECTS
-                elif ln.d == 2:
+                if d == 2:
                     return media_id.COMMUNICATION_PORT_PROTECTION_OBJECTS
-        elif ln.c == 65 and ln.d in __range63:
+        if c == 65 and d in __range63:
             return media_id.UTILITY_TABLE_OBJECTS
-        elif ln.c == 66 and ln.d == 0:
+        if c == 66 and d == 0:
             return media_id.COMPACT_DATA_OBJECTS
-        elif ln.c == 96:
-            if ln.d == 1:
-                if ln.e in __range10_and_255:
+        if c == 96:
+            if d == 1:
+                if e in __range10_and_255:
                     return media_id.DEVICE_ID_OBJECTS
-                elif ln.e == 10:
+                if e == 10:
                     return media_id.METERING_POINT_ID_OBJECTS
-            elif ln.d == 2:
+            if d == 2:
                 return media_id.PARAMETER_CHANGES_AND_CALIBRATION_OBJECTS
-            elif ln.d == 3:
-                if ln.e in (0, 1, 2, 3, 4):
+            if d == 3:
+                if e in (0, 1, 2, 3, 4):
                     return media_id.I_O_CONTROL_SIGNAL_OBJECTS
-                elif ln.e == 10:
+                if e == 10:
                     return media_id.DISCONNECT_CONTROL_OBJECTS
-                elif ln.e in range(20, 30):
+                if e in range(20, 30):
                     return media_id.ARBITRATOR_OBJECTS
-            elif ln.d == 4 and ln.e in (0, 1, 2, 3, 4):
+            if d == 4 and e in (0, 1, 2, 3, 4):
                 return media_id.STATUS_OF_INTERNAL_CONTROL_SIGNALS_OBJECTS
-            elif ln.d == 5 and ln.e in (0, 1, 2, 3, 4):
+            if d == 5 and e in (0, 1, 2, 3, 4):
                 return media_id.INTERNAL_OPERATING_STATUS_OBJECTS
-            elif ln.d == 6 and ln.e in (0, 1, 2, 3, 4, 5, 6):
+            if d == 6 and e in (0, 1, 2, 3, 4, 5, 6):
                 return media_id.BATTERY_ENTRIES_OBJECTS
-            elif ln.d == 7 and ln.e in range(0, 22):
+            if d == 7 and e in range(0, 22):
                 return media_id.POWER_FAILURE_MONITORING_OBJECTS
-            elif ln.d == 8 and ln.e in __range63:
+            if d == 8 and e in __range63:
                 return media_id.OPERATING_TIME_OBJECTS
-            elif ln.d == 9 and ln.e in (0, 1, 2):
+            if d == 9 and e in (0, 1, 2):
                 return media_id.ENVIRONMENT_RELATED_PARAMETERS_OBJECTS
-            elif ln.d == 10 and ln.e in range(1, 11):
+            if d == 10 and e in range(1, 11):
                 return media_id.STATUS_REGISTER_OBJECTS
-            elif ln.d == 11 and ln.e in range(0, 100):
+            if d == 11 and e in range(0, 100):
                 return media_id.EVENT_CODE_OBJECTS
-            elif ln.d == 12 and ln.e in range(0, 7):
+            if d == 12 and e in range(0, 7):
                 return media_id.COMMUNICATION_PORT_LOG_PARAMETER_OBJECTS
-            elif ln.d == 13 and ln.e in (0, 1):
+            if d == 13 and e in (0, 1):
                 return media_id.CONSUMER_MESSAGE_OBJECTS
-            elif ln.d == 14 and ln.e in range(0, 16):
+            if d == 14 and e in range(0, 16):
                 return media_id.CURRENTLY_ACTIVE_TARIFF_OBJECTS
-            elif ln.d == 15 and ln.e in range(0, 100):
+            if d == 15 and e in range(0, 100):
                 return media_id.EVENT_COUNTER_OBJECTS
-            elif ln.d == 16 and ln.e in range(0, 10):
+            if d == 16 and e in range(0, 10):
                 return media_id.PROFILE_ENTRY_DIGITAL_SIGNATURE_OBJECTS
-            elif ln.d == 17 and ln.e in range(0, 128):
+            if d == 17 and e in range(0, 128):
                 return media_id.PROFILE_ENTRY_COUNTER_OBJECTS
-            elif ln.d == 20:
+            if d == 20:
                 return media_id.METER_TAMPER_EVENT_RELATED_OBJECTS
-            elif ln.d in range(50, 100):
+            if d in range(50, 100):
                 return media_id.ABSTRACT_MANUFACTURER_SPECIFIC
-        elif ln.c == 97:
-            if ln.d == 97 and ln.e in __range10_and_255:
+        if c == 97:
+            if d == 97 and e in __range10_and_255:
                 return media_id.ERROR_REGISTER_OBJECTS
-            elif ln.d == 98 and (ln.e in chain(range(0, 30), (255,))):
+            if d == 98 and (e in chain(range(0, 30), (255,))):
                 return media_id.ALARM_REGISTER_FILTER_DESCRIPTOR_OBJECTS
-        elif ln.c == 98:
+        if c == 98:
             return media_id.GENERAL_LIST_OBJECTS
-        elif ln.c == 99:
-            if ln.d in (1, 2, 12, 13, 14, 15, 16, 17, 18) or (ln.d == 3 and ln.e == 0):
+        if c == 99:
+            if d in (1, 2, 12, 13, 14, 15, 16, 17, 18) or (d == 3 and e == 0):
                 return media_id.ABSTRACT_DATA_PROFILE_OBJECTS
-            if ln.d == 98:
+            if d == 98:
                 return media_id.EVENT_LOG_OBJECTS
-        elif ln.c == 127 and ln.d == 0:
+        if c == 127 and d == 0:
             return media_id.INACTIVE_OBJECTS
         else:
             return media_id.ABSTRACT
-    elif ln.a == media_id.ELECTRICITY:
-        if ln.c == 0:
-            if ln.d == 0 and ln.e in __range10_and_255:
+    if a == media_id.ELECTRICITY:
+        if c == 0:
+            if d == 0 and e in __range10_and_255:
                 return media_id.ID_NUMBERS_ELECTRICITY
-            elif ln.d == 1:
+            if d == 1:
                 return media_id.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_EL
-            elif ln.d in (2, 3, 4, 6, 7, 8, 9, 10):
+            if d in (2, 3, 4, 6, 7, 8, 9, 10):
                 return media_id.OTHER_ELECTRICITY_RELATED_GENERAL_PURPOSE_OBJECTS
-            elif ln.d == 11 and ln.e in (1, 2, 3, 4, 5, 6, 7):
+            if d == 11 and e in (1, 2, 3, 4, 5, 6, 7):
                 return media_id.MEASUREMENT_ALGORITHM
-        elif ln.c in (1, 21, 41, 61):
+        if c in (1, 21, 41, 61):
             return media_id.ACTIVE_POWER_PLUS
-        elif ln.c in (2, 22, 42, 62):
+        if c in (2, 22, 42, 62):
             return media_id.ACTIVE_POWER_MINUS
-        elif ln.c in (3, 23, 43, 63):
+        if c in (3, 23, 43, 63):
             return media_id.REACTIVE_POWER_PLUS
-        elif ln.c in (4, 24, 44, 64):
+        if c in (4, 24, 44, 64):
             return media_id.REACTIVE_POWER_MINUS
-        elif ln.c in (5, 25, 45, 65):
+        if c in (5, 25, 45, 65):
             return media_id.REACTIVE_POWER_QI
-        elif ln.c in (6, 26, 46, 66):
+        if c in (6, 26, 46, 66):
             return media_id.REACTIVE_POWER_QII
-        elif ln.c in (7, 27, 47, 67):
+        if c in (7, 27, 47, 67):
             return media_id.REACTIVE_POWER_QIII
-        elif ln.c in (8, 28, 48, 68):
+        if c in (8, 28, 48, 68):
             return media_id.REACTIVE_POWER_QIV
-        elif ln.c in (9, 29, 49, 69):
+        if c in (9, 29, 49, 69):
             return media_id.APPARENT_POWER_PLUS
-        elif ln.c in (10, 30, 50, 70):
+        if c in (10, 30, 50, 70):
             return media_id.APPARENT_POWER_MINUS
-        elif ln.c in (11, 31, 51, 71):
+        if c in (11, 31, 51, 71):
             return media_id.CURRENT
-        elif ln.c in (12, 32, 52, 72):
+        if c in (12, 32, 52, 72):
             return media_id.VOLTAGE
-        elif ln.c in (13, 33, 53, 73):
+        if c in (13, 33, 53, 73):
             return media_id.POWER_FACTOR
-        elif ln.c in (14, 34, 54, 74):
+        if c in (14, 34, 54, 74):
             return media_id.SUPPLY_FREQUENCY
-        elif ln.c in (15, 35, 55, 75):
+        if c in (15, 35, 55, 75):
             return media_id.ACTIVE_POWER_SUM
-        elif ln.c in (16, 36, 56, 76):
+        if c in (16, 36, 56, 76):
             return media_id.ACTIVE_POWER_DIFF
-        elif ln.c in (17, 37, 57, 77):
+        if c in (17, 37, 57, 77):
             return media_id.ACTIVE_POWER_QI
-        elif ln.c in (18, 38, 58, 78):
+        if c in (18, 38, 58, 78):
             return media_id.ACTIVE_POWER_QII
-        elif ln.c in (19, 39, 59, 79):
+        if c in (19, 39, 59, 79):
             return media_id.ACTIVE_POWER_QIII
-        elif ln.c in (20, 40, 60, 80):
+        if c in (20, 40, 60, 80):
             return media_id.ACTIVE_POWER_QIV
-        elif ln.c == 96:
-            if ln.d == 1 and ln.e in __range10_and_255:
+        if c == 96:
+            if d == 1 and e in __range10_and_255:
                 return media_id.ELECTRICITY_METERING_POINT_ID_OBJECTS
-            elif ln.d == 5 and ln.e in (0, 1, 2, 3, 4, 5):
+            if d == 5 and e in (0, 1, 2, 3, 4, 5):
                 return media_id.ELECTRICITY_RELATED_STATUS_OBJECTS
-            elif ln.d == 10 and ln.e in (0, 1, 2, 3):
+            if d == 10 and e in (0, 1, 2, 3):
                 return media_id.ELECTRICITY_RELATED_STATUS_OBJECTS
-        elif ln.c == 98:
+        if c == 98:
             return media_id.LIST_OBJECTS_ELECTRICITY
-        elif ln.d in range(31, 46) and ln.f in __range100_and_255:
-            if ln.c in __c1 and ln.e in __range63:
+        if d in range(31, 46) and f in __range100_and_255:
+            if c in __c1 and e in __range63:
                 return media_id.THRESHOLD_VALUES
-            elif ln.c in __table44 and ln.e in __range120_and_124_127:
+            if c in __table44 and e in __range120_and_124_127:
                 return media_id.THRESHOLD_VALUES
-        elif ln.f in __range100_and_255:
-            if ln.d in (31, 35, 39, 4, 5, 14, 15, 24, 25):
-                if ln.c in __c1 and ln.e in __range63:
+        if f in __range100_and_255:
+            if d in (31, 35, 39, 4, 5, 14, 15, 24, 25):
+                if c in __c1 and e in __range63:
                     return media_id.REGISTER_MONITOR_OBJECTS
-                elif ln.c in __c2 and ln.e in __range120_and_124_127:
+                if c in __c2 and e in __range120_and_124_127:
                     return media_id.REGISTER_MONITOR_OBJECTS
         else:
             return media_id.ELECTRICITY
-    elif ln.a == media_id.HCA:
-        if ln.c == 0:
-            if ln.d == 0 and ln.e in __range10_and_255:
+    if a == media_id.HCA:
+        if c == 0:
+            if d == 0 and e in __range10_and_255:
                 return media_id.ID_NUMBERS_HCA
-            elif ln.d == 1 and ln.e in (1, 2, 10, 11):
+            if d == 1 and e in (1, 2, 10, 11):
                 return media_id.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_HCA
-            elif ln.d == 2 and ln.e in (0, 1, 2, 3):
+            if d == 2 and e in (0, 1, 2, 3):
                 return media_id.GENERAL_PURPOSE_OBJECTS_HCA
-            elif ln.d == 4 and ln.e in (0, 1, 2, 3, 4, 5, 6):
+            if d == 4 and e in (0, 1, 2, 3, 4, 5, 6):
                 return media_id.GENERAL_PURPOSE_OBJECTS_HCA
-            elif ln.d == 5 and ln.e in (10, 11):
+            if d == 5 and e in (10, 11):
                 return media_id.GENERAL_PURPOSE_OBJECTS_HCA
-            elif ln.d == 8 and ln.e in (0, 4, 6):
+            if d == 8 and e in (0, 4, 6):
                 return media_id.GENERAL_PURPOSE_OBJECTS_HCA
-            elif ln.d == 9 and ln.e in (1, 2, 3):
+            if d == 9 and e in (1, 2, 3):
                 return media_id.GENERAL_PURPOSE_OBJECTS_HCA
-        elif ln.c in (1, 2) and ln.e == 0:
-            if ln.d in (0, 6) and ln.f == 255:
+        if c in (1, 2) and e == 0:
+            if d in (0, 6) and f == 255:
                 return media_id.MEASURED_VALUES_HCA_CONSUMPTION
-            elif ln.d in (1, 2, 3, 4, 5) and ln.f in __range100_and_101_125_and_255:
+            if d in (1, 2, 3, 4, 5) and f in __range100_and_101_125_and_255:
                 return media_id.MEASURED_VALUES_HCA_CONSUMPTION
-        elif ln.c in range(3, 8) and ln.d in (0, 4, 5, 6) and ln.e == 255 and ln.f == 255:
+        if c in range(3, 8) and d in (0, 4, 5, 6) and e == 255 and f == 255:
             return media_id.MEASURED_VALUES_HCA_TEMPERATURE
-        elif ln.c == 97 and ln.d == 97:
+        if c == 97 and d == 97:
             return media_id.ERROR_REGISTER_OBJECTS_HCA
-        elif ln.c == 98:
+        if c == 98:
             return media_id.LIST_OBJECTS_HCA
-        elif ln.c == 99 and ln.d == 1:
+        if c == 99 and d == 1:
             return media_id.DATA_PROFILE_OBJECTS_HCA
         else:
             return media_id.HCA
-    elif ln.a == media_id.THERMAL:
-        if ln.c == 0:
-            if ln.d == 0 and ln.e in __range10_and_255:
+    if a == media_id.THERMAL:
+        if c == 0:
+            if d == 0 and e in __range10_and_255:
                 return media_id.ID_NUMBERS_THERMAL
-            elif ln.d == 1 and ln.e in (1, 2, 10, 11):
+            if d == 1 and e in (1, 2, 10, 11):
                 return media_id.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_THERMAL
-            elif ln.d == 2 and ln.e in chain(range(0, 5), range(10, 14)):
+            if d == 2 and e in chain(range(0, 5), range(10, 14)):
                 return media_id.GENERAL_PURPOSE_OBJECTS_THERMAL
-            elif ln.d == 4 and ln.e in (1, 2, 3):
+            if d == 4 and e in (1, 2, 3):
                 return media_id.GENERAL_PURPOSE_OBJECTS_THERMAL
-            elif ln.d == 5 and ln.e in chain(range(1, 10), range(21, 25)):
+            if d == 5 and e in chain(range(1, 10), range(21, 25)):
                 return media_id.GENERAL_PURPOSE_OBJECTS_THERMAL
-            elif ln.d == 8 and ln.e in chain(range(0, 8), range(11, 15), range(21, 26), range(31, 35)):
+            if d == 8 and e in chain(range(0, 8), range(11, 15), range(21, 26), range(31, 35)):
                 return media_id.GENERAL_PURPOSE_OBJECTS_THERMAL
-            elif ln.d == 9 and ln.e in (1, 2, 3):
+            if d == 9 and e in (1, 2, 3):
                 return media_id.GENERAL_PURPOSE_OBJECTS_THERMAL
-        elif ln.c in range(1, 8):
-            if ln.e in range(10):
-                if ln.d in (0, 1, 2, 3, 7) and ln.f == 255:
+        if c in range(1, 8):
+            if e in range(10):
+                if d in (0, 1, 2, 3, 7) and f == 255:
                     return media_id.MEASURED_VALUES_THERMAL_CONSUMPTION
-                elif ln.d in (3, 8, 9) and ln.f in __range100_and_101_125_and_255:
+                if d in (3, 8, 9) and f in __range100_and_101_125_and_255:
                     return media_id.MEASURED_VALUES_THERMAL_CONSUMPTION
-                elif ln.d in (1, 2, 4, 5, 12, 13, 14, 15) and ln.f in chain(range(100), range(100, 126)):
+                if d in (1, 2, 4, 5, 12, 13, 14, 15) and f in chain(range(100), range(100, 126)):
                     return media_id.MEASURED_VALUES_THERMAL_CONSUMPTION
-            elif ln.d == 6 and ln.e == 255 and ln.f == 255:
+            if d == 6 and e == 255 and f == 255:
                 return media_id.MEASURED_VALUES_THERMAL_CONSUMPTION
-        elif ln.e in range(10):
-            if ln.f in __range100_and_101_125_and_255:
-                if ln.c in range(1, 8) and ln.d in (5, 15):
+        if e in range(10):
+            if f in __range100_and_101_125_and_255:
+                if c in range(1, 8) and d in (5, 15):
                     return media_id.MEASURED_VALUES_THERMAL_ENERGY
-                elif ln.c in (8, 9) and ln.d in (1, 4, 5, 12, 13, 14, 15):
+                if c in (8, 9) and d in (1, 4, 5, 12, 13, 14, 15):
                     return media_id.MEASURED_VALUES_THERMAL_ENERGY
-            elif ln.c in range(10, 14):
-                if ln.d == 0 and ln.f == 255:
+            if c in range(10, 14):
+                if d == 0 and f == 255:
                     return media_id.MEASURED_VALUES_THERMAL_ENERGY
-                elif ln.d in (4, 5, 14, 15) and ln.f in chain(range(100), range(101, 126)):
+                if d in (4, 5, 14, 15) and f in chain(range(100), range(101, 126)):
                     return media_id.MEASURED_VALUES_THERMAL_ENERGY
-                elif ln.d in (6, 7, 10, 11) and ln.f == 255:
+                if d in (6, 7, 10, 11) and f == 255:
                     return media_id.MEASURED_VALUES_THERMAL_ENERGY
-            elif ln.c in range(1, 14) and (ln.d in range(20, 26)) and ln.f == 255:
+            if c in range(1, 14) and (d in range(20, 26)) and f == 255:
                 return media_id.MEASURED_VALUES_THERMAL_ENERGY
-        elif ln.c == 97 and ln.d == 97 and ln.e in (0, 1, 2):
+        if c == 97 and d == 97 and e in (0, 1, 2):
             return media_id.ERROR_REGISTER_OBJECTS_THERMAL
-        elif ln.c == 98:
+        if c == 98:
             return media_id.LIST_OBJECTS_THERMAL
-        elif ln.c == 99 and ln.f == 255:
-            if ln.d in (1, 2) and ln.e in (1, 2, 3):
+        if c == 99 and f == 255:
+            if d in (1, 2) and e in (1, 2, 3):
                 return media_id.DATA_PROFILE_OBJECTS_THERMAL
-            elif ln.d == 3 and ln.e == 1:
+            if d == 3 and e == 1:
                 return media_id.DATA_PROFILE_OBJECTS_THERMAL
-            elif ln.d == 99:
+            if d == 99:
                 return media_id.DATA_PROFILE_OBJECTS_THERMAL
         else:
             return media_id.THERMAL
-    elif media_id.GAS == ln.a:
-        if ln.c == 0:
-            if ln.d == 0 and ln.e in __range10_and_255:
+    if media_id.GAS == a:
+        if c == 0:
+            if d == 0 and e in __range10_and_255:
                 return media_id.ID_NUMBERS_GAS
-            elif ln.d == 1:
+            if d == 1:
                 return media_id.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_GAS
-            elif ln.d in (2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):
+            if d in (2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):
                 return media_id.GENERAL_PURPOSE_OBJECTS_GAS
-        elif ln.c == 96 and ln.d == 5 and (ln.e in range(10)):
+        if c == 96 and d == 5 and (e in range(10)):
             return media_id.INTERNAL_OPERATING_STATUS_OBJECTS_GAS
-        elif ln.c in chain(range(1, 9), range(11, 17), range(21, 27), range(31, 36), range(61, 66)) and ln.e in __range63:
-            if ln.d in (24, 25, 26, 42, 43, 44, 63, 64, 65, 81, 82, 83) and ln.f in chain(range(100), range(101, 127)):
+        if c in chain(range(1, 9), range(11, 17), range(21, 27), range(31, 36), range(61, 66)) and e in __range63:
+            if d in (24, 25, 26, 42, 43, 44, 63, 64, 65, 81, 82, 83) and f in chain(range(100), range(101, 127)):
                 return media_id.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
-            elif ln.d in chain(range(6, 24), range(27, 33), range(45, 51), range(66, 72), range(84, 90)) and ln.f == 255:
+            if d in chain(range(6, 24), range(27, 33), range(45, 51), range(66, 72), range(84, 90)) and f == 255:
                 return media_id.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
-            elif ln.d in chain(range(33, 42), range(52, 63), range(72, 81), range(90, 99)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
+            if d in chain(range(33, 42), range(52, 63), range(72, 81), range(90, 99)) and f in chain(__range100_and_101_125_and_255, (126,)):
                 return media_id.MEASURED_VALUES_GAS_INDEXES_AND_INDEX_DIFFERENCES
-        elif ln.c == 42 and ln.e == 0:
-            if ln.d in chain((0, 1, 2, 13), range(15, 19), range(19, 31), range(35, 51), range(55, 71)) and ln.f == 255:
+        if c == 42 and e == 0:
+            if d in chain((0, 1, 2, 13), range(15, 19), range(19, 31), range(35, 51), range(55, 71)) and f == 255:
                 return media_id.MEASURED_VALUES_GAS_FLOW_RATE
-            elif ln.d in chain(range(31, 35), range(51, 55)) and ln.f in chain(__range100_and_101_125_and_255, (126,)):
+            if d in chain(range(31, 35), range(51, 55)) and f in chain(__range100_and_101_125_and_255, (126,)):
                 return media_id.MEASURED_VALUES_GAS_FLOW_RATE
-        elif ln.c in chain((41, 42), range(44, 50)) and ln.d in (0, 2, 3, 10, 11, 13, range(15, 92)) and ln.e == 0 and ln.f == 255:
+        if c in chain((41, 42), range(44, 50)) and d in (0, 2, 3, 10, 11, 13, range(15, 92)) and e == 0 and f == 255:
             return media_id.MEASURED_VALUES_GAS_PROCESS_VALUES
-        elif ln.c in range(51, 56):
-            if ln.d in (0, 2, 3, 10, 11) and ln.e in chain((0, 1), range(11, 29)) and ln.f == 255:
+        if c in range(51, 56):
+            if d in (0, 2, 3, 10, 11) and e in chain((0, 1), range(11, 29)) and f == 255:
                 return media_id.CONVERSION_RELATED_FACTORS_AND_COEFFICIENTS_GAS
-            elif ln.d == 12 and ln.e in range(20) and ln.f == 255:
+            if d == 12 and e in range(20) and f == 255:
                 return media_id.CALCULATION_METHODS_GAS
-        elif ln.c == 70 and ln.f == 255:
-            if ln.d in (8, 9) and ln.e == 0:
+        if c == 70 and f == 255:
+            if d in (8, 9) and e == 0:
                 return media_id.NATURAL_GAS_ANALYSIS
-            elif ln.d in chain(range(10, 21), range(60, 85)) and ln.e in chain((0, 1), range(11, 29)):
+            if d in chain(range(10, 21), range(60, 85)) and e in chain((0, 1), range(11, 29)):
                 return media_id.NATURAL_GAS_ANALYSIS
-        elif ln.c == 98:
+        if c == 98:
             return media_id.LIST_OBJECTS_GAS
         else:
             return media_id.GAS
-    elif ln.a == media_id.WATER:
-        if ln.c == 0:
-            if ln.d == 0 and ln.e in __range10_and_255:
+    if a == media_id.WATER:
+        if c == 0:
+            if d == 0 and e in __range10_and_255:
                 return media_id.ID_NUMBERS_WATER
-            elif ln.d == 1 and ln.e in (1, 2, 10, 11, 12):
+            if d == 1 and e in (1, 2, 10, 11, 12):
                 return media_id.BILLING_PERIOD_VALUES_RESET_COUNTER_ENTRIES_WATER
-            elif ln.d == 2 and ln.e in (0, 3):
+            if d == 2 and e in (0, 3):
                 return media_id.GENERAL_PURPOSE_OBJECTS_WATER
-            elif ln.d in (5, 7) and ln.e == 1:
+            if d in (5, 7) and e == 1:
                 return media_id.GENERAL_PURPOSE_OBJECTS_WATER
-            elif ln.d == 8 and ln.e in (1, 6):
+            if d == 8 and e in (1, 6):
                 return media_id.GENERAL_PURPOSE_OBJECTS_WATER
-            elif ln.d == 9 and ln.e in (1, 2, 3):
+            if d == 9 and e in (1, 2, 3):
                 return media_id.GENERAL_PURPOSE_OBJECTS_WATER
-        elif ln.c == 1 and ln.e in range(0, 13):
-            if ln.d in (0, 1, 2, 3, 6) and ln.f == 255:
+        if c == 1 and e in range(0, 13):
+            if d in (0, 1, 2, 3, 6) and f == 255:
                 return media_id.MEASURED_VALUES_WATER_CONSUMPTION
-            elif ln.d in range(1, 6) and ln.f in chain(range(100), range(101, 126)):
+            if d in range(1, 6) and f in chain(range(100), range(101, 126)):
                 return media_id.MEASURED_VALUES_WATER_CONSUMPTION
-        elif ln.c in (2, 3) and ln.e in range(0, 13):
-            if ln.d in (0, 1, 2, 3, 6) and ln.f == 255:
+        if c in (2, 3) and e in range(0, 13):
+            if d in (0, 1, 2, 3, 6) and f == 255:
                 return media_id.MEASURED_VALUES_WATER_MONITORING_VALUES
-            elif ln.d in range(1, 6) and ln.f in chain(range(100), range(101, 126)):
+            if d in range(1, 6) and f in chain(range(100), range(101, 126)):
                 return media_id.MEASURED_VALUES_WATER_MONITORING_VALUES
-        elif ln.c == 97 and ln.d == 97:
+        if c == 97 and d == 97:
             return media_id.ERROR_REGISTER_OBJECTS_WATER
-        elif ln.c == 98:
+        if c == 98:
             return media_id.LIST_OBJECTS_WATER
-        elif ln.c == 99 and ln.d == 1:
+        if c == 99 and d == 1:
             return media_id.DATA_PROFILE_OBJECTS_WATER
         else:
             return media_id.WATER
@@ -2083,7 +2077,7 @@ class Template:
     def get_not_valid(self, col: Collection) -> list[Exception]:
         """with update col"""
         attr: cdt.CommonDataType
-        ret = []
+        ret: list[Exception] = []
         use_col = self.collections[0]
         """temporary used first collection"""
         for ln, indexes in self.used.items():

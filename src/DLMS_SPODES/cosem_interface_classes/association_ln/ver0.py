@@ -23,15 +23,9 @@ class AccessMode(abstract.AccessMode, elements=(0, 1, 2, 3)):
         return True if int(self) in (1, 3) else False
 
 
-class AttributeAccessItem(abstract.AttributeAccessItem):
+class AttributeAccessItem(abstract.AttributeAccessItem): 
     """ Implemented attribute and it access . Use in Association LN """
-    DEFAULT = b'\x02\x03\x0f\x01\x16\x00\x00'
-    attribute_id: cdt.Integer
     access_mode: AccessMode
-    access_selectors: choices.access_selectors
-
-    def abstract_marker(self):
-        ...
 
 
 class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
@@ -48,25 +42,24 @@ class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
             self.append(AttributeAccessItem((attribute_id, AccessMode.parse("1"), None)))
 
 
-class MethodAccessItem(cdt.Structure):
+class MethodAccessItem(abstract.MethodAccessItem):
     """ Implemented method and it access . Use in Association LN """
-    method_id: cdt.Integer
     access_mode: cdt.Boolean
 
 
-class MethodAccessDescriptor(cdt.Array):
+class MethodAccessDescriptor(abstract.MethodAccessDescriptor):
     """ Contain all implemented methods """
     TYPE = MethodAccessItem
 
 
-class AccessRight(cdt.Structure):
-    """ TODO: """
+class AccessRight(abstract.AccessRight): 
     attribute_access: AttributeAccessDescriptor
     method_access: MethodAccessDescriptor
 
 
-class ObjectListElement(structs.ObjectListElement, access_rights=AccessRight):
+class ObjectListElement(abstract.ObjectListElement):
     """ Visible COSEM objects with their class_id, version, logical name and the access rights to their attributes and methods within the given application association"""
+    access_rights: AccessRight
 
 
 class ObjectListType(arrays.SelectionAccess, abstract.ObjectListType):
@@ -74,66 +67,58 @@ class ObjectListType(arrays.SelectionAccess, abstract.ObjectListType):
     TYPE = ObjectListElement
     __getitem__: ObjectListElement
 
-    def is_writable(self, obis: Obis, indexes: set[int]) -> bool:
-        """ index - DLMS object attribute index.
-         True: AccessRight is WriteOnly or ReadAndWrite """
-        el: ObjectListElement = next(filter(lambda it: it.logical_name.contents == obis, self), None)
-        if el is None:
-            raise exc.NoObject(F"not find {obis=} in object_list")
-        item: AttributeAccessItem
-        for index in indexes:
-            for item in el.access_rights.attribute_access:
-                if int(item.attribute_id) == index:
-                    if int(item.access_mode) not in (2, 3):
-                        return False
+    def is_readable(self,
+                    obis: Obis,
+                    i: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        match self.get_attr_access(obis, i):
+            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
+                return False
+            case pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
+                return True
+            case pdu.AttributeAccess.AUTHENTICATED_READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
+                if isinstance(security_policy, pdu.SecurityPolicyVer0):
+                    match security_policy:
+                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
+                            return True
+                        case _:
+                            return False
+                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
+                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
+                        return True
                     else:
-                        break
+                        return False
                 else:
-                    continue
-            else:
-                raise ValueError(F"not find in {obis=} attribute index: {index}")
-        return True
+                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")
 
-    def __get_access_right(self, obis: Obis) -> AccessRight:
-        """return object_list_element of object_list AssociationLN"""
-        el: ObjectListElement = next(filter(lambda it: it.logical_name.contents == obis, self), None)
-        if el is None:
-            raise exc.NoObject(F"not find {obis=} in object_list")
-        else:
-            return el.access_rights
+    def is_writable(self,
+                    obis: Obis,
+                    i: int,
+                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
+                    ) -> bool:
+        return abstract.is_attr_writable(
+            mode=self.get_access_mode(obis, i),
+            security_policy=security_policy)
 
-    def get_attr_access(self, obis: Obis, index: int) -> pdu.AttributeAccess:
-        """ index - DLMS object attribute index """
-        for item in self.__get_access_right(obis).attribute_access:  # item: AttributeAccessItem
-            item: AttributeAccessItem
-            if int(item.attribute_id) == index:
-                return pdu.AttributeAccess(int(item.access_mode))
-            else:
-                continue
-        else:
-            raise ValueError(F"access for {obis}: {index} is absense")
-
-    def get_access_mode(self, obis: Obis, i: int) -> AccessMode:
-        """ index - DLMS object attribute index """
-        for item in self.__get_access_right(obis).attribute_access:  # item: AttributeAccessItem
-            item: AttributeAccessItem
-            if int(item.attribute_id) == i:
-                return item.access_mode
-            else:
-                continue
-        else:
-            raise ValueError(F"access for {obis=}: {i} is absense")
-
-    def get_meth_access(self, obis: Obis, index: int) -> pdu.MethodAccess:
-        """ index - DLMS object method index """
-        for item in self.__get_access_right(obis).method_access:  # item: MethodAccessItem
-            item: MethodAccessItem
-            if int(item.method_id) == index:
-                return pdu.MethodAccess(int(item.access_mode))
-            else:
-                continue
-        else:
-            raise exc.ITEApplication(F"not find method access rules in object_list for {obis=}:{index}")  # todo: make custom error
+    def is_accessible(self, obis: Obis, i: int, m_id: mechanism_id.MechanismIdElement = None) -> bool:
+        """for ver 0 and 1 only"""
+        match self.get_meth_access(obis, i):
+            case pdu.MethodAccess.NO_ACCESS:
+                return False
+            case pdu.MethodAccess.ACCESS:
+                return True
+            case pdu.MethodAccess.AUTHENTICATED_ACCESS:
+                if not m_id:
+                    m_id = self.authentication_mechanism_name.mechanism_id_element
+                if m_id > mechanism_id.NONE:
+                    return True
+                else:
+                    return False
+            case err:
+                raise exc.ITEApplication(F"unsupport access: {err}")
 
 
 class AssociatedPartnersType(cdt.Structure):
@@ -352,88 +337,3 @@ class AssociationLN(ICAuto):
     def __check_empty_object_list(self):
         if self.object_list is None:
             raise exc.ITEApplication(F"empty <{self.get_attr_element(2).NAME}> in {self}")
-
-    def is_readable(self,
-                    ln: cst.LogicalName,
-                    index: int,
-                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
-                    ) -> bool:
-        self.__check_empty_object_list()
-        match self.object_list.get_attr_access(ln, index):
-            case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY:
-                return False
-            case pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
-                return True
-            case pdu.AttributeAccess.AUTHENTICATED_READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
-                if isinstance(security_policy, pdu.SecurityPolicyVer0):
-                    match security_policy:
-                        case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
-                            return True
-                        case _:
-                            return False
-                elif isinstance(security_policy, pdu.SecurityPolicyVer1):
-                    if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
-                        return True
-                    else:
-                        return False
-                else:
-                    raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
-            case err:
-                raise exc.ITEApplication(F"unsupport access: {err}")
-
-    def is_writable(self,
-                    ln: cst.LogicalName,
-                    index: int,
-                    security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
-                    ) -> bool:
-        self.__check_empty_object_list()
-        return is_attr_writable(
-            mode=self.object_list.get_access_mode(ln, index),
-            security_policy=security_policy)
-
-    def is_accessible(self, ln: cst.LogicalName,
-                      index: int,
-                      m_id: mechanism_id.MechanismIdElement = None
-                      ) -> bool:
-        """for ver 0 and 1 only"""
-        self.__check_empty_object_list()
-        match self.object_list.get_meth_access(ln, index):
-            case pdu.MethodAccess.NO_ACCESS:
-                return False
-            case pdu.MethodAccess.ACCESS:
-                return True
-            case pdu.MethodAccess.AUTHENTICATED_ACCESS:
-                if not m_id:
-                    m_id = self.authentication_mechanism_name.mechanism_id_element
-                if m_id > mechanism_id.NONE:
-                    return True
-                else:
-                    return False
-            case err:
-                raise exc.ITEApplication(F"unsupport access: {err}")
-
-
-def is_attr_writable(
-        mode: AccessMode,
-        security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING) -> bool:
-    match int(mode):
-        case pdu.AttributeAccess.NO_ACCESS | pdu.AttributeAccess.READ_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_ONLY:
-            return False
-        case pdu.AttributeAccess.WRITE_ONLY | pdu.AttributeAccess.READ_AND_WRITE:
-            return True
-        case pdu.AttributeAccess.AUTHENTICATED_WRITE_ONLY | pdu.AttributeAccess.AUTHENTICATED_READ_AND_WRITE:
-            if isinstance(security_policy, pdu.SecurityPolicyVer0):
-                match security_policy:
-                    case pdu.SecurityPolicyVer0.AUTHENTICATED | pdu.SecurityPolicyVer0.AUTHENTICATED_AND_ENCRYPTED:
-                        return True
-                    case _:
-                        return False
-            elif isinstance(security_policy, pdu.SecurityPolicyVer1):
-                if bool(security_policy & (pdu.SecurityPolicyVer1.AUTHENTICATED_REQUEST | pdu.SecurityPolicyVer1.AUTHENTICATED_RESPONSE)):
-                    return True
-                else:
-                    return False
-            else:
-                raise TypeError(F"unknown {security_policy.__class__}: {security_policy}")
-        case err:
-            raise exc.ITEApplication(F"unsupport access: {err}")

@@ -13,7 +13,7 @@ class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
     the chosen data value is taken. ITU-T Rec. X.680 | ISO/IEC 8824-1 """
     TYPE = cdt.CommonDataType
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         cls.ELEMENTS = {}
         for t in kwargs["types"]:
             if isinstance(t, dict):  # extended choice

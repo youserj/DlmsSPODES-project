@@ -44,20 +44,6 @@ class WindowElement(cdt.Structure):
     end_time: cst.OctetStringDateTime
 
 
-class AccessRight(cdt.Structure):
-    """ TODO: maybe more nested description"""
-    attribute_access: cdt.Array
-    method_access: cdt.Array
-
-
-class ObjectListElement(cdt.Structure):
-    """common for AssociationLN"""
-    class_id: long_unsigneds.ClassId
-    version: cdt.Unsigned
-    logical_name: cst.LogicalName
-    access_rights: AccessRight
-
-
 class UserListEntry(cdt.Structure):
     """user_list_entry"""
     user_id:   cdt.Unsigned

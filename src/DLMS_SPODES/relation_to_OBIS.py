@@ -179,8 +179,9 @@ def handle_E(value: int) -> str:
 
 
 @lru_cache(maxsize=512)
-def get_name(logical_name: cst.LogicalName) -> str:
-    match logical_name.a, logical_name.b, logical_name.c, logical_name.d, logical_name.e:
+def obis2name(obis: Obis) -> str:
+    a, b, c, d, e, _ = obis
+    match a, b, c, d, e:
         case  0, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
         case  0, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
         case  0, b, 0, 2, 1:    return F"{rn.ACTIVE_FIRMWARE_VERSION}{handle_B(b)}"

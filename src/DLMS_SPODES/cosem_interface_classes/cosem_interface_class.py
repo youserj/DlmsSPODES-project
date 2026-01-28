@@ -5,11 +5,10 @@ from dataclasses import dataclass, field
 from struct import Struct
 from functools import lru_cache
 from typing_extensions import deprecated
-from typing import Iterator, Type, TypeAlias, Callable, Any, Self, Literal, Optional, Protocol, ClassVar
-from ..types.type_alias import Attr, Obis, Index, Encoding, attr2i, attr2obis, AttrDesc, pack_attr
+from typing import Type, TypeAlias, Self, Literal, Optional, Protocol, ClassVar
+from ..types.type_alias import Attr, Obis, Index, Encoding, attr2i, attr2obis, AttrDesc, pack_attr, Meth
 from ..types import cdt, ut, cst
 from StructResult import result
-from ..relation_to_OBIS import get_name
 from enum import IntEnum
 from .. import exceptions as exc
 from .overview import ClassID
@@ -27,7 +26,7 @@ class Classifier(IntEnum):
     STATIC = 1
     DYNAMIC = 2
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -41,7 +40,7 @@ class ICElement:
 
     def __str__(self) -> str:
         try:
-            return getattr(settings.am_names, self.NAME)
+            return str(getattr(settings.am_names, self.NAME))
         except AttributeError:
             return self.NAME
 
@@ -56,8 +55,8 @@ class ICAElement(ICElement):
     selective_access: Optional[type[SelectiveAccessDescriptor]] = None
 
     def get_change(self,
-                   data_type: type[cdt.CommonDataType] | ut.CHOICE = None,
-                   classifier: Classifier = None) -> Self:
+                   data_type: Optional[type[cdt.CommonDataType] | ut.CHOICE] = None,
+                   classifier: Optional[Classifier] = None) -> "ICAElement":
         return ICAElement(
             i=self.i,
             NAME=self.NAME,
@@ -89,7 +88,7 @@ class ObjectValidationError(exc.DLMSException):
         self.i = i
 
 
-Name: Literal = Literal[
+Name: Literal[str] = Literal[
     "Data",
     "Register",
     "Extended register",
@@ -331,6 +330,9 @@ class IC(Protocol):
     CARDINALITY: ClassVar[Cardinality] = Cardinality()
     "Cardinality"
 
+    def __init__(self, obis: Obis) -> None:
+        self.obis = obis
+
     @classmethod
     def getAElement(cls, i: int) -> result.Simple[ICAElement] | result.Error:
         """return element by order index. Override in each new class"""
@@ -481,22 +483,21 @@ class IC(Protocol):
     def get_meth_descriptor(self, i: int) -> ut.CosemMethodDescriptor:
         """ TODO """
         return ut.CosemMethodDescriptor((
-            ut.CosemClassId(self.CLASS_ID.contents),
-            ut.CosemObjectInstanceId(self.logical_name.contents),
-            ut.CosemObjectMethodId(index)))
+            self.CLASS_ID,
+            ut.CosemObjectInstanceId(self.obis),
+            ut.CosemObjectMethodId(i)))
 
     def __hash__(self):
         return hash(self.obis)
 
-    # def validate(self) -> None:
-    #     """procedure for validate class values"""
-    #
+    @deprecated("use <Collection.get> or <Client.get>")
     def get_value(self, par: bytes) -> cdt.CommonDataType:
         ret = self.get_attr(par[0])
         for i in par[1:]:
             ret = ret[i]
         return ret
 
+    @deprecated("use <Collection.get> or <Client.get>")
     def get_values(self, par: bytes) -> list[cdt.CommonDataType]:
         ret = [self.get_attr(par[0])]
         for i in par[1:]:
@@ -507,17 +508,17 @@ class IC(Protocol):
 class ICAuto(IC):
     """IC Automatic attribute Property"""
     __slots__ = ("obis", )
-    def __init__(self, obis: Obis) -> None:
-        self.obis = obis
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
         for element in cls.A_ELEMENTS:
             cls._create_property_for_element(element)
+        for element in cls.M_ELEMENTS:
+            cls._create_property_for_element(element)
 
     @classmethod
-    def _create_property_for_element(cls, element: ICAElement):
-        def getter(self) -> Attr:
+    def _create_property_for_element[T: Attr | Meth](cls, element: ICElement) -> None:
+        def getter(self) -> T:
             return pack_attr(self.obis, attr_index)
 
         attr_index = element.i

@@ -175,14 +175,10 @@ Transcript: TypeAlias = str | list[Self]
 @runtime_checkable
 class CommonDataType(Protocol):
     """ DLMS BlueBook(IEC 62056-6-2) 13.0 4.1.5 Common data types . X.690: OSI networking and system aspects – Abstract Syntax Notation One (ASN.1) """
-    cb_post_set: Callable
-    cb_preset: Callable
     contents: bytes
     TAG: TAG = None
     """ 62056-53 8.3 TypeDescription ::= CHOICE. Set at once, no supported change """
     SIZE: int = None
-    MIN: int
-    MAX: int
 
     def __init__(self, value=None) -> None:
         """ constructor """
@@ -206,9 +202,6 @@ class CommonDataType(Protocol):
 
     def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None) -> None:
         """ get new instance from value and set to content with validation """
-
-    def validate(self) -> None:
-        """override validation if need"""
 
     @classmethod
     def get_types(cls) -> Self:
@@ -290,6 +283,10 @@ def get_instance_and_pdu(meta: type[CommonDataType], value: Encoding) -> tuple[C
     return new, value[len(new.encoding):]
 
 
+def getCDT(value: Encoding) -> CommonDataType:
+    return get_common_data_type_from(value)(value)
+
+
 def get_instance_and_pdu_from_value(value: bytes | bytearray) -> tuple[CommonDataType, bytes]:
     instance = get_common_data_type_from(value[:1])(value)
     try:    # TODO: remove it in future
@@ -312,12 +309,8 @@ class SimpleDataType(CommonDataType, Protocol):
 
     def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None) -> None:
         new_value = self._new_instance(value)
-        if hasattr(self, 'cb_preset'):
-            self.cb_preset(new_value)
         # self.__dict__['contents'] = new_value.contents
         self.contents = new_value.contents
-        if hasattr(self, 'cb_post_set'):
-            self.cb_post_set()
 
     def to_transcript(self) -> str:
         return str(self)
@@ -334,7 +327,7 @@ class ConstantMixin:
 
 @runtime_checkable
 class ComplexDataType(CommonDataType, Protocol):
-    values: list[CommonDataType, ...]
+    values: list[CommonDataType]
 
     @property
     def contents(self) -> bytes:
@@ -429,7 +422,9 @@ class Digital(SimpleDataType, Protocol):
     LENGTH: int
     DEFAULT = None
     VALUE: int | None = None
-    """integer if is it constant value"""
+    # """integer if is it constant value"""
+    # MIN: int
+    # MAX: int
 
     def __init__(self, value: bytes | bytearray | str | int | float | Self = None) -> None:
         if value is None:
@@ -1074,7 +1069,7 @@ class Array(_Array, ComplexDataType):
     TAG = TAG(b"\x01")
 
     def __init__(self, value: list[CommonDataType | list] | bytes | None | Self = None, type_: type[CommonDataType] = None) -> None:
-        self.__dict__['values'] = list()
+        self.__dict__['values'] = []
         if type_:
             self.__dict__["TYPE"] = type_
         match value:
@@ -1084,7 +1079,10 @@ class Array(_Array, ComplexDataType):
                 match value[:1], value[1:]:
                     case self.TAG, length_and_contents:
                         length, pdu = get_length_and_pdu(length_and_contents)
-                        if length and self.TYPE is None:
+                        if (
+                            length 
+                            and self.TYPE is None
+                        ):
                             self.__dict__['TYPE'] = get_common_data_type_from(pdu[:1])
                         for number in range(length):
                             if pdu == b'':
@@ -1143,8 +1141,6 @@ class Array(_Array, ComplexDataType):
 
     def set(self, value: bytes | bytearray | list | None) -> None:
         self.clear()
-        if hasattr(self, 'cb_preset'):
-            self.cb_preset(value)
         new_array = Array(value, type_=self.TYPE)
         if self.TYPE is None and len(new_array) != 0:
             self.set_type(new_array[0].__class__)
@@ -1152,8 +1148,8 @@ class Array(_Array, ComplexDataType):
             """TYPE already initiated"""
         for el in new_array:
             self.append(self.TYPE(el))
-        if hasattr(self, 'cb_post_set'):
-            self.cb_post_set()
+
+    def validate(self) -> None: ...
 
 
 _struct_names = config["DLMS"]["struct_name"]
@@ -1181,7 +1177,7 @@ class Structure(ComplexDataType):
     def __init__(self, value: list[CommonDataType | list] | bytes | tuple | None | bytearray | Self = None) -> None:
         if value is None:
             value = self.DEFAULT
-        self.__dict__['values'] = list()
+        self.__dict__['values'] = []
         match value:
             case list():  # main init data,
                 self.__dict__['values'] = value
@@ -1239,21 +1235,17 @@ class Structure(ComplexDataType):
     def get_el9(self):
         return self.values[9]
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """create ELEMENTS from annotations"""
-        if inspect.isabstract(cls):
-            ...
-        elif hasattr(cls, "ELEMENTS"):
-            """init manually, ex: Entry in ProfileGeneric"""
-            if len(kwargs) != 0:  # reinit several struct elements
-                elements = list(cls.ELEMENTS)
-                for k in kwargs.keys():
-                    for i, el in enumerate(cls.ELEMENTS):
-                        if k == el.NAME:
-                            elements[i] = StructElement(el.NAME, kwargs[k])
-                cls.ELEMENTS = tuple(elements)
+        elements: list[StructElement] = []
+        if hasattr(cls, "ELEMENTS"):  #  change type, ex: Entry in ProfileGeneric"""
+            elements.extend(cls.ELEMENTS)
+            for name, type_ in cls.__annotations__.items():
+                for i, el in enumerate(cls.ELEMENTS):
+                    if name == el.NAME:
+                        elements[i] = StructElement(name, type_)
+                        break
         else:
-            elements = []
             for (name, type_), f in zip(cls.__annotations__.items(), (
                     Structure.get_el0, Structure.get_el1, Structure.get_el2, Structure.get_el3, Structure.get_el4, Structure.get_el5, Structure.get_el6, Structure.get_el7,
                     Structure.get_el8, Structure.get_el9)):
@@ -1261,7 +1253,7 @@ class Structure(ComplexDataType):
                     NAME=name,
                     TYPE=type_)))
                 setattr(cls, name, f)
-            cls.ELEMENTS = tuple(elements)
+        cls.ELEMENTS = tuple(elements)
 
     def from_bytes(self, encoding: bytes):
         tag, length_and_contents = encoding[:1], encoding[1:]
@@ -1537,12 +1529,8 @@ class BitString(SimpleDataType):
     def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
         """ TODO: partly copypast of SimpleDataType"""
         new_value = self._new_instance(value)
-        if hasattr(self, 'cb_preset'):
-            self.cb_preset(new_value)
         self.__dict__['contents'] = new_value.contents
         self.__length = len(new_value)
-        if hasattr(self, 'cb_post_set'):
-            self.cb_post_set()
 
     def __setitem__(self, key: int, value: int | bool):
         tmp = list(self)
@@ -1600,6 +1588,8 @@ class BitString(SimpleDataType):
                         yield (byte_ >> it) & 0b00000001
 
         return g()
+    
+    def validate(self) -> None: ...
 
 
 class DoubleLong(Digital, SimpleDataType):
@@ -1652,7 +1642,7 @@ class OctetString(_String, SimpleDataType):
 
     def to_str(self, encoding: str = "utf-8") -> str:
         """ decode to utf-8 by default, replace to '?' if unsupported """
-        temp = list()
+        temp = []
         for i in self.contents:
             temp.append(i if i > 32 else 63)
         return bytes(temp).decode(encoding, errors="ignore")
@@ -1663,6 +1653,7 @@ class OctetString(_String, SimpleDataType):
             return self.contents.decode("utf-8")
         except Exception as e:
             return F"{self}(HEX)"
+
 
 class VisibleString(_String, SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """

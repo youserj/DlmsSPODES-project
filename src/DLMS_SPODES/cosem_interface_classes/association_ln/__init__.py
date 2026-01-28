@@ -3,3 +3,4 @@ from . import (
     mechanism_id,
     client_sap
 )
+from .ver0 import XDLMSContextType

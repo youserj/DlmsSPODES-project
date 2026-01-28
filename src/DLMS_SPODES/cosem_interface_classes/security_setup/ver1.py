@@ -1,7 +1,7 @@
 from . import ver0
-from ...types import choices
+from ...types import choices, cdt, ut
 from typing import Optional
-from ...types import cdt, ut
+from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAElement, ICMElement, Classifier
 
 
@@ -117,6 +117,6 @@ class SecuritySetup(ver0.SecuritySetup):
                   ICMElement(6, "import_certificate", cdt.OctetString),
                   ICMElement(7, "export_certificate", CertificateIdentification),
                   ICMElement(8, "remove_certificate", CertificateIdentification))
-    security_policy: Optional[SecurityPolicy]
-    security_suite: Optional[SecuritySuite]
-    certificates: Optional[Certificates]
+    security_policy: Attr
+    security_suite: Attr
+    certificates: Attr

@@ -19,7 +19,6 @@ class UsefulType(Protocol):
     """"""
     contents: bytes
     __match_args__ = ('contents',)
-    cb_post_set: Callable
     cb_preset: Callable
 
     def __init__(self, value):
@@ -35,8 +34,6 @@ class UsefulType(Protocol):
         if hasattr(self, 'cb_preset'):
             self.cb_preset(new_value)
         self.__dict__['contents'] = new_value.contents
-        if hasattr(self, 'cb_post_set'):
-            self.cb_post_set()
 
     def __setattr__(self, key, value):
         match key:
@@ -524,7 +521,6 @@ class SelectiveAccessDescriptor(SEQUENCE):
 
     def __init__(self, value: tuple | bytes | None = None):
         super(SelectiveAccessDescriptor, self).__init__(value)
-        self.access_selector.cb_post_set = self.__validate_selector
 
     @property
     def ELEMENTS(self) -> tuple[SequenceElement, SequenceElement]:

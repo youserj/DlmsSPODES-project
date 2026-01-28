@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug test_access",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "-m",
+            "args": [
+                "unittest",
+                "test.test_array.TestType.test_ObjectListType",
+                "-v"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "install-editable",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        }
+    ]
+}

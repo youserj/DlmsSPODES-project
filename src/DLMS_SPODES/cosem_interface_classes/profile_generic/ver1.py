@@ -2,7 +2,7 @@
 from . import ver0
 from typing import Iterator, Optional
 from ... import cosem_interface_classes
-from ...relation_to_OBIS import get_name
+from ...relation_to_OBIS import obis2name
 from ... import exceptions as exc
 from ...types.implementations import arrays, structs
 from ...types.choices import CommonDataTypeChoiceBase
@@ -15,8 +15,9 @@ class CaptureObjects(cdt.Array):
     TYPE = structs.CaptureObjectDefinition
 
 
-class FromEntry(cdt.DoubleLongUnsigned, min=1):
+class FromEntry(cdt.MinMixin, cdt.DoubleLongUnsigned):
     """ Access selector value for selective access to the object_list attribute """
+    MIN = 1
 
 
 class EntryDescriptor(cdt.Structure):
@@ -206,7 +207,6 @@ class ProfileGeneric(ver0.ProfileGeneric):
 
         class RangeDescriptor(cdt.Structure):
             # cb_preset = TODO: make check 'selected_values' from self.capture_objects or
-            # cb_post_set = TODO: make check 'selected_values' from self.capture_objects
             DEFAULT = b'\x02\x04\x02\x04\x12\x00\x01\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff' \
                       b'\x09\x0c\x07\xe4\x01\x02\xff\xff\xff\xff\xff\x80\x00\xff\x01\x00'
             restricting_object: structs.CaptureObjectDefinition
@@ -246,9 +246,9 @@ class ProfileGeneric(ver0.ProfileGeneric):
             raise ValueError(F'{self}: Empty capture objects')
         else:
             definition: structs.CaptureObjectDefinition
-            ret = list()
+            ret = []
             for definition in self.capture_objects:
-                ret.append(get_name(definition.logical_name))
+                ret.append(obis2name(definition.logical_name.contents))
             return ret
 
     def get_buffer_objects(self) -> list[cosem_interface_classes.cosem_interface_class.IC]:

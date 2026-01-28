@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import Protocol
+from typing import Protocol, Self
 from itertools import count
 from ..config_parser import config
 from ..settings import settings
@@ -28,7 +27,7 @@ class MediaId(MediaIdProto):
     TYPE: type[cdt.CommonDataType]
 
     @classmethod
-    def from_int(cls, value: int):
+    def from_int(cls, value: int) -> "MediaId":
         match value:
             case 0:     return Abstract()
             case 1:     return Electricity()
@@ -46,7 +45,7 @@ class MediaId(MediaIdProto):
         else:
             return self.__class__.__name__
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         def init_hash(self) -> int:
             return self.subgroup
 

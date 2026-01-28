@@ -1,9 +1,8 @@
 from . import ver0
-from ... import exceptions as exc
-from ...types.implementations import structs
 from . import authentication_mechanism_name
 from . import abstract
 from ...types import choices, cdt, cst
+from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAElement, ICMElement
 
 
@@ -20,15 +19,8 @@ class AccessModeMeth(cdt.Enum, elements=(0, 1, 2)):
     """ Enum of access mode for methods """
 
 
-# TODO: make as subclass of ver0
 class AttributeAccessItem(abstract.AttributeAccessItem):
-    """ Implemented attribute and it access . Use in Association LN """
-    attribute_id: cdt.Integer
     access_mode: AccessMode
-    access_selectors: choices.access_selectors
-
-    def abstract_marker(self):
-        ...
 
 
 class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
@@ -46,49 +38,47 @@ class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
 
 
 # TODO: make as subclass of ver0
-class MethodAccessItem(cdt.Structure):
+class MethodAccessItem(abstract.MethodAccessItem):
     """ Implemented method and it access . Use in Association LN """
-    method_id: cdt.Integer
     access_mode: AccessModeMeth
 
 
-class MethodAccessDescriptor(cdt.Array):
+class MethodAccessDescriptor(abstract.MethodAccessDescriptor):
     """ Contain all implemented methods """
     TYPE = MethodAccessItem
 
 
-class AccessRight(cdt.Structure):
-    """ TODO: """
+class AccessRight(abstract.AccessRight): 
     attribute_access: AttributeAccessDescriptor
     method_access: MethodAccessDescriptor
 
 
-class ObjectListElement(structs.ObjectListElement, access_rights=AccessRight):
-    """"""
+class ObjectListElement(abstract.ObjectListElement):
+    access_rights: AccessRight
 
 
 class ObjectListType(ver0.ObjectListType):
     TYPE = ObjectListElement
 
-    def is_writable(self, ln: cst.LogicalName, indexes: set[int]) -> bool:
-        """ index - DLMS object attribute index.
-         True: AccessRight is WriteOnly or ReadAndWrite """
-        el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
-        if el is None:
-            raise exc.NoObject(F"not find {ln} in object_list")
-        item: AttributeAccessItem
-        for index in indexes:
-            for item in el.access_rights.attribute_access:
-                if int(item.attribute_id) == index:
-                    if int(item.access_mode) not in (2, 3, 5, 6):
-                        return False
-                    else:
-                        break
-                else:
-                    continue
-            else:
-                raise ValueError(F"not find in {ln} attribute index: {index}")
-        return True
+    # def is_writable(self, obisln: cst.LogicalName, indexes: set[int]) -> bool:
+    #     """ index - DLMS object attribute index.
+    #      True: AccessRight is WriteOnly or ReadAndWrite """
+    #     el: ObjectListElement = next(filter(lambda it: it.logical_name == ln, self), None)
+    #     if el is None:
+    #         raise exc.NoObject(F"not find {ln} in object_list")
+    #     item: AttributeAccessItem
+    #     for index in indexes:
+    #         for item in el.access_rights.attribute_access:
+    #             if int(item.attribute_id) == index:
+    #                 if int(item.access_mode) not in (2, 3, 5, 6):
+    #                     return False
+    #                 else:
+    #                     break
+    #             else:
+    #                 continue
+    #         else:
+    #             raise ValueError(F"not find in {ln} attribute index: {index}")
+    #     return True
 
 
 class ContextNameType(cdt.AXDR, ver0.ApplicationContextName):
@@ -118,9 +108,6 @@ class AssociationLN(ver0.AssociationLN):
                   ver0.AssociationLN.getMElement(2).unwrap(),
                   ICMElement(3, "add_object", ObjectListElement),
                   ICMElement(4, "remove_object", ObjectListElement))
-    object_list: ObjectListType
-    application_context_name: ContextNameType
-    authentication_mechanism_name: MechanismNameType
-    security_setup_reference: cst.LogicalName
+    security_setup_reference: Attr
     add_object: ObjectListElement
     remove_object: ObjectListElement

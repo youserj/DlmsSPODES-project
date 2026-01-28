@@ -115,13 +115,13 @@ class ClassIDCDT:
     CLIENT_SETUP = ClassId(int(overview.ClassID.CLIENT_SETUP))
 
     @classmethod
-    def get_all_id(cls) -> tuple[int]:
+    def get_all_id(cls) -> tuple[int, ...]:
         """return all id container in build-in <int>"""
         return tuple(map(int, filter(lambda it: isinstance(it, ClassId), cls.__dict__.values())))
 
 
 class ServerSAP(cdt.LongUnsigned):
 
-    def validate(self):
+    def validate(self) -> None:
         if int.from_bytes(self.contents, 'big') > 0x3FFF:
             raise ValueError(F'The range for the server_SAP is 0x000…0x3FFF, but got {self.contents.hex()}')

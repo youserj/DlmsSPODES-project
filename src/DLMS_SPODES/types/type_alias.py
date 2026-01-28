@@ -7,6 +7,7 @@ type Obis = bytes  # bytes[6]
 type Index = int    # 0..
 type GruoupI = int  # group index of Obis 0..
 type Attr = bytes  # bytes[7]
+type Meth = bytes  # bytes[7]
 type Encoding = bytes  # bytes[1..]
 type LN = str  # logical name as "a.b.c.d.e.f"
 type Tag = bytes  # bytes[1] CDT tag
@@ -62,6 +63,10 @@ def ln2obis(ln: str) -> result.SimpleOrError[Obis]:
     if (res := ln_pattern.search(ln)) is None:
         return result.Error.from_e(ValueError(F"got wrong {ln=}"), "ln2obis")
     return result.Simple(bytes(map(int, res.groups())))
+
+
+def obis2ln(obis: Obis) -> str:
+    return ".".join(map(str, obis))
 
 
 __all__ = [

@@ -1,6 +1,7 @@
 from typing import Optional
 from ..types import cdt, cst
 from ..types.implementations import integers
+from ..types.type_alias import Attr
 from .Overview import class_id
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
@@ -27,9 +28,11 @@ class ClockStatus(cdt.Unsigned):
         return ret
 
 
-class DaylightSavingsDeviation(cdt.Integer, min=-120, max=120):
+class DaylightSavingsDeviation(cdt.MaxMixin, cdt.MaxMixin, cdt.Integer):
     """Contains the number of minutes by which the deviation in generalized time must be corrected at daylight savings begin.
     Deviation range of up to ± 120 min"""
+    MIN = -120
+    MAX = 120
 
 
 class ClockBase(cdt.Enum, elements=(0, 1, 2, 3, 4, 5)):
@@ -45,8 +48,10 @@ class PresetAdjustingTime(cdt.Structure):
     validity_interval_end: cdt.DateTime
 
 
-class ShiftTime(cdt.Long, min=-900, max=900):
+class ShiftTime(cdt.MinMixin, cdt.MaxMixin, cdt.Long):
     """ Limited Long -900..900 """
+    MIN = -900
+    MAX = 900
 
 
 class TimeZone(cdt.Long):
@@ -71,11 +76,11 @@ class Clock(ICAuto):
                   ICMElement(4, "adjust_to_preset_time", integers.Only0),
                   ICMElement(5, "preset_adjusting_time", PresetAdjustingTime),
                   ICMElement(6, "shift_time", ShiftTime))
-    time: Optional[cst.OctetStringDateTime]
-    time_zone: Optional[TimeZone]
-    status: Optional[ClockStatus]
-    daylight_savings_begin: Optional[cst.OctetStringDateTime]
-    daylight_savings_end: Optional[cst.OctetStringDateTime]
-    daylight_savings_deviation: Optional[DaylightSavingsDeviation]
-    daylight_savings_enabled: Optional[cdt.Boolean]
-    clock_base: Optional[ClockBase]
+    time: Attr
+    time_zone: Attr
+    status: Attr
+    daylight_savings_begin: Attr
+    daylight_savings_end: Attr
+    daylight_savings_deviation: Attr
+    daylight_savings_enabled: Attr
+    clock_base: Attr

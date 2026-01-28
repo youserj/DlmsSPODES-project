@@ -76,7 +76,7 @@ class AddressLength(int):
         return super().__new__(cls, *args)
 
     @classmethod
-    def from_str(cls, value: str):
+    def parse(cls, value: str) -> "AddressLength":
         if value == "AUTO":
             value = -1
         return cls(int(value))
