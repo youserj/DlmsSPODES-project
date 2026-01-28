@@ -179,7 +179,7 @@ def handle_E(value: int) -> str:
 
 
 @lru_cache(maxsize=512)
-def get_name(logical_name: cst.LogicalName) -> str:
+def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
     match logical_name.a, logical_name.b, logical_name.c, logical_name.d, logical_name.e:
         case  0, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
         case  0, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
@@ -401,6 +401,8 @@ def get_name(logical_name: cst.LogicalName) -> str:
             return F"{handle_B(b)}{get_energy_names(c)} {get_rate(e)}"
         case  1, b, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 as c, d, e:
             return F"{handle_B(b)}{rn.CUMULATIVE} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
+        case 1, 0, 12, 7, 4 if spec_map in ("KPZ", "SPODES_3"):
+            return "Глубина провала/перенапряжения"
         case  1, b, 11 | 12 as c, 7, e:
             return F"{handle_B(b)}{get_obj_names(c)} {get_harmonics_name(e)}"
         case  1, b, 11 | 12 as c, 134, 0:
