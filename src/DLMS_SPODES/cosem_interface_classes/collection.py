@@ -1001,7 +1001,7 @@ class Collection:
                             case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
                                 a_val: structs.CaptureObjectDefinition
                                 obj = self.get_object(a_val.logical_name)
-                                rep.msg = F"{get_name(a_val.logical_name)}.{obj.get_attr_element(int(a_val.attribute_index))}"
+                                rep.msg = F"{get_name(a_val.logical_name, self.spec_map)}.{obj.get_attr_element(int(a_val.attribute_index))}"
                             case _:
                                 pass
                 rep.log = cdt.Log(logging.INFO)
@@ -1040,7 +1040,7 @@ class Collection:
                             case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
                                 data: structs.CaptureObjectDefinition
                                 obj = self.get_object(data.logical_name)
-                                rep.msg = F"{get_name(data.logical_name)}.{obj.get_attr_element(int(data.attribute_index))}"
+                                rep.msg = F"{get_name(data.logical_name, self.spec_map)}.{obj.get_attr_element(int(data.attribute_index))}"
                             case _:
                                 pass
                 rep.log = cdt.Log(logging.INFO)
@@ -1432,7 +1432,7 @@ class Collection:
         """ return names and type of element from collection"""
         names: list[str] = list()
         obj = self.par2obj(Parameter(value.logical_name.contents)).unwrap()
-        names.append(get_name(obj.logical_name))
+        names.append(get_name(obj.logical_name, self.spec_map))
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
         data_type: Type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
