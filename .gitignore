@@ -4,4 +4,4 @@ dist/
 .idea/
 *.pyc
 *.egg-info
-
+.venv/
