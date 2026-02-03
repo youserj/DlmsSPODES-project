@@ -423,8 +423,6 @@ class Digital(SimpleDataType, Protocol):
     DEFAULT = None
     VALUE: int | None = None
     # """integer if is it constant value"""
-    # MIN: int
-    # MAX: int
 
     def __init__(self, value: bytes | bytearray | str | int | float | Self = None) -> None:
         if value is None:
@@ -449,25 +447,11 @@ class Digital(SimpleDataType, Protocol):
     def __init_subclass__(cls, **kwargs) -> None:
         """initiate type.VALUE from subclass arg"""
         cls.VALUE = kwargs.get("value")
-        if isinstance(cls.VALUE, int):
-            """nothing"""
-        else:
-            cls.MIN = kwargs.get("min")
-            cls.MAX = kwargs.get("max")
-            if isinstance(cls.MIN, int) or isinstance(cls.MAX, int):
-                if cls.MIN is not None:
-                    cls.DEFAULT = max(0, cls.MIN)
-            else:
-                pass
 
     def validate(self) -> None:
         """ receiving contents validate. override it if need """
         if isinstance(self.VALUE, int) and int(self) != self.VALUE:
             raise ValueError(F"for {self.TAG} got value: {int(self)}, expected {self.VALUE}")
-        if isinstance(self.MIN, int) and self.MIN > int(self):
-            raise ValueError(F"out of range {self.TAG}, got {int(self)} expected more than {self.MIN}")
-        if isinstance(self.MAX, int) and int(self) > self.MAX:
-            raise ValueError(F'out of range {self.TAG},  got {int(self)} expected less than {self.MAX}')
 
     def _new_instance(self, value) -> Self:
         """ override SimpleDataType for send scaler_unit . use only for check and send contents """
@@ -540,6 +524,24 @@ class Digital(SimpleDataType, Protocol):
 
     def __hash__(self) -> int:
         return int(self)
+
+
+class MinDigital(Digital, Protocol):
+    MIN: int
+    
+    def validate(self) -> None:
+        if int(self) > self.MAX:
+            raise ValueError(F"out of range {self.TAG}, got {int(self)} expected less than {self.MAX}")
+        self.super().validate()
+
+
+class MaxDigital(Digital, Protocol):
+    MAX: int
+
+    def validate(self) -> None:
+        if int(self) > self.MAX:
+            raise ValueError(F"out of range {self.TAG}, got {int(self)} expected less than {self.MAX}")
+        self.super().validate()
 
 
 type BitNumber = int

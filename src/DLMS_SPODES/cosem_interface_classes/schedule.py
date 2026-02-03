@@ -5,7 +5,7 @@ from ..types import cdt, cst
 from ..types.type_alias import Attr
 
 
-class Index(cdt.MinMixin, cdt.MaxMixin, cdt.LongUnsigned):
+class Index(cdt.MinDigital, cdt.MaxDigital, cdt.LongUnsigned):
     """ LongUnsigned type with validation """
     MIN = 1
     MAX = 9999

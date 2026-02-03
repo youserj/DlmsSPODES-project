@@ -15,7 +15,7 @@ class CaptureObjects(cdt.Array):
     TYPE = structs.CaptureObjectDefinition
 
 
-class FromEntry(cdt.MinMixin, cdt.DoubleLongUnsigned):
+class FromEntry(cdt.MinDigital, cdt.DoubleLongUnsigned):
     """ Access selector value for selective access to the object_list attribute """
     MIN = 1
 

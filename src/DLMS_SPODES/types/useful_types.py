@@ -153,8 +153,10 @@ class CHOICE(Protocol):
 
     @classmethod
     def from_encoding(cls, encoding: Encoding) -> result.SimpleOrError[cdt.CommonDataType]:
-        match cls.ELEMENTS[encoding[0]]:
-            case SequenceElement() as el:
+        if (el := cls.ELEMENTS.get(encoding[0])) is None:
+            return result.Error.from_e(TypeError(f"{cls} got tag {encoding[0]}, expected {", ".join(map(str, cls.ELEMENTS))}"))
+        match el:
+            case SequenceElement():
                 return el.TYPE.from_encoding(encoding)
             case dict() as ch:
                 if encoding[1] in ch.keys():

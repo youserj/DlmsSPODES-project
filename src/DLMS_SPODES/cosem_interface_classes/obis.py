@@ -1,7 +1,7 @@
 from typing_extensions import deprecated
 
 
-@deprecated("use <bytes>")
+@deprecated("use <type.type_alias.Obis>")
 class OBIS(bytes):
     """bytes[6]"""
     __slots__ = ()

@@ -69,6 +69,11 @@ def obis2ln(obis: Obis) -> str:
     return ".".join(map(str, obis))
 
 
+def Attr2report(attr: Attr) -> str:
+    """report from Attr, ex: <0.0.1.0.0.255: 2>"""
+    return f"{obis2ln(attr2obis)}: {attr2i(attr)}"
+
+
 __all__ = [
     "Obis",
     "Attr",

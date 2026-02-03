@@ -68,7 +68,7 @@ from .parameter import Parameter
 from typing_extensions import deprecated, override
 from .cosem_interface_class import IC, Classifier, _LN_ELEMENT, ICAElement
 from ..settings import settings
-from ..types.type_alias import Obis, Encoding, Attr, Tag, attr2i, attr2obis, attr2a, attr2b, attr2c, attr2e, attr2f, attr2d, Index, unpack_attr
+from ..types.type_alias import Obis, Encoding, Attr, Tag, attr2i, attr2obis, attr2a, attr2b, attr2c, attr2e, attr2f, attr2d, Index, unpack_attr, Attr2report
 from .association_ln.abstract import ObjectListType
 
 
@@ -831,8 +831,8 @@ class Collection:
                 if self.country_ver:
                     if self.country == CountrySpecificIdentifiers.RUSSIA:
                         if (
-                            self.country_ver.par == b'\x00\x00`\x01\x06\xff\x02'
-                            and SemVer.parse(bytes(cdt.OctetString(self.country_ver.value)), True) == SemVer(3, 0)
+                            self.country_ver.attr == b'\x00\x00`\x01\x06\xff\x02'
+                            and SemVer.parse(bytes(cdt.OctetString(self.country_ver.data)), True) == SemVer(3, 0)
                         ):
                             return "SPODES_3"
                 if self.dlms_ver == 6:
@@ -890,7 +890,7 @@ class Collection:
         if isinstance(res_obj := self.obis2ic(attr2obis(attr)), result.Error):
             return res_obj
         if isinstance(res_data := res_obj.value.getCDT(attr2i(attr), encoding), result.Error):
-            return res_data
+            return res_data.with_msg(f"{res_obj.value}:{attr2i(attr)}")
         return self.setup_data(attr, res_data.value)
 
     def setup[T: cdt.CommonDataType](self, attr: Attr, encoding: Encoding, e_type: type[T]) -> result.Simple[T] | result.Error:
@@ -913,10 +913,10 @@ class Collection:
         if isinstance(res_el := res_obj.value.getAElement(i), result.Error):
             return res_el
         if not isinstance(d_t := res_el.value.DATA_TYPE, ut.CHOICE):
-            return result.Error.from_e(TypeError(f"for {attr=} can't setup TAG to not CHOICE element"))
+            return result.Error.from_e(TypeError(f"{res_obj.value}:{attr2i(attr)} can't setup TAG to not CHOICE element"))
         expected = d_t.get_types()
         if not any((t_.TAG == tag for t_ in expected)):
-            return result.Error.from_e(ValueError(f"got {tag=}, expected {tuple(t_.TAG for t_ in expected)}"))
+            return result.Error.from_e(TypeError(f"{res_obj.value}:{attr2i(attr)} got tag: {tag[0]}, expected {",".join(map(str, (t_.TAG for t_ in expected)))}"))
         if tag != self._t.setdefault(attr, tag):
             return result.Error.from_e(ValueError(f"collection already exist oter <Tag> for {attr=}"))
         return result.Simple(tag)

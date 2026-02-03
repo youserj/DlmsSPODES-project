@@ -28,7 +28,7 @@ class ClockStatus(cdt.Unsigned):
         return ret
 
 
-class DaylightSavingsDeviation(cdt.MaxMixin, cdt.MaxMixin, cdt.Integer):
+class DaylightSavingsDeviation(cdt.MaxDigital, cdt.MinDigital, cdt.Integer):
     """Contains the number of minutes by which the deviation in generalized time must be corrected at daylight savings begin.
     Deviation range of up to ± 120 min"""
     MIN = -120
@@ -48,7 +48,7 @@ class PresetAdjustingTime(cdt.Structure):
     validity_interval_end: cdt.DateTime
 
 
-class ShiftTime(cdt.MinMixin, cdt.MaxMixin, cdt.Long):
+class ShiftTime(cdt.MinDigital, cdt.MaxDigital, cdt.Long):
     """ Limited Long -900..900 """
     MIN = -900
     MAX = 900
