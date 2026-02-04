@@ -78,7 +78,7 @@ class ObjectListType(cdt._Array, Protocol):
 
     def get_attr_access(self, obis: Obis, i: int) -> pdu.AttributeAccess:
         """ index - DLMS object attribute index """
-        return pdu.AttributeAccess(int(self.get_access_mode))
+        return pdu.AttributeAccess(int(self.get_access_mode(obis, i)))
 
     def get_access_mode(self, obis: Obis, i: int) -> AccessMode:
         """ index - DLMS object attribute index """

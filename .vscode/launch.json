@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug test_access",
+            "name": "Debug: test_access",
             "type": "debugpy",
             "request": "launch",
             "program": "-m",
@@ -14,7 +14,7 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "install-editable",
+            // "preLaunchTask": "install-editable",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             }

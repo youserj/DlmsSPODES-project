@@ -1,5 +1,6 @@
 """DLMS UA 1000-1 Ed. 14"""
 from . import ver0
+from typing_extensions import deprecated
 from typing import Iterator, Optional
 from ... import cosem_interface_classes
 from ...relation_to_OBIS import obis2name
@@ -240,6 +241,7 @@ class ProfileGeneric(ver0.ProfileGeneric):
         self.attr_descriptor_with_selection = CosemAttributeDescriptorWithSelection
         self.buffer.selective_access = SelectiveAccessDescriptor()
 
+    @deprecated("removed, use manual in future")
     def get_capture_object_names(self) -> list[str]:
         """ return all capture object names from collection """
         if self.capture_objects is None:
