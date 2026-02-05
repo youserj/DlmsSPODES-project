@@ -33,6 +33,14 @@ class SortMethod(cdt.Enum, elements=(1, 2, 3, 4, 5, 6)):
     """sort_method"""
 
 
+class GetBufferByIndex(cdt.Structure):
+    """get_buffer_by_index"""
+    from_index: cdt.DoubleLongUnsigned
+    to_index: cdt.DoubleLongUnsigned
+    selected_values: cdt.Array
+    
+
+
 class ProfileGeneric(ic.COSEMInterfaceClasses):
     """5.3.1 Profile generic"""
     CLASS_ID = ClassID.PROFILE_GENERIC
@@ -56,6 +64,9 @@ class ProfileGeneric(ic.COSEMInterfaceClasses):
     M_ELEMENTS = (
         ic.ICMElement("reset", integers.Only0),
         ic.ICMElement("capture", integers.Only0),
+        ic.ICMElement("write", cdt.Structure),  # todo: make anyhow
+        ic.ICMElement("get_buffer_by_range", integers.Only0),
+        ic.ICMElement("get_buffer_by_index", integers.Only0)
         # more 2 elements
     )
 
