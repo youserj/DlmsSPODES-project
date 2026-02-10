@@ -64,13 +64,13 @@ class Limiter(ICAuto):
     emergency_profile_active: Optional[cdt.Boolean]
     actions: Optional[ActionType]
 
-    def characteristics_init(self):
+    def characteristics_init(self) -> None:
         self._cbs_attr_before_init.update({
             3: lambda value: self.__validate_threshold_scaler_unit(3, value),
             4: lambda value: self.__validate_threshold_scaler_unit(4, value),
             5: lambda value: self.__validate_threshold_scaler_unit(5, value)})
 
-    def __validate_threshold_scaler_unit(self, index: int, value: cdt.CommonDataTypes):
+    def __validate_threshold_scaler_unit(self, index: int, value: cdt.CommonDataTypes) -> None:
         if self.monitored_value is not None:
             """let setup"""
         else:

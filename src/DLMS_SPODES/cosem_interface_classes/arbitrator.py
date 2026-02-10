@@ -65,14 +65,3 @@ class Arbitrator(ICAuto):
     weightings_table: Optional[WeightingsTable]
     most_recent_request_table: Optional[MostRecentRequestTable]
     last_outcome: Optional[cdt.Unsigned]
-
-    def __check_permission_table(self):
-        """set length actor_permission be same as action array size if it not valid"""
-        if len(self.permissions_table) > 0:
-            for actor in self.permissions_table:
-                if len(actor) != len(self.actions):
-                    actor.set(ActorPermissions('0'*len(self.actions)))
-                else:
-                    """lenght is correct, change is not required """
-        else:
-            """not was loaded"""

@@ -19,23 +19,20 @@ class UsefulType(Protocol):
     """"""
     contents: bytes
     __match_args__ = ('contents',)
-    cb_preset: Callable
 
-    def __init__(self, value):
+    def __init__(self, value) -> None:
         """ constructor """
 
-    def __eq__(self, other: "UsefulType"):
+    def __eq__(self, other: "UsefulType") -> bool:
         match other:
             case self.__class__(self.contents): return True
             case _:                             return False
 
-    def set_contents_from(self, value: bytes | bytearray | str | int | bool | None):
+    def set_contents_from(self, value: bytes | bytearray | str | int | bool | None) -> bool:
         new_value = self.__class__(value)
-        if hasattr(self, 'cb_preset'):
-            self.cb_preset(new_value)
         self.__dict__['contents'] = new_value.contents
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value) -> None:
         match key:
             case 'contents' as prop if hasattr(self, 'contents'): raise ValueError(F"Don't support set {prop}")
             case _: super().__setattr__(key, value)
@@ -44,7 +41,7 @@ class UsefulType(Protocol):
 class _String(Protocol):
     LENGTH: int | None
 
-    def __init__(self, value: bytes | bytearray | str | int | tuple | UsefulType = None):
+    def __init__(self, value: bytes | bytearray | str | int | tuple | UsefulType = None) -> None:
         match value:
             case None:                                                        self.__dict__["contents"] = bytes(self.LENGTH)
             case bytes() if self.LENGTH is None or self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
@@ -61,7 +58,7 @@ class _String(Protocol):
             case UsefulType():                                                self.__dict__["contents"] = value.contents  # TODO: make right type
             case _:                                                           raise ValueError(F'Error create {self.__class__.__name__} with value {value}')
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ define in subclasses """
 
 
@@ -74,7 +71,7 @@ class OCTET_STRING(_String):
 
     def from_int(self, value: int) -> bytes:
         """ Convert with recursion. Maximum convert length is 32 """
-        def to_bytes_with(length_):
+        def to_bytes_with(length_) -> bytes:
             try:
                 return int.to_bytes(value, length_, 'big')
             except OverflowError:
@@ -84,10 +81,10 @@ class OCTET_STRING(_String):
         length = 1
         return to_bytes_with(length)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.contents.hex(' ')
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.contents)
 
     def __getitem__(self, item):
@@ -135,7 +132,7 @@ class CHOICE(Protocol):
     def NAME(self) -> str:
         return F'CHOICE[{len(self)}]'
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ELEMENTS)
 
     def is_key(self, value: int) -> bool:
@@ -198,7 +195,7 @@ class CHOICE(Protocol):
         """ Use in setter attribute.value for validate """
         return tuple((seq_el.TYPE for seq_el in self.__get_elements()))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F'{CHOICE}: {", ".join((el.NAME for el in self.__get_elements()))}'
 
 
@@ -212,7 +209,7 @@ class SEQUENCE(Protocol):
     ELEMENTS: "tuple[SequenceElement | SEQUENCE, ...]"
     values: list[UsefulType]
 
-    def __init__(self, value: "bytes | tuple | list | None | SEQUENCE" = None):
+    def __init__(self, value: "bytes | tuple | list | None | SEQUENCE" = None) -> None:
         self.__dict__['values'] = [None] * len(self.ELEMENTS)
         match value:
             case tuple() | list():
@@ -224,22 +221,22 @@ class SEQUENCE(Protocol):
             case self.__class__():  self.from_bytes(value.contents)
             case _:                 raise TypeError(F'Value: "{value}" not supported')
 
-    def from_default(self):
+    def from_default(self) -> None:
         for i in range(len(self)):
             self.values[i] = self.ELEMENTS[i].TYPE()
 
-    def from_bytes(self, value: bytes | bytearray):
+    def from_bytes(self, value: bytes | bytearray) -> None:
         for i, element in enumerate(self.ELEMENTS):
             self.values[i], value = get_instance_and_context(element.TYPE, value)
 
-    def from_tuple(self, value: tuple | list):
+    def from_tuple(self, value: tuple | list) -> None:
         for i, val in enumerate(value):
             self.values[i] = self.ELEMENTS[i].TYPE(val)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F'{{{", ".join(map(lambda val: F"{val[0].NAME}: {val[1]}", zip(self.ELEMENTS, self.values)))}}}'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return F'{self.__class__.__name__}(({(", ".join(map(str, self.values)))}))'
 
     def __get_index(self, name: str) -> int | None:
@@ -250,7 +247,7 @@ class SEQUENCE(Protocol):
         else:
             return None
 
-    def __setattr__(self, key, value: UsefulType):
+    def __setattr__(self, key, value: UsefulType) -> None:
         match self.__get_index(key):
             case int() as i if isinstance(value, self.ELEMENTS[i]):                self.values[i] = value
             case int() as i:                raise ValueError(F'Try assign {key} Type got {value.__class__.__name__}, expected {self.ELEMENTS[i].NAME}')
@@ -275,7 +272,7 @@ class SEQUENCE(Protocol):
         else:
             raise ValueError(F'Type got {value.__class__.__name__}, expected {self.ELEMENTS[key].TYPE}')
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ELEMENTS)
 
     @property
@@ -292,7 +289,7 @@ class SequenceElement:
     NAME: str
     TYPE: Type[UsefulType | SEQUENCE | CHOICE | cdt.CommonDataType]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F'{self.NAME}: {self.TYPE.__name__}'
 
 
@@ -303,7 +300,7 @@ class DigitalMixin:
     LENGTH: int
     contents: bytes
 
-    def __init__(self, value: "bytes | bytearray | str | int | DigitalMixin" = None):
+    def __init__(self, value: "bytes | bytearray | str | int | DigitalMixin" = None) -> None:
         match value:
             case bytes() if self.LENGTH <= len(value): self.__dict__["contents"] = value[:self.LENGTH]
             case bytes():            raise ValueError(F'Length of contents for {self.__class__.__name__} must be at least {self.LENGTH}, but got {len(value)}')
@@ -324,17 +321,17 @@ class DigitalMixin:
     def from_str(self, value: str) -> bytes:
         return self.from_int(float(value))
 
-    def __int__(self):
+    def __int__(self) -> int:
         """ return the build in integer type """
         return int.from_bytes(self.contents, 'big', signed=self.SIGNED)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(int(self))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return F'{self.__class__.__name__}({self})'
 
-    def __gt__(self, other: "DigitalMixin"):
+    def __gt__(self, other: "DigitalMixin") -> bool:
         match other:
             case DigitalMixin(): return int(self) > int(other)
             case _:          raise TypeError(F'Compare type is {other.__class__}, expected Digital')
@@ -342,13 +339,8 @@ class DigitalMixin:
     def __len__(self) -> int:
         return self.LENGTH
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return int(self)
-
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position. Use in Entry. TODO: remove it, make better """
-        type(self)(value=value)
-        return value, cursor_position
 
 
 class Integer8(DigitalMixin, UsefulType):
@@ -414,14 +406,14 @@ class CosemClassId(Unsigned16):
         else:
             return repr(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return F"{self.__class__.__name__}({int(self)})"
 
 
 class CosemObjectInstanceId(OCTET_STRING, UsefulType):
     LENGTH = 6
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F"\"{'.'.join(map(str, self.contents))}\""
 
     def from_str(self, value: str) -> bytes:
@@ -462,7 +454,7 @@ class CosemObjectAttributeId(Integer8):
     """ TODO """
 
     @lru_cache(14)  # for test
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> None:
         return super().__new__(cls)
 
 
@@ -473,7 +465,7 @@ class CosemObjectMethodId(Integer8):
 class AccessSelectionParameters(Unsigned8):
     """ Unsigned8(0..1) """
 
-    def __init__(self, value: int | str | Unsigned8 = 1):
+    def __init__(self, value: int | str | Unsigned8 = 1) -> None:
         super(AccessSelectionParameters, self).__init__(value)
         if int(self) > 1 or int(self) < 0:
             raise ValueError(F'The {self.__class__.__name__} got {self}, expected 0..1')
@@ -488,7 +480,7 @@ class CosemAttributeDescriptor(SEQUENCE):
                 SequenceElement('instance_id', CosemObjectInstanceId),
                 SequenceElement('attribute_id', CosemObjectAttributeId))
 
-    def __init__(self, value: bytes | tuple | list = None):
+    def __init__(self, value: bytes | tuple | list = None) -> None:
         super(CosemAttributeDescriptor, self).__init__(value)
         self.__dict__['access_selection_parameters'] = AccessSelectionParameters(0)
 
@@ -506,7 +498,7 @@ class CosemMethodDescriptor(SEQUENCE):
                 SequenceElement('instance_id', CosemObjectInstanceId),
                 SequenceElement('method_id', CosemObjectMethodId))
 
-    def __init__(self, value: tuple[CosemClassId, CosemObjectInstanceId, CosemObjectMethodId]):
+    def __init__(self, value: tuple[CosemClassId, CosemObjectInstanceId, CosemObjectMethodId]) -> None:
         super(CosemMethodDescriptor, self).__init__(value)
 
 
@@ -521,22 +513,22 @@ class SelectiveAccessDescriptor(SEQUENCE):
     access_parameters: cdt.CommonDataType
     ELEMENTS: tuple[SequenceElement, SequenceElement]
 
-    def __init__(self, value: tuple | bytes | None = None):
+    def __init__(self, value: tuple | bytes | None = None) -> None:
         super(SelectiveAccessDescriptor, self).__init__(value)
 
     @property
     def ELEMENTS(self) -> tuple[SequenceElement, SequenceElement]:
         """ return elements """
 
-    def from_default(self):
+    def from_default(self) -> None:
         self.values[0] = self.ELEMENTS[0].TYPE()
         self.values[1] = self.ELEMENTS[1].TYPE.ELEMENTS[int(self.access_selector)].TYPE()
 
-    def from_bytes(self, value: bytes | bytearray):
+    def from_bytes(self, value: bytes | bytearray) -> None:
         self.values[0], value = get_instance_and_context(self.ELEMENTS[0].TYPE, value)
         self.values[1] = self.ELEMENTS[1].TYPE.ELEMENTS[int(self.access_selector)].TYPE(value)
 
-    def from_tuple(self, value: tuple | list):
+    def from_tuple(self, value: tuple | list) -> None:
         self.values[0] = self.ELEMENTS[0].TYPE(value[0])
         self.values[1] = self.ELEMENTS[1].TYPE.ELEMENTS[int(self.access_selector)].TYPE(value[1])
 
@@ -544,11 +536,11 @@ class SelectiveAccessDescriptor(SEQUENCE):
     def contents(self) -> bytes:
         return self.access_selector.contents+self.access_parameters.encoding
 
-    def __validate_selector(self):
+    def __validate_selector(self) -> None:
         self.values[1] = self.ELEMENTS[1].TYPE.ELEMENTS[int(self.access_selector)].TYPE()
         print('change sel')
 
-    def set_selector(self, index: int, value=None):
+    def set_selector(self, index: int, value=None) -> None:
         """ set selector value from int type """
         self.access_selector.set_contents_from(index)
         if value:
@@ -560,7 +552,7 @@ class CosemAttributeDescriptorWithSelection(SEQUENCE):
     access_selection: SelectiveAccessDescriptor
     ELEMENTS: tuple[CosemAttributeDescriptor, SequenceElement]
 
-    def __init__(self, value: bytes | tuple | list = None):
+    def __init__(self, value: bytes | tuple | list = None) -> None:
         super(CosemAttributeDescriptorWithSelection, self).__init__(value)
         self.cosem_attribute_descriptor.access_selection_parameters.set_contents_from(1)
 
@@ -571,7 +563,7 @@ class CosemAttributeDescriptorWithSelection(SEQUENCE):
 
 class InvokeIdAndPriority(Unsigned8):
 
-    def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = 0b1100_0000):
+    def __init__(self, value: bytes | bytearray | str | int | DigitalMixin = 0b1100_0000) -> None:
         super(InvokeIdAndPriority, self).__init__(value)
         if self.contents[0] & 0b00110000:
             raise ValueError(F'For {self.__class__.__name__} set reserved bits')
@@ -579,7 +571,7 @@ class InvokeIdAndPriority(Unsigned8):
     @classmethod
     def from_parameters(cls, invoke_id: int = 0,
                         service_class: int = 0,
-                        priority: int = 0):
+                        priority: int = 0) -> None:
         instance = cls()
         instance.invoke_id = invoke_id
         instance.service_class = service_class
@@ -591,7 +583,7 @@ class InvokeIdAndPriority(Unsigned8):
         return self.contents[0] & 0b0000_1111
 
     @invoke_id.setter
-    def invoke_id(self, value: int):
+    def invoke_id(self, value: int) -> None:
         if value & 0b00001111:
             self.__dict__['contents'] = int((self.contents[0] & 0b1111_0000) | value).to_bytes(1, 'big')
         else:
@@ -603,7 +595,7 @@ class InvokeIdAndPriority(Unsigned8):
         return (self.contents[0] >> 6) & 0b1
 
     @service_class.setter
-    def service_class(self, value: int):
+    def service_class(self, value: int) -> None:
         match value:
             case 0 | 1: self.__dict__['contents'] = int((self.contents[0] & 0b1011_1111) | (value << 6)).to_bytes(1, 'big')
             case _:     raise ValueError(F'Got {value} for service_class, expected 0..1')
@@ -614,12 +606,12 @@ class InvokeIdAndPriority(Unsigned8):
         return (self.contents[0] >> 7) & 0b1
 
     @priority.setter
-    def priority(self, value: int):
+    def priority(self, value: int) -> None:
         match value:
             case 0 | 1: self.__dict__['contents'] = int((self.contents[0] & 0b0111_1111) | (value << 7)).to_bytes(1, 'big')
             case _:     raise ValueError(F'Got {value} for service_class, expected 0..1')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F'priority: {"High" if self.contents[0] & 0b1000_0000 else "Normal"}, ' \
                F'service-class: {"Confirmed" if self.contents[0] & 0b0100_0000 else "Unconfirmed"}, ' \
                F'invoke-id: {self.invoke_id},'

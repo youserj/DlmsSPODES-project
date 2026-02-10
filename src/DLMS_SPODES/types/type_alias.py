@@ -8,6 +8,7 @@ type Index = int    # 0..
 type GruoupI = int  # group index of Obis 0..
 type Attr = bytes  # bytes[7]
 type Meth = bytes  # bytes[7]
+type Contents = bytes  # bytes[0..]
 type Encoding = bytes  # bytes[1..]
 type LN = str  # logical name as "a.b.c.d.e.f"
 type Tag = bytes  # bytes[1] CDT tag
@@ -78,6 +79,7 @@ __all__ = [
     "Obis",
     "Attr",
     "AttrDesc",
+    "Contents",
     "Encoding",
     "Index",
     "Tag"

@@ -144,7 +144,7 @@ class ChannelNumberValue(cdt.Unsigned, cdt.ReportMixin):
         return enu.ChannelNumber(int(self) & 0b0000_0111)
 
     @channel.setter
-    def channel(self, value: enu.ChannelNumber):
+    def channel(self, value: enu.ChannelNumber) -> None:
         self.set((int(self) & 0b1111_1000) | value)
 
     @property
@@ -152,7 +152,7 @@ class ChannelNumberValue(cdt.Unsigned, cdt.ReportMixin):
         return enu.Interface((int(self) & 0b1111_1000) >> 3)
 
     @interface.setter
-    def interface(self, value: enu.Interface):
+    def interface(self, value: enu.Interface) -> None:
         self.set((int(self) & 0b0001_1111) | (value << 3))
 
     def get_report(self) -> cdt.Report:
@@ -261,7 +261,7 @@ class SPODES3PowerQuality2Event(DataNotSpecific):
 
 
 class LoadLockerValue(cdt.IntegerEnum, cdt.Unsigned):
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """not need"""
 
     def get_report(self) -> cdt.Report:
@@ -412,7 +412,7 @@ class KPZ1SPODES3ReactivePowerEvent(DataStatic):
 
 
 class SPODES3MeasurementPeriodValue(cdt.Unsigned):
-    def validate(self):
+    def validate(self) -> None:
         super(SPODES3MeasurementPeriodValue, self).validate()
         values: tuple[int, ...] = (1, 2, 3, 5, 10, 15, 20, 30, 60)
         if int(self) not in values:
@@ -446,7 +446,7 @@ class SPODES3SPODESVersionValue(cdt.OctetString, cdt.ReportMixin):
             log=log
         )
 
-    def validate(self):
+    def validate(self) -> None:
         if self.__pattern.fullmatch(self.contents) is None:
             raise ValueError(F"не соответствует СТО 34.01-5.1. Приложение Г")
 

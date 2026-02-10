@@ -79,11 +79,6 @@ class Conformance(cdt.BitString):
         """ TODO: """
         return cls.ELEMENTS
 
-    def validate_from(self, value: str, cursor_position: int) -> tuple[str, int]:
-        """ return validated value and cursor position. TODO: copypast FlagMixin """
-        type(self)(value=value.zfill(len(self)))
-        return value, cursor_position
-
     @property
     def general_protection(self) -> int:
         return tuple(self)[1]

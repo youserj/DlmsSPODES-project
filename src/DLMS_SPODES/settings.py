@@ -511,6 +511,40 @@ class Settings(BaseModel):
     firmwares: list[_Firmware] = Field(default_factory=list)
     am_names: _AmNames = Field(default_factory=_AmNames)
     class_name: dict[int, str] = Field(default={1: "Data"})
+    type_name: dict[int, str] = Field(default={
+        0: "null-data",
+        1: "array",
+        2: "structure",
+        3: "boolean",
+        4: "bit-string",
+        5: "double-long",
+        6: "double-long-unsigned",
+        7: "IEC-float-not-used",
+        9: "octet-string",
+        10: "visible-string",
+        11: "IEC-time-not-used",
+        12: "utf8-string",
+        13: "bcd",
+        15: "integer",
+        16: "long",
+        17: "unsigned",
+        18: "long-unsigned",
+        19: "compact-array",
+        20: "long64",
+        21: "long64-unsigned",
+        22: "enum",
+        23: "float32",
+        24: "float64",
+        25: "date-time",
+        26: "date",
+        27: "time",
+        28: "delta-integer",
+        29: "delta-long",
+        30: "delta-double-long",
+        31: "delta-unsigned",
+        32: "delta-long-unsigned",
+        33: "delta-double-long-unsigned"
+    })
 
 
 if not os.path.isfile(path := ".//config.toml"):

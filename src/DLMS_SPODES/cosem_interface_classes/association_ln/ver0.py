@@ -32,7 +32,7 @@ class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
     """ Array of attribute_access_item """
     TYPE = AttributeAccessItem
 
-    def set_read_access(self, attribute_id: cdt.Integer):
+    def set_read_access(self, attribute_id: cdt.Integer) -> None:
         it: AttributeAccessItem
         for it in self:
             if it.attribute_id == attribute_id:
@@ -185,12 +185,12 @@ class LLCSecret(cdt.OctetString):
     __representation: Representation = Representation.HEX
     # used for set class property from instance
 
-    def __init__(self, value: bytes | bytearray | str | int = None):
+    def __init__(self, value: bytes | bytearray | str | int = None) -> None:
 
         super(LLCSecret, self).__init__(value)
         # self.representation = Representation(0)
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value) -> None:
         match key:
             case 'representation' if not isinstance(value, Representation): raise ValueError(F"Error representation type")
             case 'representation' as rep:                                   LLCSecret.__representation = value
@@ -216,7 +216,7 @@ class LLCSecret(cdt.OctetString):
         else:
             return super(LLCSecret, self).from_str(value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self.__representation:
             case Representation.ASCII:                       return cdt.VisibleString.__str__(self)
             case Representation.HIDDEN:                      return self.__hide_all(super(LLCSecret, self).__str__())
@@ -225,25 +225,11 @@ class LLCSecret(cdt.OctetString):
 
 
 class LLCSecretHigh(LLCSecret):
-    DEFAULT = b'0000000000000000'
 
     def validation(self):
         """ check for length equal 16 """
         if len(self) != 16:
             raise ValueError(F'Got length of High secret: {len(self)}, expected 16')
-
-    def validate_from(self, value: str, cursor_position=None) -> tuple[str, int]:
-        try:
-            correct = type(self)(value)
-            return str(correct), cursor_position + (len(str(correct))-len(value))
-        except ValueError:
-            match self.representation & 0b1:
-                case Representation.HEX:
-                    cursor_position: int = len(value)-1 if cursor_position is None else cursor_position
-                    type(self)(F'{value[:cursor_position]}0{value[cursor_position:]}')  # check possible
-                case Representation.ASCII:
-                    type(self)(value.zfill(16))
-            return value, cursor_position
 
 
 class AccessSelector(ut.Unsigned8):
@@ -307,7 +293,7 @@ class AssociationLN(ICAuto):
         else:
             """nothing do it"""
 
-    def __init_secret(self):
+    def __init_secret(self) -> None:
         """ before initiating secret need knowledge what kind of mechanism ID """
         match self.authentication_mechanism_name.mechanism_id_element, self.LLS_secret:
             case mechanism_id.NONE | mechanism_id.LOW, LLCSecret(): """keep secret value"""

@@ -131,7 +131,7 @@ class ProfileGeneric(ver0.ProfileGeneric):
     sort_method: Optional[ver0.SortMethod]
     sort_object: Optional[structs.CaptureObjectDefinition]
 
-    def characteristics_init(self):
+    def characteristics_init(self) -> None:
         self.set_attr(ver0.BUFFER, None)
 
         # todo remove it
@@ -196,13 +196,13 @@ class ProfileGeneric(ver0.ProfileGeneric):
 
         self.buffer.set_type(Entry)
 
-    def __create_selective_access_descriptor(self):
+    def __create_selective_access_descriptor(self) -> None:
         """ Available after got sort object. TODO: need rewrite. maybe replace to collection level. Wrong used sort_obj, it can be any element from capture_objects"""
         if self.sort_object is None:
             raise exc.EmptyObj(F"<sort object> is empty")
         sort_obj: ic.COSEMInterfaceClasses = self.collection.get_object(self.sort_object.logical_name)
         if sort_obj.CLASS_ID.contents == self.sort_object.class_id.contents:
-            value_type: Type[cdt.CommonDataType] = sort_obj.get_attr_data_type(int(self.sort_object.attribute_index))
+            value_type: type[cdt.CommonDataType] = sort_obj.get_attr_data_type(int(self.sort_object.attribute_index))
         else:
             exc.NoObject(F"got {self.sort_object.class_id=}, expected {sort_obj.CLASS_ID=} from collection")
 

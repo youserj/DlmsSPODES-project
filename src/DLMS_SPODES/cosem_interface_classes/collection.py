@@ -20,7 +20,7 @@ from .arbitrator import Arbitrator
 from .association_ln import mechanism_id, client_sap
 from .association_ln.abstract import ObjectListElement
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
-from .association_ln.ver0 import AssociationLN as AssociationLNVer0, ObjectListElement, AssociatedPartnersType
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0, AssociatedPartnersType
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver0 import PushSetup as PushSetupVer0
@@ -762,7 +762,6 @@ class Collection:
     def add_from_object_list(self, obj_list: ObjectListType) -> result.StrictOk | result.Error:
         res = result.StrictOk()
         for o_l_el in obj_list:
-            o_l_el: ObjectListElement
             if isinstance(res_new := self.addIC(
                     class_id=ut.CosemClassId(int(o_l_el.class_id)),
                     version=int(o_l_el.version),
@@ -840,20 +839,7 @@ class Collection:
                 else:
                     raise exc.DLMSException("unknown specification")
 
-    @deprecated("use <addIC>")
-    def add_if_missing(self, class_id: ut.CosemClassId,
-                       version: int,
-                       obis: Obis) -> IC:
-        """ like as add method with check for missing """
-        if (res := self.__objs.get(obis)) is None:
-            return self.add(
-                class_id=class_id,
-                version=version,
-                obis=obis)
-        else:
-            return res
-
-    def __getitem__(self, item: o.OBIS) -> IC:
+    def __getitem__(self, item: Obis) -> IC:
         return self.__objs[item]
 
     def attr2ICAElement(self, obis: Obis, i: Index) -> result.SimpleOrError[ICAElement]:
@@ -868,9 +854,9 @@ class Collection:
 
     def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
         """:return CDT by Parameter, return None if data wasn't setting"""
-        if isinstance((res_obj := self.par2obj(par)), result.Error):
-            return res_obj
-        res = result.Option(res_obj.value.get_attr(par.i))
+        if isinstance((r_obj := self.obis2ic(par.obis)), result.Error):
+            return r_obj
+        res = result.Option(r_obj.value.get_attr(par.i))
         if res.value is None:
             return res
         for i, el in enumerate(par.elements()):
@@ -1156,7 +1142,7 @@ class Collection:
                         class_id: ut.CosemClassId) -> Iterator[IC]:
         return (obj for obj in self.__objs.values() if obj.CLASS_ID == class_id)
 
-    def iter_objects[T: IC](self, e_type: type[IC]) -> Iterator[IC]:
+    def iter_objects[T: IC](self, e_type: type[T]) -> Iterator[T]:
         return (obj for obj in self.__objs.values() if isinstance(obj, e_type))
 
     def LNPattern2objects(self,
@@ -1260,7 +1246,7 @@ class Collection:
 
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> AssociationLN:
-        return self.obis2ic(bytes(0, 0, 40, 0, 1, 255)).unwrap()
+        return self.obis2obj(bytes(0, 0, 40, 0, 1, 255), AssociationLN).unwrap()
 
     @property
     def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
@@ -1319,7 +1305,7 @@ class Collection:
 
     def getARBITRATOR(self, ch: int = 0) -> Arbitrator:
         """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
-        return self.obis2ic(bytes((0, ch, 96, 3, 20, 255))).unwrap()
+        return self.obis2obj(bytes((0, ch, 96, 3, 20, 255)), Arbitrator).unwrap()
 
     @property
     def boot_version(self) -> str:
@@ -1337,7 +1323,7 @@ class Collection:
             if script.script_identifier == selector:
                 names: list[str] = []
                 for action in script.actions:
-                    action_obj = self.obis2obj(action.logical_name.contents).unwrap()
+                    action_obj = self.obis2ic(action.logical_name.contents).unwrap()
                     if int(action_obj.CLASS_ID) != int(action.class_id):
                         raise ValueError(F"got {action_obj.CLASS_ID}, expected {action.class_id}")
                     match int(action.service_id):
@@ -1447,11 +1433,11 @@ class Collection:
     def get_attr_tree(self,
                       ass_id: int,
                       obj_mode: ObjectTreeMode = "c",
-                      obj_filter: ObjFilteredKey = None,
+                      obj_filter: Optional[ObjFilteredKey] = None,
                       sort_mode: SortMode = "",
                       af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw", "m", "mlrw", "mlr"] = "l",
-                      oi_filter: tuple[tuple[ClassID, tuple[int, ...]], ...] = None  # todo: maybe ai_filter with LNPattern, indexes need?
-                      ) -> dict[ClassID | media_id.MediaId, dict[IC, list[int]]] | dict[IC, list[int]]:  # todo: not all ret annotation
+                      oi_filter: Optional[tuple[tuple[ut.CosemClassId, tuple[int, ...]], ...]] = None  # todo: maybe ai_filter with LNPattern, indexes need?
+                      ) -> dict[ut.CosemClassId | media_id.MediaId, dict[IC, list[int]]] | dict[IC, list[int]]:  # todo: not all ret annotation
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable,
         oi_filter(object attribute index filter), example: ((ClassID.REGISTER, (2,))) - is restricted for Register only Value attribute without logical_name and scaler_unit
         """
@@ -1580,7 +1566,7 @@ def obis2mediaId(obis: Obis) -> media_id.MediaId:
     return media_id.MediaId.from_int(attr2a(obis))
 
 
-def get_class_id(obj: InterfaceClass) -> ClassID:
+def get_class_id(obj: InterfaceClass) -> ut.CosemClassId:
     return obj.CLASS_ID
 
 

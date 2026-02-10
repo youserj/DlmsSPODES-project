@@ -3,15 +3,16 @@ from ...types.implementations import arrays, structs
 from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAElement, ICMElement
 
+
 class AssociationLN(ver1.AssociationLN):
     """5.4.7 Association LN"""
     VERSION = 2
     A_ELEMENTS = (
         ver1.AssociationLN.getAElement(2).unwrap(),  # <object_list>
         ver0.AssociationLN.getAElement(3).unwrap(),  # associated_partners_id
-        ver0.AssociationLN.getAElement(4).unwrap(),  # application_context_name
+        ver1.AssociationLN.getAElement(4).unwrap(),  # application_context_name
         ver0.AssociationLN.getAElement(5).unwrap(),  # xDLMS_context_info
-        ver0.AssociationLN.getAElement(6).unwrap(),  # authentication_mechanism_name
+        ver1.AssociationLN.getAElement(6).unwrap(),  # authentication_mechanism_name
         ver1.AssociationLN.getAElement(7).unwrap(),  # secret
         ver0.AssociationLN.getAElement(8).unwrap(),  # association_status
         ver1.AssociationLN.getAElement(9).unwrap(),  # security_setup_reference

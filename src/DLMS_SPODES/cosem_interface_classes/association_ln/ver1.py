@@ -27,7 +27,7 @@ class AttributeAccessDescriptor(abstract.AttributeAccessDescriptor):
     """ Array of attribute_access_item """
     TYPE = AttributeAccessItem
 
-    def set_read_access(self, attribute_id: cdt.Integer):
+    def set_read_access(self, attribute_id: cdt.Integer) -> None:
         it: AttributeAccessItem
         for it in self:
             if it.attribute_id == attribute_id:

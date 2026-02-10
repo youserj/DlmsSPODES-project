@@ -374,7 +374,6 @@ VoltSquaredHours = "Удельные потери в силовых трансф
 Voltage = "Напряжение"
 
 [DLMS.type_name]
-SimpleDataType = "Простой тип данных"
 0 = "Отсутствие данных"
 1 = "Массив"
 2 = "Структура"
@@ -399,7 +398,6 @@ SimpleDataType = "Простой тип данных"
 25 = "Дата-время"
 26 = "Дата"
 27 = "Время"
-ComplexDataType = "Составной тип данных"
 
 [DLMS.report.struct]
 DayProfileAction = "%n00: %v00 - Тариф: %v02"

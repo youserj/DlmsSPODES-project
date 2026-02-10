@@ -5,19 +5,19 @@ class CommSpeed(cdt.Enum, elements=tuple(range(10))):
     """ The communication speed supported by the corresponding port. This communication speed can be overridden if the HDLC mode of a devive is entered through a special mode
     of another protocol. """
 
-    def to_transcript(self) -> int:
+    def to_transcript(self) -> cdt.Transcript:
         """ override enum key to enum value"""
         match self.contents:
-            case b'\x00':  return 300
-            case b'\x01':  return 600
-            case b'\x02':  return 1200
-            case b'\x03':  return 2400
-            case b'\x04':  return 4800
-            case b'\x05':  return 9600
-            case b'\x06':  return 19200
-            case b'\x07':  return 38400
-            case b'\x08':  return 57600
-            case b'\x09':  return 115200
+            case b'\x00':  return "300"
+            case b'\x01':  return "600"
+            case b'\x02':  return "1200"
+            case b'\x03':  return "2400"
+            case b'\x04':  return "4800"
+            case b'\x05':  return "9600"
+            case b'\x06':  return "19200"
+            case b'\x07':  return "38400"
+            case b'\x08':  return "57600"
+            case b'\x09':  return "115200"
             case _ as err: raise ValueError(F'Wrong CommSpeed: {err}, expected {CommSpeed.ELEMENTS.keys()}')
 
     def from_int(self, value: int) -> bytes:

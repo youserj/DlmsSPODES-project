@@ -49,7 +49,7 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
                   ver1.ProfileGeneric.A_ELEMENTS[5],
                   ver1.ProfileGeneric.A_ELEMENTS[6])
 
-    def characteristics_init(self):
+    def characteristics_init(self) -> None:
         self.set_attr(ver0.BUFFER, None)
         self.buffer.register_cb_preset(lambda _: self.__create_buffer_struct_type())  # value not used for creating struct type
 
@@ -58,7 +58,7 @@ class SPODES3DisplayReadout(ver1.ProfileGeneric):
         self.buffer_capture_objects = self.capture_objects
         """ objects for buffer. Change with access_selection """
 
-    def __create_buffer_struct_type(self):
+    def __create_buffer_struct_type(self) -> None:
         """ TODO: more refactoring !!! """
         # rename CaptureObjectDefinition's and adding object if it absense in collection
         for el_value in self.capture_objects:

@@ -507,7 +507,7 @@ class PatternMatcher:
             masks.append((tuple(pattern_masks), value))
         object.__setattr__(self, '_masks', masks)
 
-    def find_match(self, param: 'Parameter') -> str:
+    def find_match(self, param: 'Parameter') -> Optional[str]:
         """Находит первое совпадение параметра с шаблоном"""
         param_values = (
             param.a, param.b, param.c, param.d, param.e, param.f,
