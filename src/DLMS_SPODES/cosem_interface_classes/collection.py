@@ -1354,7 +1354,10 @@ class Collection:
     def get_association_id(self, client_sap: enums.ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
         for ass in get_filtered(iter(self), (ln_pattern.ASSOCIATION,)):
-            if ass.associated_partners_id.client_SAP == client_sap:
+            if (
+                ass.associated_partners_id
+                and ass.associated_partners_id.client_SAP == client_sap
+            ):
                 return ass.logical_name.e
             else:
                 continue
