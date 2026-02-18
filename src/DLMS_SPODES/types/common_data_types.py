@@ -171,7 +171,7 @@ def call_wrong_tag_in_value(value: bytes, expected: TAG):
     raise ValueError(F"can't create {expected} with value {value}")
 
 
-Transcript: TypeAlias = str | list[Self]
+Transcript: TypeAlias = str | list["Transcript"]
 """represent of CDT contents by string/list values"""
 
 
