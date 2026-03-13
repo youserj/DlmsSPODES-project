@@ -12,7 +12,7 @@ class AssociationLN(ver1.AssociationLN):
         ver0.AssociationLN.get_attr_element(3),  # associated_partners_id
         ver0.AssociationLN.get_attr_element(4),  # application_context_name
         ver0.AssociationLN.get_attr_element(5),  # xDLMS_context_info
-        ver0.AssociationLN.get_attr_element(6),  # authentication_mechanism_name
+        ver1.AssociationLN.get_attr_element(6),  # authentication_mechanism_name
         ver1.AssociationLN.get_attr_element(7),  # secret
         ver0.AssociationLN.get_attr_element(8),  # association_status
         ver1.AssociationLN.get_attr_element(9),  # security_setup_reference

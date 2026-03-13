@@ -154,6 +154,11 @@ class ApplicationContextName(cdt.Structure):
     application_context_element: cdt.Unsigned
     context_id_element: cdt.Unsigned
 
+class ContextNameType(cdt.AXDR, ApplicationContextName):
+    """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
+    application association. This attribute contains the name of the application context for that association."""
+    DEFAULT = b'\x09\x07\x60\x85\x74\x05\x08\x01\x01'
+
 
 class XDLMSContextType(cdt.Structure):
     """ Contains all the necessary information on the xDLMS context for the given association. """
@@ -296,9 +301,9 @@ class AssociationLN(ic.COSEMInterfaceClasses):
     VERSION = VERSION_0
     A_ELEMENTS = (ic.ICAElement("object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
                   ic.ICAElement("associated_partners_id", AssociatedPartnersType),
-                  ic.ICAElement("application_context_name", ApplicationContextName),
+                  ic.ICAElement("application_context_name", ContextNameType),
                   ic.ICAElement("xDLMS_context_info", XDLMSContextType),
-                  ic.ICAElement("authentication_mechanism_name", authentication_mechanism_name.AuthenticationMechanismName),
+                  ic.ICAElement("authentication_mechanism_name", authentication_mechanism_name.MechanismNameType),
                   ic.ICAElement("LLS_secret", LLCSecret, classifier=ic.Classifier.NOT_SPECIFIC),
                   ic.ICAElement("association_status", AssociationStatus, classifier=ic.Classifier.DYNAMIC))
     M_ELEMENTS = (ic.ICMElement("reply_to_HLS_authentication", method.ReplyToHLSAuthentication),

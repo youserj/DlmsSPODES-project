@@ -23,3 +23,9 @@ class AuthenticationMechanismName(cdt.Structure):
         default[5] = cryptographic
         default[6] = algorithm_id
         return AuthenticationMechanismName(tuple(default)).get_a_xdr()
+
+
+class MechanismNameType(cdt.AXDR, AuthenticationMechanismName):
+    """ In the COSEM environment, it is intended that an application context pre-exists and is referenced by its name during the establishment of an
+    application association. This attribute contains the name of the application context for that association."""
+    DEFAULT = b'\x09\x07\x60\x85\x74\x05\x08\x02\x00'
