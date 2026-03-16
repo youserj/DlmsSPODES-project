@@ -1194,7 +1194,20 @@ class Collection:
                         mask: set[int] = None
                         ) -> list[cdt.ScalUnitType | None]:
         """return container of scaler_units if possible, mask: position number in capture_objects"""
-        res: list[cdt.ScalUnitType | None] = list()
+        res: list[cdt.ScalUnitType | None] = []
+        scaler_profile: ProfileGeneric
+        if (
+            isinstance(obj.scaler_profile_key, bytes)
+            and (scaler_profile := self.get(obj.scaler_profile_key)) is not None
+        ):
+            for i, s_u in enumerate(scaler_profile.buffer.values[0]):
+                if mask and i not in mask:
+                    continue
+                if isinstance(s_u, cdt.ScalUnitType):
+                    res.append(s_u)
+                else:
+                    res.append(None)
+            return res
         for i, obj_def in enumerate(obj.capture_objects):
             obj_def: structs.CaptureObjectDefinition
             if mask and i not in mask:
