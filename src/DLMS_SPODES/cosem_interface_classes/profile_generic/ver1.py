@@ -206,7 +206,7 @@ class ProfileGeneric(ver0.ProfileGeneric):
     def __create_selective_access_descriptor(self):
         """ Available after got sort object. TODO: need rewrite. maybe replace to collection level. Wrong used sort_obj, it can be any element from capture_objects"""
         if self.sort_object is None:
-            raise exc.EmptyObj(F"<sort object> is empty")
+            raise exc.EmptyObj(F"for {self} <sort object> is empty")
         sort_obj: ic.COSEMInterfaceClasses = self.collection.get_object(self.sort_object.logical_name)
         if sort_obj.CLASS_ID.contents == self.sort_object.class_id.contents:
             value_type: Type[cdt.CommonDataType] = sort_obj.get_attr_data_type(int(self.sort_object.attribute_index))

@@ -1199,6 +1199,7 @@ class Collection:
         if (
             isinstance(obj.scaler_profile_key, bytes)
             and (scaler_profile := self.get(obj.scaler_profile_key)) is not None
+            and scaler_profile.buffer.values
         ):
             for i, s_u in enumerate(scaler_profile.buffer.values[0]):
                 if mask and i not in mask:
