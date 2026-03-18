@@ -1059,28 +1059,25 @@ class Collection:
                 obj: Register | DemandRegister
                 if (s_u := obj.scaler_unit) is None:
                     raise ic.EmptyAttribute(obj.logical_name, 3)
-                else:
-                    if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                        s_u = s_u.copy()
-                        s_u.scaler.set(int(s_u.scaler)-s)
-                    return s_u
+                if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
+                    s_u = s_u.copy()
+                    s_u.scaler.set(int(s_u.scaler) - s)
+                return s_u
             case ClassID.LIMITER, 3 | 4 | 5:
                 obj: Limiter
                 if m_v := obj.monitored_value:
                     return self.get_scaler_unit(  # recursion 1 level
                         obj=self.get_object(m_v.logical_name),
                         par=m_v.attribute_index.contents)
-                else:
-                    raise ic.EmptyAttribute(obj.logical_name, 2)
+                raise ic.EmptyAttribute(obj.logical_name, 2)
             case ClassID.REGISTER_MONITOR, 2, _:
                 obj: RegisterMonitor
                 if (m_v := obj.monitored_value) is None:
                     raise ic.EmptyAttribute(obj.logical_name, 3)
-                else:
-                    return self.get_scaler_unit(  # recursion 1 level
-                        obj=self.get_object(m_v.logical_name),
-                        par=m_v.attribute_index.contents
-                    )
+                return self.get_scaler_unit(  # recursion 1 level
+                    obj=self.get_object(m_v.logical_name),
+                    par=m_v.attribute_index.contents
+                )
             case _:
                 return None
 
@@ -1205,6 +1202,9 @@ class Collection:
                 if mask and i not in mask:
                     continue
                 if isinstance(s_u, cdt.ScalUnitType):
+                    if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
+                        s_u = s_u.copy()
+                        s_u.scaler.set(int(s_u.scaler) - s)
                     res.append(s_u)
                 else:
                     res.append(None)
