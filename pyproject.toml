@@ -24,7 +24,8 @@ dependencies = [
     "semver>=3.0",
     "typing-extensions>=4.12.2",  # remove for 3.13(use for @deprecated)
     "StructResult>=0.9.6",
-    "numpy>=2.3.2"
+    "numpy>=2.3.2",
+    "COSEMpdu>=0.2"
 ]
 description="dlms-spodes"
 readme = "README.md"
