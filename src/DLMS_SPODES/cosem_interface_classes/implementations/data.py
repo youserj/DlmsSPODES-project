@@ -330,81 +330,152 @@ class KPZ1VoltageEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3VoltageEventValues.NAMES
 
 
+class KPZ1VoltageEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1VoltageEventValues, SPODES3VoltageEventValues)):
+    """"""
+
+
+kpz_voltage_event_choice = KPZ1VoltageEventChoice()
+
+
 class KPZ1SPODES3VoltageEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.2 События, связанные с напряжением with bag in value type"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1VoltageEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_voltage_event_choice),
 
 
 class KPZ1CurrentEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3CurrentEventValues.NAMES
 
 
+class KPZ1CurrentEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1CurrentEventValues, SPODES3CurrentEventValues)):
+    """"""
+
+
+kpz_current_event_choice = KPZ1CurrentEventChoice()
+
+
 class KPZ1SPODES3CurrentEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.3 События, связанные с током"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CurrentEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_current_event_choice),
 
 
 class KPZ1CommutationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3CommutationEventValues.NAMES
 
 
+class KPZ1CommutationEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1CommutationEventValues, SPODES3CommutationEventValues)):
+    """"""
+
+
+kpz_commutation_event_choice = KPZ1CommutationEventChoice()
+
+
 class KPZ1SPODES3CommutationEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.4 События, связанные с вкл./выкл. ПУ, коммутации реле нагрузки"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommutationEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_commutation_event_choice),
 
 
 class KPZ1ProgrammingEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3ProgrammingEventValues.NAMES
 
 
+class KPZ1ProgrammingEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1ProgrammingEventValues, SPODES3ProgrammingEventValues)):
+    """"""
+
+
+kpz_programming_event_choice = KPZ1ProgrammingEventChoice()
+
+
 class KPZ1SPODES3ProgrammingEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.5 События программирования параметров ПУ"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ProgrammingEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_programming_event_choice),
 
 
 class KPZ1ExternalEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3ExternalEventValues.NAMES
 
 
+class KPZ1ExternalEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1ExternalEventValues, SPODES3ExternalEventValues)):
+    """"""
+
+
+kpz_external_event_choice = KPZ1ExternalEventChoice()
+
+
 class KPZ1SPODES3ExternalEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.6 События внешних воздействий"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ExternalEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_external_event_choice),
 
 
 class KPZ1CommunicationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3CommunicationEventValues.NAMES
 
 
+class KPZ1CommunicationEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1CommunicationEventValues, SPODES3CommunicationEventValues)):
+    """"""
+
+
+kpz_communication_event_choice = KPZ1CommunicationEventChoice()
+
+
 class KPZ1SPODES3CommunicationEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.7 Коммуникационные события"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1CommunicationEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_communication_event_choice),
 
 
 class KPZ1AccessEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3AccessEventValues.NAMES
 
 
+class KPZ1AccessEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1AccessEventValues, SPODES3AccessEventValues)):
+    """"""
+
+
+kpz_access_event_choice = KPZ1AccessEventChoice()
+
+
 class KPZ1SPODES3AccessEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.8 События контроля доступа"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1AccessEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_access_event_choice),
 
 
 class KPZ1SelfDiagnosticEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3SelfDiagnosticEventValues.NAMES
 
 
+class KPZ1SelfDiagnosticEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1SelfDiagnosticEventValues, SPODES3SelfDiagnosticEventValues)):
+    """"""
+
+
+kpz_self_diagnostic_event_choice = KPZ1SelfDiagnosticEventChoice()
+
+
 class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.9 Коды событий для журнала самодиагностики"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1SelfDiagnosticEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_self_diagnostic_event_choice),
 
 
 class KPZ1ReactivePowerEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
     NAMES = SPODES3ReactivePowerEventValues.NAMES
 
 
+class KPZ1ReactivePowerEventChoice(choices.CommonDataTypeChoiceBase,
+                     types=(KPZ1ReactivePowerEventValues, SPODES3ReactivePowerEventValues)): ...
+
+
+kpz_reactive_power_event_choice = KPZ1ReactivePowerEventChoice()
+
+
 class KPZ1SPODES3ReactivePowerEvent(DataStatic):
     """СТО_34.01-5.1-006-2019v3 Д.10 События по превышению реактивной мощности"""
-    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=KPZ1ReactivePowerEventValues),
+    A_ELEMENTS = DataStatic.get_attr_element(2).get_change(data_type=kpz_reactive_power_event_choice),
 
 
 class SPODES3MeasurementPeriodValue(cdt.Unsigned):
