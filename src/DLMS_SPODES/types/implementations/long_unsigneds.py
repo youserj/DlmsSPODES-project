@@ -1,15 +1,15 @@
 from dataclasses import dataclass
+from COSEMpdu.data import (
+    NullData, BitString, DoubleLong, DoubleLongUnsigned, OctetString, VisibleString, Utf8String,
+    Integer, Long, Unsigned, LongUnsigned, Long64, Long64Unsigned, Enum, Float32, Float64, Structure,
+    Data
+)
 from ...types import common_data_types as cdt
 from ...cosem_interface_classes import overview
 
 
-class ClassId(cdt.LongUnsigned):
+class ClassId(LongUnsigned):
     """ Class ID type """
-    DEFAULT = 1
-
-    def validate(self):
-        if not int(self) in overview.ClassID.get_all_id():
-            raise ValueError(F'Unknown DLMS class with ID {int(self)}')
 
 
 @dataclass(frozen=True)

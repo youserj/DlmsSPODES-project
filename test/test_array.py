@@ -1,6 +1,6 @@
 import unittest
 from src.DLMS_SPODES.types import cdt
-from src.DLMS_SPODES.cosem_interface_classes.association_ln.abstract import ObjectListElement
+from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver1 import ObjectListElement
 
 
 class TestType(unittest.TestCase):

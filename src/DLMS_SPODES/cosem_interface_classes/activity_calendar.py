@@ -1,16 +1,16 @@
 from typing import Self
+from COSEMpdu.data import Structure, OctetString
 from ..types.implementations import integers, octet_string
 from typing import Optional
 from ..types import cdt, cst
 from .cosem_interface_class import ICAElement, ICMElement, ICAuto
-from .Overview import class_id
 
 
-class Season(cdt.Structure):
+class Season(Structure):
     """ Defined by their starting date and a specific week_profile to be executed """
-    season_profile_name: cdt.OctetString
+    season_profile_name: OctetString
     season_start: cst.OctetStringDateTime
-    week_name: cdt.OctetString
+    week_name: OctetString
 
 
 class SeasonProfile(cdt.Array):
@@ -20,10 +20,10 @@ class SeasonProfile(cdt.Array):
 
     def new_element(self) -> Season:
         names: list[bytes] = [bytes(el.season_profile_name) for el in self.values]
-        for new_name in (i.to_bytes(1, 'big') for i in range(256)):
+        for new_name in (i.to_bytes(1, "big") for i in range(256)):
             if new_name not in names:
-                return Season((bytearray(new_name), None, bytearray(b'week_name?')))
-        raise ValueError(F'in {self} all season names is busy')
+                return Season((bytearray(new_name), None, bytearray(b"week_name?")))
+        raise ValueError(F"in {self} all season names is busy")
 
     def sort(self, date_time: cdt.DateTime) -> Self:
         """sort by date-time
@@ -54,7 +54,7 @@ class SeasonProfile(cdt.Array):
         return sorted_data
 
 
-class WeekProfile(cdt.Structure):
+class WeekProfile(Structure):
     """ For each week_profile, the day_profile for every day of a week is identified. """
     week_profile_name: cdt.OctetString
     monday: cdt.Unsigned
@@ -75,16 +75,16 @@ class WeekProfileTable(cdt.Array):
     def new_element(self) -> WeekProfile:
         """return default WeekProfile with vacant week_profile_name, existed day ID and insert callback for validate change DayID"""
         names: list[bytes] = [bytes(el.week_profile_name) for el in self.values]
-        for new_name in (i.to_bytes(1, 'big') for i in range(256)):
+        for new_name in (i.to_bytes(1, "big") for i in range(256)):
             if new_name not in names:
                 return WeekProfile((bytearray(new_name), *[0]*7))
-        raise ValueError(F'in {self} all week names is busy')
+        raise ValueError(F"in {self} all week names is busy")
 
     def get_week_profile_names(self) -> tuple[cdt.OctetString, ...]:
         return tuple((el.week_profile_name for el in self.values))
 
 
-class DayProfileAction(cdt.Structure):
+class DayProfileAction(Structure):
     """ Scheduled action is defined by a script to be executed and the corresponding activation time (start_time). """
     start_time: cst.OctetStringTime
     script_logical_name: cst.LogicalName
@@ -101,7 +101,7 @@ class DaySchedule(cdt.Array):
     values: list[DayProfileAction]
 
 
-class DayProfile(cdt.Structure):
+class DayProfile(Structure):
     """ list of Scheduled actions is defined by a script to be executed and the corresponding activation time (start_time) with day ID. """
     day_id: cdt.Unsigned
     day_schedule: DaySchedule
@@ -119,7 +119,7 @@ class DayProfileTable(cdt.Array):
         for i in range(0xff):
             if i not in day_ids:
                 return DayProfile((i, None))
-        raise ValueError(F'in {self} all days ID is busy')
+        raise ValueError(F"in {self} all days ID is busy")
 
     def get_day_ids(self) -> tuple[cdt.Unsigned, ...]:
         return tuple((day_profile.day_id for day_profile in self.values))
@@ -136,7 +136,7 @@ class DayProfileTable(cdt.Array):
 
 class ActivityCalendar(ICAuto):
     """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
-    CLASS_ID = class_id.ACTIVITY_CALENDAR
+    CLASS_ID = 20
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "calendar_name_active", octet_string.ID),
                   ICAElement(3, "season_profile_active", SeasonProfile),
@@ -158,7 +158,7 @@ class ActivityCalendar(ICAuto):
     day_profile_table_passive: Optional[DayProfileTable]
     activate_passive_calendar_time: Optional[cst.OctetStringDateTime]
 
-    def ActivatePassiveCalendar(cls, value=None) -> integers.Only0:
+    def ActivatePassiveCalendar(cls, value=None) -> integers.IntegerValue0:
         return cls.M_ELEMENTS[0].DATA_TYPE
 
     def validate(self):
@@ -169,7 +169,7 @@ class ActivityCalendar(ICAuto):
                     raise ObjectValidationError(
                         ln=self.logical_name,
                         i=index,
-                        message=F"find duplicate {name}: {', '.join(map(str, duplicates))} in {self.getAElement(index).unwrap()}")
+                        message=F"find duplicate {name}: {", ".join(map(str, duplicates))} in {self.getAElement(index).unwrap()}")
                 index -= 1
 
             days: list[DayProfile.day_id] = []
@@ -191,7 +191,7 @@ class ActivityCalendar(ICAuto):
                         raise ObjectValidationError(
                             ln=self.logical_name,
                             i=index,
-                            message=F"in {self.getAElement(index).unwrap()} got {week_profile} with day_id: {week_profile[i]}; expected: {', '.join(map(str, days))}")
+                            message=F"in {self.getAElement(index).unwrap()} got {week_profile} with day_id: {week_profile[i]}; expected: {", ".join(map(str, days))}")
             handle_duplicates("week_profile_name")
             seasons: list[Season.season_profile_name] = []
             for season in self.get_attr(index):
@@ -203,7 +203,7 @@ class ActivityCalendar(ICAuto):
                     raise ObjectValidationError(
                         ln=self.logical_name,
                         i=index,
-                        message=F"in {self.get_attr_element(index)} got {season} with: {season.week_name}, expected: {', '.join(map(str, weeks))}")
+                        message=F"in {self.get_attr_element(index)} got {season} with: {season.week_name}, expected: {", ".join(map(str, weeks))}")
             handle_duplicates("season_profile_name")
 
         validate_seasons(5)

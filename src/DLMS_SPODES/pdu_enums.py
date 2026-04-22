@@ -58,24 +58,6 @@ class ActionResponse(IntEnum):
     NEXT_PBLOCK = 4
 
 
-class AttributeAccess(IntEnum):
-    """use with version 0 and 1 AssociationLN"""
-    NO_ACCESS = 0
-    READ_ONLY = 1
-    WRITE_ONLY = 2
-    READ_AND_WRITE = 3
-    AUTHENTICATED_READ_ONLY = 4
-    AUTHENTICATED_WRITE_ONLY = 5
-    AUTHENTICATED_READ_AND_WRITE = 6
-
-
-class MethodAccess(IntEnum):
-    """use with version 0 and 1 AssociationLN"""
-    NO_ACCESS = 0
-    ACCESS = 1
-    AUTHENTICATED_ACCESS = 2
-
-
 class SecurityPolicyVer0(IntEnum):
     NOTHING = 0
     AUTHENTICATED = 1

@@ -103,9 +103,9 @@ class CertificateIdentification(choices.StructureMixin, cdt.Structure):
 class SecuritySetup(ver0.SecuritySetup):
     VERSION = 1
     A_ELEMENTS = (ICAElement(2, "security_policy", SecurityPolicy),
-                  ver0.SecuritySetup.getAElement(3).unwrap(),
-                  ver0.SecuritySetup.getAElement(4).unwrap(),
-                  ver0.SecuritySetup.getAElement(5).unwrap(),
+                  ver0.SecuritySetup.getAElement(3),
+                  ver0.SecuritySetup.getAElement(4),
+                  ver0.SecuritySetup.getAElement(5),
                   ICAElement(6, "certificates", Certificates, classifier=Classifier.DYNAMIC))
 
     M_ELEMENTS = (ICMElement(1, "security_activate", SecurityPolicy),

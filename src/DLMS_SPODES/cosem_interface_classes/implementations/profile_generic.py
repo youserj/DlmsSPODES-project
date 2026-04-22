@@ -1,4 +1,4 @@
-from ..cosem_interface_class import ICAElement
+from ..cosem_interface_class import ICAElement, update_collection
 from ..profile_generic import ver0, ver1
 from ...types.implementations import structs, enums
 from ...types import ut, cdt
@@ -6,12 +6,9 @@ from ...types import ut, cdt
 
 class SPODES3ScalesProfile(ver1.ProfileGeneric):
     """Cosem3 Для профилей масштаба"""
-    A_ELEMENTS = (
-        ICAElement(
-            i=2,
-            NAME=ver1.ProfileGeneric.A_ELEMENTS[0].NAME,
-            DATA_TYPE=ver1.ProfileGeneric.A_ELEMENTS[0].DATA_TYPE),
-        *ver1.ProfileGeneric.A_ELEMENTS[1:])
+    A_ELEMENTS = update_collection(
+        ver1.ProfileGeneric.A_ELEMENTS,
+        ICAElement(2, ver1.ProfileGeneric.A_ELEMENTS[0].NAME, ver1.ProfileGeneric.A_ELEMENTS[0].DATA_TYPE))
     """override buffer with STATIC classifier"""
 
 

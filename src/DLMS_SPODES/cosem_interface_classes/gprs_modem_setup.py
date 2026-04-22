@@ -1,7 +1,6 @@
 from typing import Optional
 from ..types import cdt
 from .cosem_interface_class import ICAElement, ICAuto
-from .Overview import class_id
 
 
 class QoSElement(cdt.Structure):
@@ -23,7 +22,7 @@ class QualityOfService(cdt.Structure):
 
 class GPRSModemSetup(ICAuto):
     """ This IC allow setting up GPRS modems, by handling all data necessary data for modem management. """
-    CLASS_ID = class_id.GPRS_MODEM_SETUP
+    CLASS_ID = 45
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "APN", cdt.OctetString),
                   ICAElement(3, "PIN_code", cdt.LongUnsigned),

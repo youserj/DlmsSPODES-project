@@ -9,6 +9,7 @@ from src.DLMS_SPODES.cosem_interface_classes import collection, overview, ln_pat
 from src.DLMS_SPODES.obis import media_id
 from src.DLMS_SPODES.exceptions import NeedUpdate, NoObject
 from src.DLMS_SPODES.cosem_interface_classes.association_ln import client_sap
+from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver0 import ClientSAP
 
 
 server_1_4_0 = collection.AttrData(
@@ -116,7 +117,7 @@ class TestType(unittest.TestCase):
 
     def test_get_type_from_class(self):
         ln = cst.LogicalName.from_obis("0.0.1.0.0.255")
-        value = collection.get_interface_class(collection.common_interface_class_map, ut.CosemClassId(7), cdt.Unsigned(1))
+        value = collection.get_interface_class(collection.common_interface_class_map, 7, 1)
         v1 = value(ln)
         print(value, v1)
 
@@ -149,7 +150,7 @@ class TestType(unittest.TestCase):
             server_type=firID_M2M_1,
             server_ver=server_1_5_15)
         print(col)
-        a = col.get_objects_list(client_sap.CONFIGURATOR)
+        a = col.get_objects_list(ClientSAP.CONFIGURATOR)
         print(a)
         for i in range(10):
             col_new = collection.get_collection(
@@ -629,7 +630,6 @@ class TestType(unittest.TestCase):
         print(locker, rep)
 
     def test_report_enums(self):
-        from src.DLMS_SPODES.cosem_interface_classes.association_ln.mechanism_id import MechanismIdElement
         col = collection.get_collection(
             manufacturer=b"KPZ",
             server_type=collection.ParameterValue(
@@ -644,9 +644,6 @@ class TestType(unittest.TestCase):
         print(col.get_report(clock_obj, b'\x09', clock_obj.clock_base))
         ass_obj = col.get_object("0.0.40.0.1.255")
         print(ass_obj.authentication_mechanism_name.authentication_mechanism_name_element)
-        m_id = MechanismIdElement(0)
-        m_id.set('2')
-        print(F"{m_id=}")
         vol_ev_obj = col.get_object("0.0.96.11.0.255")
         vol_ev_obj.set_attr(2, 33)
         print(col.get_report(vol_ev_obj, b'\x02', vol_ev_obj.value))

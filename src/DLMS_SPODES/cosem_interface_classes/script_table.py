@@ -1,7 +1,6 @@
 from ..types import choices, cdt, cst
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
-from .Overview import class_id
 
 
 class ServiceId(cdt.Enum, elements=(1, 2)):
@@ -47,7 +46,7 @@ class Scripts(cdt.Array):
 
 class ScriptTable(ICAuto):
     """Script table"""
-    CLASS_ID = class_id.SCRIPT_TABLE
+    CLASS_ID = 9
     VERSION = 0
     A_ELEMENTS = ICAElement(2, "scripts", Scripts),
     M_ELEMENTS = ICMElement(1, "execute", cdt.LongUnsigned),

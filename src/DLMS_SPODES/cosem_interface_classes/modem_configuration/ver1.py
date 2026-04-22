@@ -1,27 +1,24 @@
+from COSEMpdu.data import Array, Structure, OctetString, LongUnsigned
 from . import ver0
-from typing import Optional
-from ...types import cdt
-from ..cosem_interface_class import ICAElement
-from ..Overview import class_id
+from ..cosem_interface_class import ICAElement, update_collection
+from ...types.type_alias import Attr
 
 
-class InitializationStringElement(cdt.Structure):
+class InitializationStringElement(Structure):
     """initialization_string_element"""
-    request: cdt.OctetString
-    response: cdt.OctetString
-    delay_after_response: cdt.LongUnsigned
+    request: OctetString
+    response: OctetString
+    delay_after_response: LongUnsigned
 
 
-class InitializationString(cdt.Array):
-    """initialization_string attribute"""
-    TYPE = InitializationStringElement
+InitializationString = Array[InitializationStringElement]
+"""initialization_string"""
 
 
 class ModemConfigurationVer1(ver0.PSTNModemConfiguration):
     """4.7.4 Modem configuration"""
-    ClassID = class_id.MODEM_CONFIGURATION
     VERSION = 1
-    A_ELEMENTS = (ver0.PSTNModemConfiguration.getAElement(2).unwrap(),
-                  ICAElement(3, "initialization_string", InitializationString),
-                  ver0.PSTNModemConfiguration.getAElement(4).unwrap())
-    initialization_string: Optional[InitializationString]
+    A_ELEMENTS = update_collection(
+        ver0.PSTNModemConfiguration.A_ELEMENTS,
+        ICAElement(3, "initialization_string", InitializationString))
+    initialization_string: Attr

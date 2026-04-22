@@ -1,6 +1,10 @@
 from abc import ABC
+from dataclasses import dataclass
 from itertools import chain
 from typing import TypeAlias, Self
+from COSEMpdu.x680 import NamedType
+from COSEMpdu.axdr import ChoiceType
+from COSEMpdu import data
 from ..types import cdt, ut, cst
 from ..types.implementations import structs
 
@@ -17,7 +21,7 @@ class CommonDataTypeChoiceBase(ut.CHOICE, ABC):
         cls.ELEMENTS = {}
         for t in kwargs["types"]:
             if isinstance(t, dict):  # extended choice
-                cls.ELEMENTS[int.from_bytes(tuple(t.values())[0].TAG, "big")] = {k: ut.SequenceElement(str(v.TAG), v) for k, v in t.items()}
+                cls.ELEMENTS[tuple(t.values())[0].tag, "big"] = {k: ut.SequenceElement(str(v.tag), v) for k, v in t.items()}
             else:
                 cls.ELEMENTS[int.from_bytes(t.TAG, "big")] = ut.SequenceElement(str(t.TAG), t)
 

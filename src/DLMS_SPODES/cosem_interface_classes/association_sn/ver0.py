@@ -1,5 +1,5 @@
 from ..cosem_interface_class import ICAuto, ICAElement, Classifier, Cardinality
-from ..Overview import class_id
+from ...types.type_alias import Attr
 
 
 class AssociationSN(ICAuto):
@@ -7,7 +7,7 @@ class AssociationSN(ICAuto):
     VERSION = 0
     A_ELEMENTS = ()
     M_ELEMENTS = ()
-    CLASS_ID = class_id.ASSOCIATION_SN
+    CLASS_ID = 12
     CARDINALITY = Cardinality()
 
     def __new__(cls, *args, **kwargs):

@@ -1,45 +1,39 @@
+from COSEMpdu.data import Array, OctetString, Unsigned, LongUnsigned, Structure
+from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement
 from ...types import cst
-from ...types.implementations import long_unsigneds
-from typing import Optional
-from ...types import cdt
-from ..Overview import class_id
 
 
-class ObjectDefinition(cdt.Structure):
-    class_id: long_unsigneds.ClassId
+class ObjectDefinition(Structure):
+    """object_definition"""
+    class_id: LongUnsigned
     logical_name: cst.LogicalName
 
 
-class RegisterAssignment(cdt.Array):
-    TYPE = ObjectDefinition
+RegisterAssignment = Array[ObjectDefinition]
+IndexArray = Array[Unsigned]
 
 
-class IndexArray(cdt.Array):
-    TYPE = cdt.Unsigned
-
-
-class RegisterActMask(cdt.Structure):
-    mask_name: cdt.OctetString
+class RegisterActMask(Structure):
+    mask_name: OctetString
     index_list: IndexArray
 
 
-class MaskList(cdt.Array):
-    TYPE = RegisterActMask
+MaskList = Array[RegisterActMask]
 
 
 class RegisterActivation(ICAuto):
     """4.3.5 Register activation"""
-    CLASS_ID = class_id.REGISTER_ACTIVATION
+    CLASS_ID = 6
     VERSION = 0
     A_ELEMENTS = (
         ICAElement(2, "register_assignment", RegisterAssignment),
         ICAElement(3, "mask_list", MaskList),
-        ICAElement(4, "active_mask", cdt.OctetString))
+        ICAElement(4, "active_mask", OctetString))
     M_ELEMENTS = (
         ICMElement(1, "add_register", ObjectDefinition),
         ICMElement(2, "add_mask", RegisterActMask),
-        ICMElement(3, "delete_mask", cdt.OctetString))
-    register_assignment: Optional[RegisterAssignment]
-    mask_list: Optional[MaskList]
-    active_mask: Optional[cdt.OctetString]
+        ICMElement(3, "delete_mask", OctetString))
+    register_assignment: Attr
+    mask_list: Attr
+    active_mask: Attr

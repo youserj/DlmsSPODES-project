@@ -4,7 +4,6 @@ usage of those definitions in the COSEM environment. All codes, which are not ex
 reserved for future use."""
 import logging
 from struct import pack
-import inspect
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import reduce, cached_property, lru_cache
@@ -17,10 +16,9 @@ from ..types.implementations import structs, enums, octet_string
 from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
 from .arbitrator import Arbitrator
-from .association_ln import mechanism_id, client_sap
-from .association_ln.abstract import ObjectListElement
+from .association_ln import ObjectListType, is_readable, is_writable, is_accessible, MechanismIdElement
 from .association_sn.ver0 import AssociationSN as AssociationSNVer0
-from .association_ln.ver0 import AssociationLN as AssociationLNVer0, AssociatedPartnersType
+from .association_ln.ver0 import AssociationLN as AssociationLNVer0, AssociatedPartnersType, ClientSAP
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
 from .push_setup.ver0 import PushSetup as PushSetupVer0
@@ -58,7 +56,6 @@ from .tcp_udp_setup import TCPUDPSetup
 from .. import exceptions as exc
 from ..relation_to_OBIS import obis2name
 from ..cosem_interface_classes import implementations as impl
-from ..cosem_interface_classes.Overview import class_id
 from ..cosem_interface_classes.overview import ClassID, CountrySpecificIdentifiers
 from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
@@ -66,10 +63,10 @@ from ..config_parser import config, get_message
 from ..obis import media_id
 from .parameter import Parameter
 from typing_extensions import deprecated, override
-from .cosem_interface_class import IC, Classifier, _LN_ELEMENT, ICAElement
+from .cosem_interface_class import IC, Classifier, _LN_ELEMENT, ICAElement, DataType
 from ..settings import settings
 from ..types.type_alias import Obis, Encoding, Attr, Tag, attr2i, attr2obis, attr2a, attr2b, attr2c, attr2e, attr2f, attr2d, Index, unpack_attr, Attr2report
-from .association_ln.abstract import ObjectListType
+
 
 
 class CollectionMapError(exc.DLMSException):
@@ -198,15 +195,13 @@ common_interface_class_map: dict[int, ClassMap] = {
 }
 
 
-def get_interface_class(class_map: dict[int, ClassMap], c_id: ut.CosemClassId, ver: int) -> result.SimpleOrError[type[IC]]:
+def get_interface_class(class_map: dict[int, ClassMap], c_id: int, ver: int) -> result.SimpleOrError[type[IC]]:
     """new version <get_type_from_class>"""
-    ret = class_map.get(int(c_id), None)
-    if isinstance(ret, ClassMap):
+    if isinstance(ret := class_map.get(c_id), ClassMap):
         return result.Simple(ret.get(ver))
-    if int(c_id) not in common_interface_class_map:
-        return result.Error.from_e(ValueError(F"unknown {c_id=}"), "get interface class")
-    else:
-        return result.Error.from_e(ValueError((F"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")))
+    if c_id not in common_interface_class_map:
+        return result.Error.from_e(ValueError(f"unknown {c_id=}"), "get interface class")
+    return result.Error.from_e(ValueError((f"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")))
 
 
 _CUMULATIVE = (1, 2, 11, 12, 21, 22)
@@ -565,7 +560,7 @@ __func_map_for_create.update({
 func_maps["KPZ1"] = get_func_map(__func_map_for_create)
 
 
-def get_type(class_id: ut.CosemClassId,
+def get_type(c_id: int,
              ver: int,
              obis: Obis,
              func_map: FUNC_MAP) -> result.SimpleOrError[type[IC]]:
@@ -594,7 +589,7 @@ def get_type(class_id: ut.CosemClassId,
                     # try search in A-C group
                     c_m = func_map.get(obis[:1] + obis[3:4], common_interface_class_map)
     return get_interface_class(class_map=c_m,
-                               c_id=class_id,
+                               c_id=c_id,
                                ver=ver)
 
 
@@ -694,7 +689,7 @@ class ID:
     man: bytes
     f_id: AttrData
     f_ver: AttrData
-    sap: client_sap.ClientSAP
+    sap: ClientSAP
 
     def __bytes__(self) -> bytes:
         return self.man + self.sap.contents + bytes(self.f_id) + bytes(self.f_ver)
@@ -716,7 +711,7 @@ class Collection:
     __country: Optional[CountrySpecificIdentifiers]
     __country_ver: Optional[AttrData]
     __objs: dict[Obis, IC]
-    _data: dict[Attr, cdt.CommonDataType]
+    _data: dict[Attr, DataType]
     _t: dict[Attr, Tag]
     spec_map: str
 
@@ -738,12 +733,12 @@ class Collection:
         self._t = {}
         """expected Tags of Attributes"""
 
-    def getCDT(self, attr: Attr) -> result.SimpleOrError[cdt.CommonDataType]:
+    def getCDT(self, attr: Attr) -> result.SimpleOrError[DataType]:
         if (data := self._data.get(attr)) is None:
             return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
         return result.Simple(data)
 
-    def get[T: cdt.CommonDataType](self, attr: Attr, e_type: type[T]) -> result.SimpleOrError[T]:
+    def get[T: DataType](self, attr: Attr, e_type: type[T]) -> result.SimpleOrError[T]:
         if (data := self._data.get(attr)) is None:
             return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
         if isinstance(data, e_type):
@@ -763,8 +758,8 @@ class Collection:
         res = result.StrictOk()
         for o_l_el in obj_list:
             if isinstance(res_new := self.addIC(
-                    class_id=ut.CosemClassId(int(o_l_el.class_id)),
-                    version=int(o_l_el.version),
+                    c_id=o_l_el.class_id.normalize(),
+                    version=o_l_el.version.normalize(),
                     obis=o_l_el.logical_name.contents
             ), result.Error):
                 res.append_err(res_new.err)
@@ -907,13 +902,13 @@ class Collection:
             return result.Error.from_e(ValueError(f"collection already exist oter <Tag> for {attr=}"))
         return result.Simple(tag)
 
-    def addIC(self, class_id: ut.CosemClassId,
+    def addIC(self, c_id: int,
               version: Optional[int],
               obis: Obis) -> result.SimpleOrError[IC]:
         """ append new DLMS object to collection with return it"""
         if isinstance(r_ic_type := get_type(
-            class_id=class_id,
-            ver=self.find_version(class_id) if version is None else version,
+            c_id=c_id,
+            ver=self.find_version(c_id) if version is None else version,
             obis=obis,
             func_map=func_maps[self.spec_map]), result.Error):
             return r_ic_type
@@ -1129,7 +1124,7 @@ class Collection:
             ret.append(self.obis2ic(olt.logical_name.contents).unwrap())
         return ret
 
-    def sap2objects(self, sap: client_sap.ClientSAP) -> result.List[IC]:
+    def sap2objects(self, sap: ClientSAP) -> result.List[IC]:
         res = result.List()
         for par in self.sap2association(sap).iter_pars():
             if isinstance(res1 := self.par2obj(par), result.Error):
@@ -1342,7 +1337,7 @@ class Collection:
             raise ValueError(F"not find {selector} in {obj}")
 
     @lru_cache(4)
-    def get_association_id(self, client_sap: client_sap.ClientSAP) -> int:
+    def get_association_id(self, client_sap: ClientSAP) -> int:
         """return id(association instance) from it client address without current"""
         for ass in get_filtered(iter(self), (ln_pattern.NON_CURRENT_ASSOCIATION,)):
             if ass.associated_partners_id.client_SAP == client_sap:
@@ -1352,9 +1347,9 @@ class Collection:
         else:
             raise ValueError(F"absent association with {client_sap}")
 
-    def sap2association(self, sap: client_sap.ClientSAP) -> result.SimpleOrError[AssociationLN]:
+    def sap2association(self, sap: ClientSAP) -> result.SimpleOrError[AssociationLN]:
         acc = result.ErrorAccumulator()
-        for ass in self.iter_classID_objects(class_id.ASSOCIATION_LN):
+        for ass in self.iter_classID_objects(15):
             if isinstance(r_par_type := acc.merge_err(self.get(ass.associated_partners_id, AssociatedPartnersType)), result.Error):
                 continue
             if r_par_type.value.client_SAP == sap:
@@ -1368,7 +1363,7 @@ class Collection:
                     ass_id: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
-        return self.getObjectList(ass_id).is_readable(obis, i, security_policy)
+        return is_readable(self.getObjectList(ass_id), obis, i, security_policy)
 
     @lru_cache(maxsize=1000)
     def is_writable(self, obis: Obis,
@@ -1376,7 +1371,7 @@ class Collection:
                     ass_id: int,
                     security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                     ) -> bool:
-        return self.getObjectList(ass_id).is_writable(obis, i, security_policy)
+        return is_writable(self.getObjectList(ass_id), obis, i, security_policy)
 
     @lru_cache(maxsize=1000)
     def isnt_mutable(self,
@@ -1395,14 +1390,14 @@ class Collection:
         return False
 
     @lru_cache(maxsize=1000)
-    def is_accessible(self, 
+    def is_accessible(self,
                       obis: Obis,
                       i: int,
                       ass_id: int,
-                      m_id: mechanism_id.MechanismIdElement = None
+                      m_id: int = MechanismIdElement.NONE
                       ) -> bool:
         """for ver 0 and 1 only"""
-        return self.getObjectList(ass_id).is_accessible(obis, i, m_id)
+        return is_accessible(self.getObjectList(ass_id), obis, i, m_id)
 
     @lru_cache(maxsize=100)
     def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], type[cdt.CommonDataType]]:
@@ -1486,9 +1481,10 @@ class Collection:
                         i_meth = count(1)
                         for i, m_el in zip(i_meth, obj.M_ELEMENTS):
                             try:
-                                if not self.is_accessible(obj.obis, i, ass_id, mechanism_id.LOW):
-                                    continue
-                                elif f_i and -i not in f_i:
+                                if (
+                                    not self.is_accessible(obj.obis, i, ass_id, MechanismIdElement.LOW)
+                                    or f_i and -i not in f_i
+                                ):
                                     continue
                                 indexes.append(-i)
                             except exc.ITEApplication as e:

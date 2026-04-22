@@ -1,50 +1,49 @@
 """ COMMON Structs """
-from abc import ABC, abstractmethod
-from ...types import common_data_types as cdt, cosem_service_types as cst
+from COSEMpdu.data import DoubleLongUnsigned, Integer, Structure, LongUnsigned, Unsigned, VisibleString
+from ...types import cosem_service_types as cst
 from . import long_unsigneds
 
 
-class ActionItem(cdt.Structure):
+class ActionItem(Structure):
+    """action_item"""
     script_logical_name: cst.LogicalName
-    script_selector: cdt.LongUnsigned
+    script_selector: LongUnsigned
 
 
-class ValueDefinition(cdt.Structure):
-    """ Defines an attribute of an object to be monitored. Only attributes with simple data types are allowed. """
+class ValueDefinition(Structure):
+    """value_definition"""
     class_id: long_unsigneds.ClassId
     logical_name: cst.LogicalName
-    attribute_index: cdt.Integer
+    attribute_index: Integer
 
 
-class RestrictionByDate(cdt.Structure):
+class RestrictionByDate(Structure):
+    """restriction_by_date"""
     from_date: cst.OctetStringDate
     to_date: cst.OctetStringDate
 
 
-class RestrictionByEntry(cdt.Structure):
-    from_entry: cdt.DoubleLongUnsigned
-    to_entry: cdt.DoubleLongUnsigned
+class RestrictionByEntry(Structure):
+    """restriction_by_entry"""
+    from_entry: DoubleLongUnsigned
+    to_entry: DoubleLongUnsigned
 
 
-class CaptureObjectDefinition(cdt.Structure):
-    """ Capture objects that are assigned to the object instance. Upon a call of the capture (data) method or automatically
-    in defined intervals, the selected attributes are copied into the buffer of the profile. """
-    DEFAULT = b'\x02\x04\x12\x00\x08\x09\x06\x00\x00\x01\x00\x00\xff\x0f\x02\x12\x00\x00'
+class CaptureObjectDefinition(Structure):
+    """capture_object_definition"""
     class_id: long_unsigneds.ClassId
     logical_name: cst.LogicalName
-    attribute_index: cdt.Integer
-    data_index: cdt.LongUnsigned
-
-    def __hash__(self):
-        return int.from_bytes(self.logical_name.contents+self.attribute_index.contents+self.data_index.contents, 'big')
+    attribute_index: Integer
+    data_index: LongUnsigned
 
 
-class WindowElement(cdt.Structure):
+class WindowElement(Structure):
+    """window_element"""
     start_time: cst.OctetStringDateTime
     end_time: cst.OctetStringDateTime
 
 
-class UserListEntry(cdt.Structure):
+class UserListEntry(Structure):
     """user_list_entry"""
-    user_id:   cdt.Unsigned
-    user_name: cdt.VisibleString
+    user_id:   Unsigned
+    user_name: VisibleString

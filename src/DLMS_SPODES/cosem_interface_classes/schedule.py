@@ -1,6 +1,5 @@
 from typing import Callable, Self
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
-from .Overview import class_id
 from ..types import cdt, cst
 from ..types.type_alias import Attr
 
@@ -81,7 +80,7 @@ class DataDelete(cdt.Structure):
 
 class Schedule(ICAuto):
     """4.5.3 Schedule"""
-    CLASS_ID = class_id.SCHEDULE
+    CLASS_ID = 10
     VERSION = 0
     A_ELEMENTS = ICAElement(2, "entries", Entries),
     M_ELEMENTS = (ICMElement(1, "enable_disable", DataED),

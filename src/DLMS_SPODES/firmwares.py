@@ -1,15 +1,83 @@
 from functools import lru_cache
 from typing import Optional
+from enum import IntEnum
 import pickle
 import hashlib
 import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
+from COSEMpdu.x690 import Tag
+from COSEMpdu.x680 import NamedType, EnumerationList, EnumerationMember, Class, TaggingMode
+from COSEMpdu.x680.constrained_type import SizeConstraint
+from COSEMpdu.ber import SequenceType, IntegerType, ChoiceType, create_alternatives, EnumeratedType, OctetStringType, ConstrainedOctetStringType, TaggedType
 from .settings import settings
 
 
-def init_cipher(key: bytes) -> tuple[Cipher, bytes]:
+class TargetType_(IntEnum):
+    Application = 1
+    Bootloader = 2
+    Ble = 3
+
+
+type ImageInstance = int
+type ImageData = bytes
+type Version = tuple[int, int, int]
+type FirmwareId = bytes
+type Preinstall = Optional[TargetType_]
+type Firmwares = dict[tuple[FirmwareId, TargetType_], tuple[ImageInstance, Preinstall, Version, ImageData]]
+
+
+class TargetTypeList(EnumerationList):
+    members = (
+        EnumerationMember("application", 1),
+        EnumerationMember("bootloader", 2),
+        EnumerationMember("ble", 3)
+    )
+
+
+class TargetType(EnumeratedType):
+    named_members = TargetTypeList()
+
+
+class Version1(SequenceType):
+    components = (
+        NamedType("target", TargetType),
+        NamedType("firmware-id", OctetStringType),
+        NamedType("firmware-version", OctetStringType)
+    )
+
+
+class MetaData(ChoiceType):
+    alternatives = create_alternatives(
+        NamedType("version1", Version1)
+    )
+
+
+class MetaDataTagged(TaggedType[MetaData]):
+    tag = Tag(0, class_=Class.CONTEXT_SPECIFIC)
+    mode = TaggingMode.EXPLICIT
+
+
+class OctetStringTypeSize4(ConstrainedOctetStringType):
+    constraint_spec = SizeConstraint(4)
+    value: OctetStringType
+
+
+class FirmwareImagePackage(SequenceType):
+    components = (
+        NamedType("magic", IntegerType),
+        NamedType("meta-data", MetaDataTagged),
+        NamedType("firmware-data", OctetStringType),
+        NamedType("crc", OctetStringTypeSize4),
+    )
+
+    @property
+    def meta_data(self) -> MetaDataTagged:
+        return self[1]
+
+
+def init_cipher(key: bytes) -> tuple[Cipher[modes.CBC], bytes]:
     """Initialize AES-CBC cipher with random IV"""
     iv = os.urandom(16)
     cipher = Cipher(
@@ -36,8 +104,7 @@ def decrypt(key: bytes, iv: bytes, ciphertext: bytes) -> bytes:
     data, data_hash = plaintext[16:-32], plaintext[-32:]
     if hashlib.sha256(data).digest() == data_hash:
         return data
-    else:
-        raise ValueError('Invalid password or corrupted data')
+    raise ValueError('Invalid password or corrupted data')
 
 
 def encrypt(key: bytes, iv: bytes, data: bytes) -> bytes:

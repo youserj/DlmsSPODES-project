@@ -1,12 +1,11 @@
 from ..types import cdt, cst
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement
-from .Overview import class_id
 
 
 class TCPUDPSetup(ICAuto):
     """4.9.1 TCP-UDP setup"""
-    CLASS_ID = class_id.TCP_UDP_SETUP
+    CLASS_ID = 41
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "TCP_UDP_port", cdt.LongUnsigned, default=4059),
                   ICAElement(3, "IP_reference", cst.LogicalName),

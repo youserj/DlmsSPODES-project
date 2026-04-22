@@ -1,14 +1,18 @@
 """
 DLMS UA 1000-1 Ed 14
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from struct import Struct
 from functools import lru_cache
 from typing_extensions import deprecated
-from typing import Type, TypeAlias, Self, Literal, Optional, Protocol, ClassVar
+from typing import TypeAlias, Self, Literal, Optional, Protocol, ClassVar, Any, overload
 from ..types.type_alias import Attr, Obis, Index, Encoding, attr2i, attr2obis, AttrDesc, pack_attr, Meth
 from ..types import cdt, ut, cst
 from StructResult import result
+from StructResult.result import ValueOrError, Error
+from COSEMpdu.byte_buffer import ByteBuffer
+from COSEMpdu import axdr
+from COSEMpdu.types_used import CosemClassId, SelectiveAccessDescriptor
 from enum import IntEnum
 from .. import exceptions as exc
 from .overview import ClassID
@@ -19,6 +23,7 @@ from .. import literals
 obis2attr_pat = Struct(">6sH")
 """concatenate Obis and Index pattern"""
 
+
 class Classifier(IntEnum):
     """ (dyn.) Classifies an attribute that carries a process value, which is updated by the meter itself.
     (static) Classifies an attribute, which is not updated by the meter itself (e.g. configuration data). """
@@ -28,9 +33,6 @@ class Classifier(IntEnum):
 
     def __str__(self) -> str:
         return self.name
-
-
-SelectiveAccessDescriptor: TypeAlias = ut.SelectiveAccessDescriptor  # TODO: make with subclass
 
 
 @dataclass(frozen=True)
@@ -44,10 +46,18 @@ class ICElement:
         except AttributeError:
             return self.NAME
 
+    def __lt__(self, value: object) -> bool:
+        if isinstance(value, ICElement):
+            return self.i < value.i
+        raise NotImplementedError
+
+
+type DataType = axdr.ChoiceType | axdr.TaggedType[Any]
+
 
 @dataclass(frozen=True)
 class ICAElement(ICElement):
-    DATA_TYPE: type[cdt.CommonDataType] | ut.CHOICE
+    DATA_TYPE: type[DataType]
     min: Optional[int] = None
     max: Optional[int] = None
     default: Optional[int] = None
@@ -55,7 +65,7 @@ class ICAElement(ICElement):
     selective_access: Optional[type[SelectiveAccessDescriptor]] = None
 
     def get_change(self,
-                   data_type: Optional[type[cdt.CommonDataType] | ut.CHOICE] = None,
+                   data_type: Optional[type[DataType]] = None,
                    classifier: Optional[Classifier] = None) -> "ICAElement":
         return ICAElement(
             i=self.i,
@@ -70,25 +80,34 @@ class ICAElement(ICElement):
 
 @dataclass(frozen=True)
 class ICMElement(ICElement):
-    DATA_TYPE: Type[cdt.CommonDataType]
+    DATA_TYPE: type[DataType]
+
+
+@overload
+def update_collection(container: tuple[ICAElement, ...], *elements: ICAElement) -> tuple[ICAElement, ...]: ...
+
+
+@overload
+def update_collection(container: tuple[ICMElement, ...], *elements: ICMElement) -> tuple[ICMElement, ...]: ...
+
+
+def update_collection[T: ICElement](container: tuple[T, ...], *elements: T) -> tuple[T, ...]:
+    new = list(container)
+    for el in elements:
+        for c_el in container:
+            if el.i == c_el.i:
+                new.remove(c_el)
+                break
+        new.append(el)
+    new.sort()
+    return tuple(new)
 
 
 _LN_ELEMENT: ICAElement = ICAElement(1, "logical_name", cst.LogicalName)
 """" first element for each COSEM Interface Class"""
 
 
-class ObjectValidationError(exc.DLMSException):
-    """use in validation method of COSEMInterfaceClasses"""
-    def __init__(self,
-                 ln: cst.LogicalName,
-                 i: int,
-                 message: str):
-        Exception.__init__(self, F"for {ln}: {i}. {message}")
-        self.ln = ln
-        self.i = i
-
-
-Name: Literal[str] = Literal[
+Name = Literal[
     "Data",
     "Register",
     "Extended register",
@@ -319,13 +338,13 @@ class Cardinality:
 class IC(Protocol):
     """4 The COSEM interface classes"""
     obis: Obis
-    CLASS_ID: ClassVar[ut.CosemClassId]
+    CLASS_ID: ClassVar[int]
     "class_id"
     VERSION: ClassVar[int]
     "version"
     A_ELEMENTS: ClassVar[tuple[ICAElement, ...]]
     "Attributes"
-    M_ELEMENTS: ClassVar[tuple[ICMElement, ...]] = tuple()  # empty if class not has the methods
+    M_ELEMENTS: ClassVar[tuple[ICMElement, ...]] = ()  # empty if class not has the methods
     "Specific methods"
     CARDINALITY: ClassVar[Cardinality] = Cardinality()
     "Cardinality"
@@ -334,37 +353,36 @@ class IC(Protocol):
         self.obis = obis
 
     @classmethod
-    def getAElement(cls, i: int) -> result.Simple[ICAElement] | result.Error:
+    def getAElement(cls, i: int) -> ValueOrError[ICAElement]:
         """return element by order index. Override in each new class"""
         if i == 1:
-            return result.Simple(_LN_ELEMENT)
+            return _LN_ELEMENT
         if i > len(cls.A_ELEMENTS) + 1:
             return result.Error.from_e(exc.DLMSException(F"got attribute index: {i}, expected 1..{len(cls.A_ELEMENTS) + 1}"))
-        return result.Simple(cls.A_ELEMENTS[i - 2])
+        return cls.A_ELEMENTS[i - 2]
 
     @classmethod
-    def getMElement(cls, i: int) -> result.Simple[ICMElement] | result.Error:
+    def getMElement(cls, i: int) -> ValueOrError[ICMElement]:
         """return method element by order index. Override in each new class"""
         if i > len(cls.M_ELEMENTS):
             return result.Error.from_e(exc.DLMSException(F"got method index: {i}, expected 1..{len(cls.M_ELEMENTS)}"))
-        else:
-            return result.Simple(cls.M_ELEMENTS[i - 1])
+        return cls.M_ELEMENTS[i - 1]
 
-    def get[T: cdt.CommonDataType](self, i: Index, encoding: Encoding, e_type: type[T]) -> result.SimpleOrError[T]:
+    def get[T: DataType](self, i: Index, buf: ByteBuffer, e_type: type[T]) -> ValueOrError[T]:
         """get CDT with type checking"""
-        if isinstance(res_el := self.getAElement(i), result.Error):
-            return res_el
-        if isinstance(res_data := res_el.value.DATA_TYPE.from_encoding(encoding), result.Error):
-            return res_data
-        if isinstance(res_data.value, e_type):
-            return res_data
-        return result.Error.from_e(TypeError(f"got {data.__class__}, expected {e_type}"))
+        if isinstance(r_el := self.getAElement(i), result.Error):
+            return r_el
+        if isinstance(r_data := r_el.DATA_TYPE.get(buf), result.Error):
+            return r_data
+        if isinstance(r_data, e_type):
+            return r_data
+        return result.Error.from_e(TypeError(f"got {r_data.__class__}, expected {e_type}"))
 
-    def getCDT(self, i: Index, encoding: Encoding) -> result.SimpleOrError[cdt.CommonDataType]:
+    def getCDT(self, i: Index, buf: ByteBuffer) -> ValueOrError[DataType]:
         """get CDT without type checking"""
         if isinstance(res_el := self.getAElement(i), result.Error):
             return res_el
-        return res_el.value.DATA_TYPE.from_encoding(encoding)
+        return res_el.DATA_TYPE.get(buf)
 
     @property
     def logical_name(self) -> Attr:
@@ -524,3 +542,8 @@ class ICAuto(IC):
         attr_index = element.i
         prop = property(getter)
         setattr(cls, element.NAME, prop)
+
+
+__all__ = (
+    "DataType",
+)

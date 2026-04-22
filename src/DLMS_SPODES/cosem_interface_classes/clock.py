@@ -2,7 +2,6 @@ from typing import Optional
 from ..types import cdt, cst
 from ..types.implementations import integers
 from ..types.type_alias import Attr
-from .Overview import class_id
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
@@ -60,7 +59,7 @@ class TimeZone(cdt.Long):
 
 class Clock(ICAuto):
     """4.5.1 Clock"""
-    CLASS_ID = class_id.CLOCK
+    CLASS_ID = 8
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "time", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
                   ICAElement(3, "time_zone", TimeZone, -720, 840),
@@ -70,10 +69,10 @@ class Clock(ICAuto):
                   ICAElement(7, "daylight_savings_deviation", DaylightSavingsDeviation, -120, 120),
                   ICAElement(8, "daylight_savings_enabled", cdt.Boolean),
                   ICAElement(9, "clock_base", ClockBase))
-    M_ELEMENTS = (ICMElement(1, "adjust_to_quarter", integers.Only0),
-                  ICMElement(2, "adjust_to_measuring_period", integers.Only0),
-                  ICMElement(3, "adjust_to_minute", integers.Only0),
-                  ICMElement(4, "adjust_to_preset_time", integers.Only0),
+    M_ELEMENTS = (ICMElement(1, "adjust_to_quarter", integers.IntegerValue0),
+                  ICMElement(2, "adjust_to_measuring_period", integers.IntegerValue0),
+                  ICMElement(3, "adjust_to_minute", integers.IntegerValue0),
+                  ICMElement(4, "adjust_to_preset_time", integers.IntegerValue0),
                   ICMElement(5, "preset_adjusting_time", PresetAdjustingTime),
                   ICMElement(6, "shift_time", ShiftTime))
     time: Attr

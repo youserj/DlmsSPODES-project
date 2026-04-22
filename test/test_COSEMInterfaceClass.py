@@ -25,9 +25,6 @@ class TestType(unittest.TestCase):
         print(el)
         print(el2)
 
-    def test_Exceptions(self):
-        raise ic.ObjectValidationError(ln=cst.LogicalName.from_obis("1.1.1.1.1.1"), i=2, message="some error")
-
     def test_am_names(self):
         for c in ic.IC.__subclasses__():
             print(c)

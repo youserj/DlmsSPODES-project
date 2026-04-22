@@ -4,7 +4,6 @@ from ..types.implementations import integers
 from typing import Optional
 from ..types import cdt
 from .cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
-from .Overview import class_id
 
 
 class ControlState(cdt.Enum, elements=(0, 1, 2)):
@@ -44,13 +43,13 @@ class OutputState(cdt.Boolean):
 
 class DisconnectControl(ICAuto):
     """4.5.8 Disconnect control"""
-    CLASS_ID = class_id.DISCONNECT_CONTROL
+    CLASS_ID = 70
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "output_state", OutputState, classifier=Classifier.DYNAMIC),
                   ICAElement(3, "control_state", ControlState, classifier=Classifier.DYNAMIC),
                   ICAElement(4, "control_mode", ControlMode))
-    M_ELEMENTS = (ICMElement(1, "remote_disconnect", integers.Only0),
-                  ICMElement(2, "remote_reconnect", integers.Only0))
+    M_ELEMENTS = (ICMElement(1, "remote_disconnect", integers.IntegerValue0),
+                  ICMElement(2, "remote_reconnect", integers.IntegerValue0))
     output_state: Optional[cdt.Boolean]
     control_state: Optional[ControlState]
     control_mode: Optional[ControlMode]

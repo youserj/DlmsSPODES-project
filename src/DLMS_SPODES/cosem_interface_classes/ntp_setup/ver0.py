@@ -1,48 +1,50 @@
+from typing import Final
+from COSEMpdu.data import Array, Structure, OctetString, Boolean, LongUnsigned, Enum, DoubleLongUnsigned
 from ...types.implementations import integers
-from typing import Optional
-from ...types import cdt
 from ..cosem_interface_class import ICAElement, ICAuto, ICMElement
-from ..Overview import class_id
+from ...types.type_alias import Attr
 
 
-class ServerAddress(cdt.OctetString):
+class ServerAddress(OctetString):
     """server_address attribute"""
 
 
-class AuthenticationMethod(cdt.Enum, elements=(0, 1, 2)):
-    """authentication_method attribute"""
+class AuthenticationMethod(Enum):
+    """authentication_method"""
+    NO_SECURITY: Final = 0
+    SHARED_SECRETS: Final = 1
+    AUTO_KEY_IFF: Final = 2
 
 
-class AuthenticationKey(cdt.Structure):
+class AuthenticationKey(Structure):
     """authentication_key"""
-    key_id: cdt.DoubleLongUnsigned
-    key: cdt.OctetString
+    key_id: DoubleLongUnsigned
+    key: OctetString
 
 
-class AuthenticationKeys(cdt.Array):
-    """authentication_keys"""
-    TYPE = AuthenticationKey
+AuthenticationKeys = Array[AuthenticationKey]
+"""authentication_keys"""
 
 
 class NTPSetup(ICAuto):
     """4.9.7 NTP setup"""
-    CLASS_ID = class_id.NTP_SETUP
+    CLASS_ID = 100
     VERSION = 0
     A_ELEMENTS = (
-        ICAElement(2, "activated", cdt.Boolean, default=False),
+        ICAElement(2, "activated", Boolean, default=False),
         ICAElement(3, "server_address", ServerAddress),
-        ICAElement(4, "server_port", cdt.LongUnsigned, default=123),
+        ICAElement(4, "server_port", LongUnsigned, default=123),
         ICAElement(5, "authentication_method", AuthenticationMethod),
         ICAElement(6, "authentication_keys", AuthenticationKeys),
-        ICAElement(7, "client_key", cdt.OctetString))
+        ICAElement(7, "client_key", OctetString))
     M_ELEMENTS = (
-        ICMElement(1, "synchronize", integers.Only0),
+        ICMElement(1, "synchronize", integers.IntegerValue0),
         ICMElement(2, "add_authentication_key", AuthenticationKey),
-        ICMElement(3, "delete_authentication_key", cdt.DoubleLongUnsigned),
+        ICMElement(3, "delete_authentication_key", DoubleLongUnsigned),
     )
-    activated: Optional[cdt.Boolean]
-    server_address: Optional[ServerAddress]
-    server_port: Optional[cdt.LongUnsigned]
-    authentication_method: Optional[AuthenticationMethod]
-    authentication_keys: Optional[AuthenticationKeys]
-    client_key: Optional[cdt.OctetString]
+    activated: Attr
+    server_address: Attr
+    server_port: Attr
+    authentication_method: Attr
+    authentication_keys: Attr
+    client_key: Attr

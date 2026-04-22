@@ -5,10 +5,6 @@ from ..types.implementations import double_long_usingneds
 from typing import Optional
 from ..types import cdt, cst
 from .cosem_interface_class import ICAElement, ICAuto, Classifier
-from .Overview import class_id
-
-
-threshold_scaler_unit = cdt.ScalUnitType(b'\x02\x02\x0f\x00\x16\x07')
 
 
 class ValueDefinitionType(cdt.Structure):
@@ -41,7 +37,7 @@ class ActionType(cdt.Structure):
 
 class Limiter(ICAuto):
     """4.5.9 Limiter"""
-    CLASS_ID = class_id.LIMITER
+    CLASS_ID = 71
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "monitored_value", structs.ValueDefinition),
                   ICAElement(3, "threshold_active", choices.simple_dt, classifier=Classifier.DYNAMIC),

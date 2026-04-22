@@ -1,35 +1,35 @@
-from ...types import common_data_types as cdt
+from typing import Self
+from struct import pack
+from COSEMpdu.data import DoubleLongUnsigned
 
 
-class DoubleLongUnsignedSecond(cdt.DoubleLongUnsigned):
+class DoubleLongUnsignedSecond(DoubleLongUnsigned):
     """for second implementation"""
 
 
-class IPAddress(cdt.DoubleLongUnsigned):
+class IPAddress(DoubleLongUnsigned):
     """with string parser"""
 
-    def from_str(self, value: str) -> bytes:
+    @classmethod
+    def from_str(cls, value: str) -> Self:
         """ create ip: integer from string type ddd.ddd.ddd.ddd, ex.: 127.0.0.1 """
-        raw_value = bytes()
-        for separator in '... ':
+        raw_value = bytearray()
+        for separator in "... ":
             try:
                 element, value = value.split(separator, 1)
             except ValueError:
-                element, value = value, ''
-            raw_value += self.__get_attr_element(element)
-        return raw_value
+                element, value = value, ""
+            raw_value.append(cls.__get_attr_element(element))
+        return cls.parse(int.from_bytes(raw_value, "big"))
 
     @staticmethod
-    def __get_attr_element(value: str) -> bytes:
-        if isinstance(value, str):
-            if value == '':
-                return b'\x00'
-            try:
-                return int(value).to_bytes(1, 'big')
-            except OverflowError:
-                raise ValueError(F'Int too big to convert {value}')
-        else:
-            raise TypeError(F'Unsupported type validation from string, got {value.__class__}')
+    def __get_attr_element(value: str) -> int:
+        if value == "":
+            return 0
+        try:
+            return int(value)
+        except OverflowError:
+            raise ValueError(f"Int too big to convert {value}")
 
-    def __str__(self):
-        return F'{self.contents[0]}.{self.contents[1]}.{self.contents[2]}.{self.contents[3]}'
+    def __str__(self) -> str:
+        return ".".join(map(str, pack(">L", self.normalize())))

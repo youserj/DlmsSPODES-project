@@ -1,7 +1,6 @@
 from typing import Optional
 from ...types import cdt
 from ..cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
-from ..Overview import class_id
 
 
 class SecurityPolicy(cdt.Enum, elements=tuple(range(16))):
@@ -30,7 +29,7 @@ class GlobalKeyTransfer(cdt.Array):
 
 class SecuritySetup(ICAuto):
     """4.4.7 Security setup"""
-    CLASS_ID = class_id.SECURITY_SETUP
+    CLASS_ID = 64
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "security_policy", SecurityPolicy, 0, 3, 0),
                   ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),

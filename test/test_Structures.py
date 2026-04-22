@@ -5,7 +5,7 @@ from src.DLMS_SPODES.cosem_interface_classes import ic, collection
 from src.DLMS_SPODES.types import cdt, cst, ut, implementations as impl, choices
 from src.DLMS_SPODES import relation_to_OBIS, enums
 from src.DLMS_SPODES.cosem_interface_classes.collection import Collection
-from src.DLMS_SPODES.cosem_interface_classes.association_ln.abstract import ObjectListElement
+from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver1 import ObjectListElement
 
 
 

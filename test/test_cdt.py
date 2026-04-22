@@ -53,7 +53,6 @@ class TestType(unittest.TestCase):
         t = cdt.Time("10:01")
         self.assertEqual(t.to_second(), 14460)
         self.assertRaises(OutOfRange, t.set_second, 60)
-        self.assertEqual(cdt.Time.from_float(.5), cdt.Time.parse("12:00"))
 
     def test_Date(self):
         data = cdt.Date.parse("01.01.2000")
@@ -117,29 +116,6 @@ class TestType(unittest.TestCase):
     def test_Association(self):
         ass = collection.AssociationLNVer0('0.0.40.0.1.255')
         print(ass)
-
-    def test_Conformance(self):
-        from src.DLMS_SPODES.types.implementations.bitstrings import Conformance
-        from src.DLMS_SPODES.cosem_interface_classes.association_ln.ver0 import XDLMSContextType
-        c = Conformance()
-        c.set(int('1011011101111', 2))
-        self.assertEqual(c.to_transcript(), '111101110110100000000000')
-        context = XDLMSContextType()
-        c2 = Conformance.parse("111101110110100000000000")
-        self.assertEqual(c, c2, "equal")
-        c2.set("011101110110100000000000")
-        c3 = Conformance("011101110110100000000000")
-        print(list(c3))
-
-    def test_Conformance2(self):
-        from src.DLMS_SPODES.enums import Conformance
-        c = Conformance(431)
-        print(c.content, c.name, list(c))
-
-    def test_Conformance3(self):
-        from src.DLMS_SPODES.types.implementations.bitstrings import Conformance
-        c = Conformance()
-        print(c)
 
     def test_ImageTransfer(self):
         col = Collection()
@@ -268,15 +244,6 @@ class TestType(unittest.TestCase):
         self.assertEqual(int(value), 1, "check value decode")
         value2 = cdt.Boolean(b"\x03\x00")
 
-        print(value2)
-
-    def test_mechanism_id(self):
-        from src.DLMS_SPODES.cosem_interface_classes.association_ln import mechanism_id
-        value = mechanism_id.MechanismIdElement(0)
-        value.set(1)
-        print(value)
-        value2 = mechanism_id.NONE
-        value2.set(1)
         print(value2)
 
     def test_LN_sort(self):

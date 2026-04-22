@@ -18,6 +18,40 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             }
+        },
+        {
+            "name": "test scaler_unit",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "-m",
+            "args": [
+                "unittest",
+                "test.test_array.TestType.test_ScalerUnitType",
+                "-v"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            // "preLaunchTask": "install-editable",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+        "name": "test ScalerUnitType",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "unittest",
+        "args": [
+            "-v",
+            "test.test_ScalerUnitType"
+        ],
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "justMyCode": true,
+        "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
         }
+        },
     ]
 }

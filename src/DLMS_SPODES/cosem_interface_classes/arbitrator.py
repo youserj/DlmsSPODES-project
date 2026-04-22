@@ -3,7 +3,6 @@ from ..types.implementations import integers
 from typing import Optional
 from ..types import cdt
 from .cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
-from .Overview import class_id
 
 
 class Actions(cdt.Array):
@@ -49,7 +48,7 @@ class RequestAction(cdt.Structure):
 
 class Arbitrator(ICAuto):
     """4.5.12 Arbitrator"""
-    CLASS_ID = class_id.ARBITRATOR
+    CLASS_ID = 68
     VERSION = 0
     A_ELEMENTS = (ICAElement(2, "actions", Actions),
                   ICAElement(3, "permission_table", PermissionsTable),

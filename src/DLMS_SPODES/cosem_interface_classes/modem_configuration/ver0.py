@@ -1,51 +1,41 @@
-from ...types.implementations.enums import CommSpeed
-from typing import Optional
-from ...types import cdt
+from COSEMpdu.x680.type import OCTET_STRING
+from COSEMpdu.data import Array, Structure, OctetString
+from ..iec_hdlc_setup.ver0 import CommSpeed
 from ..cosem_interface_class import ICAElement, ICAuto
-from ..Overview import class_id
+from ...types.type_alias import Attr
 
 
-class InitializationStringElement(cdt.Structure):
+class InitializationStringElement(Structure):
     """ initialization_string_element"""
-    request: cdt.OctetString
-    response: cdt.OctetString
+    request: OctetString
+    response: OctetString
 
 
-class InitializationString(cdt.Array):
-    """initialization_string attribute"""
-    TYPE = InitializationStringElement
+InitializationString = Array[InitializationStringElement]
+"""initialization_string"""
 
 
-class ModemProfileElement(cdt.OctetString):
+class ModemProfileElement(OctetString):
     """modem_profile_element"""
-
-    def __init__(self, value: bytes = b'OK'.hex()):
-        super(ModemProfileElement, self).__init__(value)
-        if bytes(self) not in self.get_validate_values():  # todo: make ReportMixin
-            raise ValueError(F'Got modem profile element {bytes(self)}, expected {b", ".join(self.get_validate_values())}')
-        else:
-            pass
-
-    @staticmethod
-    def get_validate_values() -> tuple[bytes, ...]:
-        return b'OK', b'CONNECT', b'RING', b'NO CARRIER', b'ERROR', b'CONNECT 1 200', b'NO DIAL TONE', b'BUSY', b'NO ANSWER', b'CONNECT 600', b'CONNECT 2 400', b'CONNECT 4 800', \
-               b'CONNECT 9 600', b'CONNECT 14 400', b'CONNECT 28 800', b'CONNECT 36 600', b'CONNECT 56 000'
+    containing_value: tuple[OCTET_STRING, ...] = (
+        b"OK", b"CONNECT", b"RING", b"NO CARRIER", b"ERROR", b"CONNECT 1 200", b"NO DIAL TONE", b"BUSY", b"NO ANSWER", b"CONNECT 600", b"CONNECT 2 400", b"CONNECT 4 800",
+        b"CONNECT 9 600", b"CONNECT 14 400", b"CONNECT 28 800", b"CONNECT 36 600", b"CONNECT 56 000"
+    )
 
 
-class ModemProfile(cdt.Array):
-    """modem_profile attribute"""
-    TYPE = ModemProfileElement
+ModemProfile = Array[ModemProfileElement]
+"""modem_profile attribute"""
 
 
 class PSTNModemConfiguration(ICAuto):
     """5.7.4 PSTN modem configuration"""
-    CLASS_ID = class_id.MODEM_CONFIGURATION
+    CLASS_ID = 27
     VERSION = 0
     A_ELEMENTS = (
         ICAElement(2, "comm_speed", CommSpeed, 0, 9, 5),
         ICAElement(3, "initialization_string", InitializationString),
         ICAElement(4, "modem_profile", ModemProfile)
     )
-    comm_speed: Optional[CommSpeed]
-    initialization_string: Optional[InitializationString]
-    modem_profile: Optional[ModemProfile]
+    comm_speed: Attr
+    initialization_string: Attr
+    modem_profile: Attr

@@ -1,12 +1,23 @@
 """all realisation cdt.Integer subclasses"""
-from ...types import common_data_types as cdt
-from typing import Any
+from dataclasses import dataclass
+from COSEMpdu.x680.constrained_type import ValueRange
+from COSEMpdu.x680 import TaggingMode
+from COSEMpdu.axdr import ConstrainedIntegerType, IntegerType, TaggedType
 
 
-class Only0(cdt.Integer, value=0):
-    """ Limited Integer only 0 """
-    def __call__(self, *args: Any, **kwargs: Any) -> "Only0":
-        return INTEGER_0
+@dataclass
+class Integer8Zero(ConstrainedIntegerType):
+    """Integer8(0)"""
+    constraint_spec = ValueRange(0, 0)
+    value: IntegerType
 
 
-INTEGER_0 = Only0()
+@dataclass
+class IntegerValue0(TaggedType[Integer8Zero]):
+    """[15] IMPLICIT Integer(0)"""
+    tag = 15
+    mode = TaggingMode.IMPLICIT
+    value: Integer8Zero
+
+
+INTEGER_0 = IntegerValue0(Integer8Zero(IntegerType(0)))

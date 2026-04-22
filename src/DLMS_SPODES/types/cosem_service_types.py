@@ -1,107 +1,85 @@
 from typing import Self
+import datetime
 import re
+from COSEMpdu.x680.constrained_type import SizeConstraint
+from COSEMpdu.types_used import CosemObjectInstanceId
+from COSEMpdu.axdr import OctetStringType, ConstrainedOctetStringType, TaggedType
+from COSEMpdu import axdr
+from COSEMpdu.x680.tagged_type import TaggingMode
+from COSEMpdu.x680.type import NamedType, OCTET_STRING
+from COSEMpdu import data
 from ..types import common_data_types as cdt
 import datetime
 
 
-class LogicalName(cdt.OctetString, cdt.ReportMixin):
-    """ Logical Name type. Default is CLock#1 """
-    SIZE = 6
-    __pattern = re.compile("(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})")
-    __match_args__ = ('a', 'b', 'c', 'd', 'e', 'f')
-    DEFAULT = b'\x00\x00\x01\x00\x00\xff'
+class LogicalName(TaggedType[CosemObjectInstanceId]):
+    """[9] IMPLICIT OCTET STRING (SIZE(6))"""
+    tag = 9
+    mode = TaggingMode.IMPLICIT
+    __pattern = re.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})")
+    __match_args__ = ("a", "b", "c", "d", "e", "f")
 
     @classmethod
     def from_obis(cls, value: str) -> Self:
         """ create logical_name: octet_string from string type ddd.ddd.ddd.ddd.ddd.ddd, ex.: 0.0.1.0.0.255 """
         if (res := cls.__pattern.search(value)) is None:
             raise ValueError(F"got wrong obis: {value}")
-        else:
-            return cls(bytearray(map(int, res.groups())))
+        return cls(CosemObjectInstanceId(OctetStringType(bytes(map(int, res.groups())))))
 
     def get_report(self) -> cdt.Report:
-        return cdt.Report('.'.join(map(str, self.contents)))  # todo: add error handle
+        return cdt.Report(".".join(map(str, self.value.value.value)))  # todo: add error handle
 
     def __hash__(self) -> int:
-        return int.from_bytes(self.contents, 'big')
+        return int.from_bytes(self.value.value.value, "big")
 
     @property
     def a(self) -> int:
         """ group A """
-        return self.contents[0]
+        return self.value.value.value[0]
 
     @property
     def b(self) -> int:
         """ group B """
-        return self.contents[1]
+        return self.value.value.value[1]
 
     @property
     def c(self) -> int:
         """ group C """
-        return self.contents[2]
+        return self.value.value.value[2]
 
     @property
     def d(self) -> int:
         """ group D """
-        return self.contents[3]
+        return self.value.value.value[3]
 
     @property
     def e(self) -> int:
         """ group E """
-        return self.contents[4]
+        return self.value.value.value[4]
 
     @property
     def f(self) -> int:
         """ group F """
-        return self.contents[5]
+        return self.value.value.value[5]
 
     def __lt__(self, other: Self) -> bool:
-        return self.contents < other.contents
+        return self.value.value.value < other.value.value.value
 
 
-class OctetStringDateTime(cdt.DateTime):
-    """ type Time in OctetString(SIZE(12)) """
-    TAG = cdt.OctetString.TAG
-    SIZE = 12
-
-    def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.date | datetime.time = b'\x09\x0c\x07\xe4\x01\x01\xff\xff\xff\xff\xff\x80\x00\xff'):
-        match value:  # TODO: common for all OctetDateTimes
-            case bytes() if value[1] == self.SIZE: super().__init__(self.TAG+value[2:])
-            case bytes():                          raise ValueError(F'in create {self.__class__.__name__} got tag, size: {cdt.TAG(value[0])} {value[1]}, expected {self.TAG} {self.SIZE}')
-            case _:                                super().__init__(value)
-
-    @property
-    def encoding(self) -> bytes:
-        return b'\x09\x0c' + self.contents
+class OctetStringDateTime(data.OctetString):
+    ...
 
 
-class OctetStringDate(cdt.Date):
-    """ type Time in OctetString(SIZE(5)) """
-    TAG = cdt.OctetString.TAG
-    SIZE = 5
-
-    def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.date = b'\x09\x05\x07\xe4\x01\x01\xff'):
-        match value:  # TODO: replace priority case
-            case bytes() if value[1] == self.SIZE: super().__init__(self.TAG+value[2:])
-            case bytes():                          raise ValueError(F'in create {self.__class__.__name__} got tag, size: {cdt.TAG(value[0])} {value[1]}, expected {self.TAG} {self.SIZE}')
-            case _:                                super().__init__(value)
-
-    @property
-    def encoding(self) -> bytes:
-        return b'\x09\x05' + self.contents
+class OctetStringDate(data.OctetString):
+    ...
 
 
-class OctetStringTime(cdt.Time):
-    """ type Time in OctetString(SIZE(4)) """
-    TAG = cdt.OctetString.TAG
-    SIZE = 4
+class OctetStringTime(data.OctetString, data.TimeMixin[axdr.OctetStringType]):
+    def normalize(self) -> OCTET_STRING:
+        return super().normalize()[:4].ljust(4, b"\xff")
 
-    def __init__(self, value: bytes | bytearray | str | int | datetime.datetime | datetime.time = b'\x09\x04\x00\x00\x00\x00'):
-        match value:  # TODO: replace priority case
-            case bytes() if value[1] == self.SIZE: super().__init__(self.TAG+value[2:])
-            case bytes():                          raise ValueError(F'in create {self.__class__.__name__} got tag, size: {cdt.TAG(value[0])} {value[1]}, expected {self.TAG} {self.SIZE}')
-            case _:                                super().__init__(value)
 
-    @property
-    def encoding(self) -> bytes:
-        return b'\x09\x04' + self.contents
+z = OctetStringTime.parse(b"\x01")
+x = z.normalize()
+z1 = OctetStringTime.fromisoformat("10:00:01,01")
+print(z.isoformat())
