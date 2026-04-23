@@ -14,11 +14,12 @@ exclude = ["test","KPZ"]
 
 [project]
 name = "DLMS_SPODES"
-version = "0.87.23" 
+version = "0.87.24" 
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
 dependencies = [
+    "COSEMpdu>=0.3.2",
     "pydantic>=2.11",
     "cryptography>=45.0",
     "semver>=3.0",
