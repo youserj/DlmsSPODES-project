@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import IO, Optional
 from StructResult.result import ValueOrError, Error
@@ -18,7 +19,7 @@ from .settings import settings
 
 type ImageInstance = INTEGER
 type ImageData = OCTET_STRING
-type Version = tuple[INTEGER, INTEGER, INTEGER]
+type Version = OCTET_STRING
 type FirmwareId = OCTET_STRING
 type Firmwares = dict[tuple[FirmwareId, INTEGER], tuple[ImageInstance, Version, ImageData]]
 
@@ -121,7 +122,7 @@ def encrypt(key: bytes, iv: bytes, data: bytes) -> bytes:
 
 
 GLOBAL_NAME = "CryptoFirmware"
-VERSION = SemVer(1, 0, 1)
+VERSION = SemVer(1, 1, 0)
 
 
 def io2firmwares(io: IO[bytes], key: bytes) -> ValueOrError[Firmwares]:
@@ -129,8 +130,8 @@ def io2firmwares(io: IO[bytes], key: bytes) -> ValueOrError[Firmwares]:
     try:
         name, firmwares = pickle.load(io)
         load_name, dat_version = name.split("_")
-        if not SemVer.parse(dat_version).is_compatible(VERSION):
-            return Error.from_e(ValueError(f"version of {io} not compatible with {VERSION}"))
+        if VERSION != SemVer.parse(dat_version):
+            return Error.from_e(ValueError(f"version of {io.name} not {VERSION}"))
         if load_name == GLOBAL_NAME:
             for key_, (instance, version, data) in firmwares.items():
                 try:
@@ -148,7 +149,7 @@ def io2firmwares(io: IO[bytes], key: bytes) -> ValueOrError[Firmwares]:
 
 
 @lru_cache(maxsize=10)
-def get_firmware(man: bytes) -> Optional[Firmwares]:
+def get_firmware(man: bytes) -> ValueOrError[Firmwares]:
     for firmware in settings.firmwares:
         if firmware.man.encode() == man:
             match firmware.key.codec:
@@ -157,9 +158,28 @@ def get_firmware(man: bytes) -> Optional[Firmwares]:
                 case "hex":
                     cipher_key = bytes.fromhex(firmware.key.value)
                 case _:
-                    raise ValueError(f"in get firmware, unknown firmware.key.codec={firmware.key.codec}")
+                    return Error.from_e(ValueError(f"in get firmware, unknown firmware.key.codec={firmware.key.codec}"))
             with open(firmware.path, "rb") as file:
                 if isinstance(res := io2firmwares(file, cipher_key), Error):
-                    return None
-                return res
-    return None
+                    return res
+            return res
+    return Error.from_e(ValueError("not find firmwares"))
+
+
+
+@dataclass
+class Firmware:
+    identifier: FirmwareId
+    target: INTEGER
+    instance: ImageInstance
+    version: Version
+    data: ImageData
+
+
+def id2firmwares(firmwares: Firmwares, *identifiers: OCTET_STRING) -> list[Firmware]:
+    res: list[Firmware] = []
+    for identifier in identifiers:
+        for (identifier_, target), v in firmwares.items():
+            if identifier_ == identifier:
+                res.append(Firmware(identifier, target, *v))
+    return sorted(res, key=lambda firm: 0 if firm.target == TargetType.bootloader else 1)
