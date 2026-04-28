@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import IO, Optional
+from typing import IO, Optional, Iterable, Literal
 from StructResult.result import ValueOrError, Error
 import pickle
 import hashlib
@@ -21,7 +21,7 @@ type ImageInstance = INTEGER
 type ImageData = OCTET_STRING
 type Version = OCTET_STRING
 type FirmwareId = OCTET_STRING
-type Firmwares = dict[tuple[FirmwareId, INTEGER], tuple[ImageInstance, Version, ImageData]]
+type Firmwares = dict[tuple[FirmwareId, INTEGER], tuple[Version, ImageData]]
 
 
 class TargetTypeList(EnumerationList):
@@ -122,7 +122,7 @@ def encrypt(key: bytes, iv: bytes, data: bytes) -> bytes:
 
 
 GLOBAL_NAME = "CryptoFirmware"
-VERSION = SemVer(1, 1, 0)
+VERSION = SemVer(1, 2, 0)
 
 
 def io2firmwares(io: IO[bytes], key: bytes) -> ValueOrError[Firmwares]:
@@ -133,12 +133,12 @@ def io2firmwares(io: IO[bytes], key: bytes) -> ValueOrError[Firmwares]:
         if VERSION != SemVer.parse(dat_version):
             return Error.from_e(ValueError(f"version of {io.name} not {VERSION}"))
         if load_name == GLOBAL_NAME:
-            for key_, (instance, version, data) in firmwares.items():
+            for key_, (version, data) in firmwares.items():
                 try:
                     plain = decrypt(key, os.urandom(16), data)
                 except ValueError as e:
                     return Error.from_e(e, msg=F"error password: {key!r}")
-                res[key_] = (instance, version, plain)
+                res[key_] = (version, plain)
         else:
             return Error.from_e(FileExistsError(f"not correct {io}"))
     except KeyError as e:
@@ -173,13 +173,40 @@ class Firmware:
     target: INTEGER
     instance: ImageInstance
     version: Version
-    data: ImageData
+    data: ImageData = b""
 
 
-def id2firmwares(firmwares: Firmwares, *identifiers: OCTET_STRING) -> list[Firmware]:
+def intersection(outer: Firmwares, inner: Iterable[Firmware], mode: Literal["all", "up", "down"] = "all") -> list[Firmware]:
     res: list[Firmware] = []
-    for identifier in identifiers:
-        for (identifier_, target), v in firmwares.items():
-            if identifier_ == identifier:
-                res.append(Firmware(identifier, target, *v))
+    for firm in inner:
+        for (identifier, target), (version, data) in outer.items():
+            if (
+                identifier == firm.identifier
+                and target == firm.target
+            ):
+                if (
+                    mode == "all"
+                    and version == firm.version
+                ):
+                    continue
+                try:
+                    outer_ver = SemVer.parse(version)
+                    inner_ver = SemVer.parse(version)
+                except (TypeError, ValueError):
+                    continue
+                if (
+                    mode == "up"
+                    and outer_ver > inner_ver
+                ) or (
+                    mode == "down"
+                    and outer_ver < inner_ver
+                ):
+                    continue
+                res.append(Firmware(
+                    identifier,
+                    target,
+                    firm.instance,
+                    version,
+                    data
+                ))
     return sorted(res, key=lambda firm: 0 if firm.target == TargetType.bootloader else 1)
