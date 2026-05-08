@@ -1,5 +1,4 @@
 from typing import Self
-import datetime
 import re
 from COSEMpdu.x680.constrained_type import SizeConstraint
 from COSEMpdu.types_used import CosemObjectInstanceId
@@ -9,7 +8,6 @@ from COSEMpdu.x680.tagged_type import TaggingMode
 from COSEMpdu.x680.type import NamedType, OCTET_STRING
 from COSEMpdu import data
 from ..types import common_data_types as cdt
-import datetime
 
 
 class LogicalName(TaggedType[CosemObjectInstanceId]):
@@ -18,6 +16,9 @@ class LogicalName(TaggedType[CosemObjectInstanceId]):
     mode = TaggingMode.IMPLICIT
     __pattern = re.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})")
     __match_args__ = ("a", "b", "c", "d", "e", "f")
+
+    def normalize(self) -> OCTET_STRING:
+        return super().normalize()
 
     @classmethod
     def from_obis(cls, value: str) -> Self:
@@ -64,6 +65,9 @@ class LogicalName(TaggedType[CosemObjectInstanceId]):
 
     def __lt__(self, other: Self) -> bool:
         return self.value.value.value < other.value.value.value
+
+    def __bytes__(self) -> bytes:
+        return self.normalize()
 
 
 class OctetStringDateTime(data.OctetString):

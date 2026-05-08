@@ -1,66 +1,63 @@
 from ..types.implementations import structs
 from ..types.implementations import integers
-from typing import Optional
-from ..types import cdt
+from COSEMpdu.data import Array, Structure, BitString, LongUnsigned, Unsigned
 from .cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
+from ..types.type_alias import Attr
 
 
-class Actions(cdt.Array):
-    """ Array of key_data """
-    TYPE = structs.ActionItem
+Actions = Array[structs.ActionItem]
+"""actions"""
 
 
-class ActorPermissions(cdt.BitString):
-    """TODO: """
+class ActorPermissions(BitString):
+    """actor_permissions"""
 
 
-class PermissionsTable(cdt.Array):
-    TYPE = ActorPermissions
-    __iter__: ActorPermissions
-    __get_item__: ActorPermissions
+PermissionsTable = Array[ActorPermissions]
+"""permissions_table"""
 
 
-class ActorActionWeight(cdt.LongUnsigned):
-    """TODO: make any thing"""
+class ActorActionWeight(LongUnsigned):
+    """actor_action_weight"""
 
 
-class ActorWeightingList(cdt.Array):
-    TYPE = ActorActionWeight
+ActorWeightingList = Array[ActorActionWeight]
+"""actor_weighting_list"""
+WeightingsTable = Array[ActorWeightingList]
+"""weightings_table"""
 
 
-class WeightingsTable(cdt.Array):
-    TYPE = ActorWeightingList
+class MostRecentRequest(BitString):
+    """most_recent_request"""
 
 
-class MostRecentRequest(cdt.BitString):
-    """TODO: """
+MostRecentRequestTable = Array[MostRecentRequest]
+"""most_recent_request_table"""
 
 
-class MostRecentRequestTable(cdt.Array):
-    TYPE = MostRecentRequest
-
-
-class RequestAction(cdt.Structure):
+class RequestAction(Structure):
     """Defines the actions that are requested by an actorDefines the actions that are requested by an actor"""
-    request_actor: cdt.Unsigned
-    request_action_list: cdt.BitString
+    request_actor: Unsigned
+    request_action_list: BitString
 
 
 class Arbitrator(ICAuto):
     """4.5.12 Arbitrator"""
     CLASS_ID = 68
     VERSION = 0
-    A_ELEMENTS = (ICAElement(2, "actions", Actions),
-                  ICAElement(3, "permission_table", PermissionsTable),
-                  ICAElement(4, "weightings_table", WeightingsTable),
-                  ICAElement(5, "most_recent_requests_table", MostRecentRequestTable, classifier=Classifier.DYNAMIC),
-                  ICAElement(6, "last_outcome", cdt.Unsigned, min=0, default=0, classifier=Classifier.DYNAMIC))  # TODO: max = n what it?
-    M_ELEMENTS = (ICMElement(1, "request_action", RequestAction),
-                  ICMElement(2, "reset", integers.INTEGER_0))
-    actors: tuple[str] = tuple()
+    A_ELEMENTS = (
+        ICAElement(2, "actions", Actions),
+        ICAElement(3, "permission_table", PermissionsTable),
+        ICAElement(4, "weightings_table", WeightingsTable),
+        ICAElement(5, "most_recent_requests_table", MostRecentRequestTable, classifier=Classifier.DYNAMIC),
+        ICAElement(6, "last_outcome", Unsigned, min=0, default=0, classifier=Classifier.DYNAMIC))  # TODO: max = n what it?
+    M_ELEMENTS = (
+        ICMElement(1, "request_action", RequestAction),
+        ICMElement(2, "reset", integers.IntegerValue0))
+    actors: tuple[str] = tuple()  # TODO: make new class or instance argument
     """name actors container"""
-    actions: Optional[Actions]
-    permissions_table: Optional[PermissionsTable]
-    weightings_table: Optional[WeightingsTable]
-    most_recent_request_table: Optional[MostRecentRequestTable]
-    last_outcome: Optional[cdt.Unsigned]
+    actions: Attr
+    permissions_table: Attr
+    weightings_table: Attr
+    most_recent_request_table: Attr
+    last_outcome: Attr

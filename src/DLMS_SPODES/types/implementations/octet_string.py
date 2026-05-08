@@ -1,11 +1,11 @@
-from ...types import common_data_types as cdt
+from COSEMpdu.data import OctetString
 
 
-class LDN(cdt.OctetString):
+class LDN(OctetString):
     """for ldn. todo: check length in initialisation"""
     def get_manufacturer(self) -> bytes:
         return self.contents[:3]
 
 
-class ID(cdt.OctetString):
+class ID(OctetString):
     """for all implementation of Identifiers"""

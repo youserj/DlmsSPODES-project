@@ -6,7 +6,7 @@ from COSEMpdu.data import (
 from . import register
 from ..types.type_alias import Attr
 from ..types import cst
-from .cosem_interface_class import ICAElement, Classifier
+from .cosem_interface_class import ICAElement, Classifier, update_collection
 
 
 Value: TypeAlias = NullData | BitString | DoubleLongUnsigned | OctetString | VisibleString | Utf8String | Unsigned | LongUnsigned | Long64Unsigned
@@ -21,9 +21,8 @@ class ExtendedRegister(register.Register):
     """4.3.3 Extended register"""
     CLASS_ID = 4
     VERSION = 0
-    A_ELEMENTS = (
-        register.Register.getAElement(2),
-        register.Register.getAElement(3),
+    A_ELEMENTS = update_collection(
+        register.Register.A_ELEMENTS,
         ICAElement(4, "status", StatusData, classifier=Classifier.DYNAMIC),
         ICAElement(5, "capture_time", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC))
     M_ELEMENTS = register.Register.getMElement(1),

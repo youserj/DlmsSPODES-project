@@ -1,23 +1,20 @@
+from COSEMpdu.data import Array, Structure, CommonDataType
 from ..types.implementations import structs
-from typing import Optional
-from ..types import choices, cdt
 from .cosem_interface_class import ICAuto, ICAElement
+from ..types.type_alias import Attr
 
 
-class Thresholds(cdt.Array):
-    """thresholds attribute"""
-    TYPE = choices.simple_dt
+Thresholds = Array[CommonDataType]
 
 
-class ActionSet(cdt.Structure):
+class ActionSet(Structure):
     """action_set"""
     action_up: structs.ActionItem
     action_down: structs.ActionItem
 
 
-class Actions(cdt.Array):
-    """actions attribute"""
-    TYPE = ActionSet
+Actions = Array[ActionSet]
+"""actions attribute"""
 
 
 class RegisterMonitor(ICAuto):
@@ -27,6 +24,6 @@ class RegisterMonitor(ICAuto):
     A_ELEMENTS = (ICAElement(2, "thresholds", Thresholds),
                   ICAElement(3, "monitored_value", structs.ValueDefinition),
                   ICAElement(4, "actions", Actions))
-    thresholds: Optional[Thresholds]
-    monitored_value: Optional[structs.ValueDefinition]
-    threshold_normal: Optional[Actions]
+    thresholds: Attr
+    monitored_value: Attr
+    threshold_normal: Attr

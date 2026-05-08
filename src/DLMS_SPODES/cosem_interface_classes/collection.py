@@ -6,12 +6,17 @@ import logging
 from struct import pack
 from dataclasses import dataclass
 from itertools import count, chain
-from functools import reduce, cached_property, lru_cache
-from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, cast, Annotated
+from functools import cached_property, lru_cache
+from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, Union, get_args
+from COSEMpdu.byte_buffer import ByteBuffer
+from COSEMpdu.x680.type import INTEGER, OCTET_STRING
+from COSEMpdu.types_used import CosemAttributeDescriptor
+from COSEMpdu import axdr, data as cdt
 from DLMS_SPODES.types.type_alias import attr2d
 from semver import Version as SemVer
 from StructResult import result
-from ..types import common_data_types as cdt, cosem_service_types as cst, useful_types as ut
+from StructResult.result import Error, ValueOrError
+from ..types import common_data_types as cdt_, cosem_service_types as cst, useful_types as ut
 from ..types.implementations import structs, enums, octet_string
 from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
@@ -21,6 +26,11 @@ from .association_sn.ver0 import AssociationSN as AssociationSNVer0
 from .association_ln.ver0 import AssociationLN as AssociationLNVer0, AssociatedPartnersType, ClientSAP
 from .association_ln.ver1 import AssociationLN as AssociationLNVer1
 from .association_ln.ver2 import AssociationLN as AssociationLNVer2
+from .auto_connect.ver0 import PSTNAutoDial
+from .auto_connect.ver1 import AutoConnect as AutoConnectVer1
+from .auto_connect.ver2 import AutoConnect as AutoConnectVer2
+from .charge.ver0 import Charge
+from .communication_port_protection.ver0 import CommunicationPortProtection
 from .push_setup.ver0 import PushSetup as PushSetupVer0
 from .push_setup.ver1 import PushSetup as PushSetupVer1
 from .push_setup.ver2 import PushSetup as PushSetupVer2
@@ -41,7 +51,7 @@ from .limiter import Limiter
 from .ntp_setup.ver0 import NTPSetup
 from .profile_generic.ver0 import ProfileGeneric as ProfileGenericVer0
 from .profile_generic.ver1 import ProfileGeneric as ProfileGenericVer1
-from .register import Register
+from .register import Register, Unit, ScalUnitType
 from .extended_register import ExtendedRegister
 from .demand_register.ver0 import DemandRegister as DemandRegisterVer0
 from .register_activation.ver0 import RegisterActivation
@@ -49,24 +59,25 @@ from .register_monitor import RegisterMonitor
 from .schedule import Schedule
 from .security_setup.ver0 import SecuritySetup as SecuritySetupVer0
 from .security_setup.ver1 import SecuritySetup as SecuritySetupVer1
-from .script_table import ScriptTable
+from .script_table import ScriptTable, Scripts
+from .SFSKPhy_MAC_setup.ver0 import SFSKPhyMACSetup as SFSKPhyMACSetupVer0
+from .SFSKPhy_MAC_setup.ver1 import SFSKPhyMACSetup as SFSKPhyMACSetupVer1
 from .single_action_schedule import SingleActionSchedule
 from .special_days_table import SpecialDaysTable
 from .tcp_udp_setup import TCPUDPSetup
 from .. import exceptions as exc
 from ..relation_to_OBIS import obis2name
 from ..cosem_interface_classes import implementations as impl
-from ..cosem_interface_classes.overview import ClassID, CountrySpecificIdentifiers
+from ..cosem_interface_classes.overview import CountrySpecificIdentifiers
 from . import obis as o, ln_pattern
 from .. import pdu_enums as pdu
-from ..config_parser import config, get_message
+from ..config_parser import config, get_message, get_values
 from ..obis import media_id
-from .parameter import Parameter
+from .parameter import Parameter, par2Attr
 from typing_extensions import deprecated, override
 from .cosem_interface_class import IC, Classifier, _LN_ELEMENT, ICAElement, DataType
 from ..settings import settings
 from ..types.type_alias import Obis, Encoding, Attr, Tag, attr2i, attr2obis, attr2a, attr2b, attr2c, attr2e, attr2f, attr2d, Index, unpack_attr, Attr2report
-
 
 
 class CollectionMapError(exc.DLMSException):
@@ -78,6 +89,7 @@ LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.Cos
 
 AssociationSN: TypeAlias = AssociationSNVer0
 AssociationLN: TypeAlias = AssociationLNVer0 | AssociationLNVer1 | AssociationLNVer2
+AutoConnect: TypeAlias = PSTNAutoDial | AutoConnectVer1 | AutoConnectVer2
 ModemConfiguration: TypeAlias = PSTNModemConfiguration | ModemConfigurationVer1
 SecuritySetup: TypeAlias = SecuritySetupVer0 | SecuritySetupVer1
 PushSetup: TypeAlias = PushSetupVer0 | PushSetupVer1 | PushSetupVer2
@@ -89,7 +101,7 @@ InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister 
                             SingleActionSchedule | AssociationLN | IECHDLCSetup | DisconnectControl | Limiter | ModemConfiguration | PSTNModemConfiguration | ImageTransfer | \
                             GPRSModemSetup | GSMDiagnostic | SecuritySetup | TCPUDPSetup | IPv4Setup | Arbitrator | RegisterMonitor | PushSetup | AssociationSN | \
                             NTPSetup
-
+SFSKPhyMACSetup: TypeAlias = SFSKPhyMACSetupVer0 | SFSKPhyMACSetupVer1
 
 type AttributeIndex = int
 UsedAttributes: TypeAlias = dict[cst.LogicalName, set[AttributeIndex]]
@@ -127,6 +139,8 @@ class ClassMap:
         return f"{self._values[0].CLASS_ID}[{len(self._values)}]"
 
 
+AutoConnectMap = ClassMap(PSTNAutoDial, AutoConnectVer1, AutoConnectVer2)
+CommunicationPortProtectionMap = ClassMap(CommunicationPortProtection)
 DataMap = ClassMap(Data)
 DataStaticMap = ClassMap(impl.data.DataStatic)
 DataDynamicMap = ClassMap(impl.data.DataDynamic)
@@ -138,6 +152,7 @@ ProfileGenericMap = ClassMap(ProfileGenericVer0, ProfileGenericVer1)
 ClockMap = ClassMap(Clock)
 ScriptTableMap = ClassMap(ScriptTable)
 ScheduleMap = ClassMap(Schedule)
+SFSKPhyMACSetupMap = ClassMap(SFSKPhyMACSetupVer0, SFSKPhyMACSetupVer1)
 SpecialDaysTableMap = ClassMap(SpecialDaysTable)
 AssociationSNMap = ClassMap(AssociationSNVer0)
 AssociationLNMap = ClassMap(AssociationLNVer0, AssociationLNVer1, AssociationLNVer2)
@@ -195,10 +210,10 @@ common_interface_class_map: dict[int, ClassMap] = {
 }
 
 
-def get_interface_class(class_map: dict[int, ClassMap], c_id: int, ver: int) -> result.SimpleOrError[type[IC]]:
+def get_interface_class(class_map: dict[int, ClassMap], c_id: int, ver: int) -> result.ValueOrError[type[IC]]:
     """new version <get_type_from_class>"""
     if isinstance(ret := class_map.get(c_id), ClassMap):
-        return result.Simple(ret.get(ver))
+        return ret.get(ver)
     if c_id not in common_interface_class_map:
         return result.Error.from_e(ValueError(f"unknown {c_id=}"), "get interface class")
     return result.Error.from_e(ValueError((f"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")))
@@ -305,7 +320,6 @@ class ACDDEgroup(ACDEgroup_, tuple[A, C, tuple[D, ...], E]):
         return (pack(self.fmt, a, c, d, e) for d in self[2])
 
 
-
 class ACDEEgroup(ACDEgroup_, tuple[A, C, D, tuple[E, ...]]):
     def get_key(self) -> Iterator[bytes]:
         a, c, d, _ = self
@@ -381,7 +395,7 @@ __func_map_for_create: dict[PossibleGroup, PossibleClassMap] = {
     ACDgroup((0, 1, 6)): DataMap,
     ACDEgroup((0, 2, 0, 0)): ModemConfigurationMap,
     #
-    ACDEEgroup((0, 10, 0, (0, 1, 125)+tuple(range(100, 112)))): ScriptTableMap,
+    ACDEEgroup((0, 10, 0, (0, 1, 125) + tuple(range(100, 112)))): ScriptTableMap,
     ACDgroup((0, 11, 0)): SpecialDaysTableMap,
     ACDgroup((0, 12, 0)): ScheduleMap,
     ACDgroup((0, 13, 0)): ActivityCalendarMap,
@@ -563,7 +577,7 @@ func_maps["KPZ1"] = get_func_map(__func_map_for_create)
 def get_type(c_id: int,
              ver: int,
              obis: Obis,
-             func_map: FUNC_MAP) -> result.SimpleOrError[type[IC]]:
+             func_map: FUNC_MAP) -> result.ValueOrError[type[IC]]:
     """use DLMS UA 1000-1 Ed. 14 Table 54"""
     c_m: Optional[dict[int, ClassMap]]
     if (
@@ -593,37 +607,57 @@ def get_type(c_id: int,
                                ver=ver)
 
 
-@lru_cache(20000)
-def get_unit(class_id: ClassID, elements: Iterable[int]) -> Optional[int]:
+@lru_cache(2000)
+def get_unit(class_id: INTEGER, *elements: int) -> int:
     match class_id, *elements:
-        case (ClassID.LIMITER, 6 | 7) | (ClassID.LIMITER, 8, 2) | (ClassID.DEMAND_REGISTER, 8) | (ClassID.PROFILE_GENERIC, 4) | (ClassID.PUSH_SETUP, 5) |\
-             (ClassID.PUSH_SETUP, 7, _) | (ClassID.PUSH_SETUP, 12, 1) | (ClassID.COMMUNICATION_PORT_PROTECTION, 4 | 6) | (ClassID.CHARGE, 8) | (ClassID.IEC_HDLC_SETUP, 8) \
-             | (ClassID.AUTO_CONNECT, 4):
-            return 7  # second
-        case ClassID.CLOCK, 3 | 7:
-            return 6  # min
-        case (ClassID.IEC_HDLC_SETUP, 7) | (ClassID.MODEM_CONFIGURATION, 3, 2):
-            return 7  # millisecond
-        case ClassID.S_FSK_PHY_MAC_SET_UP, 7, _:
-            return 44  # HZ
-        case (ClassID.S_FSK_PHY_MAC_SET_UP, 4 | 5):
-            return 72  # Db
-        case ClassID.S_FSK_PHY_MAC_SET_UP, 6:
-            return 71  # DbmicroV
+        case (Limiter.CLASS_ID, 6 | 7) | (Limiter.CLASS_ID, 8, 2) | (DemandRegister.CLASS_ID, 8) | (ProfileGeneric.CLASS_ID, 4) | (PushSetupVer0.CLASS_ID, 5) |\
+             (PushSetupVer0.CLASS_ID, 7, _) | (PushSetupVer0.CLASS_ID, 12, 1) | (CommunicationPortProtection.CLASS_ID, 4 | 6) | (Charge.CLASS_ID, 8) | \
+              (IECHDLCSetupVer0.CLASS_ID, 8) | (AutoConnectVer1.CLASS_ID, 4):
+            return Unit.SECOND
+        case Clock.CLASS_ID, 3 | 7:
+            return Unit.MINUTE
+        case (IECHDLCSetupVer0.CLASS_ID, 7) | (ModemConfigurationVer1.CLASS_ID, 3, 2):
+            return Unit.SECOND  # TODO: make to millisecond
+        case SFSKPhyMACSetupVer0.CLASS_ID, 7, _:
+            return Unit.HERTZ
+        case (SFSKPhyMACSetupVer1.CLASS_ID, 4 | 5):
+            return Unit.DB  # Db
+        case SFSKPhyMACSetupVer1.CLASS_ID, 6:
+            return Unit.DB_MICROVOLT
         case _:
-            return None
+            return Unit.UNITLESS  # no_unit
 
 
-type ObjFilteredKey = tuple[ClassID | LNPattern | LNPatterns | Channel, ...]
+@dataclass
+class Channel:
+    """for object filter approve"""
+    n: int
+
+    def __post_init__(self) -> None:
+        if not self.is_channel(self.n):
+            raise ValueError(F"got value={self.n}, expected (0..64)")
+
+    @staticmethod
+    def is_channel(b: int) -> bool:
+        return 0 <= b <= 64
+
+    def is_approve(self, b: int) -> bool:
+        if self.is_channel(b):
+            return b == self.n
+        return True
+
+
+ClassID: TypeAlias = INTEGER  # TODO: make ClassID in future
+ObjFilteredKey: TypeAlias = tuple[ClassID | LNPattern | LNPatterns | Channel, ...]
 
 
 def get_filtered(objects: Iterable[IC],
                  keys: ObjFilteredKey) -> list[IC]:
-    c_ids: list[ut.CosemClassId] = []
+    c_ids: list[ClassID] = []
     patterns: list[LNPattern] = []
     ch: Optional[Channel] = None
     for k in keys:
-        if isinstance(k, ut.CosemClassId):
+        if isinstance(k, ClassID):
             c_ids.append(k)
         elif isinstance(k, LNPattern):
             patterns.append(k)
@@ -633,9 +667,10 @@ def get_filtered(objects: Iterable[IC],
             ch = k
     new_list = []
     for obj in objects:
-        if obj.CLASS_ID in c_ids:
-            pass
-        elif obj.obis in patterns:
+        if (
+            obj.CLASS_ID in c_ids
+            or obj.obis in patterns
+        ):
             pass
         else:
             continue
@@ -652,7 +687,7 @@ class ParameterValue:
     value: bytes
 
     def __str__(self) -> str:
-        return F"{'.'.join(map(str, self.par[:6]))}:{self.par[6]} - {cdt.get_instance_and_pdu_from_value(self.value)[0].__repr__()}"
+        return F"{'.'.join(map(str, self.par[:6]))}:{self.par[6]} - {cdt_.get_instance_and_pdu_from_value(self.value)[0].__repr__()}"
 
     def __bytes__(self) -> bytes:
         """par + 0x00 + value"""  # todo: 00 in future other parameters
@@ -674,7 +709,7 @@ class AttrData:
     data: Encoding
 
     def __str__(self) -> str:
-        return f"{".".join(map(str, attr2obis(self.attr)))}:{attr2i(self.attr)} - {cdt.get_instance_and_pdu_from_value(self.data)[0].__repr__()}"
+        return f"{".".join(map(str, attr2obis(self.attr)))}:{attr2i(self.attr)} - {cdt_.get_instance_and_pdu_from_value(self.data)[0].__repr__()}"
 
     def __bytes__(self) -> bytes:
         return self.attr + self.data
@@ -686,22 +721,22 @@ class AttrData:
 
 @dataclass(frozen=True, unsafe_hash=True)
 class ID:
-    man: bytes
+    man: OCTET_STRING
     f_id: AttrData
     f_ver: AttrData
-    sap: ClientSAP
+    sap: INTEGER
 
     def __bytes__(self) -> bytes:
-        return self.man + self.sap.contents + bytes(self.f_id) + bytes(self.f_ver)
+        return self.man + self.sap.to_bytes() + bytes(self.f_id) + bytes(self.f_ver)
 
 
 class EmptyAttribute(exc.DLMSException):
     """need read attribute"""
     def __init__(self,
-                 ln: cst.LogicalName,
+                 obis: Obis,
                  i: int):
-        Exception.__init__(self, F"empty {ln}: {i}")
-        self.ln = ln
+        Exception.__init__(self, F"empty {obis}: {i}")
+        self.obis = obis
         self.i = i
 
 
@@ -719,7 +754,7 @@ class Collection:
                  id_: ID,
                  dlms_ver: int = 6,
                  country: Optional[CountrySpecificIdentifiers] = None,
-                 cntr_ver: Optional[AttrData] = None):
+                 cntr_ver: Optional[AttrData] = None) -> None:
         self.__id = id_
         self.__dlms_ver = dlms_ver
         self.__country = country
@@ -733,16 +768,16 @@ class Collection:
         self._t = {}
         """expected Tags of Attributes"""
 
-    def getCDT(self, attr: Attr) -> result.SimpleOrError[DataType]:
+    def getCDT(self, attr: Attr) -> result.ValueOrError[DataType]:
         if (data := self._data.get(attr)) is None:
             return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
-        return result.Simple(data)
+        return data
 
-    def get[T: DataType](self, attr: Attr, e_type: type[T]) -> result.SimpleOrError[T]:
+    def get[T: DataType](self, attr: Attr, e_type: type[T]) -> result.ValueOrError[T]:
         if (data := self._data.get(attr)) is None:
             return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
         if isinstance(data, e_type):
-            return result.Simple(data)
+            return data
         return result.Error.from_e(TypeError(f"got {data.__class__}, expected {e_type}"))
 
     @property
@@ -758,9 +793,9 @@ class Collection:
         res = result.StrictOk()
         for o_l_el in obj_list:
             if isinstance(res_new := self.addIC(
-                    c_id=o_l_el.class_id.normalize(),
-                    version=o_l_el.version.normalize(),
-                    obis=o_l_el.logical_name.contents
+                    c_id=int(o_l_el.class_id),
+                    version=int(o_l_el.version),
+                    obis=o_l_el.logical_name.normalize()
             ), result.Error):
                 res.append_err(res_new.err)
         return res
@@ -822,44 +857,47 @@ class Collection:
             case b"101" | b"102" | b"103" | b"104":
                 return "KPZ1"
             case _:
-                if self.country_ver:
-                    if self.country == CountrySpecificIdentifiers.RUSSIA:
-                        if (
-                            self.country_ver.attr == b'\x00\x00`\x01\x06\xff\x02'
-                            and SemVer.parse(bytes(cdt.OctetString(self.country_ver.data)), True) == SemVer(3, 0)
-                        ):
-                            return "SPODES_3"
+                if (
+                    self.country_ver
+                    and self.country == CountrySpecificIdentifiers.RUSSIA
+                    and self.country_ver.attr == b"\x00\x00`\x01\x06\xff\x02"
+                ):
+                    if isinstance(version := data.OctetString.get(ByteBuffer.wrap(self.country_ver.data)), Error):
+                        version.unwrap()
+                    semver = SemVer.parse(version.normalize())
+                    if semver == SemVer(3, 0):
+                        return "SPODES_3"
+                    if semver == SemVer(4, 0):
+                        return "SPODES_4"
                 if self.dlms_ver == 6:
                     return "DLMS_6"
-                else:
-                    raise exc.DLMSException("unknown specification")
+                raise exc.DLMSException("unknown specification")
 
     def __getitem__(self, item: Obis) -> IC:
         return self.__objs[item]
 
-    def attr2ICAElement(self, obis: Obis, i: Index) -> result.SimpleOrError[ICAElement]:
+    def attr2ICAElement(self, obis: Obis, i: Index) -> result.ValueOrError[ICAElement]:
         if isinstance(r_ic := self.obis2ic(obis), result.Error):
             return r_ic
-        return r_ic.value.getAElement(i)
+        return r_ic.getAElement(i)
 
     @deprecated("use <obis2ic> or <obis2obj>")
-    def par2obj(self, par: Parameter) -> result.SimpleOrError[IC]:
+    def par2obj(self, par: Parameter) -> result.ValueOrError[IC]:
         """return: DLMSObject"""
-        return self.obis2ic(par.obis)
+        raise RuntimeError("use obis2ic or obis2obj")
 
-    def par2data(self, par: Parameter) -> result.Option[cdt.CommonDataType] | result.Error:
-        """:return CDT by Parameter, return None if data wasn't setting"""
-        if isinstance((r_obj := self.obis2ic(par.obis)), result.Error):
-            return r_obj
-        res = result.Option(r_obj.value.get_attr(par.i))
-        if res.value is None:
-            return res
+    def par2data(self, par: Parameter) -> ValueOrError[DataType]:  # TODO: make for Client
+        """:return CDT by Parameter"""
+        if isinstance(attr := par2Attr(par), Error):
+            return attr
+        if isinstance(data := self.getCDT(attr), Error):
+            return data
         for i, el in enumerate(par.elements()):
-            if isinstance(res.value, cdt.ComplexDataType):
-                res.value = res.value[el]
-            else:
-                return result.Error.from_e(ValueError(f"object with {par} not has element {i}"))
-        return res
+            try:
+                data = data[el]
+            except (IndexError, TypeError) as e:
+                return result.Error.from_e(e, msg=f"with {par=} element={i}")
+        return data
 
     def values(self) -> tuple[IC, ...]:
         return tuple(self.__objs.values())
@@ -867,64 +905,57 @@ class Collection:
     def __len__(self) -> int:
         return len(self.__objs)
 
-    def setupCDT(self, attr: Attr, encoding: Encoding) -> result.Simple[cdt.CommonDataType] | result.Error:
-        if isinstance(res_obj := self.obis2ic(attr2obis(attr)), result.Error):
-            return res_obj
-        if isinstance(res_data := res_obj.value.getCDT(attr2i(attr), encoding), result.Error):
-            return res_data.with_msg(f"{res_obj.value}:{attr2i(attr)}")
-        return self.setup_data(attr, res_data.value)
+    def setupCDT(self, attr: Attr, buf: ByteBuffer) -> result.ValueOrError[DataType]:
+        if isinstance(obj := self.obis2ic(attr2obis(attr)), result.Error):
+            return obj
+        if isinstance(res_data := obj.getCDT(attr2i(attr), buf), result.Error):
+            return res_data.with_msg(f"{obj}:{attr2i(attr)}")
+        return self.setup_data(attr, res_data)
 
-    def setup[T: cdt.CommonDataType](self, attr: Attr, encoding: Encoding, e_type: type[T]) -> result.Simple[T] | result.Error:
-        if isinstance(res_obj := self.obis2ic(attr2obis(attr)), result.Error):
-            return res_obj
-        if isinstance(res_data := res_obj.value.get(attr2i(attr), encoding, e_type), result.Error):
-            return res_data
-        return self.setup_data(attr, res_data.value)
+    def setup[T: DataType](self, attr: Attr, buf: ByteBuffer, e_type: type[T]) -> result.ValueOrError[T]:
+        if isinstance(obj := self.obis2ic(attr2obis(attr)), result.Error):
+            return obj
+        if isinstance(data := obj.get(attr2i(attr), buf, e_type), result.Error):
+            return data
+        return self.setup_data(attr, data)
 
-    def setup_data[T: cdt.CommonDataType](self, attr: Attr, data: T) -> result.Simple[T] | result.Error:
+    def setup_data[T: DataType](self, attr: Attr, data: T) -> result.ValueOrError[T]:
         if data != self._data.setdefault(attr, data):
             return result.Error.from_e(ValueError(f"collection already exist other <Encoding> for {attr=}"))
-        return result.Simple(data)
+        return data
 
-    def setupTag(self, attr: Attr, encoding: Tag | Encoding) -> result.Simple[Tag] | result.Error:
-        tag = encoding[:1]  # use only 1 byte
+    def setupTag(self, attr: Attr, buf: ByteBuffer) -> ValueOrError[Tag]:
+        if isinstance(tag := buf.get_u8(), Error):
+            return tag
         obis, i = unpack_attr(attr)
-        if isinstance(res_obj := self.obis2ic(obis), result.Error):
-            return res_obj
-        if isinstance(res_el := res_obj.value.getAElement(i), result.Error):
-            return res_el
-        if not isinstance(d_t := res_el.value.DATA_TYPE, ut.CHOICE):
-            return result.Error.from_e(TypeError(f"{res_obj.value}:{attr2i(attr)} can't setup TAG to not CHOICE element"))
-        expected = d_t.get_types()
-        if not any((t_.TAG == tag for t_ in expected)):
-            return result.Error.from_e(TypeError(f"{res_obj.value}:{attr2i(attr)} got tag: {tag[0]}, expected {",".join(map(str, (t_.TAG for t_ in expected)))}"))
+        if isinstance(obj := self.obis2ic(obis), Error):
+            return obj
+        if isinstance(el := obj.getAElement(i), Error):
+            return el
+        if not isinstance(d_t := el.DATA_TYPE, axdr.ChoiceType):
+            return Error.from_e(TypeError(f"{obj}:{attr2i(attr)} can't setup TAG to not CHOICE element"))
+        if tag not in d_t.alternatives:
+            return Error.from_e(TypeError(f"{obj}:{attr2i(attr)} got {tag=}, expected {",".join(map(str, d_t.alternatives))}"))
         if tag != self._t.setdefault(attr, tag):
-            return result.Error.from_e(ValueError(f"collection already exist oter <Tag> for {attr=}"))
-        return result.Simple(tag)
+            return Error.from_e(ValueError(f"collection already exist oter <Tag> for {attr=}"))
+        return tag
 
     def addIC(self, c_id: int,
               version: Optional[int],
-              obis: Obis) -> result.SimpleOrError[IC]:
+              obis: Obis) -> result.ValueOrError[IC]:
         """ append new DLMS object to collection with return it"""
-        if isinstance(r_ic_type := get_type(
+        if version is None:
+            if (keep_ver := isinstance(self.find_version(c_id), Error)):
+                return keep_ver
+            version = keep_ver
+        if isinstance(new_type := get_type(
             c_id=c_id,
-            ver=self.find_version(c_id) if version is None else version,
+            ver=version,
             obis=obis,
-            func_map=func_maps[self.spec_map]), result.Error):
-            return r_ic_type
-        new = r_ic_type.value(obis)
-        return result.Simple(self.__objs.setdefault(obis, new))
-
-    def get_class_version(self) -> dict[ut.CosemClassId, cdt.Unsigned]:
-        """use for check all class version by unique"""
-        ret: dict[ut.CosemClassId, cdt.Unsigned] = {}
-        for obj in self.__objs.values():
-            if ver := ret.get(obj.CLASS_ID):
-                if obj.VERSION != ver:
-                    raise ValueError(F"for {obj.CLASS_ID=} exist several versions: {obj.VERSION}, {ver} in one collection")
-            else:
-                ret[obj.CLASS_ID] = obj.VERSION
-        return ret
+            func_map=func_maps[self.spec_map]), result.Error
+        ):
+            return new_type
+        return self.__objs.setdefault(obis, new_type(obis))
 
     def get_n_phases(self) -> int:
         """search objects with L2 phase"""
@@ -935,105 +966,69 @@ class Collection:
             ret = 1
         if ret is None:
             raise exc.NoObject("no one electricity object was find")
-        else:
-            return ret
+        return ret
 
-    @lru_cache(maxsize=100)  # amount of all ClassID
-    def find_version(self, class_id: ut.CosemClassId) -> int:
+    def find_version(self, class_id: ClassID) -> ValueOrError[INTEGER]:
         """use for add new object from profile_generic if absence in object list"""
-        return next(filter(lambda obj: obj.CLASS_ID == class_id, self.__objs.values())).VERSION
+        for obj in self.__objs.values():
+            if class_id == obj.CLASS_ID:
+                return obj.VERSION
+        return Error.from_e(ValueError(f"not find version for {ClassID=}"))
 
+    @deprecated("use <obis2obj>")
     def is_in_collection(self, value: LNContaining) -> bool:
-        obis = lnContents2obis(value)
-        return False if self.__objs.get(obis) is None else True
+        raise RuntimeError("use <obis2obj>")
 
-    def get_object(self, value: LNContaining) -> IC:
-        """ return object from obis<string> or raise exception if it absence """
-        return self.obis2ic(lnContents2obis(value)).unwrap()
+    @deprecated("use <obis2obj>")
+    def get_object(self, value: LNContaining) -> ValueOrError[IC]:
+        raise RuntimeError("use <obis2obj>")
 
     @deprecated("use <par2rep>")
-    def get_report(self,
-                   obj: IC,
-                   par: bytes,
-                   a_val: Optional[cdt.CommonDataType]
-                   ) -> cdt.Report:
-        """par: attribute_index, par1, par2, ..."""
-        rep = cdt.Report(str(a_val))
-        try:
-            if a_val is None:
-                rep.msg = settings.report.empty
-                rep.log = cdt.EMPTY_VAL
-            elif isinstance(a_val, cdt.ReportMixin):
-                rep = a_val.get_report()
-            elif isinstance(a_val, DayProfileAction):
-                rep.msg = F"{get_message("$rate$")}-{a_val.script_selector}: {a_val.start_time}"
-                if isinstance(script_obj := self.get_object(a_val.script_logical_name), ScriptTable):
-                    for script in script_obj.scripts:
-                        if script.script_identifier == a_val.script_selector:
-                            break
-                    else:
-                        rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {a_val.script_selector}")
-                else:
-                    rep.log = cdt.Log(logging.ERROR, f"wrong script object with {a_val.script_logical_name}")
-            else:
-                if unit := get_unit(obj.CLASS_ID, par):
-                    rep.unit = cdt.Unit(unit).get_name()
-                else:
-                    if s_u := self.get_scaler_unit(obj, par):
-                        rep.msg = (settings.report.scaler_format).format(int(a_val) * 10 ** int(s_u.scaler))
-                        rep.unit = s_u.unit.get_name()
-                    else:
-                        match obj.CLASS_ID, *par:
-                            case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
-                                a_val: structs.CaptureObjectDefinition
-                                obj = self.get_object(a_val.logical_name)
-                                rep.msg = F"{obis2name(obj.obis)}.{obj.get_attr_element(int(a_val.attribute_index))}"
-                            case _:
-                                pass
-                rep.log = cdt.Log(logging.INFO)
-        except Exception as e:
-            rep.log = cdt.Log(logging.ERROR, e)
-        finally:
-            return rep
+    def get_report(self, obj: IC, par: bytes, a_val: Optional[cdt_.CommonDataType]) -> cdt_.Report:
+        raise RuntimeError("use <par2rep>")
 
-    def par2rep(self, par: Parameter, data: Optional[cdt.CommonDataType]) -> cdt.Report:
-        rep = cdt.Report(str(data))
+    def par2rep(self, par: Parameter, data: Optional[DataType]) -> cdt_.Report:
+        rep = cdt_.Report(str(data))
         try:
             if data is None:
                 rep.msg = settings.report.empty
-                rep.log = cdt.EMPTY_VAL
-            elif isinstance(data, cdt.ReportMixin):
+                rep.log = cdt_.EMPTY_VAL
+            elif isinstance(data, cdt_.ReportMixin):
                 rep = data.get_report()
             elif isinstance(data, DayProfileAction):
                 rep.msg = F"{get_message("$rate$")}-{data.script_selector}: {data.start_time}"
-                if isinstance(script_obj := self.get_object(data.script_logical_name), ScriptTable):
-                    for script in script_obj.scripts:
-                        if script.script_identifier == data.script_selector:
-                            break
-                    else:
-                        rep.log = cdt.Log(logging.ERROR, F"absent script with ID: {data.script_selector}")
+                if isinstance(script_obj := self.obis2obj(data.script_logical_name.normalize(), ScriptTable), Error):
+                    rep.log = cdt_.Log(logging.ERROR, f"not find <ScriptTable> from {data.script_logical_name} {script_obj}")
+                    return rep
+                if isinstance(scripts := self.get(script_obj.scripts, Scripts), Error):
+                    rep.log = cdt_.Log(logging.ERROR, f"not find <Scripts> {data.script_logical_name} {scripts}")
+                    return rep
+                for script in scripts:
+                    if script.script_identifier == data.script_selector:
+                        break
                 else:
-                    rep.log = cdt.Log(logging.ERROR, f"wrong script object with {data.script_logical_name}")
+                    rep.log = cdt_.Log(logging.ERROR, F"absent script with ID: {data.script_selector}")
             else:
-                obj = self.par2obj(par).unwrap()
-                elements = tuple(par.elements())
-                if unit := get_unit(obj.CLASS_ID, elements):
-                    rep.unit = cdt.Unit(unit).get_name()
+                if isinstance(obj := self.obis2ic(par.obis), Error):
+                    rep.log = cdt_.Log(logging.ERROR, obj.err)
+                    return rep
+                if (unit := get_unit(obj.CLASS_ID, par.elements())) != Unit.UNITLESS:
+                    rep.unit = get_values("DLMS", "enum_name", f"{unit}")  # TODO: make with settings
                 else:
                     if s_u := self.par2su(par):
                         rep.msg = (settings.report.scaler_format).format(int(data) * 10 ** int(s_u.scaler))
                         rep.unit = s_u.unit.get_name()
                     else:
-                        match obj.CLASS_ID, *elements:
-                            case (ClassID.PROFILE_GENERIC, 3, _) | (ClassID.PROFILE_GENERIC, 6):
+                        match obj.CLASS_ID, *par.elements():
+                            case (ProfileGenericVer0.CLASS_ID, 3, _) | (ProfileGenericVer0.CLASS_ID, 6):
                                 data_: structs.CaptureObjectDefinition
                                 obj = self.get_object(data_.logical_name)
                                 rep.msg = F"{obis2name(obj.obis)}.{obj.get_attr_element(int(data_.attribute_index))}"
                             case _:
                                 pass
-                rep.log = cdt.Log(logging.INFO)
+                rep.log = cdt_.Log(logging.INFO)
         except Exception as e:
-            rep.log = cdt.Log(logging.ERROR, e)
+            rep.log = cdt_.Log(logging.ERROR, e)
         finally:
             return rep
 
@@ -1041,87 +1036,49 @@ class Collection:
     def get_scaler_unit(self,
                         obj: IC,
                         par: bytes
-                        ) -> cdt.ScalUnitType | None:
-        match obj.CLASS_ID, *par:
-            case (ClassID.REGISTER | ClassID.EXT_REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
-                obj: Register | DemandRegister
-                if (s_u := obj.scaler_unit) is None:
-                    raise EmptyAttribute(obj.logical_name, 3)
-                else:
-                    if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                        s_u = copy(s_u)
-                        s_u.scaler.set(int(s_u.scaler)-s)
-                    return s_u
-            case ClassID.LIMITER, 3 | 4 | 5:
-                obj: Limiter
-                if m_v := obj.monitored_value:
-                    return self.get_scaler_unit(  # recursion 1 level
-                        obj=self.get_object(m_v.logical_name),
-                        par=m_v.attribute_index.contents)
-                else:
-                    raise EmptyAttribute(obj.logical_name, 2)
-            case ClassID.REGISTER_MONITOR, 2, _:
-                obj: RegisterMonitor
-                if (m_v := obj.monitored_value) is None:
-                    raise EmptyAttribute(obj.logical_name, 3)
-                else:
-                    return self.get_scaler_unit(  # recursion 1 level
-                        obj=self.get_object(m_v.logical_name),
-                        par=m_v.attribute_index.contents
-                    )
-            case _:
-                return None
+                        ) -> cdt_.ScalUnitType | None:
+        raise RuntimeError("use par2su")
 
-    @lru_cache(20000)
-    def par2su(self, par: Parameter) -> Optional[cdt.ScalUnitType]:
-        """convert Parameter -> Optional[ScalerUnit],
-        raise: NoObject, EmptyAttribute"""
-        match (obj := self.obis2ic(par.obis).unwrap()), par.i:
-            case (exc.NoObject, _):
-                raise obj
-            case (ClassID.REGISTER | ClassID.EXT_REGISTER, 2) | (ClassID.DEMAND_REGISTER, 2 | 3):
-                obj: Register | DemandRegister
-                if (s_u := obj.scaler_unit) is None:
-                    raise EmptyAttribute(obj.logical_name, 3)
-                else:
-                    if (s := cdt.get_unit_scaler(s_u.unit.contents)) != 0:
-                        s_u = copy(s_u)
-                        s_u.scaler.set(int(s_u.scaler)-s)
-                    return s_u
-            case ClassID.LIMITER, 3 | 4 | 5:
-                obj: Limiter
-                if m_v := obj.monitored_value:
-                    return self.par2su(Parameter(m_v.logical_name.contents).set_i(int(m_v.attribute_index)))  # recursion 1 level
-                else:
-                    raise EmptyAttribute(obj.logical_name, 2)
-            case ClassID.REGISTER_MONITOR, 2, _:
-                obj: RegisterMonitor
-                if (m_v := obj.monitored_value) is None:
-                    raise EmptyAttribute(obj.logical_name, 3)
-                else:
-                    return self.par2su(Parameter(m_v.logical_name.contents).set_i(int(m_v.attribute_index)))  # recursion 1 level
+    @lru_cache(2000)
+    def par2su(self, par: Parameter) -> ValueOrError[ScalUnitType]:
+        """convert Parameter -> Optional[ScalerUnit],  raise: NoObject, EmptyAttribute"""
+        if isinstance(obj := self.obis2ic(par.obis), Error):
+            return obj
+        match obj, par.i:
+            case (Register() | ExtendedRegister(), 2) | (DemandRegisterVer0(), 2 | 3):
+                return self.get(obj.scaler_unit, ScalUnitType)
+            case (Limiter(), 3 | 4 | 5) | (RegisterMonitor(), 2):
+                if isinstance(m_v := self.get(obj.monitored_value, structs.ValueDefinition), Error):
+                    return m_v
+                return self.par2su(Parameter(m_v.logical_name.normalize()).set_i(int(m_v.attribute_index)))  # TODO: handle recursion 1 level
             case _:
-                return None
+                return Error.from_e(ValueError(f"not find <ScalUnitType> in {par}"))
 
-    def par2float(self, par: Parameter) -> float:
+    def par2float(self, par: Parameter) -> ValueOrError[float]:
         """try convert CDT value according with Parameter to build-in float"""
-        data = self.par2data(par).unwrap()
-        if isinstance(data, cdt.Digital):
-            value = float(int(data))
-        elif isinstance(data, cdt.Float):
-            value = float(data)
+        if isinstance(data_ := self.par2data(par), Error):
+            return data_
+        if isinstance(data_, data.DigitalMixin):
+            value = float(int(data_))
+        elif isinstance(data_, data._Float):
+            value = float(data_)
         else:
-            raise TypeError("can't convert Parameter data to int or float")
-        if (su := self.par2su(par)):
+            return Error.from_e(TypeError("can't convert Parameter data to int or float"))
+        if not isinstance(su := self.par2su(par), Error):
             value *= 10 ** int(su.scaler)
         return value
 
-
-    def filter_by_ass(self, ass_id: int) -> list[IC]:
+    def filter_by_ass(self, ass_id: int) -> ValueOrError[list[IC]]:
         """return only association objects"""
-        ret = []
-        for olt in self.get(self.getASSOCIATION(ass_id).object_list, ObjectListType).unwrap():
-            ret.append(self.obis2ic(olt.logical_name.contents).unwrap())
+        if isinstance(ass := self.getASSOCIATION(ass_id), Error):
+            return ass
+        if isinstance(obj_list := self.get(ass.object_list, *get_args(ObjectListType)), Error):
+            return obj_list
+        ret: list[IC] = []
+        for olt in obj_list:
+            if isinstance(obj := self.obis2ic(olt.logical_name), Error):
+                return obj
+            ret.append(obj)
         return ret
 
     def sap2objects(self, sap: ClientSAP) -> result.List[IC]:
@@ -1133,9 +1090,8 @@ class Collection:
                 res.append(res1)
         return res
 
-    def iter_classID_objects(self,
-                        class_id: ut.CosemClassId) -> Iterator[IC]:
-        return (obj for obj in self.__objs.values() if obj.CLASS_ID == class_id)
+    def iter_classID_objects(self, class_id: ClassID) -> Iterator[IC]:
+        return (obj for obj in self.__objs.values() if class_id == obj.CLASS_ID)
 
     def iter_objects[T: IC](self, e_type: type[T]) -> Iterator[T]:
         return (obj for obj in self.__objs.values() if isinstance(obj, e_type))
@@ -1148,25 +1104,15 @@ class Collection:
                 ret.append(obj)
         return ret
 
-    def get_first(self, values: list[str | bytes | cst.LogicalName]) -> InterfaceClass:
-        """ return first object from it exist in collection from value"""
-        for val in values:
-            if self.is_in_collection(val):
-                return self.get_object(val)
-            else:
-                """search next"""
-        else:
-            raise exc.NoObject(F"not found at least one DLMS Objects from collection with {values=}")
-
     @deprecated("use <iter_classID_objects>")
-    def get_objects_by_class_id(self, value: ut.CosemClassId) -> list[InterfaceClass]:
+    def get_objects_by_class_id(self, value: ClassID) -> list[InterfaceClass]:
         return list(filter(lambda obj: obj.CLASS_ID == value, self.__objs.values()))
 
     def get_writable_attr(self) -> result.SimpleOrError[UsedAttributes]:
         """return all writable {obj.ln: {attribute_index}}"""
         ret = {}
         res = result.Simple(ret)
-        for ass in self.iter_classID_objects(ClassID.ASSOCIATION_LN):
+        for ass in self.iter_classID_objects(AssociationLNVer0.CLASS_ID):
             if attr2e(ass.obis) == 0:
                 """skip current association"""
             elif isinstance(res_obj_list := self.get(AssociationLNVer0.object_list, ObjectListType, result.Error)):
@@ -1188,9 +1134,9 @@ class Collection:
     def get_profile_s_u(self,
                         obj: ProfileGeneric,
                         mask: Optional[set[int]] = None
-                        ) -> list[Optional[cdt.ScalUnitType]]:
+                        ) -> list[Optional[cdt_.ScalUnitType]]:
         """return container of scaler_units if possible, mask: position number in capture_objects"""
-        res: list[cdt.ScalUnitType | None] = []
+        res: list[cdt_.ScalUnitType | None] = []
         for i, obj_def in enumerate(obj.capture_objects):
             obj_def: structs.CaptureObjectDefinition
             if (
@@ -1209,55 +1155,48 @@ class Collection:
                 res.append(s_u)
         return res
 
-    def obis2ic(self, obis: Obis) -> result.SimpleOrError[IC]:
+    def obis2ic(self, obis: Obis) -> result.ValueOrError[IC]:
         if obj := self.__objs.get(obis, None):
-            return result.Simple(obj)
+            return obj
         return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
 
-    def obis2obj[T: IC](self, obis: Obis, e_type: type[T]) -> result.SimpleOrError[T]:
+    def obis2obj[T: IC](self, obis: Obis, *e_type: type[T]) -> ValueOrError[T]:
         if (obj := self.__objs.get(obis)) is None:
             return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
         if isinstance(obj, e_type):
-            return result.Simple(obj)
+            return obj
         return result.Error.from_e(TypeError(f"got {obj} expected {e_type}"))
 
     def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2ic(ln.contents)
 
-    @cached_property
     @deprecated("use <c.ldn>")
     def LDN(self) -> impl.data.LDN:
-        return self.obis2ic(b"\x00\x00\x2A\x00\x00\xff").unwrap()
+        raise RuntimeError("use <c.ldn>")
 
     @cached_property
-    def current_association(self) -> AssociationLN:
-        return self.obis2ic(o.CURRENT_ASSOCIATION).unwrap()
+    def current_association(self) -> ValueOrError[AssociationLN]:
+        return self.getASSOCIATION(0)
 
-    def getASSOCIATION(self, instance: int) -> AssociationLN:
-        return self.obis2obj(bytes((0, 0, 40, 0, instance, 255)), AssociationLN).unwrap()
+    def getASSOCIATION(self, instance: int) -> ValueOrError[AssociationLN]:
+        return self.obis2obj(bytes((0, 0, 40, 0, instance, 255)), *get_args(AssociationLN))
 
-    def getObjectList(self, instance: int) -> ObjectListType:
-        return self.get(self.getASSOCIATION(instance).object_list, ObjectListType).unwrap()
+    def getObjectList(self, instance: int) -> ValueOrError[ObjectListType]:
+        if isinstance(ass := self.getASSOCIATION(instance), Error):
+            return ass
+        return self.get(ass.object_list, *get_args(ObjectListType))
 
     @cached_property
-    def PUBLIC_ASSOCIATION(self) -> AssociationLN:
-        return self.obis2obj(bytes(0, 0, 40, 0, 1, 255), AssociationLN).unwrap()
+    def PUBLIC_ASSOCIATION(self) -> ValueOrError[AssociationLN]:
+        return self.getASSOCIATION(0)
 
     @property
-    def COMMUNICATION_PORT_PARAMETER(self) -> impl.data.CommunicationPortParameter:
-        return self.obis2ic(bytes((0, 0, 96, 12, 4, 255))).unwrap()
+    def COMMUNICATION_PORT_PARAMETER(self) -> ValueOrError[impl.data.CommunicationPortParameter]:
+        return self.obis2obj(bytes((0, 0, 96, 12, 4, 255)), impl.data.CommunicationPortParameter)
 
     @property
-    def clock(self) -> Clock:
-        return self.obis2ic(bytes((0, 0, 1, 0, 0, 255))).unwrap()
-
-    @property
-    def boot_image_transfer(self) -> ImageTransfer:
-        return self.obis2ic(bytes((0, 0, 44, 0, 128, 255))).unwrap()
-
-    @property
-    def firmware_image_transfer(self) -> ImageTransfer:
-        return self.obis2ic(bytes((0, 0, 44, 0, 0, 255))).unwrap()
+    def clock(self) -> ValueOrError[Clock]:
+        return self.obis2obj(bytes((0, 0, 1, 0, 0, 255)), Clock)
 
     @property
     def firmwares_description(self) -> Data:
@@ -1298,21 +1237,14 @@ class Collection:
         """DLMS UA 1000-1 Ed 14 6.2.46 Disconnect control objects by channel"""
         return self.obis2ic(bytes((0, ch, 96, 3, 10, 255))).unwrap()
 
-    def getARBITRATOR(self, ch: int = 0) -> Arbitrator:
+    def getARBITRATOR(self, ch: int = 0) -> ValueOrError[Arbitrator]:
         """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
-        return self.obis2obj(bytes((0, ch, 96, 3, 20, 255)), Arbitrator).unwrap()
+        return self.obis2obj(bytes((0, ch, 96, 3, 20, 255)), Arbitrator)
 
-    @property
-    def boot_version(self) -> str:
-        try:
-            return self.firmwares_description.value.to_str()[:4]
-        except Exception as e:
-            print(e)
-            return 'unknown'
-
-    def get_script_names(self, ln: cst.LogicalName, selector: cdt.LongUnsigned) -> str:
+    def get_script_names(self, ln: cst.LogicalName, selector: cdt_.LongUnsigned) -> str:
         """return name from script by selector"""
-        obj = self.obis2obj(ln.contents, ScriptTable).unwrap()
+        if isinstance(obj := self.obis2obj(ln.normalize(), ScriptTable), Error):
+            obj.unwrap()
         for script in obj.scripts:
             script: ScriptTable.scripts
             if script.script_identifier == selector:
@@ -1323,12 +1255,12 @@ class Collection:
                         raise ValueError(F"got {action_obj.CLASS_ID}, expected {action.class_id}")
                     match int(action.service_id):
                         case 1:  # for write
-                            if isinstance(action.parameter, cdt.NullData):
+                            if isinstance(action.parameter, cdt_.NullData):
                                 names.append(str(action_obj.getAElement(int(action.index)).unwrap()))
                             else:
                                 raise TypeError(F"not support by framework")  # TODO: make it
                         case 2:  # for execute
-                            if isinstance(action.parameter, cdt.NullData):
+                            if isinstance(action.parameter, cdt_.NullData):
                                 names.append(str(action_obj.get_meth_element(int(action.index))))
                             else:
                                 raise TypeError(F"not support by framework")  # TODO: make it
@@ -1400,22 +1332,22 @@ class Collection:
         return is_accessible(self.getObjectList(ass_id), obis, i, m_id)
 
     @lru_cache(maxsize=100)
-    def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], type[cdt.CommonDataType]]:
+    def get_name_and_type(self, value: structs.CaptureObjectDefinition) -> tuple[list[str], type[cdt_.CommonDataType]]:
         """ return names and type of element from collection"""
         names: list[str] = []
         obj = self.obis2ic(value.logical_name.contents).unwrap()
         names.append(obis2name(obj.obis))
         attr_index = int(value.attribute_index)
         data_index = int(value.data_index)
-        data_type: type[cdt.CommonDataType] = obj.get_attr_data_type(attr_index)
+        data_type: type[cdt_.CommonDataType] = obj.get_attr_data_type(attr_index)
         names.append(str(obj.get_attr_element(attr_index)))
         if data_index == 0:
             pass
-        elif issubclass(data_type, cdt.Structure):
+        elif issubclass(data_type, cdt_.Structure):
             if len(data_type.ELEMENTS) < data_index:
                 raise ValueError(F"can't create buffer_struct_type for {self}, got {data_index=} in struct {data_type.__name__}, expected 1..{len(data_type.ELEMENTS)}")
             else:
-                el: cdt.StructElement = data_type.ELEMENTS[data_index - 1]
+                el: cdt_.StructElement = data_type.ELEMENTS[data_index - 1]
                 names.append(el.NAME)
                 data_type = el.TYPE
         elif isinstance(obj, ProfileGeneric) and attr_index == 2:
@@ -1431,16 +1363,16 @@ class Collection:
                       obj_filter: Optional[ObjFilteredKey] = None,
                       sort_mode: SortMode = "",
                       af_mode: Literal["l", "r", "w", "lr", "lw", "wr", "lrw", "m", "mlrw", "mlr"] = "l",
-                      oi_filter: Optional[tuple[tuple[ut.CosemClassId, tuple[int, ...]], ...]] = None  # todo: maybe ai_filter with LNPattern, indexes need?
+                      oi_filter: Optional[tuple[tuple[ClassID, tuple[int, ...]], ...]] = None  # todo: maybe ai_filter with LNPattern, indexes need?
                       ) -> dict[ut.CosemClassId | media_id.MediaId, dict[IC, list[int]]] | dict[IC, list[int]]:  # todo: not all ret annotation
         """af_mode(attribute filter mode): l-reduce logical_name, r-show only readable, w-show only writeable,
         oi_filter(object attribute index filter), example: ((ClassID.REGISTER, (2,))) - is restricted for Register only Value attribute without logical_name and scaler_unit
         """
         objects: dict[IC, list[int]]
-        without_ln = True if "l" in af_mode else False
-        only_read = True if "r" in af_mode else False
-        only_write = True if "w" in af_mode else False
-        with_methods = True if "m" in af_mode else False
+        without_ln = "l" in af_mode
+        only_read = "r" in af_mode
+        only_write = "w" in af_mode
+        with_methods = "m" in af_mode
         oi_f = dict(oi_filter) if oi_filter else {}
         """objects indexes filter"""
         filtered = self.filter_by_ass(ass_id)
@@ -1513,36 +1445,11 @@ if config is not None:
         raise exc.TomlKeyError(F"not find {e} in [DLMS.collection]<path>")
 
 
-def lnContents2obis(value: LNContaining) -> Obis:
-    """return LN as OBIS for use in any searching"""
-    match value:
-        case bytes():
-            return value
-        case cst.LogicalName() | ut.CosemObjectInstanceId():
-            return value.contents
-        case ut.CosemAttributeDescriptor() | ut.CosemMethodDescriptor():
-            return value.instance_id.contents
-        case ut.CosemAttributeDescriptorWithSelection():
-            return value.cosem_attribute_descriptor.instance_id.contents
-        case cdt.Structure(logical_name=value.logical_name):
-            return value.logical_name.contents
-        case cdt.Structure() as s:
-            for it in s:
-                if isinstance(it, cst.LogicalName):
-                    return o.OBIS(it.contents)
-            raise ValueError(F"can't convert {value=} to Logical Name contents. Struct {s} not content the Logical Name")
-        case str() if value.find('.') != -1:
-            return cst.LogicalName.from_obis(value).contents
-        case str():
-            return cst.LogicalName(value).contents
-        case _:                                                          raise ValueError(F"can't convert {value=} to Logical Name contents")
-
-
 class AttrDesc:
     """keep constant descriptors # todo: make better"""
-    OBJECT_LIST = ut.CosemAttributeDescriptor((ClassID.ASSOCIATION_LN, ut.CosemObjectInstanceId("0.0.40.0.0.255"), ut.CosemObjectAttributeId(2)))
-    LDN_VALUE = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.42.0.0.255"), ut.CosemObjectAttributeId(2)))
-    SPODES_VERSION = ut.CosemAttributeDescriptor((ClassID.DATA, ut.CosemObjectInstanceId("0.0.96.1.6.255"), ut.CosemObjectAttributeId(2)))
+    OBJECT_LIST = CosemAttributeDescriptor.parse((AssociationLNVer0.CLASS_ID, b"\x00\x00\x28\x00\x00\xff", 2))
+    LDN_VALUE = CosemAttributeDescriptor.parse((Data.CLASS_ID, b"\x00\x00\x28\x00\x00\xff", 2))
+    SPODES_VERSION = CosemAttributeDescriptor.parse((Data.CLASS_ID, b"\x00\x00\x60\x01\x06\xff", 2))
 
 
 __range10_and_255: tuple[int, ...] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255
@@ -1562,7 +1469,7 @@ def obis2mediaId(obis: Obis) -> media_id.MediaId:
     return media_id.MediaId.from_int(attr2a(obis))
 
 
-def get_class_id(obj: InterfaceClass) -> ut.CosemClassId:
+def get_class_id(obj: InterfaceClass) -> ClassID:
     return obj.CLASS_ID
 
 
@@ -1624,25 +1531,6 @@ def get_sorted(objects: list[IC],
                 raise KeyError(F"got unknown {mode=} for get_map")
         objects = sorted(objects, key=key)
     return objects
-
-@dataclass
-class Channel:
-    """for object filter approve"""
-    n: int
-
-    def __post_init__(self) -> None:
-        if not self.is_channel(self.n):
-            raise ValueError(F"got value={self.n}, expected (0..64)")
-
-    @staticmethod
-    def is_channel(b: int) -> bool:
-        return True if 0 <= b <= 64 else False
-
-    def is_approve(self, b: int) -> bool:
-        if self.is_channel(b):
-            return True if b == self.n else False
-        else:
-            return True
 
 
 RelationGroup: TypeAlias = media_id.Abstract | media_id.Electricity | media_id.Hca | media_id.Gas | media_id.Thermal | media_id.Water | media_id.Other
@@ -2058,7 +1946,7 @@ class Template:
 
     def get_not_valid(self, col: Collection) -> list[Exception]:
         """with update col"""
-        attr: cdt.CommonDataType
+        attr: cdt_.CommonDataType
         ret: list[Exception] = []
         use_col = self.collections[0]
         """temporary used first collection"""
@@ -2079,3 +1967,8 @@ class Template:
                 else:
                     ret.append(exc.NoObject(F"has't attribute {i} for {ln}"))
         return ret
+
+
+__all__ = [
+    "ImageTransfer",
+]

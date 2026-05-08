@@ -1,121 +1,146 @@
+from typing import Final, TypeAlias
+from COSEMpdu.data import Array, Structure, OctetString, Enum, BitMixin, DiscriminatedUnion, ExternallyData
+from COSEMpdu.axdr import NamedType
 from . import ver0
-from ...types import choices, cdt, ut
-from typing import Optional
 from ...types.type_alias import Attr
-from ..cosem_interface_class import ICAElement, ICMElement, Classifier
+from ..cosem_interface_class import ICAElement, ICMElement, Classifier, update_collection
 
 
-class SecurityPolicy(cdt.Enum, cdt.IntegerFlag):
-    """ security_policy"""
+class SecurityPolicy(BitMixin, Enum):
+    """security_policy"""
+    AUTHENTICATED_REQUEST: Final = 0b100
+    ENCRYPTED_REQUEST: Final = 0b1000
+    DIGITALLY_SIGNED_REQUEST: Final = 0b1_0000
+    AUTHENTICATED_RESPONSE: Final = 0b10_0000
+    ENCRYPTED_RESPONSE: Final = 0b100_0000
+    DIGITALLY_SIGNED_RESPONSE: Final = 0b1000_0000
 
 
-class CertificateEntity(cdt.Enum, elements=(0, 1, 2, 3)):
-    """TODO:"""
+class SecuritySuite(Enum):
+    """security_suite"""
+    AES_GCM_128_WITH_AES128_WRAP: Final = 0
+    AES_GCM_128_WITH_ECDSA_P256_ECDH_P256_SHA256_V44_WRAP: Final = 1
+    AES_GCM_256_WITH_ECDSA_P384_ECDH_P384_SHA384_V44_WRAP: Final = 2
 
 
-class CertificateType(cdt.Enum, elements=(0, 1, 2, 3)):
-    """TODO:"""
+class CertificateEntity(Enum):
+    """certificate_entity"""
+    SERVER: Final = 0
+    CLIENT_OR_THIRD_PARTY: Final = 1
+    CERTIFICATION_AUTHORITY: Final = 2
+    OTHER: Final = 3
 
 
-class SecuritySuite(ver0.SecuritySuite, elements=(0, 1, 2)):
-    """Version 0 extension"""
-    AES_GCM_128_AUT_ENCR_ECDSA_P_256_DIG_SIGN_ECDH_P_256_KEY_AGR_SHA_256_HASH_V44_COMPR_AND_AES_128_KEY_WRAP = 1
-    AES_GCM_256_AUT_ENCR_ECDSA_P_384_DIG_SIGN_ECDH_P_384_KEY_AGR_SHA_384_HASH_V44_COMPR_AND_AES_256_KEY_WRAP = 2
+class CertificateType(Enum):
+    """certificate_type"""
+    DIGITAL_SIGNATURE: Final = 0
+    KEY_AGREEMENT: Final = 1
+    TLS: Final = 2
+    OTHER: Final = 3
 
 
-class CertificateInfo(cdt.Structure):
-    """ TODO: """
+class CertificateInfo(Structure):
+    """certificate_info"""
     certificate_entity: CertificateEntity
     certificate_type: CertificateType
-    serial_number: cdt.OctetString
-    issuer: cdt.OctetString
-    subject: cdt.OctetString
-    subject_alt_name: cdt.OctetString
+    serial_number: OctetString
+    issuer: OctetString
+    subject: OctetString
+    subject_alt_name: OctetString
 
 
-class Certificates(cdt.Array):
-    """Carries information on the X.509 v3 Certificates available and stored in the server"""
-    TYPE = CertificateInfo
+Certificates = Array[CertificateInfo]
+"""attribute certificates"""
 
 
-class KeyID(cdt.Enum, elements=(0, 1, 2, 3)):
-    """Version 0 extension"""
+class KeyID(Enum):
+    """key_id"""
+    GUEK: Final = 0  # global unicast encryption key
+    GBEK: Final = 1  # global broadcast encryption key
+    GAK: Final = 2   # authentication key
+    KEK: Final = 3   # master key
 
 
-class KeyTransferData(cdt.Structure):
-    """ TODO: """
+class KeyTransferData(Structure):
+    """key_transfer_data"""
     key_id: KeyID
-    key_wrapped: cdt.OctetString
+    key_wrapped: OctetString
 
 
-class KeyTransfer(cdt.Array):
-    """ Array of key_transfer_data """
-    TYPE = KeyTransferData
+KeyTransfer = Array[KeyTransferData]
+"""method key_transfer"""
 
 
-class KeyAgreementData(cdt.Structure):
-    """ TODO: """
+class KeyAgreementData(Structure):
+    """key_agreement_data"""
     key_id: KeyID
-    key_data: cdt.OctetString
+    key_data: OctetString
 
 
-class KeyAgreement(cdt.Array):
-    """ Array of key_agreement_data """
-    TYPE = KeyAgreementData
+KeyAgreement = Array[KeyAgreementData]
+"""method key_agreement"""
 
 
-class KeyPair(cdt.Enum, elements=(0, 1, 2)):
-    """TODO:"""
+class KeyPair(Enum):
+    """key_pair"""
+    DIGITAL_SIGNATURE_KEY_PAIR: Final = 0
+    KEY_AGREEMENT_KEY_PAIR: Final = 1
+    TLS_KEY_PAIR: Final = 2
 
 
-class CertificateIdentificationByEntity(cdt.Structure):
-    """ TODO: """
+class CertificateIdentificationByEntity(Structure):
+    """certificate_identification_by_entity"""
     certificate_entity: CertificateEntity
     certificate_type: CertificateType
-    system_title: cdt.OctetString
+    system_title: OctetString
 
 
-class CertificateIdentificationBySerial(cdt.Structure):
-    """ TODO: """
-    serial_number: cdt.OctetString
-    issuer: cdt.OctetString
+class CertificateIdentificationBySerial(Structure):
+    """certificate_identification_by_serial"""
+    serial_number: OctetString
+    issuer: OctetString
 
 
-class CertificateIdentificationType(cdt.Enum, elements=(0, 1)):
-    """TODO:"""
+class CertificateIdentificationType(Enum):
+    """certificate_identification_type"""
+    CERTIFICATE_IDENTIFICATION_ENTITY: Final = 0
+    CERTIFICATE_IDENTIFICATION_SERIAL: Final = 1
 
 
-class CertificationIdentificationOption(ut.CHOICE):
-    TYPE = cdt.Structure
-    ELEMENTS = {0: ut.SequenceElement('by entity', CertificateIdentificationByEntity),
-                1: ut.SequenceElement('by serial', CertificateIdentificationBySerial)}
+CertificateIdentificationT: TypeAlias = CertificateIdentificationByEntity | CertificateIdentificationBySerial
 
 
-certification_identification_option = CertificationIdentificationOption()
+class CertificateIdentificationData(ExternallyData[CertificateIdentificationT]):
+    """Controlled subset of alternatives to simplify testing"""
+    alternatives = {
+        0: NamedType("certificate_identification_entity", CertificateIdentificationByEntity),
+        1: NamedType("certificate_identification_serial", CertificateIdentificationBySerial),
+    }
 
 
-class CertificateIdentification(choices.StructureMixin, cdt.Structure):
-    """Override several methods of cdt.Structure. It limited Structure."""
-    certificate_identification_type: CertificateIdentificationType
-    certification_identification_options: certification_identification_option
+class CertificateIdentification(DiscriminatedUnion):
+    """certificate_identification"""
+    type: CertificateIdentificationType
+    option:  CertificateIdentificationData
 
 
 class SecuritySetup(ver0.SecuritySetup):
     VERSION = 1
-    A_ELEMENTS = (ICAElement(2, "security_policy", SecurityPolicy),
-                  ver0.SecuritySetup.getAElement(3),
-                  ver0.SecuritySetup.getAElement(4),
-                  ver0.SecuritySetup.getAElement(5),
-                  ICAElement(6, "certificates", Certificates, classifier=Classifier.DYNAMIC))
-
-    M_ELEMENTS = (ICMElement(1, "security_activate", SecurityPolicy),
-                  ICMElement(2, "key_transfer", KeyTransfer),
-                  ICMElement(3, "key_agreement", KeyAgreement),
-                  ICMElement(4, "generate_key_pair", KeyPair),
-                  ICMElement(5, "generate_certificate_request", KeyPair),
-                  ICMElement(6, "import_certificate", cdt.OctetString),
-                  ICMElement(7, "export_certificate", CertificateIdentification),
-                  ICMElement(8, "remove_certificate", CertificateIdentification))
+    A_ELEMENTS = update_collection(
+        ver0.SecuritySetup.A_ELEMENTS,
+        ICAElement(2, "security_policy", SecurityPolicy),
+        ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),
+        ICAElement(6, "certificates", Certificates, classifier=Classifier.DYNAMIC)
+    )
+    M_ELEMENTS = (
+        ICMElement(1, "security_activate", SecurityPolicy),
+        ICMElement(2, "key_transfer", KeyTransfer),
+        ICMElement(3, "key_agreement", KeyAgreement),
+        ICMElement(4, "generate_key_pair", KeyPair),
+        ICMElement(5, "generate_certificate_request", KeyPair),
+        ICMElement(6, "import_certificate", OctetString),
+        ICMElement(7, "export_certificate", CertificateIdentification),
+        ICMElement(8, "remove_certificate", CertificateIdentification))
     security_policy: Attr
     security_suite: Attr
     certificates: Attr

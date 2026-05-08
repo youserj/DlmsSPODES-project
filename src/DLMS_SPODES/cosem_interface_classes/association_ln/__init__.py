@@ -1,12 +1,15 @@
 from typing import overload, Union
 from COSEMpdu.data import Boolean
 from .ver0 import (
+    ObjectListElement as ObjectListElementVer0,
     ObjectListType as ObjectListTypeVer0,
     AccessRight as AccessRight0,
     AccessMode as AccessMode0,
-    MechanismIdElement
+    MechanismIdElement,
+    ClientSAP,
 )
 from .ver1 import (
+    ObjectListElement as ObjectListElementVer1,
     ObjectListType as ObjectListTypeVer1,
     AccessRight as AccessRight1,
     AccessMode as AccessMode1,
@@ -16,6 +19,8 @@ from ...types.type_alias import Obis
 from ... import exceptions as exc
 from ... import pdu_enums as pdu
 
+
+ObjectListElement = Union[ObjectListElementVer0, ObjectListElementVer1]
 ObjectListType = Union[ObjectListTypeVer0, ObjectListTypeVer1]
 AccessRight = Union[AccessRight0, AccessRight1]
 AccessMode = Union[AccessMode0, AccessMode1]
@@ -133,5 +138,6 @@ def is_accessible(instance: ObjectListType, obis: Obis, i: int, m_id: int = Mech
 
 __all__ = [
     "ObjectListType",
-    "MechanismIdElement"
+    "MechanismIdElement",
+    "ClientSAP"
 ]

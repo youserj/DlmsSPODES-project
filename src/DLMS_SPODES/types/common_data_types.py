@@ -43,7 +43,7 @@ class Log:
 @dataclass
 class Report:
     msg: str
-    unit: str = None
+    unit: Optional[str] = None
     log: Log = field(default_factory=Log)
 
     def __str__(self):

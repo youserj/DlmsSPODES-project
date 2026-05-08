@@ -38,13 +38,13 @@
             }
         },
         {
-        "name": "test ScalerUnitType",
+        "name": "test Register",
         "type": "debugpy",
         "request": "launch",
         "module": "unittest",
         "args": [
             "-v",
-            "test.test_ScalerUnitType"
+            "test.test_Register"
         ],
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",

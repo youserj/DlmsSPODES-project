@@ -1,13 +1,15 @@
 from typing_extensions import deprecated
 from dataclasses import dataclass, field
 import numpy as np
+from StructResult.result import ValueOrError, Error
 from struct import Struct, pack, unpack_from
 from typing import Optional, cast, Iterator, Self
 import re
 from functools import cached_property
 from .. import exceptions as exc
-from ..types.type_alias import Obis
-from .obis import OBIS
+from ..types.type_alias import Obis, Attr
+
+
 
 _pattern = re.compile("((?:\d{1,3}\.){5}\d{1,3})(?::(m?\d{1,3}))?")
 Index = Struct("?B")
@@ -49,17 +51,16 @@ class Parameter:
         """create from string. Only LN, attr/meth type ddd.ddd.ddd.ddd.ddd.ddd:aaa, ex.: 0.0.1.0.0.255 """
         if (res := _pattern.fullmatch(value)) is None:
             raise ValueError(F"in {cls.__name__}.parse got wrong :{value:}")
-        else:
-            groups = iter(res.groups())
-            ret = bytes(map(int, next(groups).split(".")))
-            if (a := next(groups)) is not None:
-                if a.startswith('m'):
-                    a = a[1:]
-                    g1 = 256
-                else:
-                    g1 = 0
-                ret += (g1 + int(a)).to_bytes(2)
-            return cls(ret)
+        groups = iter(res.groups())
+        ret = bytes(map(int, next(groups).split(".")))
+        if (a := next(groups)) is not None:
+            if a.startswith("m"):
+                a = a[1:]
+                g1 = 256
+            else:
+                g1 = 0
+            ret += (g1 + int(a)).to_bytes(2)
+        return cls(ret)
 
     @cached_property
     def logical_name(self) -> "Parameter":
@@ -169,13 +170,7 @@ class Parameter:
             raise exc.DLMSException(F"Parameter must has index before")
 
     def has_piece(self) -> bool:
-        if (
-            (l := len(self._value)) >= 9
-            and l % 2 != 0
-        ):
-            return True
-        else:
-            return False
+        return bool((l := len(self._value)) >= 9 and l % 2 != 0)
 
     @property
     def piece(self) -> Optional[int]:
@@ -278,8 +273,7 @@ class Parameter:
     def attr(self) -> "Parameter":
         if self.has_index:
             return Parameter(self._value[:8])
-        else:
-            raise exc.DLMSException(F"Parameter must has index before")
+        raise exc.DLMSException(F"Parameter must has index before")
 
     @property
     def obj(self) -> "Parameter":
@@ -288,6 +282,12 @@ class Parameter:
     @property
     def obis(self) -> Obis:
         return self._value[:6]
+
+
+def par2Attr(par: Parameter) -> ValueOrError[Attr]:
+    if par.has_index:
+        return par.obis + par.i.to_bytes()
+    return Error.from_e(ValueError(f"{par} hasn't index"))
 
 
 RANGE64 = bytes(range(65))  # Предвычисленный диапазон 0-64

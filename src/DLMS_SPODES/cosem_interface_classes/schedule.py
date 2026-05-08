@@ -1,81 +1,39 @@
-from typing import Callable, Self
+from COSEMpdu.data import Boolean, LongUnsigned, Structure, BitString, Array
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
-from ..types import cdt, cst
+from ..types import cst
 from ..types.type_alias import Attr
 
 
-class Index(cdt.MinDigital, cdt.MaxDigital, cdt.LongUnsigned):
-    """ LongUnsigned type with validation """
-    MIN = 1
-    MAX = 9999
-    __cb_get_indexes: Callable
-    DEFAULT = 1
-
-    def set_callback(self, cb: Callable):
-        self.__cb_get_indexes = cb
-
-    def get_indexes(self) -> list[int]:
-        """ return indexes container """
-        return self.__cb_get_indexes()
-
-    def check(self, string: str):
-        """ raise ValueError with message if string not is valid """
-        instance = type(self)(value=string)
-        if int(instance) in self.__cb_get_indexes():
-            raise ValueError('New index not unique')
-
-    @classmethod
-    def with_cb(cls, value, cb: Callable) -> Self:
-        """ get instance with callback """
-        ret = cls(value)
-        ret.set_callback(cb)
-        return ret
-
-
-class ScheduleTableEntry(cdt.Structure):
+class ScheduleTableEntry(Structure):
     """schedule_table_entry"""
-    index: Index
-    enable: cdt.Boolean
+    index: LongUnsigned
+    enable: Boolean
     script_logical_name: cst.LogicalName
-    script_selector: cdt.LongUnsigned
+    script_selector: LongUnsigned
     switch_time: cst.OctetStringTime
-    validity_window: cdt.LongUnsigned
-    exec_weekdays: cdt.BitString
-    exec_specdays: cdt.BitString
+    validity_window: LongUnsigned
+    exec_weekdays: BitString
+    exec_specdays: BitString
     begin_date: cst.OctetStringDate
     end_date: cst.OctetStringDate
 
 
-# TODO: rewrite to new API
-class Entries(cdt.Array):
-    """entries attribute"""
-    TYPE = ScheduleTableEntry
-    unique = True
-
-    def __init__(self, value: bytes = None):
-        super(Entries, self).__init__(value)
-        # setting callback for validate schedule_table_entry index
-        for schedule_table_entry in self:
-            schedule_table_entry: ScheduleTableEntry
-            schedule_table_entry.index.set_callback(self.get_indexes)
-
-    def get_indexes(self) -> list[int]:
-        """ getter for callback Index """
-        return [entries_element.index.decode() for entries_element in self]
+Entries = Array[ScheduleTableEntry]
+"""entries attribute"""
 
 
-class DataED(cdt.Structure):
+class DataED(Structure):
     """ enable/disable"""
-    firstIndexA: Index
-    lastIndexA: Index
-    firstIndexB: Index
-    lastIndexB: Index
+    firstIndexA: LongUnsigned
+    lastIndexA: LongUnsigned
+    firstIndexB: LongUnsigned
+    lastIndexB: LongUnsigned
 
 
-class DataDelete(cdt.Structure):
+class DataDelete(Structure):
     """delete"""
-    firstIndex: Index
-    lastIndex: Index
+    firstIndex: LongUnsigned
+    lastIndex: LongUnsigned
 
 
 class Schedule(ICAuto):
@@ -83,7 +41,8 @@ class Schedule(ICAuto):
     CLASS_ID = 10
     VERSION = 0
     A_ELEMENTS = ICAElement(2, "entries", Entries),
-    M_ELEMENTS = (ICMElement(1, "enable_disable", DataED),
-                  ICMElement(2, "insert", ScheduleTableEntry),
-                  ICMElement(3, "delete", DataDelete))
+    M_ELEMENTS = (
+        ICMElement(1, "enable_disable", DataED),
+        ICMElement(2, "insert", ScheduleTableEntry),
+        ICMElement(3, "delete", DataDelete))
     entries: Attr

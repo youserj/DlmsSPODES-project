@@ -1,44 +1,52 @@
-from typing import Optional
-from ...types import cdt
+from typing import Final
+from COSEMpdu.data import Array, Structure, OctetString, Enum
 from ..cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
+from ...types.type_alias import Attr
 
 
-class SecurityPolicy(cdt.Enum, elements=tuple(range(16))):
-    """ Enforces authentication and/or encrypting algorithm provided with security_suite """
+class SecurityPolicy(Enum):
+    """security_policy"""
+    NOTHING: Final = 0
+    ALL_MESSAGES_TO_BE_AUTHENTICATED: Final = 1
+    ALL_MESSAGES_TO_BE_ENCRYPTED: Final = 2
+    ALL_MESSAGES_TO_BE_AUTHENTICATED_AND_ENCRYPTED: Final = 3
 
 
-class SecuritySuite(cdt.Enum, elements=tuple(range(16))):
-    """Specifies authentication, encryption and key transport algorithm"""
-    AES_GCM_128_AUT_ENCR_AND_AES_128_KEY_WRAP = 0
+class SecuritySuite(Enum):
+    """security_suite"""
+    AES_GCM_128_WITH_AES128_WRAP: Final = 0
 
 
-class KeyID(cdt.Enum, elements=(0, 1, 2)):
-    """Use only in KeyData structure"""
+class KeyID(Enum):
+    """key_id"""
+    GLOBAL_UNICAST_ENCRYPTION_KEY: Final = 0
+    GLOBAL_BROADCAST_ENCRYPTION_KEY: Final = 1
+    AUTHENTICATION_KEY: Final = 2
 
 
-class KeyData(cdt.Structure):
-    """ TODO: """
+class KeyData(Structure):
+    """key_data"""
     key_id: KeyID
-    key_wrapped: cdt.OctetString
+    key_wrapped: OctetString
 
 
-class GlobalKeyTransfer(cdt.Array):
-    """ Array of key_data """
-    TYPE = KeyData
+GlobalKeyTransfer = Array[KeyData]
+"""attribute global_key_transfer"""
 
 
 class SecuritySetup(ICAuto):
     """4.4.7 Security setup"""
     CLASS_ID = 64
     VERSION = 0
-    A_ELEMENTS = (ICAElement(2, "security_policy", SecurityPolicy, 0, 3, 0),
-                  ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),
-                  ICAElement(4, "client_system_title", cdt.OctetString, classifier=Classifier.DYNAMIC),
-                  ICAElement(5, "server_system_title", cdt.OctetString))
-
-    M_ELEMENTS = (ICMElement(1, "security_activate", SecurityPolicy),
-                  ICMElement(2, "global_key_transfer", GlobalKeyTransfer))
-    security_policy: Optional[SecurityPolicy]
-    security_suite: Optional[SecuritySuite]
-    client_system_title: Optional[cdt.OctetString]
-    server_system_title: Optional[cdt.OctetString]
+    A_ELEMENTS = (
+        ICAElement(2, "security_policy", SecurityPolicy, 0, 3, 0),
+        ICAElement(3, "security_suite", SecuritySuite, 0, 0, 0),
+        ICAElement(4, "client_system_title", OctetString, classifier=Classifier.DYNAMIC),
+        ICAElement(5, "server_system_title", OctetString))
+    M_ELEMENTS = (
+        ICMElement(1, "security_activate", SecurityPolicy),
+        ICMElement(2, "global_key_transfer", GlobalKeyTransfer))
+    security_policy: Attr
+    security_suite: Attr
+    client_system_title: Attr
+    server_system_title: Attr

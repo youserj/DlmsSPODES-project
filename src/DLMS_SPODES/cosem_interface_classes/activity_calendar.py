@@ -1,38 +1,29 @@
 from typing import Self
-from COSEMpdu.data import Structure, OctetString
-from ..types.implementations import integers, octet_string
-from typing import Optional
-from ..types import cdt, cst
+from COSEMpdu.data import Structure, OctetString, Array, DateTime, Unsigned, LongUnsigned
+from ..types.implementations import integers
+from ..types import cst
 from .cosem_interface_class import ICAElement, ICMElement, ICAuto
+from ..types.type_alias import Attr
 
 
 class Season(Structure):
-    """ Defined by their starting date and a specific week_profile to be executed """
+    """season"""
     season_profile_name: OctetString
     season_start: cst.OctetStringDateTime
     week_name: OctetString
 
 
-class SeasonProfile(cdt.Array):
-    """ Contains a list of seasons defined by their starting date and a specific week_profile to be executed. The list is sorted according to season_start.  """
-    TYPE = Season
-    values: list[Season]
+class SeasonProfile(Array[Season]):
+    """attribute season_profile"""
 
-    def new_element(self) -> Season:
-        names: list[bytes] = [bytes(el.season_profile_name) for el in self.values]
-        for new_name in (i.to_bytes(1, "big") for i in range(256)):
-            if new_name not in names:
-                return Season((bytearray(new_name), None, bytearray(b"week_name?")))
-        raise ValueError(F"in {self} all season names is busy")
-
-    def sort(self, date_time: cdt.DateTime) -> Self:
+    def sort(self, date_time: DateTime) -> Self:  # TODO: fix with new API
         """sort by date-time
         :return now Season + next Seasons"""
         s: Season
         d_t = date_time.to_datetime()
-        l = list()
+        l = []
         """left datetime"""
-        r = list()
+        r = []
         """right datetime"""
         for i, s in enumerate(self):
             if (el := s.season_start.get_left_nearest_datetime(d_t)) is not None:
@@ -55,24 +46,22 @@ class SeasonProfile(cdt.Array):
 
 
 class WeekProfile(Structure):
-    """ For each week_profile, the day_profile for every day of a week is identified. """
-    week_profile_name: cdt.OctetString
-    monday: cdt.Unsigned
-    tuesday: cdt.Unsigned
-    wednesday: cdt.Unsigned
-    thursday: cdt.Unsigned
-    friday: cdt.Unsigned
-    saturday: cdt.Unsigned
-    sunday: cdt.Unsigned
+    """week_profile"""
+    week_profile_name: OctetString
+    monday: Unsigned
+    tuesday: Unsigned
+    wednesday: Unsigned
+    thursday: Unsigned
+    friday: Unsigned
+    saturday: Unsigned
+    sunday: Unsigned
 
 
-class WeekProfileTable(cdt.Array):
+class WeekProfileTable(Array[WeekProfile]):
     """ Contains an array of week_profiles to be used in the different seasons. For each week_profile, the day_profile for every day of a week is
     identified. """
-    TYPE = WeekProfile
-    values: list[WeekProfile]
 
-    def new_element(self) -> WeekProfile:
+    def new_element(self) -> WeekProfile:  # TODO: fix with new API
         """return default WeekProfile with vacant week_profile_name, existed day ID and insert callback for validate change DayID"""
         names: list[bytes] = [bytes(el.week_profile_name) for el in self.values]
         for new_name in (i.to_bytes(1, "big") for i in range(256)):
@@ -80,40 +69,34 @@ class WeekProfileTable(cdt.Array):
                 return WeekProfile((bytearray(new_name), *[0]*7))
         raise ValueError(F"in {self} all week names is busy")
 
-    def get_week_profile_names(self) -> tuple[cdt.OctetString, ...]:
+    def get_week_profile_names(self) -> tuple[OctetString, ...]:  # TODO: fix with new API
         return tuple((el.week_profile_name for el in self.values))
 
 
 class DayProfileAction(Structure):
-    """ Scheduled action is defined by a script to be executed and the corresponding activation time (start_time). """
+    """day_profile_action"""
     start_time: cst.OctetStringTime
     script_logical_name: cst.LogicalName
-    script_selector: cdt.LongUnsigned
+    script_selector: LongUnsigned
 
-    def __lt__(self, other: Self):
+    def __lt__(self, other: Self) -> bool:
         return self.start_time.to_time() < other.start_time.to_time()
 
 
-# TODO: make unique by start_time
-class DaySchedule(cdt.Array):
-    """ Contains an array of day_profile_action. """
-    TYPE = DayProfileAction
-    values: list[DayProfileAction]
+DaySchedule = Array[DayProfileAction]  # TODO: make unique by start_time
+"""day_schedule"""
 
 
 class DayProfile(Structure):
-    """ list of Scheduled actions is defined by a script to be executed and the corresponding activation time (start_time) with day ID. """
-    day_id: cdt.Unsigned
+    """day_profile"""
+    day_id: Unsigned
     day_schedule: DaySchedule
 
 
-class DayProfileTable(cdt.Array):
-    """ Contains an array of day_profiles, identified by their day_id. For each day_profile, a list of scheduled actions is defined by a script to be
-    executed and the corresponding activation time (start_time). The list is sorted according to start_time.  """
-    TYPE = DayProfile
-    values: list[DayProfile]
+class DayProfileTable(Array[DayProfile]):
+    """attribute day_profile_table"""
 
-    def new_element(self) -> DayProfile:
+    def new_element(self) -> DayProfile:  # TODO: fix with new API
         """return default DayProfile with vacant Day ID"""
         day_ids: list[int] = [int(el.day_id) for el in self.values]
         for i in range(0xff):
@@ -121,10 +104,10 @@ class DayProfileTable(cdt.Array):
                 return DayProfile((i, None))
         raise ValueError(F"in {self} all days ID is busy")
 
-    def get_day_ids(self) -> tuple[cdt.Unsigned, ...]:
+    def get_day_ids(self) -> tuple[Unsigned, ...]:  # TODO: fix with new API
         return tuple((day_profile.day_id for day_profile in self.values))
 
-    def normalize(self) -> bool:
+    def normalize_(self) -> bool:  # TODO: fix with new API
         d_p: DayProfile
         res = False
         for d_p in self:
@@ -138,30 +121,28 @@ class ActivityCalendar(ICAuto):
     """DLMS UA 1000-1 Ed. 14 4.5.5 Activity calendar"""
     CLASS_ID = 20
     VERSION = 0
-    A_ELEMENTS = (ICAElement(2, "calendar_name_active", octet_string.ID),
-                  ICAElement(3, "season_profile_active", SeasonProfile),
-                  ICAElement(4, "week_profile_table_active", WeekProfileTable),
-                  ICAElement(5, "day_profile_table_active", DayProfileTable),
-                  ICAElement(6, "calendar_name_passive", octet_string.ID),
-                  ICAElement(7, "season_profile_passive", SeasonProfile),
-                  ICAElement(8, "week_profile_table_passive", WeekProfileTable),
-                  ICAElement(9, "day_profile_table_passive", DayProfileTable),
-                  ICAElement(10, "activate_passive_calendar_time", cst.OctetStringDateTime))
-    M_ELEMENTS = ICMElement(1, "activate_passive_calendar", integers.INTEGER_0),
-    calendar_name_active: Optional[octet_string.ID]
-    season_profile_active: Optional[SeasonProfile]
-    week_profile_table_active: Optional[WeekProfileTable]
-    day_profile_table_active: Optional[DayProfileTable]
-    calendar_name_passive: Optional[octet_string.ID]
-    season_profile_passive: Optional[SeasonProfile]
-    week_profile_table_passive: Optional[WeekProfileTable]
-    day_profile_table_passive: Optional[DayProfileTable]
-    activate_passive_calendar_time: Optional[cst.OctetStringDateTime]
+    A_ELEMENTS = (
+        ICAElement(2, "calendar_name_active", OctetString),
+        ICAElement(3, "season_profile_active", SeasonProfile),
+        ICAElement(4, "week_profile_table_active", WeekProfileTable),
+        ICAElement(5, "day_profile_table_active", DayProfileTable),
+        ICAElement(6, "calendar_name_passive", OctetString),
+        ICAElement(7, "season_profile_passive", SeasonProfile),
+        ICAElement(8, "week_profile_table_passive", WeekProfileTable),
+        ICAElement(9, "day_profile_table_passive", DayProfileTable),
+        ICAElement(10, "activate_passive_calendar_time", cst.OctetStringDateTime))
+    M_ELEMENTS = ICMElement(1, "activate_passive_calendar", integers.IntegerValue0),
+    calendar_name_active: Attr
+    season_profile_active: Attr
+    week_profile_table_active: Attr
+    day_profile_table_active: Attr
+    calendar_name_passive: Attr
+    season_profile_passive: Attr
+    week_profile_table_passive: Attr
+    day_profile_table_passive: Attr
+    activate_passive_calendar_time: Attr
 
-    def ActivatePassiveCalendar(cls, value=None) -> integers.IntegerValue0:
-        return cls.M_ELEMENTS[0].DATA_TYPE
-
-    def validate(self):
+    def validate(self):  # TODO: fix with new API
         def validate_seasons(index: int):
             def handle_duplicates(name: str):
                 nonlocal index, duplicates

@@ -122,13 +122,6 @@ class ClassID:
         return tuple(map(int, filter(lambda it: isinstance(it, ut.CosemClassId), cls.__dict__.values())))
 
 
-VERSION_0: Final[cdt.Unsigned] = cdt.Unsigned(0)
-VERSION_1: Final[cdt.Unsigned] = cdt.Unsigned(1)
-VERSION_2: Final[cdt.Unsigned] = cdt.Unsigned(2)
-VERSION_3: Final[cdt.Unsigned] = cdt.Unsigned(3)
-VERSION_4: Final[cdt.Unsigned] = cdt.Unsigned(4)
-
-
 class CountrySpecificIdentifiers(IntEnum):
     FINLAND = 0
     USA = 1

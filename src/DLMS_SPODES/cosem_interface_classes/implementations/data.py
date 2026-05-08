@@ -1,29 +1,19 @@
 import re
 from typing import Optional
 import logging
+from COSEMpdu import data
 from ...types import cdt, cst
 from ..cosem_interface_class import Classifier, ICAElement
-from ..data import Data
+from ..data import Data, DataDynamic, DataStatic
 from ... import enums as enu
-from ...types import implementations as impl
+from ...types.implementations import octet_string
 from ...config_parser import get_message
-
-
-class DataStatic(Data):
-    A_ELEMENTS = Data.getAElement(2).get_change(classifier=Classifier.STATIC),
-
-
-class DataDynamic(Data):
-    A_ELEMENTS = Data.getAElement(2).get_change(classifier=Classifier.DYNAMIC),
-
-
-class DataNotSpecific(Data):
-    A_ELEMENTS = Data.getAElement(2).get_change(classifier=Classifier.NOT_SPECIFIC),
+from ..ipv4_setup import MulticastIPAddress
 
 
 class LDN(DataStatic):
     """for ldn"""
-    A_ELEMENTS = Data.getAElement(2).get_change(data_type=impl.octet_string.LDN),
+    A_ELEMENTS = ICAElement(2, "value", octet_string.LDN, classifier=Classifier.STATIC),
 
     @property
     def get_manufacturer(self) -> bytes:
@@ -32,18 +22,16 @@ class LDN(DataStatic):
 
 class ActiveFirmwareId(Data):
     """for keep version in collection"""
-    def characteristics_init(self):
-        """"""
 
 
-class Unsigned(DataDynamic):
+class Unsigned(Data):
     """ with value type: Unsigned """
-    A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=cdt.Unsigned),
+    A_ELEMENTS = ICAElement(2, "value", data.Unsigned, classifier=Classifier.DYNAMIC),
 
 
 class OctetStringDateTime(DataDynamic):
-    """ with value type: Unsigned """
-    A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=cst.OctetStringDateTime),
+    """ with value type: OctetStringDateTime"""
+    A_ELEMENTS = ICAElement(2, "value", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
 
 
 class OpeningBodyUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
@@ -255,9 +243,9 @@ class SPODES3PowerQuality2EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
     pass
 
 
-class SPODES3PowerQuality2Event(DataNotSpecific):
+class SPODES3PowerQuality2Event(Data):
     """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
-    A_ELEMENTS = DataNotSpecific.getAElement(2).get_change(data_type=SPODES3PowerQuality2EventValues),
+    A_ELEMENTS = Data.getAElement(2).get_change(data_type=SPODES3PowerQuality2EventValues),
 
 
 class LoadLockerValue(cdt.IntegerEnum, cdt.Unsigned):
@@ -282,7 +270,7 @@ class LoadLockerValue(cdt.IntegerEnum, cdt.Unsigned):
 
 class SPODES3LoadLocker(DataStatic):
     """СТО 34.01-5.1-006-2023 E7. Блокиратор реле нагрузки"""
-    A_ELEMENTS = DataNotSpecific.getAElement(2).get_change(data_type=LoadLockerValue),
+    A_ELEMENTS = Data.getAElement(2).get_change(data_type=LoadLockerValue),
 
 
 class SPODES3PowerQuality1EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
@@ -312,12 +300,12 @@ class SPODES3ControlAlarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
 
 class SPODES3ControlAlarm1(DataDynamic):
     """СТО 34.01-5.1-006-2023v4 Таблица 13.5 Распределение событий отключения реле нагрузки по битам"""
-    A_ELEMENTS = DataNotSpecific.getAElement(2).get_change(data_type=SPODES3ControlAlarm1Values),
+    A_ELEMENTS = Data.getAElement(2).get_change(data_type=SPODES3ControlAlarm1Values),
 
 
-class SPODES3PowerQuality1Event(DataNotSpecific):
+class SPODES3PowerQuality1Event(Data):
     """СТО_34.01-5.1-006-2019v3 E.1 Статус качества сети (журнал качества сети)"""
-    A_ELEMENTS = DataNotSpecific.getAElement(2).get_change(data_type=SPODES3PowerQuality1EventValues),
+    A_ELEMENTS = Data.getAElement(2).get_change(data_type=SPODES3PowerQuality1EventValues),
 
 
 # KPZ implements
@@ -461,10 +449,10 @@ class SPODES3IDNotSpecific(DLMSDeviceIDObject):
     A_ELEMENTS = DLMSDeviceIDObject.getAElement(2).get_change(classifier=Classifier.NOT_SPECIFIC),
 
 
-class KPZGSMPingIPValue(cdt.Structure):
+class KPZGSMPingIPValue(data.Structure):
     """Содержит настройки для проведения Ping теста"""
-    enable: cdt.Unsigned
-    multicast_IP_address: impl.arrays.MulticastIPAddress
+    enable: data.Unsigned
+    multicast_IP_address: MulticastIPAddress
 
 
 class KPZGSMPingIP(DataStatic):

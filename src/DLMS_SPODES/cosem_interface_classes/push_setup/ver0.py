@@ -1,4 +1,4 @@
-from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Unsigned, Enum, EnumMixin
+from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Unsigned, Enum
 from typing import Final
 from ...types.type_alias import Attr
 from ...types import cst

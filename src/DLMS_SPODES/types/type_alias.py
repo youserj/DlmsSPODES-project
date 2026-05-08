@@ -11,8 +11,9 @@ type Meth = bytes  # bytes[7]
 type Contents = bytes  # bytes[0..]
 type Encoding = bytes  # bytes[1..]
 type LN = str  # logical name as "a.b.c.d.e.f"
-type Tag = bytes  # bytes[1] CDT tag
+type Tag = int  # bytes[1] CDT tag
 type AttrDesc = bytes  # bytes[]
+
 
 def attr2obis(attr: Attr) -> Obis:
     return attr[:6]
