@@ -1971,4 +1971,5 @@ class Template:
 
 __all__ = [
     "ImageTransfer",
+    "Data"
 ]
