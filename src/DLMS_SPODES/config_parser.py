@@ -1,4 +1,5 @@
 import os
+import sys
 import tomllib
 from typing_extensions import deprecated
 
@@ -21,10 +22,22 @@ def get_values(*args: str) -> dict | None:
     return par
 
 
-if not os.path.isfile(path := ".//config.toml"):
-    path = F"{os.path.dirname(__file__)}{path}"
-elif not os.path.isfile(path):
+
+if getattr(sys, "frozen", False):
+    print("PyInstaller builden")
+    path = os.path.join(os.path.dirname(sys.executable), 'config.toml')
+    if not os.path.isfile(path):
+        base_path = sys._MEIPASS
+        print(f"fallback to _MEIPASS: {base_path}")
+        path = os.path.join(base_path, 'config.toml')
+        print(f"_MEIPASS path: {path}")
+else:
+    path = os.path.join(os.path.dirname(__file__), "config.toml")
+    if not os.path.isfile(path):
+        path = ".//config.toml"
+if not os.path.isfile(path):
     print("NOT FIND CONFIGURATION: <config.toml>")
+    sys.exit(1)
 with open(path, "rb") as f:
     config = tomllib.load(f)
     print(F"Find configuration <config.toml> with path: {f}")
