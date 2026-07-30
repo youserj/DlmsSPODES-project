@@ -1,13 +1,14 @@
-from typing import Final
-from COSEMpdu.data import Structure, Enum, Long, BitMixin, Integer, Boolean, DateTime
+from typing import Final, ClassVar
+from COSEMpdu.data import Structure, Enum, Long, Integer, Boolean, DateTime
 from ..types import cst
 from ..types.implementations import integers
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
-class ClockStatus(BitMixin, Enum):
+class ClockStatus(Enum):
     """clock_status"""
+    tag: ClassVar[int] = 17    # interpreted as unsigned
     INVALID_VALUE: Final = 0b1
     DOUBTFUL_VALUE: Final = 0b10
     DIFFERENT_CLOCK_BASE: Final = 0b100

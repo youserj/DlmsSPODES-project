@@ -1,5 +1,6 @@
 from typing import Self, TypeAlias, Final
-from COSEMpdu.x680.type import INTEGER
+from dataclasses import dataclass
+from COSEMpdu.x680 import INTEGER
 from COSEMpdu.data import (
     NullData, BitString, DoubleLong, DoubleLongUnsigned, OctetString, VisibleString, Utf8String,
     Integer, Long, Unsigned, LongUnsigned, Long64, Long64Unsigned, Enum, Float32, Float64, Structure,
@@ -166,6 +167,7 @@ class Unit(Enum):
     UNITLESS: Final = 255                   # no unit, unitless, count
 
 
+@dataclass
 class ScalUnitType(Structure):
     """scal_unit_type"""
     scaler: Integer

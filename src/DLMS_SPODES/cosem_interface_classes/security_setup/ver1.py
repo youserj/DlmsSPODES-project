@@ -1,4 +1,5 @@
 from typing import Final, TypeAlias
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, OctetString, Enum, BitMixin, DiscriminatedUnion, ExternallyData
 from COSEMpdu.axdr import NamedType
 from . import ver0
@@ -39,6 +40,7 @@ class CertificateType(Enum):
     OTHER: Final = 3
 
 
+@dataclass
 class CertificateInfo(Structure):
     """certificate_info"""
     certificate_entity: CertificateEntity
@@ -61,6 +63,7 @@ class KeyID(Enum):
     KEK: Final = 3   # master key
 
 
+@dataclass
 class KeyTransferData(Structure):
     """key_transfer_data"""
     key_id: KeyID
@@ -71,6 +74,7 @@ KeyTransfer = Array[KeyTransferData]
 """method key_transfer"""
 
 
+@dataclass
 class KeyAgreementData(Structure):
     """key_agreement_data"""
     key_id: KeyID
@@ -88,6 +92,7 @@ class KeyPair(Enum):
     TLS_KEY_PAIR: Final = 2
 
 
+@dataclass
 class CertificateIdentificationByEntity(Structure):
     """certificate_identification_by_entity"""
     certificate_entity: CertificateEntity
@@ -95,6 +100,7 @@ class CertificateIdentificationByEntity(Structure):
     system_title: OctetString
 
 
+@dataclass
 class CertificateIdentificationBySerial(Structure):
     """certificate_identification_by_serial"""
     serial_number: OctetString

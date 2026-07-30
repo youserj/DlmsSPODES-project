@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Enum, Array, Integer, Structure, Unsigned, OctetString
 from . import ver0
 from ...types.implementations import long_unsigneds
@@ -7,7 +8,7 @@ from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAElement, ICMElement, update_collection
 
 
-class AccessMode(abstract.AccessModeProto, Enum):
+class AccessMode(Enum, abstract.AccessModeProto):
     """access_mode"""
     NO_ACCESS = 0
     READ_ONLY = 1
@@ -24,6 +25,7 @@ class AccessMode(abstract.AccessModeProto, Enum):
         return int(self) in (self.READ_ONLY, self.READ_AND_WRITE, self.AUTHENTICATED_READ_ONLY, self.AUTHENTICATED_READ_AND_WRITE)
 
 
+@dataclass
 class AttributeAccessItem(Structure):
     attribute_id: Integer
     access_mode: AccessMode
@@ -40,6 +42,7 @@ class AccessModeMeth(Enum):
     AUTHENTICATED_ACCESS = 2
 
 
+@dataclass
 class MethodAccessItem(Structure):
     """method_access_item"""
     method_id: Integer
@@ -50,12 +53,14 @@ MethodAccessDescriptor = Array[MethodAccessItem]
 """method_access_descriptor"""
 
 
+@dataclass
 class AccessRight(Structure):
     """access_right"""
     attribute_access: AttributeAccessDescriptor
     method_access: MethodAccessDescriptor
 
 
+@dataclass
 class ObjectListElement(Structure):
     class_id: long_unsigneds.ClassId
     version: Unsigned

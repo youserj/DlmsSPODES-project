@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Final
 from COSEMpdu.data import Array, Structure, OctetString, Boolean, LongUnsigned, Enum, DoubleLongUnsigned
 from ...types.implementations import integers
@@ -16,6 +17,7 @@ class AuthenticationMethod(Enum):
     AUTO_KEY_IFF: Final = 2
 
 
+@dataclass
 class AuthenticationKey(Structure):
     """authentication_key"""
     key_id: DoubleLongUnsigned

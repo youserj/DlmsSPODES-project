@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Boolean, LongUnsigned, Structure, BitString, Array
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
 from ..types import cst
 from ..types.type_alias import Attr
 
 
+@dataclass
 class ScheduleTableEntry(Structure):
     """schedule_table_entry"""
     index: LongUnsigned
@@ -22,6 +24,7 @@ Entries = Array[ScheduleTableEntry]
 """entries attribute"""
 
 
+@dataclass
 class DataED(Structure):
     """ enable/disable"""
     firstIndexA: LongUnsigned
@@ -30,6 +33,7 @@ class DataED(Structure):
     lastIndexB: LongUnsigned
 
 
+@dataclass
 class DataDelete(Structure):
     """delete"""
     firstIndex: LongUnsigned

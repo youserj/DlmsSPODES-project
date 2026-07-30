@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Structure, LongUnsigned, Unsigned, Array
 from ..types import cst
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
 
 
+@dataclass
 class SpecDayEntry(Structure):
     """spec_day_entry"""
     index: LongUnsigned

@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, OctetString, LongUnsigned
 from . import ver0
 from ..cosem_interface_class import ICAElement, update_collection
 from ...types.type_alias import Attr
 
 
+@dataclass
 class InitializationStringElement(Structure):
     """initialization_string_element"""
     request: OctetString

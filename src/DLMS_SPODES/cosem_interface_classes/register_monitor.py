@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, CommonDataType
 from ..types.implementations import structs
 from .cosem_interface_class import ICAuto, ICAElement
@@ -7,6 +8,7 @@ from ..types.type_alias import Attr
 Thresholds = Array[CommonDataType]
 
 
+@dataclass
 class ActionSet(Structure):
     """action_set"""
     action_up: structs.ActionItem

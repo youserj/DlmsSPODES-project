@@ -1,4 +1,5 @@
 """DLMS UA 1000-1 Ed. 14"""
+from dataclasses import dataclass
 from COSEMpdu.data import (
     Array, Data, DoubleLongUnsigned, Integer, Structure, LongUnsigned, CompactArray, 
     DoubleLong, OctetString, Unsigned, VisibleString, Long, Long64Unsigned, Float32, Float64,
@@ -15,6 +16,7 @@ from ..cosem_interface_class import ICAElement, Classifier, update_collection
 CaptureObjects = Array[structs.CaptureObjectDefinition]
 
 
+@dataclass
 class EntryDescriptor(Structure):
     """entry_descriptor"""
     from_entry: DoubleLongUnsigned
@@ -31,6 +33,7 @@ class RangeValue(Data[RangeValueType]):
     alternatives = union2alternatives(RangeValueType)
 
 
+@dataclass
 class RangeDescriptor(Structure):
     """range_descriptor"""
     restricting_object: structs.CaptureObjectDefinition

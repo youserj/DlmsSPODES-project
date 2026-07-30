@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 from ..types import cst
 from COSEMpdu.data import Enum, LongUnsigned, Structure, Array, Integer, CommonDataType
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
@@ -11,6 +12,7 @@ class ServiceId(Enum):
     EXECUTE_SPECIFIC_METHOD: Final = 2
 
 
+@dataclass
 class ActionSpecification(Structure):
     """action_specification"""
     service_id: ServiceId
@@ -24,6 +26,7 @@ Actions = Array[ActionSpecification]
 """array action_specification"""
 
 
+@dataclass
 class Script(Structure):
     """script"""
     script_identifier: LongUnsigned

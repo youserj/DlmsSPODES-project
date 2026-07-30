@@ -12,7 +12,7 @@ from StructResult import result
 from StructResult.result import ValueOrError, Error
 from COSEMpdu.byte_buffer import ByteBuffer
 from COSEMpdu import axdr
-from COSEMpdu.types_used import CosemClassId, SelectiveAccessDescriptor
+from COSEMpdu.apdu import CosemClassId, SelectiveAccessDescriptor
 from enum import IntEnum
 from .. import exceptions as exc
 from .overview import ClassID

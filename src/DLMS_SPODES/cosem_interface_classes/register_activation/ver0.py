@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Array, OctetString, Unsigned, LongUnsigned, Structure
 from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement
 from ...types import cst
 
 
+@dataclass
 class ObjectDefinition(Structure):
     """object_definition"""
     class_id: LongUnsigned
@@ -14,6 +16,7 @@ RegisterAssignment = Array[ObjectDefinition]
 IndexArray = Array[Unsigned]
 
 
+@dataclass
 class RegisterActMask(Structure):
     mask_name: OctetString
     index_list: IndexArray

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import TypeAlias, Final
 from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Enum, DoubleLongUnsigned, NullData, ExternallyData, DiscriminatedUnion
 from COSEMpdu.axdr import NamedType
@@ -7,12 +8,14 @@ from ...types import cst
 from ..cosem_interface_class import ICAElement, update_collection
 
 
+@dataclass
 class RestrictionByEntry(Structure):
     """restriction_by_entry"""
     from_entry: DoubleLongUnsigned
     to_entry: DoubleLongUnsigned
 
 
+@dataclass
 class RestrictionByDate(Structure):
     """restriction_by_date"""
     from_date: OctetString
@@ -43,6 +46,7 @@ class RestrictionElement(DiscriminatedUnion):
     restriction_value: RestrictionValue
 
 
+@dataclass
 class PushObjectDefinition(Structure):
     """push_object_definition"""
     class_id: LongUnsigned
@@ -75,6 +79,7 @@ class MessageType(Enum):  # TODO: elements 128.. is manufacturer specific
     XML_ENCODED_XDLMS_APDU: Final = 5
 
 
+@dataclass
 class SendDestinationAndMethod(Structure):
     """send_destination_and_method"""
     transport_service: TransportServiceType
@@ -93,12 +98,14 @@ class KekId(Enum):
     MASTER_KEY: Final = 0
 
 
+@dataclass
 class WrappedKeyInfoOptions(Structure):
     """wrapped_key_info_options"""
     kek_id: KekId
     key_ciphered_data: OctetString
 
 
+@dataclass
 class AgreedKeyInfoOptions(Structure):
     """agreed_key_info_options"""
     key_parameters: OctetString
@@ -138,6 +145,7 @@ class ProtectionType(Enum):
     DIGITAL_SIGNATURE: Final = 3
 
 
+@dataclass
 class ProtectionOptions(Structure):
     transaction_id: OctetString
     originator_system_title: OctetString
@@ -146,6 +154,7 @@ class ProtectionOptions(Structure):
     key_info: KeyInfoElement
 
 
+@dataclass
 class ProtectionParametersElement(Structure):
     protection_type: ProtectionType
     protection_options: ProtectionOptions

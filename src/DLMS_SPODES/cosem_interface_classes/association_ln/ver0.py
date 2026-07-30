@@ -1,8 +1,8 @@
-from typing import Final, TypeAlias
-from COSEMpdu.data import Data as Data_, Enum, Array, Integer, NullData, Structure, Boolean, Unsigned, LongUnsigned, OctetString, EnumMixin, union2alternatives
-from COSEMpdu.user_information import Conformance
-from COSEMpdu.axdr import ObjectIdentifierType, ImplicitTaggedType
-from COSEMpdu import types_used
+from typing import Final
+from dataclasses import dataclass
+from COSEMpdu.apdu import Conformance, SelectiveAccessDescriptor
+from COSEMpdu.data import Enum, Array, Integer, NullData, Structure, Boolean, Unsigned, LongUnsigned, OctetString
+from COSEMpdu.axdr import ObjectIdentifierType, ImplicitTaggedType, ChoiceType
 from ...types.type_alias import Attr
 from ...types.implementations import long_unsigneds
 from . import abstract
@@ -10,7 +10,7 @@ from ...types import cst
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
-class AccessMode(abstract.AccessModeProto, Enum):
+class AccessMode(Enum, abstract.AccessModeProto):
     """access_mode"""
     NO_ACCESS = 0
     READ_ONLY = 1
@@ -27,13 +27,11 @@ class AccessMode(abstract.AccessModeProto, Enum):
 class ArrayInteger(Array[Integer]): ...
 
 
-AccessSelectorsType: TypeAlias = NullData | ArrayInteger
+class AccessSelectors(ChoiceType):
+    value: NullData | ArrayInteger
 
 
-class AccessSelectors(Data_[AccessSelectorsType]):
-    alternatives = union2alternatives(AccessSelectorsType)
-
-
+@dataclass
 class AttributeAccessItem(Structure):
     """ Implemented attribute and it access . Use in Association LN """
     attribute_id: Integer
@@ -44,6 +42,7 @@ class AttributeAccessItem(Structure):
 AttributeAccessDescriptor = Array[AttributeAccessItem]
 
 
+@dataclass
 class MethodAccessItem(Structure):
     """method_access_item"""
     method_id: Integer
@@ -53,11 +52,13 @@ class MethodAccessItem(Structure):
 MethodAccessDescriptor = Array[MethodAccessItem]
 
 
+@dataclass
 class AccessRight(Structure):
     attribute_access: AttributeAccessDescriptor
     method_access: MethodAccessDescriptor
 
 
+@dataclass
 class ObjectListElement(Structure):
     """object_list_element"""
     class_id: long_unsigneds.ClassId
@@ -79,12 +80,14 @@ class ClientSAP(Enum):  # TODO: REWRITE elements here
     CONFIGURATOR: Final = 0x30
 
 
+@dataclass
 class AssociatedPartnersType(Structure):
     """associated_partners_type"""
     client_SAP: ClientSAP
     server_SAP: long_unsigneds.ServerSAP
 
 
+@dataclass
 class ContextNameStructure(Structure):
     """context_name_structure"""
     joint_iso_ctt_element: Unsigned
@@ -96,19 +99,17 @@ class ContextNameStructure(Structure):
     context_id_element: Unsigned
 
 
-class OctetStringObjectIdentifierType(ImplicitTaggedType[ObjectIdentifierType]):
+class OctetStringObjectIdentifierType(ImplicitTaggedType, ObjectIdentifierType):
     """OBJECT IDENTIFIER encoded as an octet-string TAG"""
     tag = 9
 
 
-ContextNameTypeT: TypeAlias = ContextNameStructure | OctetStringObjectIdentifierType
-
-
-class ContextNameType(Data_[ContextNameTypeT]):
+class ContextNameType(ChoiceType):
     """context_name_type"""
-    alternatives = union2alternatives(ContextNameTypeT)
+    value: ContextNameStructure | OctetStringObjectIdentifierType
 
 
+@dataclass
 class XDLMSContextType(Structure):
     """xDLMS-context-type"""
     conformance: Conformance
@@ -119,7 +120,7 @@ class XDLMSContextType(Structure):
     cyphering_info: OctetString
 
 
-class MechanismIdElement(EnumMixin, Unsigned):
+class MechanismIdElement(Unsigned):
     NONE: Final = 0
     LOW: Final = 1
     HIGH: Final = 2
@@ -130,6 +131,7 @@ class MechanismIdElement(EnumMixin, Unsigned):
     HIGH_ECDSA: Final = 7
 
 
+@dataclass
 class MechanismNameStructure(Structure):
     """mechanism_name_structure"""
     joint_iso_ctt_element: Unsigned
@@ -141,12 +143,9 @@ class MechanismNameStructure(Structure):
     mechanism_id_element: MechanismIdElement
 
 
-MechanismNameTypeT: TypeAlias = MechanismNameStructure | OctetStringObjectIdentifierType
-
-
-class MechanismNameType(Data_[MechanismNameTypeT]):
+class MechanismNameType(ChoiceType):
     """mechanism_name_type"""
-    alternatives = union2alternatives(MechanismNameTypeT)
+    value: MechanismNameStructure | OctetStringObjectIdentifierType
 
 
 class AssociationStatus(Enum):
@@ -156,6 +155,7 @@ class AssociationStatus(Enum):
     ASSOCIATED: Final = 2
 
 
+@dataclass
 class ObjectId(Structure):
     """object_id"""
     class_id: long_unsigneds.ClassId
@@ -169,7 +169,7 @@ class ObjectIdList(Array[ObjectId]):
 class ClassList(Array[long_unsigneds.ClassId]): ...
 
 
-class SelectiveAccessDescriptor(types_used.SelectiveAccessDescriptor):
+class SelectiveAccess(SelectiveAccessDescriptor):
     selector_parameters = {
         1: NullData,        # All information
         2: ClassList,       # Access by class
@@ -182,7 +182,7 @@ class AssociationLN(ICAuto):
     """5.4.5 Association LN"""
     CLASS_ID = 15
     VERSION = 0
-    A_ELEMENTS = (ICAElement(2, "object_list", ObjectListType, selective_access=SelectiveAccessDescriptor),
+    A_ELEMENTS = (ICAElement(2, "object_list", ObjectListType, selective_access=SelectiveAccess),
                   ICAElement(3, "associated_partners_id", AssociatedPartnersType),
                   ICAElement(4, "application_context_name", ContextNameType),
                   ICAElement(5, "xDLMS_context_info", XDLMSContextType),

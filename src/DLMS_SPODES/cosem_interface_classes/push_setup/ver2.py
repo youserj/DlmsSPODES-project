@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Enum, DoubleLongUnsigned, DateTime
 from . import ver1
 from ...types.type_alias import Attr
@@ -7,6 +8,7 @@ from ...types.implementations import integers, long_unsigneds
 from ..cosem_interface_class import ICAElement, ICMElement, Classifier, update_collection
 
 
+@dataclass
 class PushObjectDefinition(Structure):
     """push_object_definition"""
     class_id: long_unsigneds.ClassId
@@ -27,6 +29,7 @@ class MessageType(Enum):  # TODO: elements 128.. is manufacturer specific
     XML_ENCODED_XDLMS_APDU: Final = 1
 
 
+@dataclass
 class SendDestinationAndMethod(Structure):
     """send_destination_and_method"""
     transport_service: ver1.TransportServiceType
@@ -34,6 +37,7 @@ class SendDestinationAndMethod(Structure):
     message: MessageType
 
 
+@dataclass
 class RepetitionDelay(Structure):
     """repetition_delay"""
     repetition_delay_min: LongUnsigned
@@ -48,6 +52,7 @@ class PushOperationMethod(Enum):
     CONFIRMED = 2
 
 
+@dataclass
 class ConfirmationParameters(Structure):
     confirmation_start_date: DateTime
     confirmation_interval: DoubleLongUnsigned

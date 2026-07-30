@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, OctetString, Enum
 from ..cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
 from ...types.type_alias import Attr
@@ -24,6 +25,7 @@ class KeyID(Enum):
     AUTHENTICATION_KEY: Final = 2
 
 
+@dataclass
 class KeyData(Structure):
     """key_data"""
     key_id: KeyID

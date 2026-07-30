@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 from COSEMpdu.data import Enum, Structure, Array
 from ..types.implementations import structs
 from ..types import cst
@@ -15,6 +16,7 @@ class Type(Enum):
     SIZE_N_DIFFERENT_TIME_VALUES_WILDCARDS_IN_DATE: Final = 5
 
 
+@dataclass
 class ExecutionTimeDate(Structure):
     """execution_time_date"""
     time: cst.OctetStringTime

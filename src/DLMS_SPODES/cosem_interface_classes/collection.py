@@ -7,17 +7,17 @@ from struct import pack
 from dataclasses import dataclass
 from itertools import count, chain
 from functools import cached_property, lru_cache
-from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Hashable, Protocol, Union, get_args
+from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Protocol, get_args
 from COSEMpdu.byte_buffer import ByteBuffer
-from COSEMpdu.x680.type import INTEGER, OCTET_STRING
-from COSEMpdu.types_used import CosemAttributeDescriptor
+from COSEMpdu.x680 import INTEGER, OCTET_STRING
+from COSEMpdu.apdu import CosemAttributeDescriptor
 from COSEMpdu import axdr, data as cdt
 from DLMS_SPODES.types.type_alias import attr2d
 from semver import Version as SemVer
 from StructResult import result
 from StructResult.result import Error, ValueOrError
 from ..types import common_data_types as cdt_, cosem_service_types as cst, useful_types as ut
-from ..types.implementations import structs, enums, octet_string
+from ..types.implementations import structs
 from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
 from .arbitrator import Arbitrator
@@ -795,7 +795,7 @@ class Collection:
             if isinstance(res_new := self.addIC(
                     c_id=int(o_l_el.class_id),
                     version=int(o_l_el.version),
-                    obis=o_l_el.logical_name.normalize()
+                    obis=o_l_el.logical_name.value
             ), result.Error):
                 res.append_err(res_new.err)
         return res

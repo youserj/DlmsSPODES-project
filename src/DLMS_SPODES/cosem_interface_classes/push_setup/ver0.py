@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Unsigned, Enum
 from typing import Final
 from ...types.type_alias import Attr
@@ -6,6 +7,7 @@ from ...types.implementations import structs, integers
 from ..cosem_interface_class import ICAElement, ICMElement, ICAuto
 
 
+@dataclass
 class ObjectDefinition(Structure):
     """object_definition"""
     class_id: LongUnsigned
@@ -36,6 +38,7 @@ class MessageType(Enum):  # TODO: elements 128.. is manufacturer specific
     XML_ENCODED_XDLMS_APDU = 3
 
 
+@dataclass
 class SendDestinationAndMethod(Structure):
     """send_destination_and_method"""
     transport_service: TransportServiceType

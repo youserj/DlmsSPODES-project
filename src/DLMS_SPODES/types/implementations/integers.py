@@ -1,23 +1,13 @@
 """all realisation cdt.Integer subclasses"""
-from dataclasses import dataclass
-from COSEMpdu.x680.constrained_type import ValueRange
-from COSEMpdu.x680 import TaggingMode
-from COSEMpdu.axdr import ConstrainedIntegerType, IntegerType, TaggedType
+from typing import ClassVar
+from COSEMpdu.x680 import ValueRange
+from COSEMpdu.axdr import ConstrainedIntegerType, ImplicitTaggedType
 
 
-@dataclass
-class Integer8Zero(ConstrainedIntegerType):
-    """Integer8(0)"""
-    constraint_spec = ValueRange(0, 0)
-    value: IntegerType
-
-
-@dataclass
-class IntegerValue0(TaggedType[Integer8Zero]):
+class IntegerValue0(ImplicitTaggedType, ConstrainedIntegerType):
     """[15] IMPLICIT Integer(0)"""
-    tag = 15
-    mode = TaggingMode.IMPLICIT
-    value: Integer8Zero
+    tag: ClassVar[int] = 15
+    constraint_spec = ValueRange(0, 0)
 
 
-INTEGER_0 = IntegerValue0(Integer8Zero(IntegerType(0)))
+INTEGER_0 = IntegerValue0(0)
