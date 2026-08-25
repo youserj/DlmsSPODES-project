@@ -63,7 +63,7 @@ ACTIVE_FIRMWARE_IDENTIFIER = "Active firmware identifier"
 ACTIVE_FIRMWARE_VERSION = "Active firmware version"
 ACTIVE_FIRMWARE_SIGNATURE = "Active firmware signature"
 # 6.2.13 Register monitor and alarm monitor objects
-RU_ALARM_MONITOR_1 = "RU. Load alarm monitor"
+ALARM_MONITOR = "Alarm monitor"
 # 6.2.19 Standard readout profile objects
 GENERAL_DISPLAY_READOUT = "General display readout"
 ALTERNATE_DISPLAY_READOUT = "Alternate display readout"
@@ -121,6 +121,7 @@ COMMUNICATION_TAMPER_EVENT_TIME_STAMP = "Communication tamper event, time stamp 
 COMMUNICATION_TAMPER_EVENT_DURATION = "Communication tamper event, duration of current event"
 COMMUNICATION_TAMPER_EVENT_CUMULATIVE_DURATION = "Communication tamper event, cumulative duration"
 # 6.2.64 Alarm register, Alarm filter and Alarm descriptor objects
+ALARM_REGISTER = "Alarm register"
 RU_ALARM_REGISTER_1 = "RU. Alarm register. Initiative output"
 RU_ALARM_FILTER_1 = "RU. Alarm filter. Initiative exit"
 RU_ALARM_REGISTER_2 = "RU. Alarm register. Load relay"
@@ -180,6 +181,11 @@ ITE_USED_COMMUNICATION_INTERFACES = "ITE. Used communication interfaces"
 # Consumer messages
 LOCAL_CONSUMER_MESSAGE = "Consumer message via local consumer information port"
 DISPLAY_CONSUMER_MESSAGE = "Consumer message via the meter display and / or via consumer information port"
+# Battery entries
+BATTERY_USE_TIME_COUNTER = "Battery use time counter"
+BATTERY_CHARGE_DISPLAY = "Battery charge display"
+DATE_OF_NEXT_BATTERY_CHANGE = "Date of next battery change"
+BATTERY_VOLTAGE = "Battery voltage"
 # 7.4.5 Data profile objects – Abstract
 GSM_DIAGNOSTIC_PROFILE = "GSM diagnostic profile"
 # electricity

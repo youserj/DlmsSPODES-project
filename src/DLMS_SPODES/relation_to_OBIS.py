@@ -3,12 +3,11 @@ principles (see Clause 4 EN 62056-62:2007), the identification of real data item
 usage of those definitions in the COSEM environment. All codes, which are not explicitly listed, but outside the manufacturer specific range are
 reserved for future use."""
 from functools import lru_cache
-from dataclasses import dataclass
+
 from . import settings
-from .types import cosem_service_types as cst
 from .cosem_interface_classes import overview
 from .obis import media_id
-
+from .types import cosem_service_types as cst
 
 match settings.get_current_language():
     case settings.Language.ENGLISH:     from .Values.EN import relation_to_obis_names as rn
@@ -207,7 +206,9 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, b, 15, 0, 5:   return F"{rn.LOAD_PROFILE_CONTROL_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
         case  0, b, 15, 0, 6:   return F"{rn.M_BUS_PROFILE_CONTROL_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
         case  0, b, 15, 0, 7:   return F"{rn.FUNCTION_CONTROL_SINGLE_ACTION_SCHEDULE}{handle_B(b)}"
-        case  0, b, 16, 1, 1:   return F"{rn.RU_ALARM_MONITOR_1}{handle_B(b)}"
+        case  0, b, 16, 0, e:   return F"{rn.ALARM_REGISTER}#{e}{handle_B(b)}"
+        case  0, b, 16, 1, 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 as e:
+            return F"{rn.ALARM_MONITOR}#{e}{handle_B(b)}"
         case  0, b, 17, 0, 0:   return F"{rn.RU_LIMITER_BY_POWER}{handle_B(b)}"
         case  0, b, 17, 0, 1:   return F"{rn.RU_LIMITER_BY_CURRENT}{handle_B(b)}"
         case  0, b, 17, 0, 2:   return F"{rn.RU_LIMITER_BY_VOLTAGE}{handle_B(b)}"
@@ -271,7 +272,13 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, 0, 96, 5, 2:   return rn.INTERNAL_OPERATING_STATUS_2
         case  0, 0, 96, 5, 3:   return rn.INTERNAL_OPERATING_STATUS_3
         case  0, 0, 96, 5, 4:   return rn.INTERNAL_OPERATING_STATUS_4
+        case  0, 0, 96, 5, 131 if spec_map in ("KPZ", "SPODES_3"):
+            return "Номер аварийного тарифа"
         case  0, 0, 96, 5, 132: return rn.SPODES3_PHASE_ALTERNATING_CONTROL
+        case  0, 0, 96, 6, 1: return rn.BATTERY_CHARGE_DISPLAY
+        case  0, 0, 96, 6, 3: return rn.BATTERY_VOLTAGE
+        case 0, 0 | 1 | 2 as b, 96, 5, 134, 255 if spec_map in ("KPZ", "SPODES_3"):
+            return F"Причина передачи Push №{b}"
         case  0, b, 96, 8, 0:   return F"{rn.TIME_OF_OPERATION}{handle_B(b)}"
         case  0, b, 96, 8, 10:  return F"{rn.RU_DURATION_OF_FAILURE_OVERSTRAIN}{handle_B(b)}"
         case  0, b, 96, 9, 0:   return F"{rn.RU_AMBIENT_TEMPERATURE}{handle_B(b)}"
@@ -327,6 +334,12 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, 0, 96, 51, 7:  return rn.RU_CLEAR_OF_ELECTRONIC_SEALS_FIXED_STATE
         case  0, 0, 96, 51, 8:  return rn.RU_FIRST_OPENING_TIME_OF_BODY
         case  0, 0, 96, 51, 9:  return rn.RU_FIRST_OPENING_TIME_OF_TERMINALS_COVER
+        case  0, 0, 96, 90, 0 if spec_map == "KPZ":
+            return "Напряжение источника питания"
+        case  0, 0, 96, 91, 0 if spec_map == "KPZ":
+            return "Температура блока клеммников"
+        case  0, 0, 96, 99, 2 if spec_map == "KPZ":
+            return "Разностное напряжение детектора обманного резистора"
         case  0, 0, 97, 98, 0:  return rn.RU_ALARM_REGISTER_1
         case  0, 0, 97, 98, 1:  return rn.RU_ALARM_REGISTER_2
         case  0, 0, 97, 98, 10:  return rn.RU_ALARM_FILTER_1
@@ -374,8 +387,37 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, 0, 128, 152, 0:   return rn.ITE_BLE_ID
         case  0, 0, 128, 170, 0:   return rn.ITE_ICCID
         case  0, 0, 128, 171, 0:   return rn.KPZ_IMSI
-        case  0, 128, 154, 0, 0:   return F"KPZPingTestSetup"
-        case  0, 128, 25, 6, 0:   return F"(KPZ) ICCID"
+        case  0, 0, 128, 1, 0 if spec_map in ("KPZ", "SPODES_3"):
+            return "Часы больших нагрузок"
+        case  0, 0, 128, 2, 0 if spec_map in ("KPZ", "SPODES_3"):
+            return "Часы утреннего и вечернего максимума"
+        case  0, 0, 128, 143, 0 if spec_map == "KPZ":
+            return "Параметры сети BLE Mesh"
+        case  0, 0, 128, 144, 0 | 1 | 2 as e if spec_map == "KPZ":
+            return f"Параметры рекламы BLE. Режим {e}"
+        case  0, 0, 128, 145, 0 if spec_map == "KPZ":
+            return "Интервал BLE-соединения"
+        case  0, 0, 128, 146, 0 if spec_map == "KPZ":
+            return "Мощность передатчика BLE"
+        case  0, 0, 128, 146, 1 if spec_map == "KPZ":
+            return "TTL пакета BLE Mesh"
+        case  0, 0, 128, 146, 2 if spec_map == "KPZ":
+            return "Функция ретрансляции BLE Mesh"
+        case  0, 0, 128, 147, 0 if spec_map == "KPZ":
+            return "Параметры передачи BLE Mesh"
+        case  0, 0, 128, 147, 1 if spec_map == "KPZ":
+            return "Параметры ретрансляции BLE Mesh"
+        case  0, 0, 128, 148, 0 if spec_map == "KPZ":
+            return "Настройки повторных попыток BLE Mesh"
+        case  0, 0, 128, 154, 0 if spec_map == "KPZ":
+            return "Величина максимального интервала опроса ПУ"
+        case  0, 0, 128, 154, 1 if spec_map == "KPZ":
+            return "Таймер с момента предыдущего опроса"
+        case  0, 0, 128, 155, 0 if spec_map == "KPZ":
+            return "Kоличество нажатий кнопок корпуса"
+        case  0, 128, 25, 6, 0:   return "(KPZ) ICCID"
+        case  0, 0, 135, 210, 0 if spec_map in ("KPZ", "SPODES_3"):
+            return "Настройка коммутационного профиля для портов"
         case  1, b, 0, 0, e:    return F"{F'{rn.COMPLETE_COMBINED_ELECTRICITY_ID} {e+1}'}{handle_B(b)}"
         case  1, b, 0, 2, 0:    return F"{rn.ACTIVE_FIRMWARE_IDENTIFIER}{handle_B(b)}"
         case  1, b, 0, 2, 8:    return F"{rn.ACTIVE_FIRMWARE_SIGNATURE}{handle_B(b)}"

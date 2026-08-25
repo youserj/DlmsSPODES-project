@@ -77,7 +77,7 @@ ACTIVE_FIRMWARE_IDENTIFIER = "Активный идентификатор про
 ACTIVE_FIRMWARE_VERSION = "Активная версия прошивки"
 ACTIVE_FIRMWARE_SIGNATURE = "Активная подпись прошивки"
 # 6.2.13 Register monitor and alarm monitor objects
-RU_ALARM_MONITOR_1 = "Монитор событий реле нагрузки"
+ALARM_MONITOR = "Монитор событий"
 # 6.2.19 Standard readout profile objects
 GENERAL_DISPLAY_READOUT = "Профиль основного дисплея «в Автопрокрутке»"
 ALTERNATE_DISPLAY_READOUT = "Профиль основного дисплея «по кнопке»"
@@ -115,6 +115,7 @@ COMMUNICATION_TAMPER_EVENT_TIME_STAMP = "Дата последного вмеш�
 COMMUNICATION_TAMPER_EVENT_DURATION = "Продолжительность последнего вмешательства в коммуникационный интерфейс"
 COMMUNICATION_TAMPER_EVENT_CUMULATIVE_DURATION = "Общая продолжительность вмешательства в коммуникационный интерфейс"
 # 6.2.64 Alarm register, Alarm filter and Alarm descriptor objects
+ALARM_REGISTER = "Регистр контроля"
 RU_ALARM_REGISTER_1 = "СПОДЭС3. Инициативный выход. Текущее состояние"
 RU_ALARM_FILTER_1 = "СПОДЭС3. Инициативный выход. Фильтр"
 ALARM_DESCRIPTOR = "СПОДЭС3. Инициативный выход. Флаги"
@@ -181,6 +182,11 @@ NUMBER_OF_PROTECTED_CONFIGURATION_PROGRAM_CHANGES = "Счетчик защище
 DATE_A_OF_LAST_PROTECTED_CONFIGURATION_PROGRAM_CHANGE = "Дата последнего защищенного конфигурирования"
 DATE_A_CORRECTED_OF_LAST_CLOCK_SYNCHRONIZATION_SETTING = "Дата последней установки времени"
 DATE_OF_LAST_FIRMWARE_ACTIVATION = "Дата последнего изменения встроенного ПО"
+# Battery entries
+BATTERY_USE_TIME_COUNTER = "Счетчик времени использования батареи"
+BATTERY_CHARGE_DISPLAY = "Индикация заряда аккумулятора"
+DATE_OF_NEXT_BATTERY_CHANGE = "Дата следующей замены батареи"
+BATTERY_VOLTAGE = "Напряжение аккумулятора"
 # Internal operating status
 INTERNAL_OPERATING_STATUS_GLOBAL = "Внутренний рабочий статус, общий"
 INTERNAL_OPERATING_STATUS_1 = "Статус качества сети (профиль суточных показаний)"
