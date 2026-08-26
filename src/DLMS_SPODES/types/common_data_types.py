@@ -1678,6 +1678,7 @@ class OctetString(_String, SimpleDataType):
         except Exception as e:
             return F"{self}(HEX)"
 
+
 class VisibleString(_String, SimpleDataType):
     """ An ordered sequence of octets (8 bit bytes) """
     TAG = TAG(b'\x0A')
@@ -1694,12 +1695,11 @@ class VisibleString(_String, SimpleDataType):
     def __len__(self):
         return len(self.contents)
 
-    @deprecated("use str")
     def to_str(self) -> str:
-        temp = list()
+        temp = []
         for i in self.contents:
             temp.append(i if i >= 32 else 63)
-        return bytes(temp).decode(encoding)
+        return bytes(temp).decode("latin-1")
 
     @classmethod
     def parse(cls, value: str) -> Self:
