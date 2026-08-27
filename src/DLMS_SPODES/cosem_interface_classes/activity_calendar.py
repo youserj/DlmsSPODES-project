@@ -19,19 +19,19 @@ class SeasonProfile(cdt.Array):
 
     def new_element(self) -> Season:
         names: list[bytes] = [bytes(el.season_profile_name) for el in self.values]
-        for new_name in (i.to_bytes(1, 'big') for i in range(256)):
+        for new_name in (i.to_bytes(1, "big") for i in range(256)):
             if new_name not in names:
-                return Season((bytearray(new_name), None, bytearray(b'week_name?')))
-        raise ValueError(F'in {self} all season names is busy')
+                return Season((bytearray(new_name), None, bytearray(b"week_name?")))
+        raise ValueError(F"in {self} all season names is busy")
 
     def sort(self, date_time: cdt.DateTime) -> Self:
         """sort by date-time
         :return now Season + next Seasons"""
         s: Season
         d_t = date_time.to_datetime()
-        l = list()
+        l = []
         """left datetime"""
-        r = list()
+        r = []
         """right datetime"""
         for i, s in enumerate(self):
             if (el := s.season_start.get_left_nearest_datetime(d_t)) is not None:
@@ -45,8 +45,7 @@ class SeasonProfile(cdt.Array):
         for el in r:
             if el[0] == now:
                 continue
-            else:
-                indexes.append(el[0])
+            indexes.append(el[0])
         sorted_data = self.__class__()
         for i in indexes:
             sorted_data.append(self[i])
@@ -74,10 +73,10 @@ class WeekProfileTable(cdt.Array):
     def new_element(self) -> WeekProfile:
         """return default WeekProfile with vacant week_profile_name, existed day ID and insert callback for validate change DayID"""
         names: list[bytes] = [bytes(el.week_profile_name) for el in self.values]
-        for new_name in (i.to_bytes(1, 'big') for i in range(256)):
+        for new_name in (i.to_bytes(1, "big") for i in range(256)):
             if new_name not in names:
-                return WeekProfile((bytearray(new_name), *[0]*7))
-        raise ValueError(F'in {self} all week names is busy')
+                return WeekProfile((bytearray(new_name), *[0] * 7))
+        raise ValueError(F"in {self} all week names is busy")
 
     def get_week_profile_names(self) -> tuple[cdt.OctetString, ...]:
         return tuple((el.week_profile_name for el in self.values))
@@ -99,6 +98,9 @@ class DaySchedule(cdt.Array):
     TYPE = DayProfileAction
     values: list[DayProfileAction]
 
+    def new_element(self) -> DayProfileAction:
+        return DayProfileAction((None, cst.LogicalName.from_obis("0.10.0.100.0.255"), None))
+
 
 class DayProfile(cdt.Structure):
     """ list of Scheduled actions is defined by a script to be executed and the corresponding activation time (start_time) with day ID. """
@@ -118,7 +120,7 @@ class DayProfileTable(cdt.Array):
         for i in range(0xff):
             if i not in day_ids:
                 return DayProfile((i, None))
-        raise ValueError(F'in {self} all days ID is busy')
+        raise ValueError(F"in {self} all days ID is busy")
 
     def get_day_ids(self) -> tuple[cdt.Unsigned, ...]:
         return tuple((day_profile.day_id for day_profile in self.values))
