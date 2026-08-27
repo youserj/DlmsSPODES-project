@@ -11,6 +11,12 @@ class LogicalName(cdt.ReportMixin, cdt.OctetString, size=6):
     DEFAULT = b'\x00\x00\x01\x00\x00\xff'
 
     @classmethod
+    def parse(cls, value: str) -> Self:
+        if value.count(".") == 5:
+            return cls.from_obis(value)
+        return super().parse(value)
+
+    @classmethod
     def from_obis(cls, value: str) -> Self:
         """ create logical_name: octet_string from string type ddd.ddd.ddd.ddd.ddd.ddd, ex.: 0.0.1.0.0.255 """
         if (res := cls.__pattern.search(value)) is None:

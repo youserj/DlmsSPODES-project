@@ -99,7 +99,7 @@ class DaySchedule(cdt.Array):
     values: list[DayProfileAction]
 
     def new_element(self) -> DayProfileAction:
-        return DayProfileAction((None, cst.LogicalName.from_obis("0.10.0.100.0.255"), None))
+        return DayProfileAction((None, cst.LogicalName.from_obis("0.0.10.0.100.255"), None))
 
 
 class DayProfile(cdt.Structure):

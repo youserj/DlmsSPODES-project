@@ -328,7 +328,10 @@ class SimpleDataType(CommonDataType, ABC):
         return self.__class__(value)
 
     def set(self, value: Self | bytes | bytearray | str | int | bool | float | datetime.date | None):
-        new_value = self._new_instance(value)
+        if isinstance(value, str):
+            new_value = self.parse(value)
+        else:
+            new_value = self._new_instance(value)
         if hasattr(self, 'cb_preset'):
             self.cb_preset(new_value)
         # self.__dict__['contents'] = new_value.contents
