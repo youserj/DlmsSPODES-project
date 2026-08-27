@@ -224,7 +224,15 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, b, 22, 0, 0:   return F"{overview.ClassID.IEC_HDLC_SETUP}{handle_B(b)}"
         case  0, b, 25, 0, 0:   return F"{overview.ClassID.TCP_UDP_SETUP}{handle_B(b)}"
         case  0, b, 25, 1, 0:   return F"{overview.ClassID.IPV4_SETUP}{handle_B(b)}"
+        case  0, 128, 25, 4, 0 if spec_map == "KPZ":
+            return "Настройка периода реинициализации"
         case  0, b, 25, 4, 0:   return F"{overview.ClassID.GPRS_MODEM_SETUP}{handle_B(b)}"
+        case  0, 128, 25, 6, 0 if spec_map == "KPZ":
+            return "ICCID"
+        case  0, 129, 25, 6, 0 if spec_map == "KPZ":
+            return "IMSI"
+        case  0, 130, 25, 6, 0 if spec_map == "KPZ":
+            return "Список доступных операторов"
         case  0, b, 25, 6, 0:   return F"{overview.ClassID.GSM_DIAGNOSTIC}{handle_B(b)}"
         case  0, b, 25, 9, 0:   return F"{overview.ClassID.PUSH_SETUP}{handle_B(b)}"
         case  0, b, 25, 10, 0:  return F"{overview.ClassID.NTP_SETUP}{handle_B(b)}"
@@ -295,10 +303,13 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, b, 96, 11, 8:  return F"{rn.RU_EVENTS_FOR_EXCEEDING_THE_REACTIVE_POWER}{handle_B(b)}"
         case  0, b, 96, 12, 4:  return F"{rn.RU_CHANNEL_NUMBER_INTERFACE}{handle_B(b)}"
         case  0, b, 96, 12, 6:  return F"{rn.COMMUNICATION_ADDRESS}{handle_B(b)}"
+        case  0, 128, 96, 15, 0 if spec_map == "KPZ":
+            return "Счетчик локальных срабатываний реле на размыкание в сутки"
         case  0, 128, 96, 12, 0:  return F"{rn.KPZ_INTERFACE_LIST}"
         case  0, b, 96, 13, 0:  return F"{rn.LOCAL_CONSUMER_MESSAGE}{handle_B(b)}"
         case  0, b, 96, 13, 1:  return F"{rn.DISPLAY_CONSUMER_MESSAGE}{handle_B(b)}"
-        case  0, b, 96, 15, 0:  return F"{rn.RU_RELAY_TRIGGERING_METER_FOR_OPENING}{handle_B(b)}"
+        case  0, b, 96, 15, 0:
+            return F"{rn.RU_RELAY_TRIGGERING_METER_FOR_OPENING}{handle_B(b)}"
         case  0, b, 96, 20, 0:  return F"{rn.METER_OPEN_EVENT_COUNTER}{handle_B(b)}"
         case  0, b, 96, 20, 1:  return F"{rn.METER_OPEN_EVENT_TIME_STAMP}{handle_B(b)}"
         case  0, b, 96, 20, 2:  return F"{rn.METER_OPEN_EVENT_DURATION}{handle_B(b)}"
@@ -415,16 +426,14 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
             return "Величина максимального интервала опроса ПУ"
         case  0, 0, 128, 154, 1 if spec_map == "KPZ":
             return "Таймер с момента предыдущего опроса"
+        case  0, 0, 128, 154, 2 if spec_map == "KPZ":
+            return "Выбор источника данных по температуре"
         case  0, 0, 128, 155, 0 if spec_map == "KPZ":
             return "Kоличество нажатий кнопок корпуса"
-        case  0, 128, 25, 6, 0:
-            return "(KPZ) ICCID"
         case  0, 128, 154, 0, 0 if spec_map == "KPZ":
             return "Настройка пингования"
         case  0, 128, 154, 1, 0 if spec_map == "KPZ":
             return "Механизм проверки связи"
-        case  0, 128, 154, 2, 0 if spec_map == "KPZ":
-            return "Выбор источника данных по температуре"
         case  0, 0, 135, 210, 0 if spec_map in ("KPZ", "SPODES_3"):
             return "Настройка коммутационного профиля для портов"
         case  1, b, 0, 0, e:    return F"{F'{rn.COMPLETE_COMBINED_ELECTRICITY_ID} {e+1}'}{handle_B(b)}"
@@ -435,7 +444,7 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  1, b, 0, 4, 2:    return F"{rn.TRANSFORMER_RATIO_CURRENT}{handle_B(b)}"
         case  1, b, 0, 4, 3:    return F"{rn.TRANSFORMER_RATIO_VOLTAGE}{handle_B(b)}"
         # Nominal values
-        case  1, b, 0, 6, 0 if spec_map in ("KPZ", "SPODES_3"):
+        case  1, b, 1, 6, 0 if spec_map in ("KPZ", "SPODES_3"):
             return "Максимальная мощность на расчётном периоде и дата время начала интервала максимальной мощности"
         case  1, b, 0, 6, 0:    return F"{rn.NOMINAL_VOLTAGE}{handle_B(b)}"
         case  1, b, 0, 6, 1:    return F"{rn.NOMINAL_CURRENT}{handle_B(b)}"
@@ -456,16 +465,6 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
             return "Минимальное значение полной мощности на интервале интегрирования 2 за расчетный период"
         case  1, 0, 9, 6, 128 if spec_map in ("KPZ", "SPODES_3"):
             return "Максимальное значение полной мощности на интервале интегрирования 2 за расчетный период"        
-        case  1, b, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 as c, d, e:
-            return F"{handle_B(b)}{rn.CUMULATIVE} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
-        case 1, 0, 12, 7, 4 if spec_map in ("KPZ", "SPODES_3"):
-            return "Глубина провала/перенапряжения"
-        case  1, b, 11 | 12 as c, 7, e:
-            return F"{handle_B(b)}{get_obj_names(c)} {get_harmonics_name(e)}"
-        case  1, b, 11 | 12 as c, 134, 0:
-            return F"{handle_B(b)}{get_obj_names(c)} {rn.RU_CHANGE_LIMIT_LEVEL}"
-        case  1, b, 11 | 12 as c, d, e:
-            return F"{handle_B(b)}{rn.ANY_PHASE} {get_obj_names(c)} {get_processing_names(d)} {get_harmonics_name(e)}"
         case  1, 0, 15, 3, 128 if spec_map in ("KPZ", "SPODES_3"):
             return "Минимальное значение активной мощности на интервале интегрирования 2 за расчетный период"
         case  1, 0, 15, 6, 128 if spec_map in ("KPZ", "SPODES_3"):
@@ -482,6 +481,30 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
             return "Максимальное значение активной мощности на интервале интегрирования 2 за расчетный период. Пороговое значение"
         case  1, 0, 15, 35, 130 if spec_map in ("KPZ", "SPODES_3"):
             return "Максимальное значение активной мощности на интервале интегрирования 2 за расчетный период в период пиковых нагрузок. Пороговое значение"
+        case  1, 0, 131, 6, 128 if spec_map in ("KPZ", "SPODES_3"):
+            return "Тангенс нагрузки. Максимальное значение на интервале интегрирования 2 за расчетный период"
+        case  1, 0, 131, 27, 0 if spec_map in ("KPZ", "SPODES_3"):
+            return "Тангенс нагрузки. Среднее значение на интервале интегрирования 2"
+        case  1, 0, 137, 3, 128 if spec_map in ("KPZ", "SPODES_3"):
+            return "Минимальное значение реактивной мощности на интервале интегрирования 2 за расчетный период"
+        case  1, 0, 137, 6, 128 if spec_map in ("KPZ", "SPODES_3"):
+            return "Максимальное значение реактивной мощности на интервале интегрирования 2 за расчетный период"
+        case  1, b, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 as c, d, e:
+            return F"{handle_B(b)}{rn.CUMULATIVE} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
+        case 1, 0, 12, 7, 4 if spec_map in ("KPZ", "SPODES_3"):
+            return "Глубина провала/перенапряжения"
+        case  1, b, 11 | 12 as c, 7, e:
+            return F"{handle_B(b)}{get_obj_names(c)} {get_harmonics_name(e)}"
+        case  1, b, 11 | 12 as c, 134, 0:
+            return F"{handle_B(b)}{get_obj_names(c)} {rn.RU_CHANGE_LIMIT_LEVEL}"
+        case  1, b, 11 | 12 as c, d, e:
+            return F"{handle_B(b)}{rn.ANY_PHASE} {get_obj_names(c)} {get_processing_names(d)} {get_harmonics_name(e)}"
+        case  1, b, 137, d, 128:
+            return F"{handle_B(b)}{rn.REACTIVE_FACTOR} {get_processing_names(d)}"
+        case  1, 0, 145, 35, 0 if spec_map in ("KPZ", "SPODES_3"):
+            return "Порог отклонения частоты"
+        case  1, 0, 147 as c, 133, 0: return F"{get_obj_names(c)} {rn.BILLING_PERIOD}"
+        case  1, 0, 148, 36, 0: return F"{rn.OVER_VOLTAGE_COUNTER} {rn.BILLING_PERIOD}"
         case  1, b, c, d, e if c in range(21, 41):
             return F"{handle_B(b)}{rn.L1} {get_obj_names(c)} {get_processing_names(d)} {get_rate(e)}"
         case  1, b, c, d, e if c in range(41, 61):
@@ -494,20 +517,6 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  1, b, 91, 7, 132:   return F"{rn.RU_DIFFERENTIAL_CURRENT}. {rn.PERCENT}. {rn.INSTANTANEOUS_VALUE}{handle_B(b)}"
         case 1, b, 91, d, e if d <= 127:
             return F"{handle_B(b)}{rn.L0_CURRENT_NEUTRAL} {get_processing_names(d)} {get_harmonics_name(e)}"
-        case  1, b, 137, d, 128:
-            return F"{handle_B(b)}{rn.REACTIVE_FACTOR} {get_processing_names(d)}"
-        case  1, 0, 131, 6, 128 if spec_map in ("KPZ", "SPODES_3"):
-            return "Тангенс нагрузки. Максимальное значение на интервале интегрирования 2 за расчетный период"
-        case  1, 0, 131, 27, 0 if spec_map in ("KPZ", "SPODES_3"):
-            return "Тангенс нагрузки. Среднее значение на интервале интегрирования 2"
-        case  1, 0, 137, 3, 128 if spec_map in ("KPZ", "SPODES_3"):
-            return "Минимальное значение реактивной мощности на интервале интегрирования 2 за расчетный период"
-        case  1, 0, 137, 6, 128 if spec_map in ("KPZ", "SPODES_3"):
-            return "Максимальное значение реактивной мощности на интервале интегрирования 2 за расчетный период"
-        case  1, 0, 145, 35, 0 if spec_map in ("KPZ", "SPODES_3"):
-            return "Порог отклонения частоты"
-        case  1, 0, 147 as c, 133, 0: return F"{get_obj_names(c)} {rn.BILLING_PERIOD}"
-        case  1, 0, 148, 36, 0: return F"{rn.OVER_VOLTAGE_COUNTER} {rn.BILLING_PERIOD}"
         case 1, b, 81, 7, e if e < 78:
             angel_values = (rn.U_L1, rn.U_L2, rn.U_L3, rn.ERROR, rn.I_L1, rn.I_L2, rn.I_L3, rn.I_L0)
             to_, from_ = divmod(logical_name.e, 10)
