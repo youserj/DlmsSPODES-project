@@ -1886,6 +1886,14 @@ class Enum(IntegerEnum, Unsigned, ABC):
         else:
             raise ValueError(F'Error create {self.__class__.__name__} with value {value}')
 
+    @classmethod
+    def parse(cls, value: str) -> Self:
+        if value.isdigit():
+            return cls(int(value))
+        if res := enum_rep.search(value):
+            return cls(int(res.group("value")))
+        raise ValueError(F'Error create {self.__class__.__name__} with value {value}')
+
     def from_none(self):
         """first key value"""
         if len(self.NAMES) != 0:

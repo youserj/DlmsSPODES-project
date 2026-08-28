@@ -17,7 +17,7 @@ def get_values(*args: str) -> dict | None:
             par = par[key]
             continue
         except KeyError as e:
-            print(f"error: {e.args[0]}")
+            # print(f"error: {e.args[0]}")
             return None
     return par
 
