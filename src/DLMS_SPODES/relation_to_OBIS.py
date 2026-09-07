@@ -303,6 +303,8 @@ def get_name(logical_name: cst.LogicalName, spec_map: str = "DLMS_6") -> str:
         case  0, b, 96, 11, 8:  return F"{rn.RU_EVENTS_FOR_EXCEEDING_THE_REACTIVE_POWER}{handle_B(b)}"
         case  0, b, 96, 12, 4:  return F"{rn.RU_CHANNEL_NUMBER_INTERFACE}{handle_B(b)}"
         case  0, b, 96, 12, 6:  return F"{rn.COMMUNICATION_ADDRESS}{handle_B(b)}"
+        case  0, 0, 96, 99, 0 if spec_map == "KPZ":
+            return "Поколение и ревизия платы"
         case  0, 128, 96, 15, 0 if spec_map == "KPZ":
             return "Счетчик локальных срабатываний реле на размыкание в сутки"
         case  0, 128, 96, 12, 0:  return F"{rn.KPZ_INTERFACE_LIST}"
