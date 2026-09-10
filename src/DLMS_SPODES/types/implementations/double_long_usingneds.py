@@ -1,3 +1,5 @@
+from typing import Self
+
 from ...types import common_data_types as cdt
 
 
@@ -8,9 +10,15 @@ class DoubleLongUnsignedSecond(cdt.DoubleLongUnsigned):
 class IPAddress(cdt.DoubleLongUnsigned):
     """with string parser"""
 
+    @classmethod
+    def parse(cls, value: str) -> Self:
+        if value.count(".") == 3:
+            return cls(value)
+        return super().parse(value)
+
     def from_str(self, value: str) -> bytes:
         """ create ip: integer from string type ddd.ddd.ddd.ddd, ex.: 127.0.0.1 """
-        raw_value = bytes()
+        raw_value = b""
         for separator in '... ':
             try:
                 element, value = value.split(separator, 1)
@@ -31,5 +39,5 @@ class IPAddress(cdt.DoubleLongUnsigned):
         else:
             raise TypeError(F'Unsupported type validation from string, got {value.__class__}')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return F'{self.contents[0]}.{self.contents[1]}.{self.contents[2]}.{self.contents[3]}'
